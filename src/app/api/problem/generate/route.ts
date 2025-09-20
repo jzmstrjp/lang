@@ -2,11 +2,18 @@ import OpenAI from 'openai';
 import { Buffer } from 'node:buffer';
 import { NextResponse } from 'next/server';
 
+import type {
+  InteractionIntent as PrismaInteractionIntent,
+  ProblemType as PrismaProblemType,
+} from '@prisma/client';
+
+import { saveGeneratedProblem } from '@/lib/problem-storage';
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-type ProblemType = 'short' | 'medium' | 'long';
+type ProblemType = PrismaProblemType;
 
 type GenerateRequest = {
   type?: ProblemType;
@@ -14,7 +21,7 @@ type GenerateRequest = {
   genre?: string;
 };
 
-type InteractionIntent = 'request' | 'question' | 'opinion' | 'agreement' | 'info';
+type InteractionIntent = PrismaInteractionIntent;
 
 type GeneratedProblem = {
   type: ProblemType;
@@ -25,6 +32,7 @@ type GeneratedProblem = {
   nuance: string;
   genre: string;
   scenePrompt: string;
+  sceneId: string;
   speakers: {
     sceneA: 'male' | 'female' | 'neutral';
     sceneB: 'male' | 'female' | 'neutral';
@@ -148,7 +156,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 - japaneseReply: SceneB の自然な返答。english に出てくる主要な名詞・動作を必ず含め、質問なら回答、依頼なら可否と理由/補足を伝える。日常会話で違和感のない口語表現（例: 「〜するね」「〜してくれる？」など）を使い、直訳調の硬い言い回し（例: 「〜を渡します」など）は避ける。追加する状況ヒントは一言にとどめ、options[0] の本文を繰り返さない。
 - options: 日本語文4つ（全てユニーク）。全て日常会話として自然な口語表現にする。index0 は english の忠実な訳で情報の追加・削除をしないが、丁寧すぎる直訳を避け、英語のニュアンスに合う自然な言い回しに整える。index1 は主要名詞を共有しつつ意図を変える誤答（断り・別案など）。index2 と index3 は動作や対象を変えた誤答。英語の意味を基準に作成し、japaneseReply の内容に引きずられない。
 - correctIndex は常に 0。
-- scenePrompt: sceneId=${scene.id}（${scene.description}）の情景を英語で最大150文字にまとめる。SceneA/B の人物とキーになる物体を描写しつつ、命令口調・カメラ指定・テキスト挿入の指示は避け、ベースとなる環境描写だけを書く。
+- scenePrompt: sceneId=${scene.id}（${scene.description}）の情景を、以下の形式で150〜220文字にまとめる → 'who=...; what=...; where=...; when=...; key_objects=...; camera=...'。各項目は具体的で固有の名詞・形容詞を用い、「someone」「something」のような曖昧語は避け、誰がどこで何をしているか・時間帯・重要な物体・カメラの距離/視点まで特定する。
 - speakers: sceneA/sceneB を male/female/neutral で返す。少なくとも片方は male。情報がない場合は自然に推測し、両方 neutral になりそうなら片方を male にする。
 - 出力は JSON 1 つのみ。改行や解説、コードフェンスは禁止。english ↔ options[0] ↔ japaneseReply の論理整合性を確認し、必要なら修正してから返答する。
 - タイプ: ${type} / ニュアンス: ${nuance} / ジャンル: ${genre}`;
@@ -240,7 +248,10 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     correctIndex: typeof parsed.correctIndex === 'number' ? parsed.correctIndex : 0,
     nuance,
     genre,
-    scenePrompt: parsed.scenePrompt ?? `${genre} scene with polite tone`,
+    sceneId: scene.id,
+    scenePrompt:
+      parsed.scenePrompt ??
+      `who=family member in their ${genre} home; what=politely requesting help handling ${genre}-related task; where=cozy ${scene.description.toLowerCase()}; when=early evening with warm indoor lighting; key_objects=tableware, requested item clearly visible; camera=medium shot at eye level capturing both speaker and target object`,
     speakers: normalizeSpeakers({
       sceneA: mapSpeaker(parsed.speakers?.sceneA),
       sceneB: mapSpeaker(parsed.speakers?.sceneB),
@@ -417,30 +428,67 @@ export async function POST(req: Request) {
     const body: GenerateRequest = await req.json().catch(() => ({}));
     const problem = await generateProblem(body);
 
-    const debugMode = process.env.DEBUG_MODE === 'true';
-
-    let sceneA: string;
-    let sceneB: string;
-
-    if (debugMode) {
-      sceneA = `${problem.scenePrompt} [Scene A: request moment, hands empty, item not yet handed over]`;
-      sceneB = `${problem.scenePrompt} [Scene B: action carried out after Japanese reply, item clearly visible]`;
-    } else {
-      sceneA = await generateImage(
-        `${problem.scenePrompt}. Scene A: right before the English line is spoken, the requester is clearly making the correct request with body language and focus on the relevant item, hands empty, item not yet handed over. Photorealistic style, consistent tone with Scene B. No text, no subtitles, no speech bubbles. Avoid unrelated actions that could imply other options.`,
-      );
-      sceneB = await generateImage(
-        `${problem.scenePrompt}. Scene B: immediately after the Japanese reply, only the correct action is being carried out (e.g., item being passed, beverage being poured), clearly showing the requested item in focus. Photorealistic style, consistent tone with Scene A. No text, no subtitles, no speech bubbles. Avoid hints for incorrect options.`,
-      );
-    }
+    const baseSceneFacts = `Use these scene facts exactly: ${problem.scenePrompt}.`;
+    const sceneA = await generateImage(
+      `${baseSceneFacts} Scene A focuses on the instant right before the English line is spoken, with the requester clearly making the correct request through body language while the item is still not handed over. Photorealistic style, even lighting, authentic household textures, no text or speech bubbles.`,
+    );
+    const sceneB = await generateImage(
+      `${baseSceneFacts} Scene B captures the seconds immediately after the Japanese reply, highlighting only the correct action being carried out and the requested item prominently in frame. Photorealistic style, matching composition to Scene A, no alternative actions or distractions, no text.`,
+    );
 
     const [englishAudio, japaneseAudio] = await Promise.all([
       generateSpeech(problem.english, problem.speakers.sceneA),
       generateSpeech(problem.japaneseReply || problem.english, problem.speakers.sceneB),
     ]);
 
+    let persisted = null;
+    try {
+      persisted = await saveGeneratedProblem({
+        problem: {
+          type: problem.type,
+          english: problem.english,
+          japaneseReply: problem.japaneseReply,
+          options: problem.options,
+          correctIndex: problem.correctIndex,
+          sceneId: problem.sceneId,
+          scenePrompt: problem.scenePrompt,
+          nuance: problem.nuance,
+          genre: problem.genre,
+          patternGroup: undefined,
+          wordCount: problem.wordCount,
+          interactionIntent: problem.interactionIntent,
+          speakers: problem.speakers,
+        },
+        assets: {
+          sceneA,
+          sceneB,
+          audio: {
+            english: englishAudio,
+            japanese: japaneseAudio,
+          },
+        },
+      });
+    } catch (persistError) {
+      console.error('[problem/generate] persist error', persistError);
+    }
+
+    if (persisted) {
+      return NextResponse.json(persisted);
+    }
+
     return NextResponse.json({
-      problem,
+      problem: {
+        type: problem.type,
+        english: problem.english,
+        japaneseReply: problem.japaneseReply,
+        options: problem.options,
+        correctIndex: problem.correctIndex,
+        nuance: problem.nuance,
+        genre: problem.genre,
+        speakers: problem.speakers,
+        wordCount: problem.wordCount,
+        interactionIntent: problem.interactionIntent,
+      },
       assets: {
         sceneA,
         sceneB,
@@ -448,7 +496,6 @@ export async function POST(req: Request) {
           english: englishAudio,
           japanese: japaneseAudio,
         },
-        debug: debugMode,
       },
     });
   } catch (error) {

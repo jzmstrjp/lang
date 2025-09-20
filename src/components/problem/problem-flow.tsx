@@ -38,7 +38,6 @@ type AssetsData = {
     english: string;
     japanese: string;
   };
-  debug?: boolean;
 };
 
 type ApiResponse = {
@@ -51,6 +50,8 @@ const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
   middle: 'medium',
   long: 'long',
 };
+
+const INCLUDE_UNREVIEWED = process.env.NEXT_PUBLIC_INCLUDE_UNREVIEWED === 'true';
 
 const FALLBACK_SCENE_A = '/img/a.png';
 const FALLBACK_SCENE_B = '/img/b.png';
@@ -211,22 +212,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             secondaryAudioRef.current = null;
           }
 
-          if (assets?.audio?.japanese) {
-            const japaneseAudio = new Audio(assets.audio.japanese);
-            secondaryAudioRef.current = japaneseAudio;
-            secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
-              japaneseAudio
-                .play()
-                .catch(() => {
-                  console.warn('日本語音声の自動再生に失敗しました');
-                })
-                .finally(() => {
-                  secondaryPlaybackTimeoutRef.current = null;
-                });
-            }, 1000);
-          }
-        } else {
-          console.info(`${languageLabel}音声の再生が終了しました`);
+          return;
         }
       };
 
@@ -282,6 +268,43 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setIsFetching(true);
     setError(null);
 
+    const applyResponse = (data: ApiResponse) => {
+      setProblem(data.problem);
+      setAssets(data.assets);
+      setSelectedOption(null);
+
+      if (isMountedRef.current) {
+        setPhase('sceneA');
+      }
+    };
+
+    const buildCachedUrl = () => {
+      const params = new URLSearchParams({ type: problemType });
+      if (INCLUDE_UNREVIEWED) {
+        params.set('includeUnreviewed', 'true');
+      }
+      return `/api/problem?${params.toString()}`;
+    };
+
+    try {
+      const cachedRes = await fetch(buildCachedUrl(), { cache: 'no-store' });
+      if (cachedRes.ok) {
+        const cached: ApiResponse = await cachedRes.json();
+        applyResponse(cached);
+        if (isMountedRef.current) {
+          setIsFetching(false);
+        }
+        return;
+      }
+
+      if (cachedRes.status !== 404) {
+        const payload = await cachedRes.json().catch(() => ({}));
+        throw new Error(payload?.error ?? '問題取得に失敗しました');
+      }
+    } catch (err) {
+      console.warn('cached problem fetch failed', err);
+    }
+
     try {
       const res = await fetch('/api/problem/generate', {
         method: 'POST',
@@ -297,13 +320,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
 
       const data: ApiResponse = await res.json();
-      setProblem(data.problem);
-      setAssets(data.assets);
-      setSelectedOption(null);
-
-      if (isMountedRef.current) {
-        setPhase('sceneA');
-      }
+      applyResponse(data);
     } catch (err) {
       console.error(err);
       if (isMountedRef.current) {
@@ -325,6 +342,41 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   const handleRetryQuiz = () => {
     setSelectedOption(null);
+    if (assets) {
+      setAssets((prev) => {
+        if (!prev) {
+          return prev;
+        }
+
+        const zipped = problem?.options.map((option, index) => ({ option, index })) ?? [];
+        if (!problem || zipped.length === 0) {
+          return prev;
+        }
+
+        for (let i = zipped.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+        }
+
+        const reshuffledOptions = zipped.map((item) => item.option);
+        const correctIndex = zipped.findIndex((item) => item.index === problem.correctIndex);
+
+        setProblem((prevProblem) => {
+          if (!prevProblem) {
+            return prevProblem;
+          }
+
+          return {
+            ...prevProblem,
+            options: reshuffledOptions,
+            correctIndex: correctIndex === -1 ? 0 : correctIndex,
+          };
+        });
+
+        return prev;
+      });
+    }
+
     setPhase('sceneA');
   };
 
@@ -358,44 +410,32 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       {phase === 'sceneA' && (
         <section className="grid place-items-center">
-          {assets?.debug ? (
-            <p className="rounded-3xl border border-dashed border-[#c5d7d3] bg-[#ffffff] px-6 py-8 text-sm text-[#4b5a58]">
-              {assets.sceneA}
-            </p>
-          ) : (
-            <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
-              <Image
-                src={assets?.sceneA ?? FALLBACK_SCENE_A}
-                alt="英語のセリフが流れるシーン"
-                width={1920}
-                height={1080}
-                className="h-full w-full object-cover"
-                priority
-                unoptimized={Boolean(assets)}
-              />
-            </figure>
-          )}
+          <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
+            <Image
+              src={assets?.sceneA ?? FALLBACK_SCENE_A}
+              alt="英語のセリフが流れるシーン"
+              width={1920}
+              height={1080}
+              className="h-full w-full object-cover"
+              priority
+              unoptimized={Boolean(assets)}
+            />
+          </figure>
         </section>
       )}
 
       {phase === 'sceneB' && (
         <section className="grid place-items-center">
-          {assets?.debug ? (
-            <p className="rounded-3xl border border-dashed border-[#c5d7d3] bg-[#ffffff] px-6 py-8 text-sm text-[#4b5a58]">
-              {assets.sceneB}
-            </p>
-          ) : (
-            <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
-              <Image
-                src={assets?.sceneB ?? FALLBACK_SCENE_B}
-                alt="日本語で返答するシーン"
-                width={1920}
-                height={1080}
-                className="h-full w-full object-cover"
-                unoptimized={Boolean(assets)}
-              />
-            </figure>
-          )}
+          <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
+            <Image
+              src={assets?.sceneB ?? FALLBACK_SCENE_B}
+              alt="日本語で返答するシーン"
+              width={1920}
+              height={1080}
+              className="h-full w-full object-cover"
+              unoptimized={Boolean(assets)}
+            />
+          </figure>
         </section>
       )}
 

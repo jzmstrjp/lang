@@ -60,12 +60,19 @@
 ## 9. データモデル（論理）
 
 - Problem
-  - id, type(`short|medium|long`), english, japanese
+  - id, type(`short|medium|long`), english, japanese_reply
   - options(JSON配列・文字列4件), correct_index(Int)
-  - audio_en_url, audio_ja_url, scene_image_url
-  - scene_id(String), nuance(`polite|casual|rude`等), genre(String)
-  - pattern_group(String) ※差し替え量産用の型ID
+  - scene_id(String), scene_prompt(Text)
+  - speakers_scene_a(String), speakers_scene_b(String)
+  - word_count(Int), interaction_intent(`request|question|opinion|agreement|info`)
+  - audio_en_url?, audio_ja_url?, scene_a_image_url?, scene_b_image_url?
+  - nuance(`polite|casual|rude`等), genre(String), pattern_group(String)
   - is_cached(Bool), quality_check(Bool), created_at, updated_at
+- ProblemAsset
+  - id, problem_id(FK), scene_prompt(Text)
+  - scene_a_image(Text), scene_b_image(Text)
+  - audio_en(Text), audio_ja(Text)
+  - created_at, updated_at
 - （拡張）Dialogue
   - id, type, genre, turns(JSON: [{speaker, lang, text, audio_url}...])
   - quiz_target_index(Int) ※どのターンを問題化するか
@@ -109,6 +116,7 @@
 - 初期ストック：**type別30問×3=90問**を一括生成（ローカルCLIで可）。
 - ローカル開発：SQLiteでも可だが、**複数人開発はクラウドdev DB**推奨。
 - デプロイ：Vercel。生成APIは基本**サーバ側のみ使用**（一般公開しない）。
+- フラグ：`AUTO_APPROVE_PROBLEMS`（生成直後に `quality_check` を立てるか）
 
 ## 14. 非機能要件
 

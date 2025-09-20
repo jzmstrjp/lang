@@ -13,26 +13,57 @@ enum ProblemType {
   long
 }
 
+enum InteractionIntent {
+  request
+  question
+  opinion
+  agreement
+  info
+}
+
 model Problem {
-  id             String      @id @default(cuid())
-  type           ProblemType
-  english        String
-  japanese       String
-  options        Json
-  correctIndex   Int
-  audioEnUrl     String
-  audioJaUrl     String
-  sceneImageUrl  String
-  sceneId        String
-  nuance         String?
-  genre          String?
-  patternGroup   String?
-  isCached       Boolean     @default(false)
-  qualityCheck   Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                String             @id @default(cuid())
+  type              ProblemType
+  english           String
+  japaneseReply     String
+  options           Json
+  correctIndex      Int
+  audioEnUrl        String?
+  audioJaUrl        String?
+  sceneAImageUrl    String?
+  sceneBImageUrl    String?
+  sceneId           String
+  scenePrompt       String
+  speakersSceneA    String
+  speakersSceneB    String
+  nuance            String?
+  genre             String?
+  patternGroup      String?
+  wordCount         Int
+  interactionIntent InteractionIntent
+  isCached          Boolean            @default(false)
+  qualityCheck      Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  asset             ProblemAsset?
 
   @@index([type, isCached, qualityCheck])
   @@index([sceneId])
+  @@unique([english, interactionIntent, sceneId])
   @@map("problems")
+}
+
+model ProblemAsset {
+  id            String   @id @default(cuid())
+  problemId     String   @unique
+  scenePrompt   String
+  sceneAImage   String
+  sceneBImage   String
+  audioEn       String
+  audioJa       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@map("problem_assets")
 }
