@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -23,10 +24,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-slate-50 text-slate-900 antialiased`}
+        suppressHydrationWarning
       >
+        <header className="border-b border-slate-200 bg-white">
+          <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:px-6">
+            <Link href="/" className="text-lg font-bold tracking-wide text-slate-900">
+              英語太郎
+            </Link>
+          </div>
+        </header>
         {children}
       </body>
     </html>
