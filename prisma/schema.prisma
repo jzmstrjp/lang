@@ -16,6 +16,7 @@ enum ProblemType {
 enum InteractionIntent {
   request
   question
+  proposal
   opinion
   agreement
   info

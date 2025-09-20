@@ -61,7 +61,6 @@ const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
   long: 'long',
 };
 
-
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
@@ -69,6 +68,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [fetchingStatus, setFetchingStatus] = useState<'generating' | 'retrieving' | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -212,7 +212,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             .finally(() => {
               secondaryPlaybackTimeoutRef.current = null;
             });
-        }, 100);
+        }, 300);
       };
 
       if (englishSrc) {
@@ -322,6 +322,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setSelectedOption(null);
     setError(null);
     setIsFetching(false);
+    setFetchingStatus(null);
   }, [problemType]);
 
   const fetchProblem = useCallback(async () => {
@@ -348,12 +349,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
     };
 
-    const shouldGenerate = Math.random() < 0.5; // 50:50の確率
+    const shouldGenerate = Math.random() < 0.1; // 生成する確率
     console.log(`[ProblemFlow] ${shouldGenerate ? '新規生成' : 'DB取得'} を選択`);
 
     try {
       if (shouldGenerate) {
-        // 50%の確率で新しい問題を生成
+        setFetchingStatus('generating');
         console.log('[ProblemFlow] 新しい問題を生成中...');
         const res = await fetch('/api/problem/generate', {
           method: 'POST',
@@ -371,17 +372,18 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const data: ApiResponse = await res.json();
         applyResponse(data);
       } else {
-        // 50%の確率でDBから既存の問題を取得
+        setFetchingStatus('retrieving');
         console.log('[ProblemFlow] DBから既存の問題を取得中...');
         const params = new URLSearchParams({ type: problemType });
         const cachedRes = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
-        
+
         if (cachedRes.ok) {
           const cached: ApiResponse = await cachedRes.json();
           console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
           applyResponse(cached);
         } else {
           // DBに問題がない場合は生成にフォールバック
+          setFetchingStatus('generating');
           console.log('[ProblemFlow] DB取得失敗、生成にフォールバック');
           const res = await fetch('/api/problem/generate', {
             method: 'POST',
@@ -409,6 +411,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     } finally {
       if (isMountedRef.current) {
         setIsFetching(false);
+        setFetchingStatus(null);
       }
     }
   }, [problemType]);
@@ -483,13 +486,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       {phase === 'loading' && (
         <section className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#c5d7d3] bg-[#edf2f1] px-6 py-20 text-center text-[#4b5a58]">
-          生成中です...
+          {fetchingStatus === 'generating' && '新しい問題を生成中...'}
+          {fetchingStatus === 'retrieving' && '問題を取得中...'}
+          {!fetchingStatus && '処理中...'}
         </section>
       )}
 
       {phase === 'scene' && (
         <section className="grid place-items-center">
-          <figure className="flex w-full justify-center overflow-hidden rounded-3xl border border-[#d8cbb6] bg-[#f7f5f0] px-6 py-6 shadow-2xl shadow-[#d8cbb6]/50">
+          <figure className="flex w-full justify-center">
             {assets?.image ? (
               <Image
                 src={assets.image}
@@ -557,7 +562,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               </>
             )}
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
+          <div className="flex flex-row gap-3 items-center justify-center">
             <button
               type="button"
               onClick={handleRetryQuiz}

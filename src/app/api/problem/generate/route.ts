@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { Buffer } from 'node:buffer';
 import { NextResponse } from 'next/server';
+import { generateSpeech } from '@/lib/audio-utils';
 
 import type {
   InteractionIntent as PrismaInteractionIntent,
@@ -141,7 +142,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     {
       id: 'park',
       description:
-        'A nearby park or playground with benches, paths, or exercise equipment, capturing casual outdoor requests.',
+        'A nearby park or playground with benches, paths, or exercise equipment, perfect for outdoor activity proposals and suggestions.',
     },
   ];
 
@@ -158,14 +159,14 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 - 女性（SceneA）が scenePrompt に沿った状況で自然に話し始める。${TYPE_GUIDANCE[type]}
 - ${TYPE_EXAMPLES[type]}
 - **厳守**: english は必ず ${wordCountRule.min}〜${wordCountRule.max} 語以内にする（${wordCountRule.label}）。語数を数えて確認すること。水増しのための間投詞や名前呼びを避け、簡潔で自然な文にする。
-- 依頼・質問・意見などの意図を scenePrompt と整合させ、'request' | 'question' | 'opinion' | 'agreement' | 'info' から interactionIntent を選ぶ。
+- 依頼・質問・提案・意見などの意図を scenePrompt と整合させ、'request' | 'question' | 'proposal' | 'opinion' | 'agreement' | 'info' から interactionIntent を選ぶ。
 - 丁寧/カジュアル/ぶっきらぼうなど nuance の指示があれば、それに合う語調・モーダル・語尾を採用する。同じ出題内で毎回同じ書き出しにならないようバリエーションをつける（"Can you" などは可だが連続使用は避ける）。
 
 【日本語返信】
 - japaneseReply は男性（SceneB）が女性（SceneA）の依頼・提案・質問に対して即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
 - 依頼への返事は対象物を含めて「はい、○○どうぞ」「うん、○○いいよ」「分かった、○○ね」など、クイズのヒントとなる適度な情報を含む自然な表現にする。
 - 質問への返事は具体的かつ簡潔に。意見への返事は同意/反論を自然に表現する。
-- 参考例: "リモコンを渡してくれる？" → "はい、リモコンどうぞ" / "おもちゃを片付けるの手伝ってくれる？" → "うん、おもちゃ一緒に片付けよう" / "今日は遊園地に行きたいなぁ" → "いいね、遊園地行こう！" / "塩を取ってくれる？" → "はい、塩これ" / "窓を開けてくれる？" → "分かった、窓開けるね"
+- 参考例: "リモコンを渡してくれる？" → "はい、リモコンどうぞ" / "おもちゃを片付けるの手伝ってくれる？" → "うん、おもちゃ一緒に片付けよう" / "今日は公園に行こう！" → "いいね、公園行こう！" / "映画を見ない？" → "うん、映画見よう" / "塩を取ってくれる？" → "はい、塩これ" / "窓を開けてくれる？" → "分かった、窓開けるね"
 - 絶対に避けるべき表現: 「〜してあげる」「その○○を〜する」など、相手の発言をそのまま長々と繰り返す不自然な日本語。ただし、対象物の名詞は学習のヒントとして適度に含める。
 
 【選択肢】
@@ -176,7 +177,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 - correctIndex は常に 0。
 
 【シーン設定】
-- scenePrompt: sceneId=${scene.id}（${scene.description}）の状況を 'who=...; what=...; where=...; when=...; key_objects=...; camera=...' 形式で150〜220文字にまとめる。曖昧語を避け、具体的な人物像・行動・時間帯・主要物体・撮影距離を記述する。
+- scenePrompt: sceneId=${scene.id}（${scene.description}）の状況を日本語の自然な文章で描写する。「女性が、[距離・位置関係]にいる男性に対して『[英語のセリフ]』と[言う/尋ねる/提案する]。すると男性が『[日本語の返事]』と答える。」の形式で、150〜200文字程度にまとめる。具体的な場所、時間帯、物の配置なども自然に含める。
 - speakers: SceneA/SceneB を male/female/neutral で返す。少なくとも片方は male。情報が薄い場合は自然に補完し、両方 neutral になりそうなら片方を male にする。
 
 【厳守事項】
@@ -273,7 +274,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     sceneId: scene.id,
     scenePrompt:
       parsed.scenePrompt ??
-      `who=family member in their ${genre} home; what=politely requesting help handling ${genre}-related task; where=cozy ${scene.description.toLowerCase()}; when=early evening with warm indoor lighting; key_objects=tableware, requested item clearly visible; camera=medium shot at eye level capturing both speaker and target object`,
+      `女性が、${scene.description.toLowerCase()}で男性に対して何かを依頼する。男性がそれに応じて行動する。${genre}に関連した家庭的な雰囲気の中で、暖かい室内照明の下、必要な物がはっきりと見える環境。`,
     speakers: normalizeSpeakers({
       sceneA: mapSpeaker(parsed.speakers?.sceneA),
       sceneB: mapSpeaker(parsed.speakers?.sceneB),
@@ -318,6 +319,7 @@ function mapInteractionIntent(value?: string): InteractionIntent {
   switch (normalized) {
     case 'request':
     case 'question':
+    case 'proposal':
     case 'opinion':
     case 'agreement':
     case 'info':
@@ -402,42 +404,20 @@ async function generateImage(prompt: string) {
   throw new Error('Failed to generate image');
 }
 
-async function generateSpeech(input: string, speaker: 'male' | 'female' | 'neutral') {
-  ensureApiKey();
-
-  const voice = speakerToVoice(speaker);
-
-  const result = await openai.audio.speech.create({
-    model: 'gpt-4o-mini-tts',
-    voice,
-    input,
-  });
-
-  const arrayBuffer = await result.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString('base64');
-  return `data:audio/mpeg;base64,${base64}`;
-}
-
-function speakerToVoice(speaker: 'male' | 'female' | 'neutral'): string {
-  switch (speaker) {
-    case 'male':
-      return 'verse';
-    case 'female':
-      return 'coral';
-    default:
-      return 'alloy';
-  }
-}
-
 export async function POST(req: Request) {
   try {
     const body: GenerateRequest = await req.json().catch(() => ({}));
     const problem = await generateProblem(body);
 
-    const baseSceneFacts = `Use these scene facts exactly: ${problem.scenePrompt}.`;
-    const storyNarrative = `Story flow: In Panel 1, ${problem.speakers.sceneA === 'male' ? 'a man' : problem.speakers.sceneA === 'female' ? 'a woman' : 'a person'} says to ${problem.speakers.sceneB === 'male' ? 'a man' : problem.speakers.sceneB === 'female' ? 'a woman' : 'another person'}: "${problem.english}". In Panel 2, responding to this request, ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} replies "${problem.japaneseReply}" and takes the corresponding action.`;
+    const imagePrompt = `Create a single illustration arranged as a two-panel comic strip stacked vertically in portrait orientation with a clear white border/gutter between the panels. Each panel must have exactly equal height - divide the image into two perfectly symmetrical halves with a distinct white gap separating them. Ensure there is always a visible white space between the top and bottom panels to clearly distinguish them as separate scenes. 
 
-    const imagePrompt = `Create a single illustration arranged as a two-panel comic strip stacked vertically in portrait orientation with a clear white border/gutter between the panels. Each panel must have exactly equal height - divide the image into two perfectly symmetrical halves with a distinct white gap separating them. Ensure there is always a visible white space between the top and bottom panels to clearly distinguish them as separate scenes. ${storyNarrative} ${baseSceneFacts} Panel 1 (top half): Show the moment when ${problem.speakers.sceneA === 'male' ? 'the man' : problem.speakers.sceneA === 'female' ? 'the woman' : 'the person'} is making the request "${problem.english}" through clear visual gestures and expressions, while the requested action has not yet been fulfilled. Panel 2 (bottom half): Show ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} actively responding with "${problem.japaneseReply}" by performing the requested action or providing what was asked for. Maintain the same characters, wardrobe, and setting across both panels. Ensure both panels are identical in height and proportions with a clear white separator between them. This is a two-panel comic strip, but DO NOT include any dialogue, speech bubbles, or text in the image - express everything through visual actions and expressions only. Photorealistic rendering, consistent household lighting, gentle comic framing, and absolutely no speech bubbles or text anywhere.`;
+Scene description in Japanese (translate and interpret): ${problem.scenePrompt}
+
+Panel 1 (top half): Show the moment when the woman is saying "${problem.english}" to the man - she should be clearly addressing him with appropriate gestures, facial expressions, and body language that match this specific request. The man should be listening and the requested action has NOT yet happened.
+
+Panel 2 (bottom half): Show the moment when the man is responding "${problem.japaneseReply}" - he should be actively performing the requested action or providing what was asked for, with facial expressions and body language showing he is responding positively to her request.
+
+Maintain the same characters, wardrobe, and setting across both panels. Show clear progression from request (Panel 1) to fulfillment (Panel 2). Ensure both panels are identical in height and proportions with a clear white separator between them. This is a two-panel comic strip, but DO NOT include any dialogue, speech bubbles, or text in the image - express everything through visual actions and expressions only. Photorealistic rendering, consistent household lighting, gentle comic framing, and absolutely no speech bubbles or text anywhere.`;
 
     const compositeScene =
       process.env.WITHOUT_GENERATE_PICTURE === 'true' ? null : await generateImage(imagePrompt);

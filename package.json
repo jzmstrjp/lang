@@ -12,18 +12,15 @@
     "format:check": "prettier --check .",
     "prisma": "prisma",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.cjs"
+    "db:migrate": "prisma migrate deploy"
   },
   "dependencies": {
-    "next": "15.5.3",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
     "@prisma/client": "^5.18.0",
-    "openai": "^4.70.2"
+    "dotenv": "^17.2.2",
+    "next": "15.5.3",
+    "openai": "^4.70.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

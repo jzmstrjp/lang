@@ -26,10 +26,10 @@ export type PersistGeneratedProblemInput = {
     };
   };
   assets: {
-    composite: string;
+    composite: string | null;
     audio: {
       english: string;
-      japanese: string;
+      japanese: string | null;
     };
   };
 };
@@ -53,7 +53,7 @@ export type CachedProblemResponse = {
     interactionIntent: InteractionIntent;
   };
   assets: {
-    composite: string;
+    composite: string | null;
     audio: {
       english: string;
       japanese: string;
@@ -150,7 +150,7 @@ export async function saveGeneratedProblem(
     scenePrompt: input.problem.scenePrompt,
     compositeImage: input.assets.composite,
     audioEn: input.assets.audio.english,
-    audioJa: input.assets.audio.japanese,
+    audioJa: input.assets.audio.japanese || '',
   };
 
   const record = await prisma.problem.upsert({
@@ -190,7 +190,7 @@ export async function fetchCachedProblem(
 
   const total = await prisma.problem.count({ where });
   console.log(`[fetchCachedProblem] ${type}タイプの問題数: ${total}`);
-  
+
   if (total === 0) {
     return null;
   }
@@ -198,7 +198,7 @@ export async function fetchCachedProblem(
   const take = Math.min(RANDOM_SAMPLE_SIZE, total);
   const maxSkip = Math.max(total - take, 0);
   const skip = maxSkip > 0 ? Math.floor(Math.random() * (maxSkip + 1)) : 0;
-  
+
   console.log(`[fetchCachedProblem] skip: ${skip}, take: ${take}`);
 
   const records = await prisma.problem.findMany({
@@ -215,7 +215,9 @@ export async function fetchCachedProblem(
 
   const chosenIndex = Math.floor(Math.random() * records.length);
   const chosen = records[chosenIndex];
-  console.log(`[fetchCachedProblem] ${records.length}件中${chosenIndex}番目を選択: "${chosen.english}"`);
-  
+  console.log(
+    `[fetchCachedProblem] ${records.length}件中${chosenIndex}番目を選択: "${chosen.english}"`,
+  );
+
   return mapRecordToResponse(chosen);
 }

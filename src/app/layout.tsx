@@ -26,12 +26,12 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-slate-50 text-slate-900 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-white text-slate-900 antialiased`}
         suppressHydrationWarning
       >
-        <header className="border-b border-slate-200 bg-white">
+        <header className="border-b border-gray-800 bg-black">
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:px-6">
-            <Link href="/" className="text-lg font-bold tracking-wide text-slate-900">
+            <Link href="/" className="text-lg font-bold tracking-wide text-white">
               英語太郎
             </Link>
           </div>
