@@ -335,14 +335,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   };
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-slate-900 sm:px-6 lg:max-w-4xl">
+    <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'landing' && (
-        <section className="flex flex-col items-center gap-4 rounded-3xl border border-slate-200 bg-slate-50 px-6 py-20 text-center shadow-lg shadow-slate-900/10">
+        <section className="flex flex-col items-center gap-4 rounded-3xl border border-[#d8cbb6] bg-[#ffffff] px-6 py-20 text-center shadow-lg shadow-[#d8cbb6]/40">
           {error && <p className="text-sm text-rose-500">{error}</p>}
           <button
             type="button"
             onClick={handleStart}
-            className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-lg font-semibold text-slate-50 shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isFetching}
           >
             {isFetching ? '生成中…' : '英語学習を始める'}
@@ -351,7 +351,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       )}
 
       {phase === 'loading' && (
-        <section className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-20 text-center text-slate-500">
+        <section className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#c5d7d3] bg-[#edf2f1] px-6 py-20 text-center text-[#4b5a58]">
           生成中です...
         </section>
       )}
@@ -359,11 +359,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       {phase === 'sceneA' && (
         <section className="grid place-items-center">
           {assets?.debug ? (
-            <p className="rounded-3xl border border-dashed border-slate-400 bg-slate-50 px-6 py-8 text-sm text-slate-700">
+            <p className="rounded-3xl border border-dashed border-[#c5d7d3] bg-[#ffffff] px-6 py-8 text-sm text-[#4b5a58]">
               {assets.sceneA}
             </p>
           ) : (
-            <figure className="w-full overflow-hidden rounded-3xl border border-slate-200 shadow-2xl shadow-slate-900/10">
+            <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
               <Image
                 src={assets?.sceneA ?? FALLBACK_SCENE_A}
                 alt="英語のセリフが流れるシーン"
@@ -381,11 +381,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       {phase === 'sceneB' && (
         <section className="grid place-items-center">
           {assets?.debug ? (
-            <p className="rounded-3xl border border-dashed border-slate-400 bg-slate-50 px-6 py-8 text-sm text-slate-700">
+            <p className="rounded-3xl border border-dashed border-[#c5d7d3] bg-[#ffffff] px-6 py-8 text-sm text-[#4b5a58]">
               {assets.sceneB}
             </p>
           ) : (
-            <figure className="w-full overflow-hidden rounded-3xl border border-slate-200 shadow-2xl shadow-slate-900/10">
+            <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
               <Image
                 src={assets?.sceneB ?? FALLBACK_SCENE_B}
                 alt="日本語で返答するシーン"
@@ -401,7 +401,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       {phase === 'quiz' && problem && (
         <section className="grid gap-8">
-          <p className="text-xl font-semibold text-slate-900 sm:text-2xl">この英文の意味は？</p>
+          <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
           <ul className="grid gap-3">
             {problem.options.map((option, index) => (
               <li key={`${option}-${index}`}>
@@ -411,7 +411,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                     setSelectedOption(index);
                     setPhase('result');
                   }}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-left text-base font-medium text-slate-800 shadow-sm shadow-slate-900/5 transition hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]"
                 >
                   {option}
                 </button>
@@ -435,8 +435,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             </h2>
             {isCorrect && (
               <>
-                <p className="mt-4 text-base text-slate-800">{problem.english}</p>
-                <p className="mt-4 text-base text-slate-800">
+                <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">{problem.english}</p>
+                <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">
                   {problem.options[problem.correctIndex]}
                 </p>
               </>
@@ -446,7 +446,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             <button
               type="button"
               onClick={handleRetryQuiz}
-              className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 shadow-sm transition hover:border-slate-400 hover:text-slate-900"
+              className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
             >
               再挑戦
             </button>
@@ -454,7 +454,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <button
                 type="button"
                 onClick={handleNextProblem}
-                className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-base font-semibold text-slate-50 shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition hover:bg-[#c3684f] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isFetching}
               >
                 {isFetching ? '生成中…' : '次の問題へ'}

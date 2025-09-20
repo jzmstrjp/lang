@@ -20,16 +20,16 @@ const links = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-slate-900 sm:px-6">
+    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-[#2a2b3c] sm:px-6">
       <nav className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
         {links.map(({ href, label, description }) => (
           <Link
             key={href}
             href={href}
-            className="flex flex-col items-center rounded-2xl border border-slate-200 px-5 py-4 text-blue-600 shadow-sm transition hover:border-blue-300 hover:text-blue-500"
+            className="flex flex-col items-center rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:text-[#2f8f9d]"
           >
             <span className="text-lg font-semibold">{label}</span>
-            <span className="text-xs font-medium text-slate-500">{description}</span>
+            <span className="text-xs font-medium text-[#d77a61]">{description}</span>
           </Link>
         ))}
       </nav>
