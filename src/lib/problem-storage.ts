@@ -44,6 +44,7 @@ export type CachedProblemResponse = {
     correctIndex: number;
     nuance: string;
     genre: string;
+    scenePrompt: string;
     speakers: {
       sceneA: SpeakerLabel;
       sceneB: SpeakerLabel;
@@ -52,8 +53,6 @@ export type CachedProblemResponse = {
     interactionIntent: InteractionIntent;
   };
   assets: {
-    sceneA: string;
-    sceneB: string;
     composite: string;
     audio: {
       english: string;
@@ -99,6 +98,7 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
       correctIndex: record.correctIndex,
       nuance: record.nuance ?? DEFAULT_NUANCE,
       genre: record.genre ?? DEFAULT_GENRE,
+      scenePrompt: record.scenePrompt,
       speakers: {
         sceneA: (record.speakersSceneA as SpeakerLabel) ?? 'neutral',
         sceneB: (record.speakersSceneB as SpeakerLabel) ?? 'neutral',
@@ -107,9 +107,7 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
       interactionIntent: record.interactionIntent,
     },
     assets: {
-      sceneA: record.asset.compositeImage,
-      sceneB: record.asset.compositeImage,
-      composite: record.asset.compositeImage,
+      composite: record.asset.compositeImage || null,
       audio: {
         english: record.asset.audioEn,
         japanese: record.asset.audioJa,
@@ -191,6 +189,8 @@ export async function fetchCachedProblem(
   };
 
   const total = await prisma.problem.count({ where });
+  console.log(`[fetchCachedProblem] ${type}タイプの問題数: ${total}`);
+  
   if (total === 0) {
     return null;
   }
@@ -198,6 +198,8 @@ export async function fetchCachedProblem(
   const take = Math.min(RANDOM_SAMPLE_SIZE, total);
   const maxSkip = Math.max(total - take, 0);
   const skip = maxSkip > 0 ? Math.floor(Math.random() * (maxSkip + 1)) : 0;
+  
+  console.log(`[fetchCachedProblem] skip: ${skip}, take: ${take}`);
 
   const records = await prisma.problem.findMany({
     where,
@@ -211,6 +213,9 @@ export async function fetchCachedProblem(
     return null;
   }
 
-  const chosen = records[Math.floor(Math.random() * records.length)];
+  const chosenIndex = Math.floor(Math.random() * records.length);
+  const chosen = records[chosenIndex];
+  console.log(`[fetchCachedProblem] ${records.length}件中${chosenIndex}番目を選択: "${chosen.english}"`);
+  
   return mapRecordToResponse(chosen);
 }

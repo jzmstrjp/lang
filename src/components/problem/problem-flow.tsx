@@ -23,6 +23,7 @@ type ProblemData = {
   correctIndex: number;
   nuance: string;
   genre: string;
+  scenePrompt?: string;
   speakers: {
     sceneA: 'male' | 'female' | 'neutral';
     sceneB: 'male' | 'female' | 'neutral';
@@ -33,6 +34,7 @@ type ProblemData = {
 
 type AssetsData = {
   image: string | null;
+  imagePrompt?: string;
   audio: {
     english?: string;
     japanese?: string;
@@ -40,9 +42,8 @@ type AssetsData = {
 };
 
 type ApiAssets = {
-  sceneA?: string;
-  sceneB?: string;
   composite?: string;
+  imagePrompt?: string;
   audio?: {
     english?: string;
     japanese?: string;
@@ -60,9 +61,6 @@ const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
   long: 'long',
 };
 
-const INCLUDE_UNREVIEWED = process.env.NEXT_PUBLIC_INCLUDE_UNREVIEWED === 'true';
-
-const FALLBACK_COMPOSITE = '/img/a.png';
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [phase, setPhase] = useState<Phase>('landing');
@@ -331,7 +329,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setError(null);
 
     const applyResponse = (data: ApiResponse) => {
-      const image = data.assets?.composite ?? data.assets?.sceneA ?? data.assets?.sceneB ?? null;
+      const image = data.assets?.composite ?? null;
       const audio = {
         english: data.assets?.audio?.english,
         japanese: data.assets?.audio?.japanese,
@@ -340,6 +338,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       setProblem(data.problem);
       setAssets({
         image,
+        imagePrompt: data.assets?.imagePrompt,
         audio,
       });
       setSelectedOption(null);
@@ -349,53 +348,62 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
     };
 
-    const buildCachedUrl = () => {
-      const params = new URLSearchParams({ type: problemType });
-      if (INCLUDE_UNREVIEWED) {
-        params.set('includeUnreviewed', 'true');
-      }
-      return `/api/problem?${params.toString()}`;
-    };
+    const shouldGenerate = Math.random() < 0.5; // 50:50の確率
+    console.log(`[ProblemFlow] ${shouldGenerate ? '新規生成' : 'DB取得'} を選択`);
 
     try {
-      const cachedRes = await fetch(buildCachedUrl(), { cache: 'no-store' });
-      if (cachedRes.ok) {
-        const cached: ApiResponse = await cachedRes.json();
-        applyResponse(cached);
-        if (isMountedRef.current) {
-          setIsFetching(false);
+      if (shouldGenerate) {
+        // 50%の確率で新しい問題を生成
+        console.log('[ProblemFlow] 新しい問題を生成中...');
+        const res = await fetch('/api/problem/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ type: problemType }),
+        });
+
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          throw new Error(payload?.error ?? '問題生成に失敗しました');
         }
-        return;
+
+        const data: ApiResponse = await res.json();
+        applyResponse(data);
+      } else {
+        // 50%の確率でDBから既存の問題を取得
+        console.log('[ProblemFlow] DBから既存の問題を取得中...');
+        const params = new URLSearchParams({ type: problemType });
+        const cachedRes = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+        
+        if (cachedRes.ok) {
+          const cached: ApiResponse = await cachedRes.json();
+          console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
+          applyResponse(cached);
+        } else {
+          // DBに問題がない場合は生成にフォールバック
+          console.log('[ProblemFlow] DB取得失敗、生成にフォールバック');
+          const res = await fetch('/api/problem/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ type: problemType }),
+          });
+
+          if (!res.ok) {
+            const payload = await res.json().catch(() => ({}));
+            throw new Error(payload?.error ?? '問題生成に失敗しました');
+          }
+
+          const data: ApiResponse = await res.json();
+          applyResponse(data);
+        }
       }
-
-      if (cachedRes.status !== 404) {
-        const payload = await cachedRes.json().catch(() => ({}));
-        throw new Error(payload?.error ?? '問題取得に失敗しました');
-      }
-    } catch (err) {
-      console.warn('cached problem fetch failed', err);
-    }
-
-    try {
-      const res = await fetch('/api/problem/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: problemType }),
-      });
-
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.error ?? '問題生成に失敗しました');
-      }
-
-      const data: ApiResponse = await res.json();
-      applyResponse(data);
     } catch (err) {
       console.error(err);
       if (isMountedRef.current) {
-        setError(err instanceof Error ? err.message : '問題生成に失敗しました');
+        setError(err instanceof Error ? err.message : '問題取得に失敗しました');
         setPhase('landing');
       }
     } finally {
@@ -482,15 +490,26 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       {phase === 'scene' && (
         <section className="grid place-items-center">
           <figure className="flex w-full justify-center overflow-hidden rounded-3xl border border-[#d8cbb6] bg-[#f7f5f0] px-6 py-6 shadow-2xl shadow-[#d8cbb6]/50">
-            <Image
-              src={assets?.image ?? FALLBACK_COMPOSITE}
-              alt="英語と日本語のセリフを並べた2コマシーン"
-              width={500}
-              height={750}
-              className="h-auto w-full max-w-[500px] object-contain"
-              priority
-              unoptimized={Boolean(assets)}
-            />
+            {assets?.image ? (
+              <Image
+                src={assets.image}
+                alt="英語と日本語のセリフを並べた2コマシーン"
+                width={500}
+                height={750}
+                className="h-auto w-full max-w-[500px] object-contain"
+                priority
+                unoptimized={Boolean(assets)}
+              />
+            ) : problem?.scenePrompt ? (
+              <div className="w-full max-w-[500px] p-4 text-sm text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+                <h3 className="font-semibold mb-2 text-[#2f8f9d]">シーンプロンプト:</h3>
+                <p className="whitespace-pre-wrap">{problem.scenePrompt}</p>
+              </div>
+            ) : (
+              <div className="w-full max-w-[500px] p-8 text-center bg-white rounded-lg border border-[#d8cbb6]">
+                <p className="text-[#666] text-lg">画像なし</p>
+              </div>
+            )}
           </figure>
         </section>
       )}

@@ -57,10 +57,10 @@ const TYPE_GUIDANCE: Record<ProblemType, string> = {
 
 const TYPE_EXAMPLES: Record<ProblemType, string> = {
   short:
-    '例(short): english="Could you grab the orange mug?" → options[0]="そのオレンジのマグ取ってくれる？" / japaneseReply="いいよ、テーブルの右側にあるやつでしょ。"',
+    '例(short): english="Pass the salt?" (3語) → options[0]="塩取って？" / japaneseReply="はい、塩どうぞ" または english="Ready yet?" (2語) → options[0]="まだ？" / japaneseReply="もうすぐだよ"',
   medium:
-    '例(medium): english="Mind watching the soup while I get the door?" → options[0]="私が玄関に出ている間、お鍋を見ていてくれる？" / japaneseReply="いいよ、吹きこぼれに気をつけるね。"',
-  long: '例(long): english="I thought we could invite Sam since he fixed the projector last time, what do you think?" → options[0]="この前プロジェクターを直してくれたサムを招待したらどうかな？" / japaneseReply="賛成、彼もまた手伝ってくれそう。"',
+    '例(medium): english="Could you help me clean?" (6語) → options[0]="掃除手伝ってくれる？" / japaneseReply="うん、一緒にやろう"',
+  long: '例(long): english="I think we should invite Sam since he helped us last time." (12語) → options[0]="この前手伝ってくれたサムを招待しない？" / japaneseReply="いいね、彼も喜ぶと思う"',
 };
 
 function mapProblemType(type?: string): ProblemType {
@@ -157,7 +157,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 - SceneA は女性、SceneB は男性として設定する。女性（SceneA）が男性（SceneB）に対して依頼・提案・質問をし、男性（SceneB）がそれに応じる構造にする。
 - 女性（SceneA）が scenePrompt に沿った状況で自然に話し始める。${TYPE_GUIDANCE[type]}
 - ${TYPE_EXAMPLES[type]}
-- ${wordCountRule.min}〜${wordCountRule.max} 語（${wordCountRule.label}）。水増しのための間投詞や名前呼びを避け、文として完結させる。
+- **厳守**: english は必ず ${wordCountRule.min}〜${wordCountRule.max} 語以内にする（${wordCountRule.label}）。語数を数えて確認すること。水増しのための間投詞や名前呼びを避け、簡潔で自然な文にする。
 - 依頼・質問・意見などの意図を scenePrompt と整合させ、'request' | 'question' | 'opinion' | 'agreement' | 'info' から interactionIntent を選ぶ。
 - 丁寧/カジュアル/ぶっきらぼうなど nuance の指示があれば、それに合う語調・モーダル・語尾を採用する。同じ出題内で毎回同じ書き出しにならないようバリエーションをつける（"Can you" などは可だが連続使用は避ける）。
 
@@ -436,9 +436,11 @@ export async function POST(req: Request) {
 
     const baseSceneFacts = `Use these scene facts exactly: ${problem.scenePrompt}.`;
     const storyNarrative = `Story flow: In Panel 1, ${problem.speakers.sceneA === 'male' ? 'a man' : problem.speakers.sceneA === 'female' ? 'a woman' : 'a person'} says to ${problem.speakers.sceneB === 'male' ? 'a man' : problem.speakers.sceneB === 'female' ? 'a woman' : 'another person'}: "${problem.english}". In Panel 2, responding to this request, ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} replies "${problem.japaneseReply}" and takes the corresponding action.`;
-    const compositeScene = await generateImage(
-      `Create a single illustration arranged as a two-panel comic strip stacked vertically in portrait orientation with a clear white border/gutter between the panels. Each panel must have exactly equal height - divide the image into two perfectly symmetrical halves with a distinct white gap separating them. Ensure there is always a visible white space between the top and bottom panels to clearly distinguish them as separate scenes. ${storyNarrative} ${baseSceneFacts} Panel 1 (top half): Show the moment when ${problem.speakers.sceneA === 'male' ? 'the man' : problem.speakers.sceneA === 'female' ? 'the woman' : 'the person'} is making the request "${problem.english}" through clear visual gestures and expressions, while the requested action has not yet been fulfilled. Panel 2 (bottom half): Show ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} actively responding with "${problem.japaneseReply}" by performing the requested action or providing what was asked for. Maintain the same characters, wardrobe, and setting across both panels. Ensure both panels are identical in height and proportions with a clear white separator between them. This is a two-panel comic strip, but DO NOT include any dialogue, speech bubbles, or text in the image - express everything through visual actions and expressions only. Photorealistic rendering, consistent household lighting, gentle comic framing, and absolutely no speech bubbles or text anywhere.`,
-    );
+
+    const imagePrompt = `Create a single illustration arranged as a two-panel comic strip stacked vertically in portrait orientation with a clear white border/gutter between the panels. Each panel must have exactly equal height - divide the image into two perfectly symmetrical halves with a distinct white gap separating them. Ensure there is always a visible white space between the top and bottom panels to clearly distinguish them as separate scenes. ${storyNarrative} ${baseSceneFacts} Panel 1 (top half): Show the moment when ${problem.speakers.sceneA === 'male' ? 'the man' : problem.speakers.sceneA === 'female' ? 'the woman' : 'the person'} is making the request "${problem.english}" through clear visual gestures and expressions, while the requested action has not yet been fulfilled. Panel 2 (bottom half): Show ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} actively responding with "${problem.japaneseReply}" by performing the requested action or providing what was asked for. Maintain the same characters, wardrobe, and setting across both panels. Ensure both panels are identical in height and proportions with a clear white separator between them. This is a two-panel comic strip, but DO NOT include any dialogue, speech bubbles, or text in the image - express everything through visual actions and expressions only. Photorealistic rendering, consistent household lighting, gentle comic framing, and absolutely no speech bubbles or text anywhere.`;
+
+    const compositeScene =
+      process.env.WITHOUT_GENERATE_PICTURE === 'true' ? null : await generateImage(imagePrompt);
 
     const [englishAudio, japaneseAudio] = await Promise.all([
       generateSpeech(problem.english, problem.speakers.sceneA),
@@ -446,7 +448,7 @@ export async function POST(req: Request) {
     ]);
 
     const persistAssets = {
-      composite: compositeScene,
+      composite: compositeScene || null,
       audio: {
         english: englishAudio,
         japanese: japaneseAudio,
@@ -482,9 +484,8 @@ export async function POST(req: Request) {
     }
 
     const responseAssets = {
-      sceneA: compositeScene,
-      sceneB: compositeScene,
       composite: compositeScene,
+      imagePrompt: compositeScene === null ? imagePrompt : undefined,
       audio: {
         english: englishAudio,
         japanese: japaneseAudio,
@@ -500,6 +501,7 @@ export async function POST(req: Request) {
         correctIndex: problem.correctIndex,
         nuance: problem.nuance,
         genre: problem.genre,
+        scenePrompt: problem.scenePrompt,
         speakers: problem.speakers,
         wordCount: problem.wordCount,
         interactionIntent: problem.interactionIntent,

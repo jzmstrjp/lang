@@ -56,7 +56,7 @@ model ProblemAsset {
   id            String   @id @default(cuid())
   problemId     String   @unique
   scenePrompt   String
-  compositeImage String
+  compositeImage String?
   audioEn       String
   audioJa       String
   createdAt     DateTime @default(now())
