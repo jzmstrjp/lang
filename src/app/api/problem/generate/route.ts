@@ -43,15 +43,15 @@ const TYPE_GUIDANCE: Record<ProblemType, string> = {
   short:
     '短文タイプ: 2〜4語の超短い口語フレーズ（例: Need that mug?, Mind if I sit?）にし、節の入れ子や長い修飾は避ける。瞬時の反応や軽い確認に焦点を当てる。',
   medium:
-    '中文タイプ: 依頼や意見に理由・条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
+    '中くらいタイプ: 依頼や意見に理由・条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
   long: '長文タイプ: 11〜15語を活かし、and / because / if / when などで節をつなぐ複合文にしてよい。自然な口語的な言い回しや軽い脱文法も許容する。',
 };
 
 const TYPE_EXAMPLES: Record<ProblemType, string> = {
   short:
-    '例(short): english="Can you grab the orange mug?" → options[0]="そのオレンジ色のマグを取ってくれる？" / japaneseReply="了解、テーブルの右側にあるやつね。"',
+    '例(short): english="Orange mug, please." → options[0]="そのオレンジのマグちょうだい。" / japaneseReply="了解、テーブルの右側にあるやつね。"',
   medium:
-    '例(medium): english="Could you watch the soup pot while I answer the door?" → options[0]="私が玄関に出ている間、お鍋を見ていてもらえる？" / japaneseReply="いいよ、吹きこぼれに気をつけるね。"',
+    '例(medium): english="Mind watching the soup while I get the door?" → options[0]="私が玄関に出ている間、お鍋を見ていてくれる？" / japaneseReply="いいよ、吹きこぼれに気をつけるね。"',
   long: '例(long): english="I thought we could invite Sam since he fixed the projector last time, what do you think?" → options[0]="この前プロジェクターを直してくれたサムを招待したらどうかな？" / japaneseReply="賛成、彼もまた手伝ってくれそう。"',
 };
 
@@ -141,17 +141,16 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   const genre = input.genre ?? scene.id;
 
   const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の制約を守った JSON オブジェクトのみを出力してください。
-- フィールド: english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
-- english: SceneA が発話する日常会話。状況が分かる文にし、${TYPE_GUIDANCE[type]} ${TYPE_EXAMPLES[type]}
-- 意図のバリエーション: request/question/opinion/agreement/info をローテーションし、同じ導入を連続使用しない。
-- 英文長: ${wordCountRule.min}〜${wordCountRule.max} 語（${wordCountRule.label}）。不要な呼びかけで水増ししない。
-- japaneseReply: SceneB が自然に応答。英語に登場する主要名詞・動作を必ず含め、英語が質問なら答え、依頼なら受諾/断り、意見なら共感/補足を述べる。状況ヒントを一言添えるが、options[0] の文面は写さない。
-- options: 日本語文4つ。index0 は english の自然な訳（主要名詞・意図を一致させ、余計な情報を足さない）。index1 は主要名詞は同じでも、英語の意図とは別の反応や主張になる文（例:断り／予定変更／別の提案など）にして、助詞や表現差だけの重複は禁止。index2 と index3 は動作や対象が異なる誤答。すべて english の意味に基づき、日本語リプライの補足に引きずられない。
+- 必須フィールド: english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
+- english: SceneA が発話する日常会話。状況が分かる一文にし、${TYPE_GUIDANCE[type]} ${TYPE_EXAMPLES[type]} 先頭に "Can you" / "Could you" を置かず、同じ言い出しをテンプレ化しない。依頼・質問・感想などを命令文や平叙文、"Would you mind"、"Any chance"、"I was thinking" など多様な構文で自然に表現する。
+- 語数: ${wordCountRule.min}〜${wordCountRule.max} 語（${wordCountRule.label}）。間投詞や呼びかけで水増ししない。
+- interactionIntent: 'request' | 'question' | 'opinion' | 'agreement' | 'info' から実際の意図に最も合うものを選ぶ。
+- japaneseReply: SceneB の自然な返答。english に出てくる主要な名詞・動作を必ず含め、質問なら回答、依頼なら可否と理由/補足を伝える。日常会話で違和感のない口語表現（例: 「〜するね」「〜してくれる？」など）を使い、直訳調の硬い言い回し（例: 「〜を渡します」など）は避ける。追加する状況ヒントは一言にとどめ、options[0] の本文を繰り返さない。
+- options: 日本語文4つ（全てユニーク）。全て日常会話として自然な口語表現にする。index0 は english の忠実な訳で情報の追加・削除をしないが、丁寧すぎる直訳を避け、英語のニュアンスに合う自然な言い回しに整える。index1 は主要名詞を共有しつつ意図を変える誤答（断り・別案など）。index2 と index3 は動作や対象を変えた誤答。英語の意味を基準に作成し、japaneseReply の内容に引きずられない。
 - correctIndex は常に 0。
-- interactionIntent: 'request' | 'question' | 'opinion' | 'agreement' | 'info' から english に即した値を選ぶ。
-- scenePrompt: DALL·E 用英語150文字以内。sceneId=${scene.id}（${scene.description}）に沿って SceneA/B の瞬間差を指示し、photorealistic・文字要素なしで統一トーンにする。
-- speakers: sceneA/sceneB の性別を male/female/neutral で整合させ、少なくとも片方は male。
-- 出力前に english ↔ options[0] ↔ japaneseReply が論理的に一致しているか確認し、必要なら修正した JSON を返す。
+- scenePrompt: sceneId=${scene.id}（${scene.description}）の情景を英語で最大150文字にまとめる。SceneA/B の人物とキーになる物体を描写しつつ、命令口調・カメラ指定・テキスト挿入の指示は避け、ベースとなる環境描写だけを書く。
+- speakers: sceneA/sceneB を male/female/neutral で返す。少なくとも片方は male。情報がない場合は自然に推測し、両方 neutral になりそうなら片方を male にする。
+- 出力は JSON 1 つのみ。改行や解説、コードフェンスは禁止。english ↔ options[0] ↔ japaneseReply の論理整合性を確認し、必要なら修正してから返答する。
 - タイプ: ${type} / ニュアンス: ${nuance} / ジャンル: ${genre}`;
 
   const response = await openai.responses.create({
@@ -407,7 +406,7 @@ function speakerToVoice(speaker: 'male' | 'female' | 'neutral'): string {
     case 'male':
       return 'verse';
     case 'female':
-      return 'luna';
+      return 'coral';
     default:
       return 'alloy';
   }
