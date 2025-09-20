@@ -42,17 +42,17 @@ type GeneratedProblem = {
 };
 
 const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number; label: string }> = {
-  short: { min: 4, max: 7, label: '短い依頼フレーズ (4〜7語)' },
-  medium: { min: 8, max: 12, label: '中くらいの依頼文 (8〜12語)' },
-  long: { min: 13, max: 18, label: '長めの依頼文 (13〜18語)' },
+  short: { min: 2, max: 5, label: '短い会話フレーズ (2〜5語)' },
+  medium: { min: 6, max: 10, label: '中くらいの会話文 (6〜10語)' },
+  long: { min: 11, max: 20, label: '長めの会話文 (11〜20語)' },
 };
 
 const TYPE_GUIDANCE: Record<ProblemType, string> = {
   short:
-    '短文タイプ: 4〜7語で完結した口語文にする。主語や情景ヒントを短く入れ、単なる名詞句や命令文だけにならないようにする。',
+    '短文タイプ: 2〜5語で完結した口語文にする。依頼・質問・提案・意見など多様な会話パターンを使い、単なる名詞句や命令文だけにならないようにする。',
   medium:
-    '中くらいタイプ: 依頼や意見に理由・条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
-  long: '長文タイプ: 13〜18語を活かし、and / because / if / when などで節をつなぐ複合文にしてよい。自然な口語的な言い回しや軽い脱文法も許容する。',
+    '中くらいタイプ: 6〜10語で依頼・質問・提案・意見・情報共有など様々な会話意図に理由・条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
+  long: '長文タイプ: 11〜20語を活かし、and / because / if / when などで節をつなぐ複合文にしてよい。依頼だけでなく質問・提案・意見・情報共有など多様な会話意図を含める。自然な口語的な言い回しや軽い脱文法も許容する。',
 };
 
 const TYPE_EXAMPLES: Record<ProblemType, string> = {
@@ -154,16 +154,19 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 - english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
 
 【会話デザイン】
-- SceneA の人物が scenePrompt に沿った状況で自然に話し始める。${TYPE_GUIDANCE[type]}
+- SceneA は女性、SceneB は男性として設定する。女性（SceneA）が男性（SceneB）に対して依頼・提案・質問をし、男性（SceneB）がそれに応じる構造にする。
+- 女性（SceneA）が scenePrompt に沿った状況で自然に話し始める。${TYPE_GUIDANCE[type]}
 - ${TYPE_EXAMPLES[type]}
 - ${wordCountRule.min}〜${wordCountRule.max} 語（${wordCountRule.label}）。水増しのための間投詞や名前呼びを避け、文として完結させる。
 - 依頼・質問・意見などの意図を scenePrompt と整合させ、'request' | 'question' | 'opinion' | 'agreement' | 'info' から interactionIntent を選ぶ。
 - 丁寧/カジュアル/ぶっきらぼうなど nuance の指示があれば、それに合う語調・モーダル・語尾を採用する。同じ出題内で毎回同じ書き出しにならないようバリエーションをつける（"Can you" などは可だが連続使用は避ける）。
 
 【日本語返信】
-- japaneseReply は SceneB の人物が即座に返す自然な口語文。english の要素（対象物・行為・条件）を必ず言及し、相手の発話のキーワードを短く言い直すか引用して意味を確認する。
-- 依頼なら可否と短い理由、質問なら具体的な答え、意見なら同意/反論＋補足を述べる。相手の要望を繰り返しつつ日本語で感情を添える。「うん、その○○一緒にやろう！」「いや、○○は気にしてないよ」など自然な返しにする。直訳調や不自然な敬語は禁止。
-- 参考例: "気にしてる？" → "ううん、気にしてないよ！" / "おもちゃを片付けるの手伝ってくれる？" → "うん、一緒に片付けよう！" / "今日は遊園地に行きたいなぁ" → "いいね、遊園地に行こうよ！"。
+- japaneseReply は男性（SceneB）が女性（SceneA）の依頼・提案・質問に対して即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
+- 依頼への返事は対象物を含めて「はい、○○どうぞ」「うん、○○いいよ」「分かった、○○ね」など、クイズのヒントとなる適度な情報を含む自然な表現にする。
+- 質問への返事は具体的かつ簡潔に。意見への返事は同意/反論を自然に表現する。
+- 参考例: "リモコンを渡してくれる？" → "はい、リモコンどうぞ" / "おもちゃを片付けるの手伝ってくれる？" → "うん、おもちゃ一緒に片付けよう" / "今日は遊園地に行きたいなぁ" → "いいね、遊園地行こう！" / "塩を取ってくれる？" → "はい、塩これ" / "窓を開けてくれる？" → "分かった、窓開けるね"
+- 絶対に避けるべき表現: 「〜してあげる」「その○○を〜する」など、相手の発言をそのまま長々と繰り返す不自然な日本語。ただし、対象物の名詞は学習のヒントとして適度に含める。
 
 【選択肢】
 - options は日本語4文（全てユニークで自然な口語）。
@@ -182,7 +185,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 - タイプ: ${type} / ニュアンス: ${nuance} / ジャンル: ${genre}`;
   const response = await openai.responses.create({
     model: 'gpt-4o-mini',
-    temperature: 0.7,
+    temperature: 0.9,
     input: [
       {
         role: 'system',
@@ -325,27 +328,11 @@ function mapInteractionIntent(value?: string): InteractionIntent {
 }
 
 function normalizeSpeakers(speakers: GeneratedProblem['speakers']): GeneratedProblem['speakers'] {
-  let { sceneA, sceneB } = speakers;
-  const randomGender = () => (Math.random() < 0.5 ? 'male' : 'female') as 'male' | 'female';
-
-  if (sceneA === 'neutral' && sceneB === 'neutral') {
-    sceneA = randomGender();
-    sceneB = sceneA === 'male' ? 'female' : 'male';
-  } else if (sceneA === 'neutral') {
-    sceneA = sceneB === 'neutral' ? randomGender() : sceneB;
-  } else if (sceneB === 'neutral') {
-    sceneB = sceneA;
-  }
-
-  if (sceneA !== 'male' && sceneB !== 'male') {
-    if (Math.random() < 0.5) {
-      sceneA = 'male';
-    } else {
-      sceneB = 'male';
-    }
-  }
-
-  return { sceneA, sceneB };
+  // 固定設定: Panel 1 (sceneA) = 女性が話す、Panel 2 (sceneB) = 男性が応じる
+  return {
+    sceneA: 'female', // 1コマ目：女性がお願い・提案
+    sceneB: 'male', // 2コマ目：男性が応じる
+  };
 }
 
 function shuffleProblem(problem: GeneratedProblem): GeneratedProblem {
