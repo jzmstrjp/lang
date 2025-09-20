@@ -28,16 +28,14 @@ async function main() {
     interactionIntent: InteractionIntent.request,
     isCached: true,
     qualityCheck: true,
-    sceneAImageUrl: 'https://{r2-domain}/images/sample-scene-a.jpg',
-    sceneBImageUrl: 'https://{r2-domain}/images/sample-scene-b.jpg',
+    compositeImageUrl: 'https://{r2-domain}/images/sample-scene-comic.jpg',
     audioEnUrl: 'https://{r2-domain}/audio/en/sample.mp3',
     audioJaUrl: 'https://{r2-domain}/audio/ja/sample.mp3',
   };
 
   const assetSample = {
     scenePrompt: sample.scenePrompt,
-    sceneAImage: 'data:image/png;base64,placeholderA',
-    sceneBImage: 'data:image/png;base64,placeholderB',
+    compositeImage: 'data:image/png;base64,placeholderComposite',
     audioEn: 'data:audio/mpeg;base64,placeholderEn',
     audioJa: 'data:audio/mpeg;base64,placeholderJa',
   };

@@ -26,8 +26,7 @@ export type PersistGeneratedProblemInput = {
     };
   };
   assets: {
-    sceneA: string;
-    sceneB: string;
+    composite: string;
     audio: {
       english: string;
       japanese: string;
@@ -55,6 +54,7 @@ export type CachedProblemResponse = {
   assets: {
     sceneA: string;
     sceneB: string;
+    composite: string;
     audio: {
       english: string;
       japanese: string;
@@ -107,8 +107,9 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
       interactionIntent: record.interactionIntent,
     },
     assets: {
-      sceneA: record.asset.sceneAImage,
-      sceneB: record.asset.sceneBImage,
+      sceneA: record.asset.compositeImage,
+      sceneB: record.asset.compositeImage,
+      composite: record.asset.compositeImage,
       audio: {
         english: record.asset.audioEn,
         japanese: record.asset.audioJa,
@@ -149,8 +150,7 @@ export async function saveGeneratedProblem(
 
   const assetData = {
     scenePrompt: input.problem.scenePrompt,
-    sceneAImage: input.assets.sceneA,
-    sceneBImage: input.assets.sceneB,
+    compositeImage: input.assets.composite,
     audioEn: input.assets.audio.english,
     audioJa: input.assets.audio.japanese,
   };

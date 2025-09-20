@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type Phase = 'landing' | 'loading' | 'sceneA' | 'sceneB' | 'quiz' | 'result';
+type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
 type ProblemType = 'short' | 'medium' | 'long';
 
@@ -32,17 +32,26 @@ type ProblemData = {
 };
 
 type AssetsData = {
-  sceneA: string;
-  sceneB: string;
+  image: string | null;
   audio: {
-    english: string;
-    japanese: string;
+    english?: string;
+    japanese?: string;
+  };
+};
+
+type ApiAssets = {
+  sceneA?: string;
+  sceneB?: string;
+  composite?: string;
+  audio?: {
+    english?: string;
+    japanese?: string;
   };
 };
 
 type ApiResponse = {
   problem: ProblemData;
-  assets: AssetsData;
+  assets: ApiAssets;
 };
 
 const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
@@ -53,8 +62,7 @@ const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
 
 const INCLUDE_UNREVIEWED = process.env.NEXT_PUBLIC_INCLUDE_UNREVIEWED === 'true';
 
-const FALLBACK_SCENE_A = '/img/a.png';
-const FALLBACK_SCENE_B = '/img/b.png';
+const FALLBACK_COMPOSITE = '/img/a.png';
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [phase, setPhase] = useState<Phase>('landing');
@@ -123,11 +131,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
 
     if (phase === 'result') {
-      if (!isCorrect || !assets?.audio?.english) {
+      const englishSrc = assets?.audio?.english;
+      if (!isCorrect || !englishSrc) {
         return;
       }
 
-      const audio = new Audio(assets.audio.english);
+      const audio = new Audio(englishSrc);
       audioRef.current = audio;
 
       const handleEnded = () => {
@@ -159,75 +168,82 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       };
     }
 
-    if (phase === 'sceneA' || phase === 'sceneB' || phase === 'quiz') {
-      const audioSources: Record<'sceneA' | 'sceneB' | 'quiz', string | undefined> = {
-        sceneA: assets?.audio?.english,
-        sceneB: assets?.audio?.japanese,
-        quiz: assets?.audio?.english,
+    if (phase === 'scene') {
+      const englishSrc = assets?.audio?.english;
+      const japaneseSrc = assets?.audio?.japanese;
+
+      let englishAudio: HTMLAudioElement | null = null;
+      let japaneseAudio: HTMLAudioElement | null = null;
+      let handleEnglishEnded: (() => void) | null = null;
+      let handleJapaneseEnded: (() => void) | null = null;
+
+      const queueQuizTransition = () => {
+        if (transitionTimeoutRef.current) {
+          clearTimeout(transitionTimeoutRef.current);
+        }
+        if (isMountedRef.current) {
+          setPhase('quiz');
+        }
       };
 
-      const src = audioSources[phase];
-      if (!src) {
-        return;
+      const startJapanesePlayback = () => {
+        if (japaneseAudio || !japaneseSrc) {
+          queueQuizTransition();
+          return;
+        }
+
+        japaneseAudio = new Audio(japaneseSrc);
+        secondaryAudioRef.current = japaneseAudio;
+
+        handleJapaneseEnded = () => {
+          if (!isMountedRef.current) {
+            return;
+          }
+          queueQuizTransition();
+        };
+
+        japaneseAudio.addEventListener('ended', handleJapaneseEnded);
+
+        secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
+          japaneseAudio
+            ?.play()
+            .catch(() => {
+              console.warn('日本語音声の自動再生に失敗しました。');
+              queueQuizTransition();
+            })
+            .finally(() => {
+              secondaryPlaybackTimeoutRef.current = null;
+            });
+        }, 100);
+      };
+
+      if (englishSrc) {
+        englishAudio = new Audio(englishSrc);
+        audioRef.current = englishAudio;
+
+        handleEnglishEnded = () => {
+          if (!isMountedRef.current) {
+            return;
+          }
+          startJapanesePlayback();
+        };
+
+        englishAudio.addEventListener('ended', handleEnglishEnded);
+
+        playbackTimeoutRef.current = window.setTimeout(() => {
+          englishAudio
+            ?.play()
+            .catch(() => {
+              console.warn('英語音声の自動再生に失敗しました。');
+              handleEnglishEnded?.();
+            })
+            .finally(() => {
+              playbackTimeoutRef.current = null;
+            });
+        }, 1000);
+      } else {
+        startJapanesePlayback();
       }
-
-      const audio = new Audio(src);
-      audioRef.current = audio;
-
-      const languageLabel = phase === 'sceneB' ? '日本語' : '英語';
-
-      const handleEnded = () => {
-        if (!isMountedRef.current) {
-          return;
-        }
-
-        if (phase === 'sceneA') {
-          transitionTimeoutRef.current = window.setTimeout(() => {
-            if (isMountedRef.current) {
-              setPhase('sceneB');
-            }
-            transitionTimeoutRef.current = null;
-          }, 1000);
-          return;
-        }
-
-        if (phase === 'sceneB') {
-          transitionTimeoutRef.current = window.setTimeout(() => {
-            if (isMountedRef.current) {
-              setPhase('quiz');
-            }
-            transitionTimeoutRef.current = null;
-          }, 1000);
-          return;
-        }
-
-        if (phase === 'quiz') {
-          if (secondaryPlaybackTimeoutRef.current) {
-            clearTimeout(secondaryPlaybackTimeoutRef.current);
-            secondaryPlaybackTimeoutRef.current = null;
-          }
-
-          if (secondaryAudioRef.current) {
-            secondaryAudioRef.current.pause();
-            secondaryAudioRef.current = null;
-          }
-
-          return;
-        }
-      };
-
-      audio.addEventListener('ended', handleEnded);
-
-      playbackTimeoutRef.current = window.setTimeout(() => {
-        audio
-          .play()
-          .catch(() => {
-            console.warn(`自動再生に失敗しました: ${languageLabel}`);
-          })
-          .finally(() => {
-            playbackTimeoutRef.current = null;
-          });
-      }, 1000);
 
       return () => {
         if (playbackTimeoutRef.current) {
@@ -242,14 +258,60 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           clearTimeout(transitionTimeoutRef.current);
           transitionTimeoutRef.current = null;
         }
+        if (englishAudio && handleEnglishEnded) {
+          englishAudio.removeEventListener('ended', handleEnglishEnded);
+        }
+        if (japaneseAudio && handleJapaneseEnded) {
+          japaneseAudio.removeEventListener('ended', handleJapaneseEnded);
+        }
+        englishAudio?.pause();
+        if (audioRef.current === englishAudio) {
+          audioRef.current = null;
+        }
+        japaneseAudio?.pause();
+        if (secondaryAudioRef.current === japaneseAudio) {
+          secondaryAudioRef.current = null;
+        }
+      };
+    }
+
+    if (phase === 'quiz') {
+      const englishSrc = assets?.audio?.english;
+      if (!englishSrc) {
+        return;
+      }
+
+      const audio = new Audio(englishSrc);
+      audioRef.current = audio;
+
+      const handleEnded = () => {
+        if (audioRef.current === audio) {
+          audioRef.current = null;
+        }
+      };
+
+      audio.addEventListener('ended', handleEnded);
+
+      playbackTimeoutRef.current = window.setTimeout(() => {
+        audio
+          .play()
+          .catch(() => {
+            console.warn('クイズ用の英語音声の自動再生に失敗しました。');
+          })
+          .finally(() => {
+            playbackTimeoutRef.current = null;
+          });
+      }, 1000);
+
+      return () => {
+        if (playbackTimeoutRef.current) {
+          clearTimeout(playbackTimeoutRef.current);
+          playbackTimeoutRef.current = null;
+        }
         audio.removeEventListener('ended', handleEnded);
         audio.pause();
         if (audioRef.current === audio) {
           audioRef.current = null;
-        }
-        if (secondaryAudioRef.current) {
-          secondaryAudioRef.current.pause();
-          secondaryAudioRef.current = null;
         }
       };
     }
@@ -269,12 +331,21 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setError(null);
 
     const applyResponse = (data: ApiResponse) => {
+      const image = data.assets?.composite ?? data.assets?.sceneA ?? data.assets?.sceneB ?? null;
+      const audio = {
+        english: data.assets?.audio?.english,
+        japanese: data.assets?.audio?.japanese,
+      };
+
       setProblem(data.problem);
-      setAssets(data.assets);
+      setAssets({
+        image,
+        audio,
+      });
       setSelectedOption(null);
 
       if (isMountedRef.current) {
-        setPhase('sceneA');
+        setPhase('scene');
       }
     };
 
@@ -377,7 +448,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       });
     }
 
-    setPhase('sceneA');
+    setPhase('scene');
   };
 
   const handleNextProblem = () => {
@@ -408,31 +479,16 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         </section>
       )}
 
-      {phase === 'sceneA' && (
+      {phase === 'scene' && (
         <section className="grid place-items-center">
-          <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
+          <figure className="flex w-full justify-center overflow-hidden rounded-3xl border border-[#d8cbb6] bg-[#f7f5f0] px-6 py-6 shadow-2xl shadow-[#d8cbb6]/50">
             <Image
-              src={assets?.sceneA ?? FALLBACK_SCENE_A}
-              alt="英語のセリフが流れるシーン"
-              width={1920}
-              height={1080}
-              className="h-full w-full object-cover"
+              src={assets?.image ?? FALLBACK_COMPOSITE}
+              alt="英語と日本語のセリフを並べた2コマシーン"
+              width={500}
+              height={750}
+              className="h-auto w-full max-w-[500px] object-contain"
               priority
-              unoptimized={Boolean(assets)}
-            />
-          </figure>
-        </section>
-      )}
-
-      {phase === 'sceneB' && (
-        <section className="grid place-items-center">
-          <figure className="w-full overflow-hidden rounded-3xl border border-[#d8cbb6] shadow-2xl shadow-[#d8cbb6]/50">
-            <Image
-              src={assets?.sceneB ?? FALLBACK_SCENE_B}
-              alt="日本語で返答するシーン"
-              width={1920}
-              height={1080}
-              className="h-full w-full object-cover"
               unoptimized={Boolean(assets)}
             />
           </figure>

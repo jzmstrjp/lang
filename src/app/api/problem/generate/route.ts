@@ -394,7 +394,7 @@ async function generateImage(prompt: string) {
   const image = await openai.images.generate({
     model: 'gpt-image-1',
     prompt,
-    size: '1024x1024',
+    size: '1024x1536',
   });
 
   const first = image.data?.[0];
@@ -448,18 +448,23 @@ export async function POST(req: Request) {
     const problem = await generateProblem(body);
 
     const baseSceneFacts = `Use these scene facts exactly: ${problem.scenePrompt}.`;
-    const dialogueFocus = `English line: "${problem.english}". Japanese reply: "${problem.japaneseReply}".`;
-    const sceneA = await generateImage(
-      `You are generating two sequential images for the same short dialogue. This request is for Scene A only (image 1 of 2). Do not create Scene B yet. ${dialogueFocus} ${baseSceneFacts} Scene A focuses on the instant right before the English line is spoken, with the requester clearly making the correct request through body language while the item is still not handed over. Photorealistic style, even lighting, authentic household textures, no text or speech bubbles.`,
-    );
-    const sceneB = await generateImage(
-      `You are generating two sequential images for the same short dialogue. This request is for Scene B only (image 2 of 2). Do not recreate or modify Scene A. ${dialogueFocus} ${baseSceneFacts} Scene B captures the seconds immediately after the Japanese reply, highlighting only the correct action being carried out and the requested item prominently in frame. Photorealistic style, matching composition to Scene A, no alternative actions or distractions, no text.`,
+    const storyNarrative = `Story flow: In Panel 1, ${problem.speakers.sceneA === 'male' ? 'a man' : problem.speakers.sceneA === 'female' ? 'a woman' : 'a person'} says to ${problem.speakers.sceneB === 'male' ? 'a man' : problem.speakers.sceneB === 'female' ? 'a woman' : 'another person'}: "${problem.english}". In Panel 2, responding to this request, ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} replies "${problem.japaneseReply}" and takes the corresponding action.`;
+    const compositeScene = await generateImage(
+      `Create a single illustration arranged as a two-panel comic strip stacked vertically in portrait orientation with a clear white border/gutter between the panels. Each panel must have exactly equal height - divide the image into two perfectly symmetrical halves with a distinct white gap separating them. Ensure there is always a visible white space between the top and bottom panels to clearly distinguish them as separate scenes. ${storyNarrative} ${baseSceneFacts} Panel 1 (top half): Show the moment when ${problem.speakers.sceneA === 'male' ? 'the man' : problem.speakers.sceneA === 'female' ? 'the woman' : 'the person'} is making the request "${problem.english}" through clear visual gestures and expressions, while the requested action has not yet been fulfilled. Panel 2 (bottom half): Show ${problem.speakers.sceneB === 'male' ? 'the man' : problem.speakers.sceneB === 'female' ? 'the woman' : 'the person'} actively responding with "${problem.japaneseReply}" by performing the requested action or providing what was asked for. Maintain the same characters, wardrobe, and setting across both panels. Ensure both panels are identical in height and proportions with a clear white separator between them. This is a two-panel comic strip, but DO NOT include any dialogue, speech bubbles, or text in the image - express everything through visual actions and expressions only. Photorealistic rendering, consistent household lighting, gentle comic framing, and absolutely no speech bubbles or text anywhere.`,
     );
 
     const [englishAudio, japaneseAudio] = await Promise.all([
       generateSpeech(problem.english, problem.speakers.sceneA),
       generateSpeech(problem.japaneseReply || problem.english, problem.speakers.sceneB),
     ]);
+
+    const persistAssets = {
+      composite: compositeScene,
+      audio: {
+        english: englishAudio,
+        japanese: japaneseAudio,
+      },
+    };
 
     let persisted = null;
     try {
@@ -479,14 +484,7 @@ export async function POST(req: Request) {
           interactionIntent: problem.interactionIntent,
           speakers: problem.speakers,
         },
-        assets: {
-          sceneA,
-          sceneB,
-          audio: {
-            english: englishAudio,
-            japanese: japaneseAudio,
-          },
-        },
+        assets: persistAssets,
       });
     } catch (persistError) {
       console.error('[problem/generate] persist error', persistError);
@@ -495,6 +493,16 @@ export async function POST(req: Request) {
     if (persisted) {
       return NextResponse.json(persisted);
     }
+
+    const responseAssets = {
+      sceneA: compositeScene,
+      sceneB: compositeScene,
+      composite: compositeScene,
+      audio: {
+        english: englishAudio,
+        japanese: japaneseAudio,
+      },
+    } as const;
 
     return NextResponse.json({
       problem: {
@@ -509,14 +517,7 @@ export async function POST(req: Request) {
         wordCount: problem.wordCount,
         interactionIntent: problem.interactionIntent,
       },
-      assets: {
-        sceneA,
-        sceneB,
-        audio: {
-          english: englishAudio,
-          japanese: japaneseAudio,
-        },
-      },
+      assets: responseAssets,
     });
   } catch (error) {
     console.error('[problem/generate] error', error);
