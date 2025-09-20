@@ -42,22 +42,22 @@ type GeneratedProblem = {
 };
 
 const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number; label: string }> = {
-  short: { min: 2, max: 4, label: '超短文 (2〜4語)' },
-  medium: { min: 6, max: 10, label: '中くらいの依頼文 (6〜10語)' },
-  long: { min: 11, max: 15, label: '長めの依頼文 (11〜15語)' },
+  short: { min: 4, max: 7, label: '短い依頼フレーズ (4〜7語)' },
+  medium: { min: 8, max: 12, label: '中くらいの依頼文 (8〜12語)' },
+  long: { min: 13, max: 18, label: '長めの依頼文 (13〜18語)' },
 };
 
 const TYPE_GUIDANCE: Record<ProblemType, string> = {
   short:
-    '短文タイプ: 2〜4語の超短い口語フレーズ（例: Need that mug?, Mind if I sit?）にし、節の入れ子や長い修飾は避ける。瞬時の反応や軽い確認に焦点を当てる。',
+    '短文タイプ: 4〜7語で完結した口語文にする。主語や情景ヒントを短く入れ、単なる名詞句や命令文だけにならないようにする。',
   medium:
     '中くらいタイプ: 依頼や意見に理由・条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
-  long: '長文タイプ: 11〜15語を活かし、and / because / if / when などで節をつなぐ複合文にしてよい。自然な口語的な言い回しや軽い脱文法も許容する。',
+  long: '長文タイプ: 13〜18語を活かし、and / because / if / when などで節をつなぐ複合文にしてよい。自然な口語的な言い回しや軽い脱文法も許容する。',
 };
 
 const TYPE_EXAMPLES: Record<ProblemType, string> = {
   short:
-    '例(short): english="Orange mug, please." → options[0]="そのオレンジのマグちょうだい。" / japaneseReply="了解、テーブルの右側にあるやつね。"',
+    '例(short): english="Could you grab the orange mug?" → options[0]="そのオレンジのマグ取ってくれる？" / japaneseReply="いいよ、テーブルの右側にあるやつでしょ。"',
   medium:
     '例(medium): english="Mind watching the soup while I get the door?" → options[0]="私が玄関に出ている間、お鍋を見ていてくれる？" / japaneseReply="いいよ、吹きこぼれに気をつけるね。"',
   long: '例(long): english="I thought we could invite Sam since he fixed the projector last time, what do you think?" → options[0]="この前プロジェクターを直してくれたサムを招待したらどうかな？" / japaneseReply="賛成、彼もまた手伝ってくれそう。"',
@@ -148,19 +148,38 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   const scene = scenePool[Math.floor(Math.random() * scenePool.length)];
   const genre = input.genre ?? scene.id;
 
-  const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の制約を守った JSON オブジェクトのみを出力してください。
-- 必須フィールド: english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
-- english: SceneA が発話する日常会話。状況が分かる一文にし、${TYPE_GUIDANCE[type]} ${TYPE_EXAMPLES[type]} 先頭に "Can you" / "Could you" を置かず、同じ言い出しをテンプレ化しない。依頼・質問・感想などを命令文や平叙文、"Would you mind"、"Any chance"、"I was thinking" など多様な構文で自然に表現する。
-- 語数: ${wordCountRule.min}〜${wordCountRule.max} 語（${wordCountRule.label}）。間投詞や呼びかけで水増ししない。
-- interactionIntent: 'request' | 'question' | 'opinion' | 'agreement' | 'info' から実際の意図に最も合うものを選ぶ。
-- japaneseReply: SceneB の自然な返答。english に出てくる主要な名詞・動作を必ず含め、質問なら回答、依頼なら可否と理由/補足を伝える。日常会話で違和感のない口語表現（例: 「〜するね」「〜してくれる？」など）を使い、直訳調の硬い言い回し（例: 「〜を渡します」など）は避ける。追加する状況ヒントは一言にとどめ、options[0] の本文を繰り返さない。
-- options: 日本語文4つ（全てユニーク）。全て日常会話として自然な口語表現にする。index0 は english の忠実な訳で情報の追加・削除をしないが、丁寧すぎる直訳を避け、英語のニュアンスに合う自然な言い回しに整える。index1 は主要名詞を共有しつつ意図を変える誤答（断り・別案など）。index2 と index3 は動作や対象を変えた誤答。英語の意味を基準に作成し、japaneseReply の内容に引きずられない。
-- correctIndex は常に 0。
-- scenePrompt: sceneId=${scene.id}（${scene.description}）の情景を、以下の形式で150〜220文字にまとめる → 'who=...; what=...; where=...; when=...; key_objects=...; camera=...'。各項目は具体的で固有の名詞・形容詞を用い、「someone」「something」のような曖昧語は避け、誰がどこで何をしているか・時間帯・重要な物体・カメラの距離/視点まで特定する。
-- speakers: sceneA/sceneB を male/female/neutral で返す。少なくとも片方は male。情報がない場合は自然に推測し、両方 neutral になりそうなら片方を male にする。
-- 出力は JSON 1 つのみ。改行や解説、コードフェンスは禁止。english ↔ options[0] ↔ japaneseReply の論理整合性を確認し、必要なら修正してから返答する。
-- タイプ: ${type} / ニュアンス: ${nuance} / ジャンル: ${genre}`;
+  const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。
 
+【出力フィールド】
+- english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
+
+【会話デザイン】
+- SceneA の人物が scenePrompt に沿った状況で自然に話し始める。${TYPE_GUIDANCE[type]}
+- ${TYPE_EXAMPLES[type]}
+- ${wordCountRule.min}〜${wordCountRule.max} 語（${wordCountRule.label}）。水増しのための間投詞や名前呼びを避け、文として完結させる。
+- 依頼・質問・意見などの意図を scenePrompt と整合させ、'request' | 'question' | 'opinion' | 'agreement' | 'info' から interactionIntent を選ぶ。
+- 丁寧/カジュアル/ぶっきらぼうなど nuance の指示があれば、それに合う語調・モーダル・語尾を採用する。同じ出題内で毎回同じ書き出しにならないようバリエーションをつける（"Can you" などは可だが連続使用は避ける）。
+
+【日本語返信】
+- japaneseReply は SceneB の人物が即座に返す自然な口語文。english の要素（対象物・行為・条件）を必ず言及し、相手の発話のキーワードを短く言い直すか引用して意味を確認する。
+- 依頼なら可否と短い理由、質問なら具体的な答え、意見なら同意/反論＋補足を述べる。相手の要望を繰り返しつつ日本語で感情を添える。「うん、その○○一緒にやろう！」「いや、○○は気にしてないよ」など自然な返しにする。直訳調や不自然な敬語は禁止。
+- 参考例: "気にしてる？" → "ううん、気にしてないよ！" / "おもちゃを片付けるの手伝ってくれる？" → "うん、一緒に片付けよう！" / "今日は遊園地に行きたいなぁ" → "いいね、遊園地に行こうよ！"。
+
+【選択肢】
+- options は日本語4文（全てユニークで自然な口語）。
+- options[0] は english の忠実な訳。情報の追加・削除はせず語調だけ自然に整える。
+- options[1] は主要名詞を共有しつつ意図をすり替える誤答（断り・別案・勘違いなど）。
+- options[2], options[3] は動作や対象を変えた誤答。japaneseReply に引きずられず、英文の意味に基づいて作る。
+- correctIndex は常に 0。
+
+【シーン設定】
+- scenePrompt: sceneId=${scene.id}（${scene.description}）の状況を 'who=...; what=...; where=...; when=...; key_objects=...; camera=...' 形式で150〜220文字にまとめる。曖昧語を避け、具体的な人物像・行動・時間帯・主要物体・撮影距離を記述する。
+- speakers: SceneA/SceneB を male/female/neutral で返す。少なくとも片方は male。情報が薄い場合は自然に補完し、両方 neutral になりそうなら片方を male にする。
+
+【厳守事項】
+- 出力は JSON 1 つのみ。改行や凡例、コードフェンスは禁止。
+- english ↔ options[0] ↔ japaneseReply の論理を必ずそろえ、矛盾があれば修正してから返答する。
+- タイプ: ${type} / ニュアンス: ${nuance} / ジャンル: ${genre}`;
   const response = await openai.responses.create({
     model: 'gpt-4o-mini',
     temperature: 0.7,
@@ -429,11 +448,12 @@ export async function POST(req: Request) {
     const problem = await generateProblem(body);
 
     const baseSceneFacts = `Use these scene facts exactly: ${problem.scenePrompt}.`;
+    const dialogueFocus = `English line: "${problem.english}". Japanese reply: "${problem.japaneseReply}".`;
     const sceneA = await generateImage(
-      `${baseSceneFacts} Scene A focuses on the instant right before the English line is spoken, with the requester clearly making the correct request through body language while the item is still not handed over. Photorealistic style, even lighting, authentic household textures, no text or speech bubbles.`,
+      `You are generating two sequential images for the same short dialogue. This request is for Scene A only (image 1 of 2). Do not create Scene B yet. ${dialogueFocus} ${baseSceneFacts} Scene A focuses on the instant right before the English line is spoken, with the requester clearly making the correct request through body language while the item is still not handed over. Photorealistic style, even lighting, authentic household textures, no text or speech bubbles.`,
     );
     const sceneB = await generateImage(
-      `${baseSceneFacts} Scene B captures the seconds immediately after the Japanese reply, highlighting only the correct action being carried out and the requested item prominently in frame. Photorealistic style, matching composition to Scene A, no alternative actions or distractions, no text.`,
+      `You are generating two sequential images for the same short dialogue. This request is for Scene B only (image 2 of 2). Do not recreate or modify Scene A. ${dialogueFocus} ${baseSceneFacts} Scene B captures the seconds immediately after the Japanese reply, highlighting only the correct action being carried out and the requested item prominently in frame. Photorealistic style, matching composition to Scene A, no alternative actions or distractions, no text.`,
     );
 
     const [englishAudio, japaneseAudio] = await Promise.all([
