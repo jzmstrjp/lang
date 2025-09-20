@@ -1,9 +1,9 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 const links = [
-  { href: "/problems/short", label: "short" },
-  { href: "/problems/middle", label: "middle" },
-  { href: "/problems/long", label: "long" },
+  { href: '/problems/short', label: 'short' },
+  { href: '/problems/middle', label: 'middle' },
+  { href: '/problems/long', label: 'long' },
 ];
 
 export default function Home() {

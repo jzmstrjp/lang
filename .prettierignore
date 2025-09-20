@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+coverage
+public/*.png
+public/*.svg
+package-lock.json
+yarn.lock

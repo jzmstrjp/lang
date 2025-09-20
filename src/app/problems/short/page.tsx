@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
 const sceneAImage = '/img/a.png';
@@ -32,8 +33,8 @@ export default function ShortProblemPage() {
   const [phase, setPhase] = useState<Phase>('landing');
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const playbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playbackTimeoutRef = useRef<number | null>(null);
+  const transitionTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
   const isCorrect = selectedOption === mockProblem.correctIndex;
 
@@ -209,7 +210,14 @@ export default function ShortProblemPage() {
       {phase === 'sceneA' && (
         <section className="grid place-items-center">
           <figure className="w-full overflow-hidden rounded-3xl border border-slate-200 shadow-2xl shadow-slate-900/10">
-            <img src={sceneAImage} alt="食卓で英語で話す女性の写真" className="h-full w-full object-cover" />
+            <Image
+              src={sceneAImage}
+              alt="食卓で英語で話す女性の写真"
+              width={1920}
+              height={1080}
+              className="h-full w-full object-cover"
+              priority
+            />
           </figure>
         </section>
       )}
@@ -217,7 +225,13 @@ export default function ShortProblemPage() {
       {phase === 'sceneB' && (
         <section className="grid place-items-center">
           <figure className="w-full overflow-hidden rounded-3xl border border-slate-200 shadow-2xl shadow-slate-900/10">
-            <img src={sceneBImage} alt="男性が塩を差し出す写真" className="h-full w-full object-cover" />
+            <Image
+              src={sceneBImage}
+              alt="男性が塩を差し出す写真"
+              width={1920}
+              height={1080}
+              className="h-full w-full object-cover"
+            />
           </figure>
         </section>
       )}
