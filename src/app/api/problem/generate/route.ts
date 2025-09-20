@@ -14,6 +14,8 @@ type GenerateRequest = {
   genre?: string;
 };
 
+type InteractionIntent = 'request' | 'question' | 'opinion' | 'agreement' | 'info';
+
 type GeneratedProblem = {
   type: ProblemType;
   english: string;
@@ -27,6 +29,30 @@ type GeneratedProblem = {
     sceneA: 'male' | 'female' | 'neutral';
     sceneB: 'male' | 'female' | 'neutral';
   };
+  wordCount: number;
+  interactionIntent: InteractionIntent;
+};
+
+const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number; label: string }> = {
+  short: { min: 2, max: 4, label: '超短文 (2〜4語)' },
+  medium: { min: 6, max: 10, label: '中くらいの依頼文 (6〜10語)' },
+  long: { min: 11, max: 15, label: '長めの依頼文 (11〜15語)' },
+};
+
+const TYPE_GUIDANCE: Record<ProblemType, string> = {
+  short:
+    '短文タイプ: 2〜4語の超短い口語フレーズ（例: You worried?, Do you mind?）にし、節の入れ子や長い修飾は避ける。丁寧さよりも瞬時の反応を重視し、必要なら主語省略や省略文も可。',
+  medium:
+    '中文タイプ: 依頼や意見に理由や条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
+  long: '長文タイプ: 11〜15語を活かし、and / because / if / when などで節をつないだ複合文にしてよい。自然な口語的な言い回しや軽い脱文法も許容する。',
+};
+
+const TYPE_EXAMPLES: Record<ProblemType, string> = {
+  short:
+    '例(short): english="Worried about me?" → japaneseReply="全然、大丈夫だよ。" / english="Need a hand?" → japaneseReply="うん、助かる！"',
+  medium:
+    '例(medium): english="Could you watch the pot while I grab my phone?" → japaneseReply="いいよ、すぐ戻るんだよね。"',
+  long: '例(long): english="I thought we could invite Sam since he helped last time, what do you think?" → japaneseReply="いいね、彼も喜ぶと思う。"',
 };
 
 function mapProblemType(type?: string): ProblemType {
@@ -47,6 +73,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 
   const type = mapProblemType(input.type);
   const nuance = input.nuance ?? 'polite';
+  const wordCountRule = WORD_COUNT_RULES[type];
   const scenePool = [
     {
       id: 'kitchen',
@@ -115,16 +142,23 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 
   const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の条件でJSONのみを出力してください。
 - JSON object のみ。フィールドは英語本文(english)、日本語での返答セリフ(japaneseReply)、4つの日本語選択肢(options)、正解インデックス(correctIndex)、画像プロンプト(scenePrompt)、話者情報speakers。
-- english は家庭や職場、近所などの日常生活に即した短文（ライトなお願い、会話のフレーズなど）。敬語一辺倒ではなく、カジュアル〜丁寧の幅を持たせ、sceneId=${scene.id}（${scene.description}）の状況に合う内容にする。
-- japaneseReply は、場面Bで自然に返す日本語。カジュアル／友人／家族の距離感を意識し、英語と同じ表現をそのまま訳さない。ニュアンスや言い回しを変えてもよい。
-- options は4つの日本語文。index 0 は英語文の正しい意味。index 1 は英語文と近いがニュアンスが少し違う・迷いやすい文。index 2 と 3 は明らかに意味が異なる文だが自然な会話文にする。丁寧さや一人称・二人称の使い分けを混ぜて紛らわせる。
+- english は家庭や職場、近所などの日常生活に即した短文（ライトなお願い、会話のフレーズ、感想への同意/共感など）。敬語一辺倒ではなく、カジュアル〜丁寧の幅を持たせ、sceneId=${scene.id}（${scene.description}）の状況に合う内容にする。
+- ${TYPE_GUIDANCE[type]}
+- ${TYPE_EXAMPLES[type]}
+- 会話の意図はリクエスト・質問・意見表明・同意/共感の応答などを織り交ぜ、単調な「依頼ばかり」にならないようにする。
+- 同じ導入表現（特に "Could you" や "Can you"）を連続して使用せず、依頼・意見・同意・感情表現などをバランスよく組み合わせる。時には平叙文や感嘆文で始め、疑問文に偏らないようにする。
+- english の語数は ${wordCountRule.min}〜${wordCountRule.max} 語で、${wordCountRule.label} を必ず守る。単語数を調整するために不要な間投詞や呼びかけだけを足さない。
+- japaneseReply は、場面Bで自然に返す日本語。カジュアル／友人／家族の距離感を意識し、英語と同じ表現をそのまま訳さない。主要な名詞・動作・感情などをさりげなく含めてヒントを与えつつ、正解選択肢と文面が完全一致しないようにする。
+- options は4つの日本語文。index 0 は英語文の正しい意味。index 1 は状況は似ているが、行動・対象・時制など重要な点が異なるため誤りと判断できる文にする（敬語レベルや助詞だけが異なるパターンは禁止）。index 2 と 3 は明らかに意味が異なる文だが自然な会話文にする。丁寧さや一人称・二人称の使い分けを混ぜて紛らわせるが、正解と同じ意味になる表現は避ける。
+- interactionIntent は 'request' | 'question' | 'opinion' | 'agreement' | 'info' のいずれかで、今回の英語文が属するカテゴリを選ぶ。連続生成を想定し、リクエスト以外（とくに agreement/opinion）も高い頻度で登場するよう均等にバリエーションを持たせる。
 - correctIndex は 0-based。
 - scenePrompt は DALL·E 用に英語で 150 文字以内。指定された場面 (sceneId=${scene.id}) の説明「${scene.description}」に沿って、多様な短文が生まれるよう毎回アクションを変える。塩や食器の受け渡しに固定しない。
 - scenePrompt では、不要な字幕やテキストオーバーレイ、看板など文字要素は一切描写しない。同一シーンでもシーンA/Bで異なるアングル・瞬間を確保すること。
-- 画像は、正しい選択肢の内容・ニュアンスが視覚的に明確にわかるようにし、他の選択肢と紛らわしい構図は避ける。正解と直接関係しない動作や家具などは控える。
+- scenePrompt では、不要な字幕やテキストオーバーレイ、看板など文字要素は一切描写しない。同一シーンでもシーンA/Bで異なるアングル・瞬間を確保すること。
+- 画像は、正しい選択肢の内容・ニュアンスが視覚的に明確にわかるようにし、他の選択肢と紛らわしい構図は避ける。必ず自然光や室内光のリアルな写真調（photorealistic）で、SceneA/Bともトーン・画質・色味を統一する。
 - scenePrompt の中に、SceneA は「まだ依頼が受け入れられておらず、依頼者が手を伸ばしたり視線を向けているがアイテムは手にしていない状態」、SceneB は「日本語の返答後で、アイテムを手渡したりアクションが進行した直後」であると明示する。
 - speakers は { sceneA: "male|female|neutral", sceneB: "male|female|neutral" } の形式で、scenePrompt に登場する人物の性別・雰囲気と整合させる。ケース全体で男性の話者が過半数になるよう意識し、少なくとも片方は男性になるように調整する。
-- 例: english="Can you grab my phone from the sofa?" → japaneseReply="いいよ、そこにあるやつね。" / english="Mind helping me fold this blanket?" → japaneseReply="もちろん、一緒にやろう。" / english="Could you rinse these cups?" → japaneseReply="了解、今すぐ流しに持っていくよ。" のように、日常会話として自然で柔らかい対応をすること。
+- 例: english="Can you grab my phone from the sofa?" → japaneseReply="いいよ、そこにあるやつね。" / english="The sunset looks amazing tonight." → japaneseReply="本当だ、ピンクがきれいだね。" / english="Mind helping me fold this blanket?" → japaneseReply="もちろん、一緒にやろう。" のように、日常会話として自然で柔らかい対応をすること。
 - タイプ: ${type}
 - ニュアンス: ${nuance}
 - ジャンル: ${genre}`;
@@ -181,14 +215,21 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
       sceneA?: string;
       sceneB?: string;
     };
+    interactionIntent?: string;
   };
 
   let parsed: ModelResponse;
   try {
     parsed = JSON.parse(jsonText) as ModelResponse;
   } catch (err) {
-    console.error('[problem/generate] JSON parse error', err, jsonText);
-    throw new Error('Failed to parse model response as JSON');
+    const repaired = sanitizeJson(jsonText);
+    try {
+      parsed = JSON.parse(repaired) as ModelResponse;
+    } catch (err2) {
+      console.error('[problem/generate] JSON parse error', err, jsonText);
+      console.error('[problem/generate] JSON parse retry failed', err2, repaired);
+      throw new Error('Failed to parse model response as JSON');
+    }
   }
 
   if (
@@ -201,7 +242,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 
   const options = parsed.options.map((option: unknown) => String(option));
 
-  const problem: GeneratedProblem = {
+  const baseProblem = {
     type,
     english: parsed.english,
     japaneseReply: parsed.japaneseReply ?? parsed.japanese ?? '',
@@ -214,7 +255,20 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
       sceneA: mapSpeaker(parsed.speakers?.sceneA),
       sceneB: mapSpeaker(parsed.speakers?.sceneB),
     }),
+    interactionIntent: mapInteractionIntent(parsed.interactionIntent),
   };
+
+  const wordCount = countWords(baseProblem.english);
+  const problem: GeneratedProblem = {
+    ...baseProblem,
+    wordCount,
+  };
+
+  if (wordCount < wordCountRule.min || wordCount > wordCountRule.max) {
+    console.warn(
+      `[problem/generate] english word count ${wordCount} out of range ${wordCountRule.min}-${wordCountRule.max} for type ${type}.`,
+    );
+  }
 
   return shuffleProblem(problem);
 }
@@ -235,9 +289,22 @@ function mapSpeaker(value?: string): 'male' | 'female' | 'neutral' {
   return 'neutral';
 }
 
-function normalizeSpeakers(
-  speakers: GeneratedProblem['speakers'],
-): GeneratedProblem['speakers'] {
+function mapInteractionIntent(value?: string): InteractionIntent {
+  if (!value) return 'request';
+  const normalized = value.toLowerCase();
+  switch (normalized) {
+    case 'request':
+    case 'question':
+    case 'opinion':
+    case 'agreement':
+    case 'info':
+      return normalized;
+    default:
+      return 'request';
+  }
+}
+
+function normalizeSpeakers(speakers: GeneratedProblem['speakers']): GeneratedProblem['speakers'] {
   let { sceneA, sceneB } = speakers;
   const randomGender = () => (Math.random() < 0.5 ? 'male' : 'female') as 'male' | 'female';
 
@@ -276,6 +343,30 @@ function shuffleProblem(problem: GeneratedProblem): GeneratedProblem {
     options: shuffledOptions,
     correctIndex: newCorrectIndex === -1 ? 0 : newCorrectIndex,
   };
+}
+
+function countWords(text: string): number {
+  return text
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean).length;
+}
+
+function sanitizeJson(text: string): string {
+  let sanitized = text.trim();
+  sanitized = sanitized
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/,\s*([}\]])/g, '$1');
+
+  if (!sanitized.startsWith('{') && sanitized.includes('{')) {
+    sanitized = sanitized.slice(sanitized.indexOf('{'));
+  }
+  if (!sanitized.endsWith('}') && sanitized.lastIndexOf('}') !== -1) {
+    sanitized = sanitized.slice(0, sanitized.lastIndexOf('}') + 1);
+  }
+
+  return sanitized;
 }
 
 async function generateImage(prompt: string) {
@@ -346,10 +437,10 @@ export async function POST(req: Request) {
       sceneB = `${problem.scenePrompt} [Scene B: action carried out after Japanese reply, item clearly visible]`;
     } else {
       sceneA = await generateImage(
-        `${problem.scenePrompt}. Scene A: right before the English line is spoken, the requester is clearly making the correct request with body language and focus on the relevant item, hands empty, item not yet handed over. No text, no subtitles, no speech bubbles. Avoid unrelated actions that could imply other options.`,
+        `${problem.scenePrompt}. Scene A: right before the English line is spoken, the requester is clearly making the correct request with body language and focus on the relevant item, hands empty, item not yet handed over. Photorealistic style, consistent tone with Scene B. No text, no subtitles, no speech bubbles. Avoid unrelated actions that could imply other options.`,
       );
       sceneB = await generateImage(
-        `${problem.scenePrompt}. Scene B: immediately after the Japanese reply, only the correct action is being carried out (e.g., item being passed, beverage being poured), clearly showing the requested item in focus. No text, no subtitles, no speech bubbles. Avoid hints for incorrect options.`,
+        `${problem.scenePrompt}. Scene B: immediately after the Japanese reply, only the correct action is being carried out (e.g., item being passed, beverage being poured), clearly showing the requested item in focus. Photorealistic style, consistent tone with Scene A. No text, no subtitles, no speech bubbles. Avoid hints for incorrect options.`,
       );
     }
 
