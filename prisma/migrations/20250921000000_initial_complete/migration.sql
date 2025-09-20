@@ -2,7 +2,7 @@
 CREATE TYPE "ProblemType" AS ENUM ('short', 'medium', 'long');
 
 -- CreateEnum
-CREATE TYPE "InteractionIntent" AS ENUM ('request', 'question', 'opinion', 'agreement', 'info');
+CREATE TYPE "InteractionIntent" AS ENUM ('request', 'question', 'proposal', 'opinion', 'agreement', 'info');
 
 -- CreateTable
 CREATE TABLE "problems" (
@@ -14,8 +14,7 @@ CREATE TABLE "problems" (
     "correctIndex" INTEGER NOT NULL,
     "audioEnUrl" TEXT,
     "audioJaUrl" TEXT,
-    "sceneAImageUrl" TEXT,
-    "sceneBImageUrl" TEXT,
+    "compositeImageUrl" TEXT,
     "sceneId" TEXT NOT NULL,
     "scenePrompt" TEXT NOT NULL,
     "speakersSceneA" TEXT NOT NULL,
@@ -38,11 +37,9 @@ CREATE TABLE "problem_assets" (
     "id" TEXT NOT NULL,
     "problemId" TEXT NOT NULL,
     "scenePrompt" TEXT NOT NULL,
-    "sceneAImage" TEXT NOT NULL,
-    "sceneBImage" TEXT NOT NULL,
+    "compositeImage" TEXT,
     "audioEn" TEXT NOT NULL,
     "audioJa" TEXT NOT NULL,
-    "debugMode" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -63,3 +60,4 @@ CREATE UNIQUE INDEX "problem_assets_problemId_key" ON "problem_assets"("problemI
 
 -- AddForeignKey
 ALTER TABLE "problem_assets" ADD CONSTRAINT "problem_assets_problemId_fkey" FOREIGN KEY ("problemId") REFERENCES "problems"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

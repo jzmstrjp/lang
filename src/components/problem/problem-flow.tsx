@@ -349,13 +349,37 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
     };
 
-    const shouldGenerate = Math.random() < 0.1; // 生成する確率
-    console.log(`[ProblemFlow] ${shouldGenerate ? '新規生成' : 'DB取得'} を選択`);
+    // 常に既存問題から選択
+    setFetchingStatus('retrieving');
+    console.log('[ProblemFlow] DBから既存の問題を取得中...');
 
     try {
-      if (shouldGenerate) {
+      const params = new URLSearchParams({ type: problemType });
+      const cachedRes = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+
+      if (cachedRes.ok) {
+        const cached: ApiResponse = await cachedRes.json();
+        console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
+        applyResponse(cached);
+
+        // バックグラウンドで新問題を生成してDB蓄積（ユーザーには見せない）
+        const shouldGenerateBackground = Math.random() < 0.1; // 新規問題を生成する確率
+        if (shouldGenerateBackground) {
+          console.log('[ProblemFlow] バックグラウンドで新問題を生成中...');
+          fetch('/api/problem/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ type: problemType }),
+          }).catch((error) => {
+            console.warn('[ProblemFlow] バックグラウンド生成失敗:', error);
+          });
+        }
+      } else {
+        // DBに問題がない場合は生成にフォールバック（初回のみ）
         setFetchingStatus('generating');
-        console.log('[ProblemFlow] 新しい問題を生成中...');
+        console.log('[ProblemFlow] DB取得失敗、生成にフォールバック');
         const res = await fetch('/api/problem/generate', {
           method: 'POST',
           headers: {
@@ -371,36 +395,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
         const data: ApiResponse = await res.json();
         applyResponse(data);
-      } else {
-        setFetchingStatus('retrieving');
-        console.log('[ProblemFlow] DBから既存の問題を取得中...');
-        const params = new URLSearchParams({ type: problemType });
-        const cachedRes = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
-
-        if (cachedRes.ok) {
-          const cached: ApiResponse = await cachedRes.json();
-          console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
-          applyResponse(cached);
-        } else {
-          // DBに問題がない場合は生成にフォールバック
-          setFetchingStatus('generating');
-          console.log('[ProblemFlow] DB取得失敗、生成にフォールバック');
-          const res = await fetch('/api/problem/generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ type: problemType }),
-          });
-
-          if (!res.ok) {
-            const payload = await res.json().catch(() => ({}));
-            throw new Error(payload?.error ?? '問題生成に失敗しました');
-          }
-
-          const data: ApiResponse = await res.json();
-          applyResponse(data);
-        }
       }
     } catch (err) {
       console.error(err);

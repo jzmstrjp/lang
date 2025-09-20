@@ -9,6 +9,7 @@ import type {
 } from '@prisma/client';
 
 import { saveGeneratedProblem } from '@/lib/problem-storage';
+import { prisma } from '@/lib/prisma';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -83,6 +84,15 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   const type = mapProblemType(input.type);
   const nuance = input.nuance ?? 'polite';
   const wordCountRule = WORD_COUNT_RULES[type];
+
+  // 既存問題を取得して重複を避ける（最新50件）
+  const existingProblems = await prisma.problem.findMany({
+    where: { type },
+    select: { english: true },
+    orderBy: { createdAt: 'desc' },
+    take: 50, // より多くの既存問題をチェック
+  });
+  const existingPhrases = existingProblems.map((p) => p.english);
   const scenePool = [
     {
       id: 'kitchen',
@@ -149,7 +159,13 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   const scene = scenePool[Math.floor(Math.random() * scenePool.length)];
   const genre = input.genre ?? scene.id;
 
-  const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。
+  // 重複回避のための既存フレーズリスト（簡潔版）
+  const duplicateAvoidanceText =
+    existingPhrases.length > 0
+      ? `\n【重複回避】以下と異なる英語フレーズを生成: ${existingPhrases.map((p) => `"${p}"`).join(', ')}`
+      : '';
+
+  const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。${duplicateAvoidanceText}
 
 【出力フィールド】
 - english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。

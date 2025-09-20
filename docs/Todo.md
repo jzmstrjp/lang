@@ -6,6 +6,7 @@
 - [x] 生成した Problem を RDS/Supabase に書き込むサービス層を実装（単発生成もキャッシュ前提に）
 - [x] 問題の重複検出（english + interactionIntent + scene_id）を Prisma レベルで実装し、ユニーク制約 or 事前チェックを導入
 - [ ] 生成ログを保存するテーブル（prompt, model, cost, status）を作成し、異常検知や再生成に備える
+- [ ] 画像がnullのやつの分だけ全て生成して保存するスクリプト
 
 ## キャッシュ戦略
 
