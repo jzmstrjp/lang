@@ -21,8 +21,8 @@ export type PersistGeneratedProblemInput = {
     wordCount: number;
     interactionIntent: InteractionIntent;
     speakers: {
-      sceneA: SpeakerLabel;
-      sceneB: SpeakerLabel;
+      character1: SpeakerLabel;
+      character2: SpeakerLabel;
     };
   };
   assets: {
@@ -46,8 +46,8 @@ export type CachedProblemResponse = {
     genre: string;
     scenePrompt: string;
     speakers: {
-      sceneA: SpeakerLabel;
-      sceneB: SpeakerLabel;
+      character1: SpeakerLabel;
+      character2: SpeakerLabel;
     };
     wordCount: number;
     interactionIntent: InteractionIntent;
@@ -100,8 +100,8 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
       genre: record.genre ?? DEFAULT_GENRE,
       scenePrompt: record.scenePrompt,
       speakers: {
-        sceneA: (record.speakersSceneA as SpeakerLabel) ?? 'neutral',
-        sceneB: (record.speakersSceneB as SpeakerLabel) ?? 'neutral',
+        character1: (record.speakersSceneA as SpeakerLabel) ?? 'neutral',
+        character2: (record.speakersSceneB as SpeakerLabel) ?? 'neutral',
       },
       wordCount: record.wordCount,
       interactionIntent: record.interactionIntent,
@@ -135,8 +135,8 @@ export async function saveGeneratedProblem(
     correctIndex: input.problem.correctIndex,
     sceneId: input.problem.sceneId,
     scenePrompt: input.problem.scenePrompt,
-    speakersSceneA: input.problem.speakers.sceneA,
-    speakersSceneB: input.problem.speakers.sceneB,
+    speakersSceneA: input.problem.speakers.character1,
+    speakersSceneB: input.problem.speakers.character2,
     nuance: input.problem.nuance ?? null,
     genre: input.problem.genre ?? null,
     patternGroup: input.problem.patternGroup ?? null,

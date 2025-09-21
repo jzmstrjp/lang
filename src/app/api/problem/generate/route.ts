@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { Buffer } from 'node:buffer';
 import { NextResponse } from 'next/server';
 import { generateSpeech } from '@/lib/audio-utils';
 
@@ -9,7 +8,6 @@ import type {
 } from '@prisma/client';
 
 import { saveGeneratedProblem } from '@/lib/problem-storage';
-import { prisma } from '@/lib/prisma';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -20,7 +18,9 @@ type ProblemType = PrismaProblemType;
 type GenerateRequest = {
   type?: ProblemType;
   nuance?: string;
-  genre?: string;
+  genre?: (typeof GENRE_POOL)[number];
+  withoutPicture?: boolean;
+  skipSave?: boolean;
 };
 
 type InteractionIntent = PrismaInteractionIntent;
@@ -36,34 +36,33 @@ type GeneratedProblem = {
   scenePrompt: string;
   sceneId: string;
   speakers: {
-    sceneA: 'male' | 'female' | 'neutral';
-    sceneB: 'male' | 'female' | 'neutral';
+    character1: 'male' | 'female' | 'neutral';
+    character2: 'male' | 'female' | 'neutral';
   };
   wordCount: number;
   interactionIntent: InteractionIntent;
 };
 
-const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number; label: string }> = {
-  short: { min: 2, max: 5, label: '短い会話フレーズ (2〜5語)' },
-  medium: { min: 6, max: 10, label: '中くらいの会話文 (6〜10語)' },
-  long: { min: 11, max: 20, label: '長めの会話文 (11〜20語)' },
+const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number }> = {
+  short: { min: 2, max: 5 },
+  medium: { min: 6, max: 10 },
+  long: { min: 11, max: 20 },
 };
 
-const TYPE_GUIDANCE: Record<ProblemType, string> = {
-  short:
-    '短文タイプ: 2〜5語で完結した口語文にする。依頼・質問・提案・意見など多様な会話パターンを使い、単なる名詞句や命令文だけにならないようにする。',
-  medium:
-    '中くらいタイプ: 6〜10語で依頼・質問・提案・意見・情報共有など様々な会話意図に理由・条件をひと言添えてよいが、関係代名詞や分詞構文は最小限にし、読みやすさを優先する。',
-  long: '長文タイプ: 11〜20語を活かし、and / because / if / when などで節をつなぐ複合文にしてよい。依頼だけでなく質問・提案・意見・情報共有など多様な会話意図を含める。自然な口語的な言い回しや軽い脱文法も許容する。',
-};
-
-const TYPE_EXAMPLES: Record<ProblemType, string> = {
-  short:
-    '例(short): english="Pass the salt?" (3語) → options[0]="塩取って？" / japaneseReply="はい、塩どうぞ" または english="Ready yet?" (2語) → options[0]="まだ？" / japaneseReply="もうすぐだよ"',
-  medium:
-    '例(medium): english="Could you help me clean?" (6語) → options[0]="掃除手伝ってくれる？" / japaneseReply="うん、一緒にやろう"',
-  long: '例(long): english="I think we should invite Sam since he helped us last time." (12語) → options[0]="この前手伝ってくれたサムを招待しない？" / japaneseReply="いいね、彼も喜ぶと思う"',
-};
+const GENRE_POOL = ['依頼', '質問', '提案', '意見', '情報共有'] as const;
+const SCENE_POOL = [
+  '家庭',
+  'オフィス',
+  '公園',
+  '旅行先',
+  '学校',
+  '病院',
+  '駅',
+  '飲食店',
+  'スポーツ施設',
+  'ショッピングモール',
+  '結婚式',
+] as const;
 
 function mapProblemType(type?: string): ProblemType {
   if (type === 'medium' || type === 'long') {
@@ -85,124 +84,56 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   const nuance = input.nuance ?? 'polite';
   const wordCountRule = WORD_COUNT_RULES[type];
 
-  // 既存問題を取得して重複を避ける（最新50件）
-  const existingProblems = await prisma.problem.findMany({
-    where: { type },
-    select: { english: true },
-    orderBy: { createdAt: 'desc' },
-    take: 50, // より多くの既存問題をチェック
-  });
-  const existingPhrases = existingProblems.map((p) => p.english);
-  const scenePool = [
-    {
-      id: 'kitchen',
-      description:
-        'A cozy kitchen where family members are preparing or cleaning up a meal together. Countertops, sink, or stove may be visible.',
-    },
-    {
-      id: 'living_room',
-      description:
-        'A living room with a sofa, coffee table, TV stand, or bookshelves where friends or family relax, watch TV, or chat.',
-    },
-    {
-      id: 'dining_room',
-      description:
-        'A dining room with a table, chairs, and dishes laid out; people might be setting the table, serving food, or clearing up after eating.',
-    },
-    {
-      id: 'home_office',
-      description:
-        'A home office or study corner with a desk, laptop, papers, and stationery used for remote work or study at home.',
-    },
-    {
-      id: 'entryway',
-      description:
-        'An entryway or hallway with shoes, coats, keys, or shopping bags, capturing people coming or going.',
-    },
-    {
-      id: 'laundry_room',
-      description:
-        'A laundry or utility area with washing machine, dryer, laundry baskets, detergent, and household cleaning tools.',
-    },
-    {
-      id: 'balcony',
-      description:
-        'A balcony or outdoor patio with plants, small furniture, and light chores like watering plants or shaking blankets.',
-    },
-    {
-      id: 'kids_room',
-      description:
-        'A child’s room or play area with toys, books, or art supplies where a parent and child interact.',
-    },
-    {
-      id: 'garage',
-      description:
-        'A garage or storage space with tools, boxes, or bicycles where someone might ask for help moving or finding items.',
-    },
-    {
-      id: 'neighborhood',
-      description:
-        'A residential neighborhood street, front yard, or sidewalk where neighbors or family members interact outdoors.',
-    },
-    {
-      id: 'grocery_store',
-      description:
-        'A small grocery or convenience store aisle with shelves, baskets, and chilled cases where people shop together.',
-    },
-    {
-      id: 'park',
-      description:
-        'A nearby park or playground with benches, paths, or exercise equipment, perfect for outdoor activity proposals and suggestions.',
-    },
-  ];
+  // ランダムにsceneとgenreを選択
+  const scene = SCENE_POOL[Math.floor(Math.random() * SCENE_POOL.length)];
+  const genre = GENRE_POOL[Math.floor(Math.random() * GENRE_POOL.length)];
 
-  const scene = scenePool[Math.floor(Math.random() * scenePool.length)];
-  const genre = input.genre ?? scene.id;
+  const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。
+  男性の日本語台詞をヒントに女性の英語台詞の意味を当てるクイズを作成したいのです。
 
-  // 重複回避のための既存フレーズリスト（簡潔版）
-  const duplicateAvoidanceText =
-    existingPhrases.length > 0
-      ? `\n【重複回避】以下と異なる英語フレーズを生成: ${existingPhrases.map((p) => `"${p}"`).join(', ')}`
-      : '';
-
-  const systemPrompt = `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。${duplicateAvoidanceText}
+【重要：単語数制約】
+- english フィールドは必ず ${wordCountRule.min}語から${wordCountRule.max}語の範囲内にしてください。
+- 単語数は空白で区切られた語の数です（例：「Can you help me?」= 4語）。
+- この制約は絶対に守ってください。範囲外の場合は不適切な回答とみなされます。
 
 【出力フィールド】
 - english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
 
 【会話デザイン】
-- SceneA は女性、SceneB は男性として設定する。女性（SceneA）が男性（SceneB）に対して依頼・提案・質問をし、男性（SceneB）がそれに応じる構造にする。
-- 女性（SceneA）が scenePrompt に沿った状況で自然に話し始める。${TYPE_GUIDANCE[type]}
-- ${TYPE_EXAMPLES[type]}
-- **厳守**: english は必ず ${wordCountRule.min}〜${wordCountRule.max} 語以内にする（${wordCountRule.label}）。語数を数えて確認すること。水増しのための間投詞や名前呼びを避け、簡潔で自然な文にする。
-- 依頼・質問・提案・意見などの意図を scenePrompt と整合させ、'request' | 'question' | 'proposal' | 'opinion' | 'agreement' | 'info' から interactionIntent を選ぶ。
-- 丁寧/カジュアル/ぶっきらぼうなど nuance の指示があれば、それに合う語調・モーダル・語尾を採用する。同じ出題内で毎回同じ書き出しにならないようバリエーションをつける（"Can you" などは可だが連続使用は避ける）。
+- ${scene}で、女性が男性に対して英語で何か${genre}をする。具体的に何なのかはあなたがランダムに決めてください。ただし場面にあったものにしてください。男性がそれに応じて日本語で返答する。
+- 女性の英語台詞をenglishフィールドに入れる。男性の日本語台詞をjapaneseReplyフィールドに入れる。
+- 場面に合わせてenglishは丁寧/カジュアル/ぶっきらぼうなどのニュアンスを表現すること。
 
-【日本語返信】
-- japaneseReply は男性（SceneB）が女性（SceneA）の依頼・提案・質問に対して即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
-- 依頼への返事は対象物を含めて「はい、○○どうぞ」「うん、○○いいよ」「分かった、○○ね」など、クイズのヒントとなる適度な情報を含む自然な表現にする。
-- 質問への返事は具体的かつ簡潔に。意見への返事は同意/反論を自然に表現する。
-- 参考例: "リモコンを渡してくれる？" → "はい、リモコンどうぞ" / "おもちゃを片付けるの手伝ってくれる？" → "うん、おもちゃ一緒に片付けよう" / "今日は公園に行こう！" → "いいね、公園行こう！" / "映画を見ない？" → "うん、映画見よう" / "塩を取ってくれる？" → "はい、塩これ" / "窓を開けてくれる？" → "分かった、窓開けるね"
-- 絶対に避けるべき表現: 「〜してあげる」「その○○を〜する」など、相手の発言をそのまま長々と繰り返す不自然な日本語。ただし、対象物の名詞は学習のヒントとして適度に含める。
+【japaneseReply】
+- japaneseReplyは、englishを日本語訳した文章ではありません。japaneseReplyは、englishに対する返答です。
+- japaneseReplyは、女性の台詞（english）に対して男性が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
+- japaneseReplyを見れば、englishがどんな英文なのか推測できるように匂わせるべし。ただし、完全なオウム返しにはならないように。
+  - 例えば「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
+  - 悪い例: 「Can you pass me that?」というenglishに対して「うん、そのことね。」というjapaneseReply。→japaneseReplyからenglishが何なのか全く推測できない。
+- 「うん、〇〇しよう」「いいね、〇〇だね」「いや、〇〇だと」「そうですね、〇〇ですものね」みたいに「うん」「いや」「いいえ」「ああ」「そうだね」「そうですね」「わかりました」とかを文頭に含めてほしい。
+
+【scenePrompt】（文字列）
+- english と japaneseReply の台詞の内容にぴったりな2コマ漫画のストーリーを文字列で記述してほしい。
+- ${scene}で何が起きていて、女性が男性に対して何を${genre}したのか想像して、自然なストーリーにしてほしい。
+- 2コマ漫画で描写できるような、ごく短い完結なストーリーにしてほしい。
+- この文を元に画像生成プロンプトを作成するので、具体的に詳細に描写してほしい。
+- 【1コマ目】【2コマ目】という見出しを使って、各コマで起きていることや情景を明確に言語化した文字列として出力してほしい。
+- 1コマ目の説明にはenglishを、2コマ目の説明にはjapaneseReplyを必ず引用すること。
+- 1コマ目ではまだjapaneseReplyの内容は行動に移さないこと。
+- 2コマ目ではjapaneseReplyでやろうと言った内容を行動に移すこと。
+  - 悪い例: セリフが「ベンチに座ろう」なのに「ベンチに向かった」と表現する
+  - 良い例: 台詞が「ベンチに座ろう」だから「ベンチに座った」と表現する
 
 【選択肢】
 - options は日本語4文（全てユニークで自然な口語）。
-- options[0] は english の忠実な訳。情報の追加・削除はせず語調だけ自然に整える。
+- options[0] は english の正しい訳。英文のフォーマルさ・カジュアルさ・丁寧さのレベルを日本語でも同等に保つこと。例：「Could you please...」→「〜していただけませんか」、「Can you...」→「〜してくれる？」、「Help me」→「手伝って」。日本人ならこの場面でこう言うのが自然だろうな、って感じの訳。
 - options[1] は主要名詞を共有しつつ意図をすり替える誤答（断り・別案・勘違いなど）。
 - options[2], options[3] は動作や対象を変えた誤答。japaneseReply に引きずられず、英文の意味に基づいて作る。
 - correctIndex は常に 0。
-
-【シーン設定】
-- scenePrompt: sceneId=${scene.id}（${scene.description}）の状況を日本語の自然な文章で描写する。「女性が、[距離・位置関係]にいる男性に対して『[英語のセリフ]』と[言う/尋ねる/提案する]。すると男性が『[日本語の返事]』と答える。」の形式で、150〜200文字程度にまとめる。具体的な場所、時間帯、物の配置なども自然に含める。
-- speakers: SceneA/SceneB を male/female/neutral で返す。少なくとも片方は male。情報が薄い場合は自然に補完し、両方 neutral になりそうなら片方を male にする。
-
-【厳守事項】
-- 出力は JSON 1 つのみ。改行や凡例、コードフェンスは禁止。
-- english ↔ options[0] ↔ japaneseReply の論理を必ずそろえ、矛盾があれば修正してから返答する。
-- タイプ: ${type} / ニュアンス: ${nuance} / ジャンル: ${genre}`;
+`;
   const response = await openai.responses.create({
     model: 'gpt-4o-mini',
-    temperature: 0.9,
+    temperature: 0.7,
     input: [
       {
         role: 'system',
@@ -210,7 +141,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
       },
       {
         role: 'user',
-        content: '英語フレーズと選択肢を生成してください。',
+        content: `英語フレーズと選択肢を生成してください。英語フレーズは必ず${wordCountRule.min}語から${wordCountRule.max}語の範囲内で作成してください。`,
       },
     ],
   });
@@ -249,8 +180,8 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     correctIndex?: number;
     scenePrompt?: string;
     speakers?: {
-      sceneA?: string;
-      sceneB?: string;
+      character1?: string;
+      character2?: string;
     };
     interactionIntent?: string;
   };
@@ -287,14 +218,11 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     correctIndex: typeof parsed.correctIndex === 'number' ? parsed.correctIndex : 0,
     nuance,
     genre,
-    sceneId: scene.id,
+    sceneId: scene,
     scenePrompt:
       parsed.scenePrompt ??
-      `女性が、${scene.description.toLowerCase()}で男性に対して何かを依頼する。男性がそれに応じて行動する。${genre}に関連した家庭的な雰囲気の中で、暖かい室内照明の下、必要な物がはっきりと見える環境。`,
-    speakers: normalizeSpeakers({
-      sceneA: mapSpeaker(parsed.speakers?.sceneA),
-      sceneB: mapSpeaker(parsed.speakers?.sceneB),
-    }),
+      `女性が、${scene}で男性に対して何か${genre}をする。男性がそれに応じて行動する。`,
+    speakers: normalizeSpeakers(),
     interactionIntent: mapInteractionIntent(parsed.interactionIntent),
   };
 
@@ -345,11 +273,11 @@ function mapInteractionIntent(value?: string): InteractionIntent {
   }
 }
 
-function normalizeSpeakers(speakers: GeneratedProblem['speakers']): GeneratedProblem['speakers'] {
-  // 固定設定: Panel 1 (sceneA) = 女性が話す、Panel 2 (sceneB) = 男性が応じる
+function normalizeSpeakers(): GeneratedProblem['speakers'] {
+  // 固定設定: Panel 1 (character1) = 女性が話す、Panel 2 (character2) = 男性が応じる
   return {
-    sceneA: 'female', // 1コマ目：女性がお願い・提案
-    sceneB: 'male', // 2コマ目：男性が応じる
+    character1: 'female', // 1コマ目：女性がお願い・提案
+    character2: 'male', // 2コマ目：男性が応じる
   };
 }
 
@@ -425,22 +353,29 @@ export async function POST(req: Request) {
     const body: GenerateRequest = await req.json().catch(() => ({}));
     const problem = await generateProblem(body);
 
-    const imagePrompt = `Create a single illustration arranged as a two-panel comic strip stacked vertically in portrait orientation with a clear white border/gutter between the panels. Each panel must have exactly equal height - divide the image into two perfectly symmetrical halves with a distinct white gap separating them. Ensure there is always a visible white space between the top and bottom panels to clearly distinguish them as separate scenes. 
+    const imagePrompt = `実写風の2コマ漫画。縦構図、パネル間に白い境界線。
 
-Scene description in Japanese (translate and interpret): ${problem.scenePrompt}
+${problem.scenePrompt}
 
-Panel 1 (top half): Show the moment when the woman is saying "${problem.english}" to the man - she should be clearly addressing him with appropriate gestures, facial expressions, and body language that match this specific request. The man should be listening and the requested action has NOT yet happened.
+台詞に合ったジェスチャーと表情を描写してください。
 
-Panel 2 (bottom half): Show the moment when the man is responding "${problem.japaneseReply}" - he should be actively performing the requested action or providing what was asked for, with facial expressions and body language showing he is responding positively to her request.
+吹き出し・文字なし。視覚的表現のみ。自然で生成AIっぽくないテイスト。`;
 
-Maintain the same characters, wardrobe, and setting across both panels. Show clear progression from request (Panel 1) to fulfillment (Panel 2). Ensure both panels are identical in height and proportions with a clear white separator between them. This is a two-panel comic strip, but DO NOT include any dialogue, speech bubbles, or text in the image - express everything through visual actions and expressions only. Photorealistic rendering, consistent household lighting, gentle comic framing, and absolutely no speech bubbles or text anywhere.`;
+    // リクエストパラメータで画像生成を制御
+    let compositeScene = null;
 
-    const compositeScene =
-      process.env.WITHOUT_GENERATE_PICTURE === 'true' ? null : await generateImage(imagePrompt);
+    if (!body.withoutPicture) {
+      try {
+        compositeScene = await generateImage(imagePrompt);
+      } catch (imageError) {
+        console.error('[problem/generate] image generation failed', imageError);
+        // 画像生成に失敗してもエラーにしない
+      }
+    }
 
     const [englishAudio, japaneseAudio] = await Promise.all([
-      generateSpeech(problem.english, problem.speakers.sceneA),
-      generateSpeech(problem.japaneseReply || problem.english, problem.speakers.sceneB),
+      generateSpeech(problem.english, problem.speakers.character1),
+      generateSpeech(problem.japaneseReply || problem.english, problem.speakers.character2),
     ]);
 
     const persistAssets = {
@@ -452,36 +387,46 @@ Maintain the same characters, wardrobe, and setting across both panels. Show cle
     };
 
     let persisted = null;
-    try {
-      persisted = await saveGeneratedProblem({
-        problem: {
-          type: problem.type,
-          english: problem.english,
-          japaneseReply: problem.japaneseReply,
-          options: problem.options,
-          correctIndex: problem.correctIndex,
-          sceneId: problem.sceneId,
-          scenePrompt: problem.scenePrompt,
-          nuance: problem.nuance,
-          genre: problem.genre,
-          patternGroup: undefined,
-          wordCount: problem.wordCount,
-          interactionIntent: problem.interactionIntent,
-          speakers: problem.speakers,
-        },
-        assets: persistAssets,
-      });
-    } catch (persistError) {
-      console.error('[problem/generate] persist error', persistError);
+    if (!body.skipSave) {
+      try {
+        persisted = await saveGeneratedProblem({
+          problem: {
+            type: problem.type,
+            english: problem.english,
+            japaneseReply: problem.japaneseReply,
+            options: problem.options,
+            correctIndex: problem.correctIndex,
+            sceneId: problem.sceneId,
+            scenePrompt: problem.scenePrompt,
+            nuance: problem.nuance,
+            genre: problem.genre,
+            patternGroup: undefined,
+            wordCount: problem.wordCount,
+            interactionIntent: problem.interactionIntent,
+            speakers: problem.speakers,
+          },
+          assets: persistAssets,
+        });
+      } catch (persistError) {
+        console.error('[problem/generate] persist error', persistError);
+      }
     }
 
     if (persisted) {
-      return NextResponse.json(persisted);
+      // persistedデータにimagePromptを追加
+      const persistedWithImagePrompt = {
+        ...persisted,
+        assets: {
+          ...persisted.assets,
+          imagePrompt: imagePrompt,
+        },
+      };
+      return NextResponse.json(persistedWithImagePrompt);
     }
 
     const responseAssets = {
       composite: compositeScene,
-      imagePrompt: compositeScene === null ? imagePrompt : undefined,
+      imagePrompt: imagePrompt, // 常に画像プロンプトを含める
       audio: {
         english: englishAudio,
         japanese: japaneseAudio,

@@ -61,6 +61,11 @@ const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
   long: 'long',
 };
 
+// 環境変数をチェックして画像生成をスキップするかどうかを判定
+const shouldSkipImageGeneration = () => {
+  return process.env.NEXT_PUBLIC_WITHOUT_GENERATE_PICTURE === 'true';
+};
+
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
@@ -363,7 +368,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         applyResponse(cached);
 
         // バックグラウンドで新問題を生成してDB蓄積（ユーザーには見せない）
-        const shouldGenerateBackground = Math.random() < 0.1; // 新規問題を生成する確率
+        const shouldGenerateBackground = Math.random() < 1; // 新規問題を生成する確率
         if (shouldGenerateBackground) {
           console.log('[ProblemFlow] バックグラウンドで新問題を生成中...');
           fetch('/api/problem/generate', {
@@ -371,7 +376,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ type: problemType }),
+            body: JSON.stringify({
+              type: problemType,
+              withoutPicture: shouldSkipImageGeneration(),
+            }),
           }).catch((error) => {
             console.warn('[ProblemFlow] バックグラウンド生成失敗:', error);
           });
@@ -385,7 +393,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ type: problemType }),
+          body: JSON.stringify({
+            type: problemType,
+            withoutPicture: shouldSkipImageGeneration(),
+          }),
         });
 
         if (!res.ok) {
