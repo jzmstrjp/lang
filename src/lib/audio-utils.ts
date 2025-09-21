@@ -20,9 +20,9 @@ function ensureApiKey() {
 function speakerToVoice(speaker: 'male' | 'female' | 'neutral'): string {
   switch (speaker) {
     case 'male':
-      return 'verse';
+      return 'echo';
     case 'female':
-      return 'coral';
+      return 'nova';
     default:
       return 'alloy';
   }
