@@ -238,6 +238,10 @@ async function generateEnglishSentence(
 【条件】
 - 英文は「${initialAlphabet}」で始まること
 - 日常やビジネスよく使うような自然な英文にしてください。
+- 具体的な文章にしてください。
+  - 悪い例: 「Pass me that.」
+  - 良い例: 「Pass me the salt.」
+
 - 単語数は${wordCountRule.min}語から${wordCountRule.max}語の範囲内（必須）
 - ${scene}で女性が男性に対して${genre}をする場面
 - ニュアンスは場面に合わせて「カジュアル」「砕けた」「礼儀正しい」のいずれかを適切に選択
@@ -368,6 +372,7 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
 - japaneseReplyを見ることでenglishがどんな英文なのか推測できるような文章にしてください。
   - 例えばjapaneseReplyで「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
   - 悪い例: options[0]が「来週の会議のテーマは何だっけ？」だった場合に「うん、そのことね。」というjapaneseReplyは不適切。japaneseReplyからenglishが何なのか全く推測できない。
+  - 良い例: options[0]が「ボールから目を離さないで。」だった場合に「うん、ボールに集中するね。」というjapaneseReplyは適切。japaneseReplyからenglishが何となく推測できる。
 - 「うん、〇〇しよう」「いいね、〇〇だね」「いや、〇〇だと」「そうですね、〇〇ですものね」みたいに「うん」「いや」「いいえ」「ああ」「そうだね」「そうですね」「わかりました」とかを文頭に含めてほしい。
 - japaneseReplyは、englishをただ日本語訳しただけのようなオウム返しではダメです。
   - 悪い例: Let me share this. → ああ、それについて教えて。

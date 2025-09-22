@@ -235,8 +235,8 @@ export default function PromptTestPage() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="bg-purple-50 border border-purple-200 rounded p-3">
-                  <span className="font-semibold text-purple-800">問題タイプ:</span>
-                  <p className="text-purple-700">{problem.type}</p>
+                  <span className="font-semibold text-purple-800">シーン:</span>
+                  <p className="text-purple-700">{problem.sceneId}</p>
                 </div>
                 <div className="bg-pink-50 border border-pink-200 rounded p-3">
                   <span className="font-semibold text-pink-800">ニュアンス:</span>
