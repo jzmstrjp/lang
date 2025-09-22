@@ -5,11 +5,12 @@ on:
   workflow_dispatch:
     inputs:
       problem_type:
-        description: '問題のタイプ (short, medium, long)'
+        description: '問題のタイプ (auto: ランダム選択)'
         required: false
-        default: 'short'
+        default: 'auto'
         type: choice
         options:
+          - auto
           - short
           - medium
           - long
@@ -19,9 +20,9 @@ on:
         default: false
         type: boolean
 
-  # 毎日午前9時（JST）に実行（UTC 0時）
+  # 10分ごとに実行 - ランダムタイプで生成
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '*/10 * * * *'
 
 jobs:
   generate-problem:
@@ -48,8 +49,18 @@ jobs:
       - name: Generate problem directly (No Server Required!)
         run: |
           # 入力パラメータを設定
-          TYPE="${{ github.event.inputs.problem_type || 'short' }}"
+          INPUT_TYPE="${{ github.event.inputs.problem_type || 'auto' }}"
           WITHOUT_PICTURE="${{ github.event.inputs.without_picture || 'false' }}"
+
+          # ランダム選択の処理
+          if [ "$INPUT_TYPE" = "auto" ]; then
+            TYPES=("short" "medium" "long")
+            TYPE=${TYPES[$RANDOM % ${#TYPES[@]}]}
+            echo "🎲 ランダム選択: $TYPE"
+          else
+            TYPE="$INPUT_TYPE"
+            echo "👤 手動選択: $TYPE"
+          fi
 
           echo "🚀 問題生成を開始します（サーバー起動なし）"
           echo "📊 Type: $TYPE"

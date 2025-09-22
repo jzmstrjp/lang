@@ -400,6 +400,7 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
 
 【重要】
 - japaneseReplyは、englishの日本語訳であってはなりません。englishに対する返答です。
+- options[0] はenglishの日本語訳です。options[0] は japaneseReplyと同じ内容であってはなりません。
 `;
 }
 
