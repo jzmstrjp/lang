@@ -7,25 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ProblemType {
-  short
-  medium
-  long
-}
-
-enum InteractionIntent {
-  request
-  question
-  proposal
-  opinion
-  agreement
-  info
-}
-
 model Problem {
-  id                String             @id @default(cuid())
+  id                String            @id @default(cuid())
   type              ProblemType
-  initial_alphabet  String
   english           String
   japaneseReply     String
   options           Json
@@ -42,29 +26,30 @@ model Problem {
   patternGroup      String?
   wordCount         Int
   interactionIntent InteractionIntent
-  isCached          Boolean            @default(false)
-  qualityCheck      Boolean            @default(false)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  asset             ProblemAsset?
+  isCached          Boolean           @default(false)
+  qualityCheck      Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  initial_alphabet  String
 
+  @@unique([english, interactionIntent, sceneId])
   @@index([type, initial_alphabet])
   @@index([type, isCached, qualityCheck])
   @@index([sceneId])
-  @@unique([english, interactionIntent, sceneId])
   @@map("problems")
 }
 
-model ProblemAsset {
-  id            String   @id @default(cuid())
-  problemId     String   @unique
-  scenePrompt   String
-  compositeImage String?
-  audioEn       String
-  audioJa       String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+enum ProblemType {
+  short
+  medium
+  long
+}
 
-  @@map("problem_assets")
+enum InteractionIntent {
+  request
+  question
+  proposal
+  opinion
+  agreement
+  info
 }

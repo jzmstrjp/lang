@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
-import { generateSpeech } from '@/lib/audio-utils';
+import { generateSpeech, generateSpeechAndUploadToR2 } from '@/lib/audio-utils';
+import { generateImageAndUploadToR2 } from '@/lib/image-utils';
 
 import type {
   InteractionIntent as PrismaInteractionIntent,
@@ -655,12 +656,15 @@ ${problem.scenePrompt}
 
 漫画ですが、吹き出し・台詞はなし。自然で生成AIっぽくないテイスト。`;
 
-    // リクエストパラメータで画像生成を制御
+    // 一意のproblemId生成（タイムスタンプベース）
+    const problemId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // R2アップロード版を使用
     let compositeScene = null;
 
     if (!body.withoutPicture) {
       try {
-        compositeScene = await generateImage(imagePrompt);
+        compositeScene = await generateImageAndUploadToR2(imagePrompt, problemId);
       } catch (imageError) {
         console.error('[problem/generate] image generation failed', imageError);
         // 画像生成に失敗してもエラーにしない
@@ -668,8 +672,13 @@ ${problem.scenePrompt}
     }
 
     const [englishAudio, japaneseAudio] = await Promise.all([
-      generateSpeech(problem.english, problem.speakers.character1),
-      generateSpeech(problem.japaneseReply || problem.english, problem.speakers.character2),
+      generateSpeechAndUploadToR2(problem.english, problem.speakers.character1, problemId, 'en'),
+      generateSpeechAndUploadToR2(
+        problem.japaneseReply || problem.english,
+        problem.speakers.character2,
+        problemId,
+        'ja',
+      ),
     ]);
 
     const persistAssets = {

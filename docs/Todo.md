@@ -55,52 +55,52 @@ OpenAI TTS/DALL-E → R2 Upload → Cloudflare R2
 - [x] セキュリティ設定（`.gitignore`更新）
 - [x] Terraformプロバイダー問題修正（versions.tf追加）
 - [x] Terraform初期化完了
-- [ ] **明日のタスク**: Cloudflare認証情報取得・設定
-  - [ ] Cloudflare Account ID取得
-  - [ ] API Token作成（R2 + DNS権限）
-  - [ ] Zone ID取得
-  - [ ] R2 Access Key/Secret Key作成
-  - [ ] `dev.tfvars`に実際の値を設定
-- [ ] **その後**: Cloudflare R2バケット作成（Terraform実行）
+- [x] **完了**: Cloudflare認証情報取得・設定
+  - [x] Cloudflare Account ID取得：`d6440650d9139a91a55c362227fb9310`
+  - [x] API Token作成（R2権限）
+  - [x] R2 Access Key/Secret Key取得
+  - [x] `prod.tfvars`に実際の値を設定
+- [x] **完了**: Cloudflare R2バケット作成（Terraform実行）
+  - [x] **prod環境**: `prod-lang-media` バケット作成済み（apacロケーション）
+  - [x] **バケットURL**: `https://prod-lang-media.d6440650d9139a91a55c362227fb9310.r2.cloudflarestorage.com`
+  - [x] **ロケーション**: APAC（アジア太平洋）- 日本のユーザーに最適化
+- [ ] **次のステップ**: dev環境も同様に作成（オプション）
 
-### Phase 1: R2アップロード機能実装
+### Phase 1: R2アップロード機能実装 ✅
 
-- [ ] R2クライアント用ライブラリ作成 (`src/lib/r2-client.ts`)
-- [ ] 音声ファイル用アップロード関数
-- [ ] 画像ファイル用アップロード関数
-- [ ] 環境変数設定の確認・更新
+- [x] R2クライアント用ライブラリ作成 (`src/lib/r2-client.ts`)
+- [x] 音声ファイル用アップロード関数
+- [x] 画像ファイル用アップロード関数
+- [x] 環境変数設定の確認・更新
 
-### Phase 2: API修正
+### Phase 2: API修正 ✅
 
-- [ ] `generateSpeech()` - Base64返却をR2アップロード+URL返却に変更
-- [ ] `generateImage()` - Base64返却をR2アップロード+URL返却に変更
-- [ ] `saveGeneratedProblem()` - ProblemAsset保存をProblem URL更新に変更
-- [ ] `fetchCachedProblem()` - asset参照をURL直接参照に変更
+- [x] `generateSpeech()` - Base64返却をR2アップロード+URL返却に変更
+- [x] `generateImage()` - Base64返却をR2アップロード+URL返却に変更
+- [x] `saveGeneratedProblem()` - ProblemAsset保存をProblem URL更新に変更
+- [x] `fetchCachedProblem()` - asset参照をURL直接参照に変更
 
-### Phase 3: 既存データ移行
+### Phase 3: 既存データ移行 ⏭️
 
-- [ ] 移行スクリプト作成
-  - ProblemAssetからBase64データを取得
-  - R2にアップロード
-  - ProblemテーブルのURL欄を更新
-- [ ] 移行実行＆検証
+- [x] **スキップ**: 既存データ破棄で新システムに移行
 
-### Phase 4: スキーマクリーンアップ
+### Phase 4: スキーマクリーンアップ ✅
 
-- [ ] Prismaスキーマから`ProblemAsset`モデル削除
-- [ ] `Problem.asset`リレーション削除
-- [ ] マイグレーション作成・実行
-- [ ] TypeScript型定義更新
+- [x] Prismaスキーマから`ProblemAsset`モデル削除
+- [x] `Problem.asset`リレーション削除
+- [x] データベースリセット・新スキーマ適用
+- [x] TypeScript型定義更新
 
-### Phase 5: フロントエンド対応
+### Phase 5: フロントエンド対応 ✅
 
-- [ ] `problem-flow.tsx` - asset.composite/audio参照をURL直接参照に変更
-- [ ] APIレスポンス型の更新
+- [x] `problem-flow.tsx` - URL直接参照で動作確認
+- [x] APIレスポンス型の互換性確認
 
-### Phase 6: 旧データ削除
+### Phase 6: 完了 ✅
 
-- [ ] `problem_assets`テーブル削除
-- [ ] 不要なコード削除
+- [x] `problem_assets`テーブル削除完了
+- [x] 不要なコード削除完了
+- [x] 全体テスト・TypeScriptエラー確認完了
 
 ## 🔧 必要な環境変数
 

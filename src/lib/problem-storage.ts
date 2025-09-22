@@ -1,4 +1,4 @@
-import type { InteractionIntent, Prisma, Problem, ProblemAsset, ProblemType } from '@prisma/client';
+import type { InteractionIntent, Prisma, Problem, ProblemType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 const RANDOM_SAMPLE_SIZE = Number(process.env.PROBLEM_CACHE_SAMPLE_SIZE ?? '20');
@@ -62,7 +62,7 @@ export type CachedProblemResponse = {
   };
 };
 
-type ProblemRecord = Problem & { asset: ProblemAsset | null };
+type ProblemRecord = Problem;
 
 type FetchOptions = {
   requireQualityCheck?: boolean;
@@ -80,7 +80,7 @@ function toStringArray(value: Problem['options']): string[] {
 }
 
 function mapRecordToResponse(record: ProblemRecord | null): CachedProblemResponse | null {
-  if (!record || !record.asset) {
+  if (!record) {
     return null;
   }
 
@@ -89,6 +89,7 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
     return null;
   }
 
+  // R2 URL直接参照に変更
   return {
     problem: {
       id: record.id,
@@ -108,10 +109,10 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
       interactionIntent: record.interactionIntent,
     },
     assets: {
-      composite: record.asset.compositeImage || null,
+      composite: record.compositeImageUrl || null,
       audio: {
-        english: record.asset.audioEn,
-        japanese: record.asset.audioJa,
+        english: record.audioEnUrl || '',
+        japanese: record.audioJaUrl || '',
       },
     },
   };
@@ -128,7 +129,7 @@ export async function saveGeneratedProblem(
     },
   };
 
-  const baseData = {
+  const problemData = {
     type: input.problem.type,
     initial_alphabet: input.problem.initialAlphabet,
     english: input.problem.english,
@@ -146,35 +147,16 @@ export async function saveGeneratedProblem(
     interactionIntent: input.problem.interactionIntent,
     isCached: true,
     qualityCheck: AUTO_APPROVE_NEW_PROBLEMS,
+    // R2 URL直接保存
+    audioEnUrl: input.assets.audio.english,
+    audioJaUrl: input.assets.audio.japanese || null,
+    compositeImageUrl: input.assets.composite,
   } as const;
-
-  const assetData = {
-    scenePrompt: input.problem.scenePrompt,
-    compositeImage: input.assets.composite,
-    audioEn: input.assets.audio.english,
-    audioJa: input.assets.audio.japanese || '',
-  };
 
   const record = await prisma.problem.upsert({
     where: uniqueWhere,
-    create: {
-      ...baseData,
-      asset: {
-        create: assetData,
-      },
-    },
-    update: {
-      ...baseData,
-      asset: {
-        upsert: {
-          update: assetData,
-          create: assetData,
-        },
-      },
-    },
-    include: {
-      asset: true,
-    },
+    create: problemData,
+    update: problemData,
   });
 
   return mapRecordToResponse(record);
@@ -205,7 +187,6 @@ export async function fetchCachedProblem(
 
   const records = await prisma.problem.findMany({
     where,
-    include: { asset: true },
     orderBy: { updatedAt: 'desc' },
     take,
     skip,

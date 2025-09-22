@@ -17,7 +17,13 @@ async function main() {
     console.log('🚀 問題生成を開始します...');
 
     // 環境変数のチェック
-    const requiredEnvs = ['OPENAI_API_KEY', 'DATABASE_URL'];
+    const requiredEnvs = [
+      'OPENAI_API_KEY',
+      'DATABASE_URL',
+      'R2_BUCKET_NAME',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+    ];
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);
 
     if (missingEnvs.length > 0) {

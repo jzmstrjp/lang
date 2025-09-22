@@ -1,19 +1,9 @@
 output "bucket_name" {
   value = cloudflare_r2_bucket.media.name
+  description = "R2 bucket name"
 }
 
-output "bucket_public_domain" {
-  value = var.custom_domain
-}
-
-output "app_access_key" {
-  value       = var.r2_access_key
-  description = "Expose the application access key so it can be propagated to Vercel."
-  sensitive   = true
-}
-
-output "app_secret_key" {
-  value       = var.r2_secret_key
-  description = "Expose the application secret key so it can be propagated to Vercel."
-  sensitive   = true
+output "bucket_public_url" {
+  value = "https://${cloudflare_r2_bucket.media.name}.${var.account_id}.r2.cloudflarestorage.com"
+  description = "Default R2 bucket public URL"
 }
