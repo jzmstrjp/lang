@@ -2,7 +2,7 @@ import type { InteractionIntent, Prisma, Problem, ProblemAsset, ProblemType } fr
 import { prisma } from '@/lib/prisma';
 
 const RANDOM_SAMPLE_SIZE = Number(process.env.PROBLEM_CACHE_SAMPLE_SIZE ?? '20');
-const AUTO_APPROVE_NEW_PROBLEMS = process.env.AUTO_APPROVE_PROBLEMS === 'true';
+const AUTO_APPROVE_NEW_PROBLEMS = 'true';
 
 export type SpeakerLabel = 'male' | 'female' | 'neutral';
 

@@ -61,11 +61,6 @@ const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
   long: 'long',
 };
 
-// 環境変数をチェックして画像生成をスキップするかどうかを判定
-const shouldSkipImageGeneration = () => {
-  return process.env.NEXT_PUBLIC_WITHOUT_GENERATE_PICTURE === 'true';
-};
-
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
@@ -367,27 +362,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
         applyResponse(cached);
       } else {
-        // DBに問題がない場合は生成にフォールバック（初回のみ）
-        setFetchingStatus('generating');
-        console.log('[ProblemFlow] DB取得失敗、生成にフォールバック');
-        const res = await fetch('/api/problem/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: problemType,
-            withoutPicture: shouldSkipImageGeneration(),
-          }),
-        });
-
-        if (!res.ok) {
-          const payload = await res.json().catch(() => ({}));
-          throw new Error(payload?.error ?? '問題生成に失敗しました');
-        }
-
-        const data: ApiResponse = await res.json();
-        applyResponse(data);
+        // DBに問題がない場合はエラーを表示
+        console.log('[ProblemFlow] DB取得失敗、問題が存在しません');
+        throw new Error('問題がありません');
       }
     } catch (err) {
       console.error(err);

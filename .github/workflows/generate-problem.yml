@@ -1,0 +1,178 @@
+name: 問題生成とDB保存
+
+on:
+  # 手動実行
+  workflow_dispatch:
+    inputs:
+      problem_type:
+        description: '問題のタイプ (short, medium, long)'
+        required: false
+        default: 'short'
+        type: choice
+        options:
+          - short
+          - medium
+          - long
+      without_picture:
+        description: '画像なしで生成するか'
+        required: false
+        default: false
+        type: boolean
+
+  # 毎日午前9時（JST）に実行（UTC 0時）
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  generate-problem:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Start Next.js server in background
+        run: |
+          npm run start &
+          echo $! > nextjs.pid
+          # サーバーが起動するまで待機
+          sleep 30
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PORT: 3000
+
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:3000/api/problem/generate > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+
+      - name: Generate problem via API
+        run: |
+          # 入力パラメータを設定
+          TYPE="${{ github.event.inputs.problem_type || 'short' }}"
+          WITHOUT_PICTURE="${{ github.event.inputs.without_picture || 'false' }}"
+
+          # APIリクエストボディを作成
+          BODY=$(cat <<EOF
+          {
+            "type": "$TYPE",
+            "withoutPicture": $WITHOUT_PICTURE,
+            "skipSave": false
+          }
+          EOF
+          )
+
+          echo "Generating problem with parameters:"
+          echo "Type: $TYPE"
+          echo "Without Picture: $WITHOUT_PICTURE"
+          echo "Request body: $BODY"
+
+          # API呼び出し
+          RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$BODY" \
+            http://localhost:3000/api/problem/generate)
+
+          echo "API Response:"
+          echo "$RESPONSE" | jq .
+
+          # レスポンスにエラーがないかチェック
+          if echo "$RESPONSE" | jq -e '.error' > /dev/null; then
+            echo "Error in API response:"
+            echo "$RESPONSE" | jq '.error'
+            exit 1
+          fi
+
+          # 成功メッセージを表示
+          if echo "$RESPONSE" | jq -e '.problem.english' > /dev/null; then
+            ENGLISH=$(echo "$RESPONSE" | jq -r '.problem.english')
+            JAPANESE=$(echo "$RESPONSE" | jq -r '.problem.japaneseReply')
+            echo "✅ 問題が正常に生成されました！"
+            echo "English: $ENGLISH"
+            echo "Japanese Reply: $JAPANESE"
+          else
+            echo "❌ 問題の生成に失敗しました。"
+            exit 1
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Stop Next.js server
+        if: always()
+        run: |
+          if [ -f nextjs.pid ]; then
+            kill $(cat nextjs.pid) || true
+            rm nextjs.pid
+          fi
+
+      - name: Verify database entry
+        run: |
+          # Prismaクライアントを使用して最新の問題を確認
+          node -e "
+            const { PrismaClient } = require('@prisma/client');
+            const prisma = new PrismaClient();
+            
+            async function checkLatestProblem() {
+              try {
+                const latest = await prisma.problem.findFirst({
+                  orderBy: { createdAt: 'desc' },
+                  select: {
+                    id: true,
+                    english: true,
+                    japaneseReply: true,
+                    type: true,
+                    createdAt: true
+                  }
+                });
+                
+                if (latest) {
+                  console.log('✅ 最新の問題がDBに保存されています:');
+                  console.log('ID:', latest.id);
+                  console.log('Type:', latest.type);
+                  console.log('English:', latest.english);
+                  console.log('Japanese:', latest.japaneseReply);
+                  console.log('Created:', latest.createdAt);
+                } else {
+                  console.log('❌ DBに問題が見つかりません。');
+                  process.exit(1);
+                }
+              } catch (error) {
+                console.error('DB確認エラー:', error);
+                process.exit(1);
+              } finally {
+                await prisma.\$disconnect();
+              }
+            }
+            
+            checkLatestProblem();
+          "
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

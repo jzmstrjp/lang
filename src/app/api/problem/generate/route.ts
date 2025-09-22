@@ -361,17 +361,18 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
 
 【選択肢】
 - options は日本語4文（全て自然な口語）。
-- options[0] は 「${english}」の正しい日本語訳。直訳ではなく、日本人ならこの場面でこう言うのが自然だろうな、って感じの訳を生成すべし。日本語らしく訳すべし（例: 「platform」なら「プラットフォーム」ではなく「ホーム」）。
+- options[0] は正解の選択肢です。 「${english}」の正しい日本語訳です。直訳ではなく、日本人ならこの場面でこう言うのが自然だろうな、って感じの訳を生成すべし。日本語らしく訳すべし（例: 「platform」なら「プラットフォーム」ではなく「ホーム」）。
   - 悪い例: 「You should try this park.」→「この公園を試してみた方がいいよ。」
   - 良い例: 「You should try this park.」→「この公園、ぜひ行ってみてください。」
 - options[0] は英文のフォーマルさ・カジュアルさ・丁寧さのレベルを日本語でも同等に保つこと。例：「Could you please...」→「〜していただけませんか」、「Can you...」→「〜してくれる？」、「Help me」→「手伝って」。
 - options[1] は主要名詞を共有しつつ意図をすり替える誤答（断り・別案・勘違いなど）。
-- options[2], options[3] 明らかな誤答。「${english}」と似ても似つかない無関係な日本語文。
+- options[2], options[3] 明らかな誤答。「${english}」とは無関係な${genre}の文章。
 - correctIndex は常に 0。
 
 【japaneseReply】
 - japaneseReplyは、englishの日本語訳ではありません。返答です。options[0]（「${english}」の日本語訳）に対する男性の返答です。
   - 男性が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
+  - japaneseReplyは返答なので、options[0]の内容と同じになることはありません。
 - japaneseReplyを見ることでenglishがどんな英文なのか推測できるような文章にしてください。
   - 例えばjapaneseReplyで「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
   - 悪い例: options[0]が「来週の会議のテーマは何だっけ？」だった場合に「うん、そのことね。」というjapaneseReplyは不適切。japaneseReplyからenglishが何なのか全く推測できない。
