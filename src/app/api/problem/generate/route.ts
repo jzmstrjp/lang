@@ -493,7 +493,7 @@ function createSystemPrompt(
   - 良い例: Let me share this. → うん、教えてくれる？
 
 【重要】
-- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答の台詞を生成してください。
+- japaneseReplyは、englishに対する返答の台詞を生成してください。englishの日本語訳ではありません。
 - options[0] には英文クイズの正解が入ります。「${english}」の正しい日本語訳を入れてください。
 `;
 }
