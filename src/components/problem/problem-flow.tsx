@@ -366,24 +366,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const cached: ApiResponse = await cachedRes.json();
         console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
         applyResponse(cached);
-
-        // バックグラウンドで新問題を生成してDB蓄積（ユーザーには見せない）
-        const shouldGenerateBackground = Math.random() < 1; // 新規問題を生成する確率
-        if (shouldGenerateBackground) {
-          console.log('[ProblemFlow] バックグラウンドで新問題を生成中...');
-          fetch('/api/problem/generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              type: problemType,
-              withoutPicture: shouldSkipImageGeneration(),
-            }),
-          }).catch((error) => {
-            console.warn('[ProblemFlow] バックグラウンド生成失敗:', error);
-          });
-        }
       } else {
         // DBに問題がない場合は生成にフォールバック（初回のみ）
         setFetchingStatus('generating');
