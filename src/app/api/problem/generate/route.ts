@@ -43,6 +43,10 @@ type GeneratedProblem = {
     character1: 'male' | 'female' | 'neutral';
     character2: 'male' | 'female' | 'neutral';
   };
+  characterRoles: {
+    character1: string;
+    character2: string;
+  };
   wordCount: number;
   interactionIntent: InteractionIntent;
 };
@@ -163,19 +167,104 @@ const INITIAL_ALPHABETS = [
 
 const GENRE_POOL = ['依頼', '質問', '提案', '意見', '情報共有'] as const;
 // const NUANCE_POOL = ['カジュアル', '砕けた', '礼儀正しい'] as const;
+
 const SCENE_POOL = [
-  '家庭',
-  'オフィス',
-  '公園',
-  '旅行先',
-  '学校',
-  '病院',
-  '駅',
-  '飲食店',
-  'スポーツ施設',
-  'ショッピングモール',
-  '結婚式',
-  '電話',
+  {
+    place: '家庭',
+    roles: [
+      ['妻', '夫'],
+      ['娘', '父親'],
+      ['母親', '息子'],
+    ],
+  },
+  {
+    place: 'オフィス',
+    roles: [
+      ['部下', '上司'],
+      ['同僚', '同僚'],
+      ['新人', '先輩'],
+    ],
+  },
+  {
+    place: '公園',
+    roles: [
+      ['友人', '友人'],
+      ['母親', '子供'],
+      ['散歩者', '散歩者'],
+    ],
+  },
+  {
+    place: '旅行先',
+    roles: [
+      ['旅行者', '現地ガイド'],
+      ['観光客', 'ホテルスタッフ'],
+      ['友人', '友人'],
+    ],
+  },
+  {
+    place: '学校',
+    roles: [
+      ['学生', '先生'],
+      ['生徒', '先輩'],
+      ['同級生', '同級生'],
+    ],
+  },
+  {
+    place: '病院',
+    roles: [
+      ['患者', '医師'],
+      ['患者', '看護師'],
+      ['家族', '医師'],
+    ],
+  },
+  {
+    place: '駅',
+    roles: [
+      ['乗客', '駅員'],
+      ['旅行者', '案内係'],
+      ['友人', '友人'],
+    ],
+  },
+  {
+    place: '飲食店',
+    roles: [
+      ['客', '店員'],
+      ['客', 'シェフ'],
+      ['友人', '友人'],
+    ],
+  },
+  {
+    place: 'スポーツ施設',
+    roles: [
+      ['会員', 'インストラクター'],
+      ['初心者', 'コーチ'],
+      ['仲間', '仲間'],
+    ],
+  },
+  {
+    place: 'ショッピングモール',
+    roles: [
+      ['客', '店員'],
+      ['買い物客', '案内係'],
+      ['友人', '友人'],
+    ],
+  },
+  {
+    place: '結婚式',
+    roles: [
+      ['ゲスト', 'スタッフ'],
+      ['友人', '友人'],
+      ['親族', '親族'],
+    ],
+  },
+  {
+    place: '電話',
+    roles: [
+      ['顧客', 'オペレーター'],
+      ['友人', '友人'],
+      ['家族', '家族'],
+    ],
+  },
 ] as const;
 
 function mapProblemType(type?: string): ProblemType {
@@ -230,6 +319,7 @@ async function generateEnglishSentence(
   initialAlphabet: string,
   scene: string,
   genre: string,
+  characterRoles: { character1: string; character2: string },
 ): Promise<{ english: string; nuance: string }> {
   ensureApiKey();
 
@@ -240,14 +330,14 @@ async function generateEnglishSentence(
 【条件】
 - 英文は ${initialAlphabet} から始まること
   - 例: ${initialAlphabet} が C であれば「Can you 〜 ?」など
-- 日常やビジネスよく使うような自然な英文にしてください。
+- 日常やビジネスでよく使うような自然な英文にしてください。
+- ${scene}で${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して言いそうな英文を生成してください。
 - 具体的な文章にしてください。
   - 悪い例: 「Pass me that.」
   - 良い例: 「Pass me the salt.」
 
 - 単語数は${wordCountRule.min}語から${wordCountRule.max}語の範囲内（必須）
-- ${scene}で女性が男性に対して${genre}をする場面
-- ニュアンスは場面に合わせて「カジュアル」「砕けた」「礼儀正しい」のいずれかを適切に選択
+- ニュアンスは場面と関係性に合わせて「カジュアル」「砕けた」「礼儀正しい」のいずれかを適切に選択
 
 【重要な制約】
 - 単語数は空白で区切られた語の数です（例：「Can you help me?」= 4語）
@@ -255,8 +345,9 @@ async function generateEnglishSentence(
 - この制約は絶対に守ってください
 
 【ニュアンスの選択基準】
-- オフィス・病院・学校などフォーマルな場面 → 「礼儀正しい」
-- 家庭・公園・旅行先などプライベートな場面 → 「カジュアル」または「砕けた」
+- ${characterRoles.character1}と${characterRoles.character2}の関係性を考慮
+- オフィス・病院・学校などフォーマルな場面や、上司・医師・先生など上位の立場への発話 → 「礼儀正しい」
+- 家庭・公園・旅行先などプライベートな場面や、友人・同僚・家族など対等/親しい関係 → 「カジュアル」または「砕けた」
 - 場面と関係性を考慮して最適なニュアンスを選択してください
 
 【出力】
@@ -318,6 +409,7 @@ async function generateUniqueEnglish(
   initialAlphabet: string,
   scene: string,
   genre: string,
+  characterRoles: { character1: string; character2: string },
 ): Promise<{ english: string; nuance: string }> {
   const maxRetries = 10;
 
@@ -328,7 +420,13 @@ async function generateUniqueEnglish(
   );
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const result = await generateEnglishSentence(type, initialAlphabet, scene, genre);
+    const result = await generateEnglishSentence(
+      type,
+      initialAlphabet,
+      scene,
+      genre,
+      characterRoles,
+    );
 
     // メモリ内でSetを使って高速チェック
     if (!existingEnglishTexts.has(result.english)) {
@@ -349,9 +447,14 @@ async function generateUniqueEnglish(
 /**
  * systemPromptを作成
  */
-function createSystemPrompt(scene: string, genre: string, english: string): string {
+function createSystemPrompt(
+  scene: string,
+  genre: string,
+  english: string,
+  characterRoles: { character1: string; character2: string },
+): string {
   return `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。
-  男性の日本語台詞をヒントに女性の英語台詞の意味を当てるクイズを作成したいのです。
+  ${characterRoles.character2}（男性）の日本語での返事をヒントに${characterRoles.character1}（女性）の英語台詞の意味を当てるクイズを作成したいのです。
 
 【提供された英文】
 "${english}"
@@ -361,22 +464,22 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
   ※englishフィールドには上記の英文「${english}」をそのまま含めてください。
 
 【会話デザイン】
-- ${scene}で、女性が男性に対して「${english}」で${genre}をする場面です。
-- この英文「${english}」に対して男性が自然に返答する日本語台詞をjapaneseReplyフィールドに入れる。
+- ${scene}で、${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して「${english}」と言います。
+- この英文「${english}」に対して${characterRoles.character2}が自然に返答する日本語台詞を japaneseReply フィールドに入れること。
 
 【選択肢】
 - options は日本語4文（全て自然な口語）。
-- options[0] は正解の選択肢です。 「${english}」の正しい日本語訳です。直訳ではなく、日本人ならこの場面でこう言うのが自然だろうな、って感じの訳を生成すべし。日本語らしく訳すべし（例: 「platform」なら「プラットフォーム」ではなく「ホーム」）。
+- options[0] は正解の選択肢です。つまり「${english}」の正しい日本語訳です。直訳ではなく、日本人ならこの場面でこう言うのが自然だろうな、って感じの訳を生成すべし。日本語らしく訳すべし（例: 「platform」なら「プラットフォーム」ではなく「ホーム」）。
   - 悪い例: 「You should try this park.」→「この公園を試してみた方がいいよ。」
   - 良い例: 「You should try this park.」→「この公園、ぜひ行ってみてください。」
 - options[0] は英文のフォーマルさ・カジュアルさ・丁寧さのレベルを日本語でも同等に保つこと。例：「Could you please...」→「〜していただけませんか」、「Can you...」→「〜してくれる？」、「Help me」→「手伝って」。
 - options[1] は主要名詞を共有しつつ意図をすり替える誤答（断り・別案・勘違いなど）。
-- options[2], options[3] 明らかな誤答。「${english}」とは無関係な${genre}の文章。
+- options[2], options[3] 明らかな誤答。「${english}」とは無関係な日本語の台詞。
 - correctIndex は常に 0。
 
 【japaneseReply】
-- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答です。options[0]（「${english}」の日本語訳）に対する男性の返答です。
-  - 男性が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
+- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答です。options[0]（「${english}」の日本語訳）に対する${characterRoles.character2}の返答です。
+  - ${characterRoles.character2}が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な台詞を生成してください。
   - japaneseReplyは返答なので、options[0]の内容と同じになることはありません。
 - japaneseReplyを見ることでenglishがどんな英文なのか推測できるような文章にしてください。
   - 例えばjapaneseReplyで「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
@@ -389,21 +492,9 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
   - 悪い例: Let me share this. → ああ、それについて教えて。
   - 良い例: Let me share this. → うん、教えてくれる？
 
-【scenePrompt】（文字列）
-- english と japaneseReply の台詞の内容にぴったりな2コマ漫画のストーリーを文字列で記述してほしい。
-- ${scene}で何が起きていて、女性が男性に対して何を${genre}したのか想像して、自然なストーリーにしてほしい。
-- 2コマ漫画で描写できるような、ごく短い完結なストーリーにしてほしい。
-- この文を元に画像生成プロンプトを作成するので、具体的に詳細に描写してほしい。
-- 【1コマ目】【2コマ目】という2つの見出しを含めて、各コマで起きていることや情景を明確に言語化した文字列として出力してほしい。オブジェクトではなくただの文字列。
-- 1コマ目の説明にはenglishを、2コマ目の説明にはjapaneseReplyを必ず引用すること。
-- 1コマ目ではまだjapaneseReplyの内容は行動に移さないこと。
-- 2コマ目ではjapaneseReplyでやろうと言った内容を行動に移すこと。
-  - 悪い例: セリフが「ベンチに座ろう」なのに「ベンチに向かった」と表現する
-  - 良い例: 台詞が「ベンチに座ろう」だから「ベンチに座った」と表現する
-
 【重要】
-- japaneseReplyは、englishの日本語訳であってはなりません。englishに対する返答です。
-- options[0] はenglishの日本語訳です。options[0] は japaneseReplyと同じ内容であってはなりません。
+- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答の台詞を生成してください。
+- options[0] には英文クイズの正解が入ります。「${english}」の正しい日本語訳を入れてください。
 `;
 }
 
@@ -427,14 +518,27 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   const wordCountRule = WORD_COUNT_RULES[type];
 
   // ランダムにsceneとgenreを選択
-  const scene = SCENE_POOL[Math.floor(Math.random() * SCENE_POOL.length)];
+  const sceneData = SCENE_POOL[Math.floor(Math.random() * SCENE_POOL.length)];
+  const selectedRolePair = sceneData.roles[Math.floor(Math.random() * sceneData.roles.length)];
   const genre = GENRE_POOL[Math.floor(Math.random() * GENRE_POOL.length)];
 
+  const scene = sceneData.place;
+  const characterRoles = {
+    character1: selectedRolePair[0],
+    character2: selectedRolePair[1],
+  };
+
   // 2. 重複のない英文を生成（ニュアンスはAIが自動選択）
-  const { english, nuance } = await generateUniqueEnglish(type, initialAlphabet, scene, genre);
+  const { english, nuance } = await generateUniqueEnglish(
+    type,
+    initialAlphabet,
+    scene,
+    genre,
+    characterRoles,
+  );
 
   // 3. systemPromptを作成して、生成された英文を元に問題の詳細を作成
-  const systemPrompt = createSystemPrompt(scene, genre, english);
+  const systemPrompt = createSystemPrompt(scene, genre, english, characterRoles);
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.7,
@@ -535,8 +639,9 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     sceneId: scene,
     scenePrompt:
       parsed.scenePrompt ??
-      `女性が、${scene}で男性に対して何か${genre}をする。男性がそれに応じて行動する。`,
+      `${characterRoles.character1}（女性）が、${scene}で${characterRoles.character2}（男性）に対して何か${genre}をする。${characterRoles.character2}がそれに応じて行動する。`,
     speakers: normalizeSpeakers(),
+    characterRoles,
     interactionIntent: mapInteractionIntent(parsed.interactionIntent),
   };
 
@@ -651,13 +756,26 @@ export async function POST(req: Request) {
     const body: GenerateRequest = await req.json().catch(() => ({}));
     const problem = await generateProblem(body);
 
-    const imagePrompt = `実写風の2コマ漫画。縦構図、パネル間に20ピクセルの白い境界線。
+    const imagePrompt = `実写風の2コマ漫画。
+縦に2コマ。
+上下のコマの間に20ピクセルの白い境界線。
 上下のコマの高さは完全に同じです。
 
-${problem.scenePrompt}
+【場所】
+${problem.sceneId}
 
+【登場人物】
+${problem.characterRoles.character1}（女性）
+${problem.characterRoles.character2}（男性）
+
+【1コマ目】
+${problem.characterRoles.character1}（女性）が「${problem.english}」と言っている。
+
+【2コマ目】
+それを聞いた${problem.characterRoles.character2}（男性）が「${problem.japaneseReply}」と反応した。
+
+【備考】
 台詞に合ったジェスチャーと表情を描写してください。
-
 漫画ですが、吹き出し・台詞はなし。自然で生成AIっぽくないテイスト。`;
 
     // 一意のproblemId生成（タイムスタンプベース）
@@ -709,6 +827,7 @@ ${problem.scenePrompt}
             scenePrompt: problem.scenePrompt,
             sceneId: problem.sceneId,
             speakers: problem.speakers,
+            characterRoles: problem.characterRoles,
             wordCount: problem.wordCount,
             interactionIntent: problem.interactionIntent,
           },
@@ -857,6 +976,7 @@ ${problem.scenePrompt}
         genre: problem.genre,
         scenePrompt: problem.scenePrompt,
         speakers: problem.speakers,
+        characterRoles: problem.characterRoles,
         wordCount: problem.wordCount,
         interactionIntent: problem.interactionIntent,
       },

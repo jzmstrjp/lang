@@ -16,6 +16,10 @@ type GeneratedProblem = {
   interactionIntent: string;
   options: string[];
   correctIndex: number;
+  characterRoles?: {
+    character1: string;
+    character2: string;
+  };
 };
 
 type AssetsData = {
@@ -157,11 +161,15 @@ export default function PromptTestPage() {
 
           {problem && !loading && (
             <div className="space-y-6">
-              {/* シーン説明を一番上に移動 */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">シーン説明</h3>
-                <p className="text-gray-700 leading-relaxed">{problem.scenePrompt}</p>
-              </div>
+              {/* 画像生成プロンプトを常に表示 */}
+              {assets?.imagePrompt && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-amber-800 mb-2">画像生成プロンプト</h3>
+                  <div className="text-sm text-amber-700 leading-relaxed whitespace-pre-line bg-white border border-amber-200 rounded p-3">
+                    {assets.imagePrompt}
+                  </div>
+                </div>
+              )}
 
               {/* 生成された画像を表示 */}
               {assets?.composite && (
@@ -176,16 +184,6 @@ export default function PromptTestPage() {
                       className="max-w-full h-auto rounded-lg shadow-md"
                       unoptimized={true}
                     />
-                  </div>
-                </div>
-              )}
-
-              {/* 画像生成プロンプトを表示（画像がない場合のフォールバック） */}
-              {!assets?.composite && assets?.imagePrompt && (
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-purple-800 mb-2">画像生成プロンプト</h3>
-                  <div className="text-sm text-purple-700 leading-relaxed whitespace-pre-line">
-                    {assets.imagePrompt}
                   </div>
                 </div>
               )}
@@ -233,7 +231,7 @@ export default function PromptTestPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div className="bg-purple-50 border border-purple-200 rounded p-3">
                   <span className="font-semibold text-purple-800">シーン:</span>
                   <p className="text-purple-700">{problem.sceneId}</p>
@@ -250,6 +248,15 @@ export default function PromptTestPage() {
                   <span className="font-semibold text-teal-800">会話意図:</span>
                   <p className="text-teal-700">{problem.interactionIntent}</p>
                 </div>
+                {problem.characterRoles && (
+                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3 col-span-2">
+                    <span className="font-semibold text-cyan-800">キャラクター:</span>
+                    <p className="text-cyan-700">
+                      {problem.characterRoles.character1}（女性） →{' '}
+                      {problem.characterRoles.character2}（男性）
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
