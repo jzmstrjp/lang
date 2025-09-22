@@ -32,7 +32,7 @@ export default function RootLayout({
         <header className="border-b border-gray-800 bg-black">
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:px-6">
             <Link href="/" className="text-lg font-bold tracking-wide text-white">
-              英語太郎
+              英語きわめ太郎
             </Link>
           </div>
         </header>
