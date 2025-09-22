@@ -454,7 +454,7 @@ function createSystemPrompt(
   characterRoles: { character1: string; character2: string },
 ): string {
   return `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。
-  ${characterRoles.character2}（男性）の日本語での返事をヒントに${characterRoles.character1}（女性）の英語台詞の意味を当てるクイズを作成したいのです。
+  ${characterRoles.character2}（男性）の日本語での返事をヒントに${characterRoles.character1}（女性）の英語台詞「${english}」の意味を当てるクイズを作成したいのです。
 
 【提供された英文】
 "${english}"
@@ -465,11 +465,11 @@ function createSystemPrompt(
 
 【会話デザイン】
 - ${scene}で、${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して「${english}」と言います。
-- この英文「${english}」に対して${characterRoles.character2}が自然に返答する日本語台詞を japaneseReply フィールドに入れること。
+- この英文「${english}」に対して${characterRoles.character2}（男性）が自然に返答する日本語台詞を japaneseReply フィールドに入れること。
 
 【選択肢】
 - options は日本語4文（全て自然な口語）。
-- options[0] は正解の選択肢です。つまり「${english}」の正しい日本語訳です。直訳ではなく、日本人ならこの場面でこう言うのが自然だろうな、って感じの訳を生成すべし。日本語らしく訳すべし（例: 「platform」なら「プラットフォーム」ではなく「ホーム」）。
+- options[0] は正解の選択肢です。つまり「${english}」の正しい日本語訳です。日本語としての自然な言い回しにしてください。単語も日本語らしく訳すべし（例: 「platform」なら「プラットフォーム」ではなく「ホーム」）。
   - 悪い例: 「You should try this park.」→「この公園を試してみた方がいいよ。」
   - 良い例: 「You should try this park.」→「この公園、ぜひ行ってみてください。」
 - options[0] は英文のフォーマルさ・カジュアルさ・丁寧さのレベルを日本語でも同等に保つこと。例：「Could you please...」→「〜していただけませんか」、「Can you...」→「〜してくれる？」、「Help me」→「手伝って」。
@@ -478,8 +478,8 @@ function createSystemPrompt(
 - correctIndex は常に 0。
 
 【japaneseReply】
-- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答です。options[0]（「${english}」の日本語訳）に対する${characterRoles.character2}の返答です。
-  - ${characterRoles.character2}が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な台詞を生成してください。
+- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答です。options[0]（「${english}」の日本語訳）に対する${characterRoles.character2}（男性）の返答です。
+  - ${characterRoles.character2}（男性）が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な台詞を生成してください。
   - japaneseReplyは返答なので、options[0]の内容と同じになることはありません。
 - japaneseReplyを見ることでenglishがどんな英文なのか推測できるような文章にしてください。
   - 例えばjapaneseReplyで「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
