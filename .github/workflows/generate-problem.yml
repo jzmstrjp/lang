@@ -64,62 +64,8 @@ jobs:
 
       - name: Verify database entry
         run: |
-          echo "🔍 データベースの確認中..."
-          # Prismaクライアントを使用して最新の問題を確認
-          npx tsx -e "
-            import { PrismaClient } from '@prisma/client';
-            
-            const prisma = new PrismaClient();
-            
-            async function checkLatestProblem() {
-              try {
-                const latest = await prisma.problem.findFirst({
-                  orderBy: { createdAt: 'desc' },
-                  select: {
-                    id: true,
-                    english: true,
-                    japaneseReply: true,
-                    type: true,
-                    createdAt: true,
-                    wordCount: true,
-                    genre: true,
-                    nuance: true
-                  }
-                });
-                
-                if (latest) {
-                  console.log('');
-                  console.log('💾 ===============================================');
-                  console.log('✅ 最新の問題がDBに保存されています');
-                  console.log('💾 ===============================================');
-                  console.log('🆔 ID:', latest.id);
-                  console.log('📊 Type:', latest.type);
-                  console.log('📚 English:', latest.english);
-                  console.log('🗾 Japanese:', latest.japaneseReply);
-                  console.log('📝 Word Count:', latest.wordCount);
-                  console.log('🎭 Genre:', latest.genre);
-                  console.log('💬 Nuance:', latest.nuance);
-                  console.log('⏰ Created:', latest.createdAt);
-                  console.log('');
-                } else {
-                  console.log('❌ DBに問題が見つかりません。');
-                  process.exit(1);
-                }
-              } catch (error) {
-                console.error('❌ DB確認エラー:', error);
-                process.exit(1);
-              } finally {
-                await prisma.\$disconnect();
-              }
-            }
-            
-            (async () => {
-              await checkLatestProblem();
-            })().catch(error => {
-              console.error('データベース確認エラー:', error);
-              process.exit(1);
-            });
-          "
+          # 専用スクリプトでDB確認を実行（Prisma接続の分離）
+          npx tsx scripts/verify-db.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

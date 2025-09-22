@@ -82,7 +82,7 @@ async function main() {
     }
   } catch (error) {
     console.error('❌ 問題生成エラー:', error);
-    process.exit(1);
+    throw error; // エラーを再スローして適切に処理
   }
 }
 
