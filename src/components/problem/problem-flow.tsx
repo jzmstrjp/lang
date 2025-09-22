@@ -84,6 +84,39 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const problemType = PROBLEM_TYPE_MAP[length];
   const isCorrect = problem != null && selectedOption === problem.correctIndex;
 
+  // 英語音声を再生する関数
+  const playEnglishAudio = useCallback(() => {
+    if (!assets?.audio?.english) return;
+
+    // 既存の音声を停止
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    const audio = new Audio(assets.audio.english);
+    audioRef.current = audio;
+
+    const handleEnded = () => {
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    audio.play().catch(() => {
+      console.warn('英語音声の再生に失敗しました。');
+    });
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.pause();
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+    };
+  }, [assets?.audio?.english]);
+
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -715,7 +748,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       {phase === 'quiz' && problem && (
         <section className="grid gap-8">
-          <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
+          <div className="flex items-center gap-4">
+            <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
+            <button
+              type="button"
+              onClick={playEnglishAudio}
+              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-4 py-2 text-sm font-medium text-[#ffffff] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffffff] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!assets?.audio?.english}
+            >
+              もう一度聞く
+            </button>
+          </div>
           <ul className="grid gap-3">
             {problem.options.map((option, index) => (
               <li key={`${option}-${index}`}>
@@ -757,13 +800,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             )}
           </div>
           <div className="flex flex-row gap-3 items-center justify-center">
-            <button
-              type="button"
-              onClick={handleRetryQuiz}
-              className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
-            >
-              再挑戦
-            </button>
+            {!isCorrect && (
+              <button
+                type="button"
+                onClick={handleRetryQuiz}
+                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
+              >
+                再挑戦
+              </button>
+            )}
             {isCorrect && (
               <button
                 type="button"
