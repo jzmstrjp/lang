@@ -217,7 +217,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           }, 300);
         };
 
-        japaneseAudio.addEventListener('canplaythrough', handleJapaneseCanPlayThrough, { once: true });
+        japaneseAudio.addEventListener('canplaythrough', handleJapaneseCanPlayThrough, {
+          once: true,
+        });
 
         // タイムアウト処理（10秒経っても読み込まれない場合は次に進む）
         const japaneseTimeoutId = window.setTimeout(() => {
@@ -226,9 +228,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }, 10000);
 
         // 読み込み完了時にタイムアウトをクリア
-        japaneseAudio.addEventListener('canplaythrough', () => {
-          clearTimeout(japaneseTimeoutId);
-        }, { once: true });
+        japaneseAudio.addEventListener(
+          'canplaythrough',
+          () => {
+            clearTimeout(japaneseTimeoutId);
+          },
+          { once: true },
+        );
       };
 
       if (englishSrc) {
@@ -268,9 +274,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }, 10000);
 
         // 読み込み完了時にタイムアウトをクリア
-        englishAudio.addEventListener('canplaythrough', () => {
-          clearTimeout(timeoutId);
-        }, { once: true });
+        englishAudio.addEventListener(
+          'canplaythrough',
+          () => {
+            clearTimeout(timeoutId);
+          },
+          { once: true },
+        );
       } else {
         startJapanesePlayback();
       }
