@@ -236,7 +236,8 @@ async function generateEnglishSentence(
   const prompt = `あなたは英語学習アプリの出題担当です。以下の条件を満たす英文を1つだけ生成してください。
 
 【条件】
-- 英文は「${initialAlphabet}」で始まること
+- 英文は ${initialAlphabet} から始まること
+  - 例: ${initialAlphabet} が C であれば「Can you 〜 ?」など
 - 日常やビジネスよく使うような自然な英文にしてください。
 - 具体的な文章にしてください。
   - 悪い例: 「Pass me that.」
@@ -273,7 +274,7 @@ async function generateEnglishSentence(
       },
       {
         role: 'user',
-        content: `「${initialAlphabet}」で始まる英文を生成してください。単語数は必ず${wordCountRule.min}語から${wordCountRule.max}語の範囲内にしてください。`,
+        content: `${initialAlphabet} から始まる英文を生成してください。単語数は必ず${wordCountRule.min}語から${wordCountRule.max}語の範囲内にしてください。`,
       },
     ],
   });
