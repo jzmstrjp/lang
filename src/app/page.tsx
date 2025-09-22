@@ -1,20 +1,21 @@
 import Link from 'next/link';
+import { WORD_COUNT_RULES } from './api/problem/generate/route';
 
 const links = [
   {
     href: '/problems/short',
     label: 'short',
-    description: '短い文 (2〜6語)',
+    description: `短い文 (${WORD_COUNT_RULES.short.min}〜${WORD_COUNT_RULES.short.max}語)`,
   },
   {
-    href: '/problems/middle',
-    label: 'middle',
-    description: '中くらいの文 (7〜10語)',
+    href: '/problems/medium',
+    label: 'medium',
+    description: `中くらいの文 (${WORD_COUNT_RULES.medium.min}〜${WORD_COUNT_RULES.medium.max}語)`,
   },
   {
     href: '/problems/long',
     label: 'long',
-    description: '少し長い文 (11〜15語)',
+    description: `少し長い文 (${WORD_COUNT_RULES.long.min}〜${WORD_COUNT_RULES.long.max}語)`,
   },
 ];
 

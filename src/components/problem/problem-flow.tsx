@@ -7,7 +7,7 @@ type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
 type ProblemType = 'short' | 'medium' | 'long';
 
-export type ProblemLength = 'short' | 'middle' | 'long';
+export type ProblemLength = 'short' | 'medium' | 'long';
 
 type ProblemFlowProps = {
   length: ProblemLength;
@@ -57,7 +57,7 @@ type ApiResponse = {
 
 const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
   short: 'short',
-  middle: 'medium',
+  medium: 'medium',
   long: 'long',
 };
 

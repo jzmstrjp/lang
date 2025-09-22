@@ -14,7 +14,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-type ProblemType = PrismaProblemType;
+export type ProblemType = PrismaProblemType;
 
 type GenerateRequest = {
   type?: ProblemType;
@@ -45,7 +45,7 @@ type GeneratedProblem = {
   interactionIntent: InteractionIntent;
 };
 
-const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number }> = {
+export const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number }> = {
   short: { min: 2, max: 6 },
   medium: { min: 7, max: 10 },
   long: { min: 11, max: 20 },
@@ -631,13 +631,14 @@ export async function POST(req: Request) {
     const body: GenerateRequest = await req.json().catch(() => ({}));
     const problem = await generateProblem(body);
 
-    const imagePrompt = `実写風の2コマ漫画。縦構図、パネル間に白い境界線。
+    const imagePrompt = `実写風の2コマ漫画。縦構図、パネル間に20ピクセルの白い境界線。
+上下のコマの高さは完全に同じです。
 
 ${problem.scenePrompt}
 
 台詞に合ったジェスチャーと表情を描写してください。
 
-吹き出し・文字なし。視覚的表現のみ。自然で生成AIっぽくないテイスト。`;
+漫画ですが、吹き出し・台詞はなし。自然で生成AIっぽくないテイスト。`;
 
     // リクエストパラメータで画像生成を制御
     let compositeScene = null;
