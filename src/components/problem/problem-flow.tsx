@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { initializeAudioContext } from '@/lib/audio-utils';
+import { initializeAudioContext } from '@/lib/audio-context';
 
 type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
