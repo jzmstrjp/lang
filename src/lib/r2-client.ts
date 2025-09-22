@@ -20,7 +20,7 @@ function ensureR2Config() {
       'R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY must be set in environment variables',
     );
   }
-  
+
   console.log('[R2] Debug info:', {
     bucket: R2_BUCKET_NAME,
     accessKeyLength: R2_ACCESS_KEY_ID?.length,
