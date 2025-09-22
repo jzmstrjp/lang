@@ -14,6 +14,13 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'prod-lang-media';
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 
+console.log('[R2] Debug info:', {
+  bucket: R2_BUCKET_NAME,
+  accessKeyLength: R2_ACCESS_KEY_ID?.length,
+  secretKeyLength: R2_SECRET_ACCESS_KEY?.length,
+  endpoint: R2_ENDPOINT,
+});
+
 function ensureR2Config() {
   if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
     throw new Error(

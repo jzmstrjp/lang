@@ -61,17 +61,31 @@ export async function generateImageAndUploadToR2(
     model: 'gpt-image-1',
     prompt,
     size: '1024x1536',
-    response_format: 'b64_json', // Base64形式で取得
   });
 
   const first = image.data?.[0];
-  if (!first?.b64_json) {
-    console.error('[image-utils] image generation failed or missing b64_json', image);
+  if (!first) {
+    console.error('[image-utils] image generation failed', image);
     throw new Error('Failed to generate image');
   }
 
-  // Base64からBufferに変換
-  const imageBuffer = Buffer.from(first.b64_json, 'base64');
+  let imageBuffer: Buffer;
+
+  if (first.b64_json) {
+    // Base64形式の場合
+    imageBuffer = Buffer.from(first.b64_json, 'base64');
+  } else if (first.url) {
+    // URL形式の場合、ダウンロードしてBufferに変換
+    const response = await fetch(first.url);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    imageBuffer = Buffer.from(arrayBuffer);
+  } else {
+    console.error('[image-utils] image generation missing url/b64_json', first);
+    throw new Error('Failed to generate image');
+  }
 
   // R2にアップロードしてURLを返す
   return uploadImageToR2(imageBuffer, problemId, 'composite');
