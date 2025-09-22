@@ -6,16 +6,32 @@
 
 import { PrismaClient } from '@prisma/client';
 
+// Prismaクライアントをシングルトンとして管理
+let prisma: PrismaClient | null = null;
+
+function getPrismaClient() {
+  if (!prisma) {
+    prisma = new PrismaClient({
+      datasourceUrl: process.env.DATABASE_URL,
+      log: ['error'],
+      // 接続プールの設定を追加
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    });
+  }
+  return prisma;
+}
+
 async function main() {
-  const prisma = new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
-    log: ['error'],
-  });
+  const prismaClient = getPrismaClient();
 
   try {
     console.log('🔍 データベースの確認中...');
 
-    const latest = await prisma.problem.findFirst({
+    const latest = await prismaClient.problem.findFirst({
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -51,7 +67,7 @@ async function main() {
     console.error('❌ DB確認エラー:', error);
     throw error;
   } finally {
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
   }
 }
 
