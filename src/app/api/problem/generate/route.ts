@@ -294,7 +294,9 @@ async function generateEnglishSentence(
   }
 
   if (!parsed.english.startsWith(initialAlphabet)) {
-    throw new Error(`Generated English sentence does not start with "${initialAlphabet}"`);
+    console.warn(
+      `⚠️ Warning: Generated English sentence does not start with "${initialAlphabet}", but continuing anyway. Sentence: "${parsed.english}"`,
+    );
   }
 
   const wordCount = countWords(parsed.english);
