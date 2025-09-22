@@ -49,12 +49,9 @@ export async function generateImage(prompt: string): Promise<string> {
 }
 
 /**
- * 画像を生成してR2にアップロード（新しい関数）
+ * 画像を生成してBufferを返す（アップロードは別途実行）
  */
-export async function generateImageAndUploadToR2(
-  prompt: string,
-  problemId: string,
-): Promise<string> {
+export async function generateImageBuffer(prompt: string): Promise<Buffer> {
   ensureApiKey();
 
   const image = await openai.images.generate({
@@ -69,11 +66,9 @@ export async function generateImageAndUploadToR2(
     throw new Error('Failed to generate image');
   }
 
-  let imageBuffer: Buffer;
-
   if (first.b64_json) {
     // Base64形式の場合
-    imageBuffer = Buffer.from(first.b64_json, 'base64');
+    return Buffer.from(first.b64_json, 'base64');
   } else if (first.url) {
     // URL形式の場合、ダウンロードしてBufferに変換
     const response = await fetch(first.url);
@@ -81,13 +76,21 @@ export async function generateImageAndUploadToR2(
       throw new Error(`Failed to download image: ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
-    imageBuffer = Buffer.from(arrayBuffer);
+    return Buffer.from(arrayBuffer);
   } else {
     console.error('[image-utils] image generation missing url/b64_json', first);
     throw new Error('Failed to generate image');
   }
+}
 
-  // R2にアップロードしてURLを返す
+/**
+ * 画像を生成してR2にアップロード（レガシー関数、後で削除予定）
+ */
+export async function generateImageAndUploadToR2(
+  prompt: string,
+  problemId: string,
+): Promise<string> {
+  const imageBuffer = await generateImageBuffer(prompt);
   return uploadImageToR2(imageBuffer, problemId, 'composite');
 }
 

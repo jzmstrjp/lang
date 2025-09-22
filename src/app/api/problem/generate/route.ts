@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
-import { generateSpeech, generateSpeechAndUploadToR2 } from '@/lib/audio-utils';
-import { generateImageAndUploadToR2 } from '@/lib/image-utils';
+import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
+import { generateImageBuffer } from '@/lib/image-utils';
+import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 
 import type {
   InteractionIntent as PrismaInteractionIntent,
@@ -662,35 +663,78 @@ ${problem.scenePrompt}
     // 一意のproblemId生成（タイムスタンプベース）
     const problemId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // R2アップロード版を使用
-    let compositeScene = null;
+    console.log('[problem/generate] 🎯 ステップ1: アセット生成開始');
 
-    if (!body.withoutPicture) {
-      try {
-        compositeScene = await generateImageAndUploadToR2(imagePrompt, problemId);
-      } catch (imageError) {
-        console.error('[problem/generate] image generation failed', imageError);
-        // 画像生成に失敗してもエラーにしない
+    // ステップ1: 全てのアセットを生成（メモリ内で完了）
+    let imageBuffer: Buffer | null = null;
+    let englishAudioBuffer: Buffer;
+    let japaneseAudioBuffer: Buffer;
+
+    try {
+      // 並列でアセット生成
+      const assetPromises: Promise<any>[] = [
+        generateSpeechBuffer(problem.english, problem.speakers.character1),
+        generateSpeechBuffer(problem.japaneseReply || problem.english, problem.speakers.character2),
+      ];
+
+      if (!body.withoutPicture) {
+        assetPromises.push(generateImageBuffer(imagePrompt));
       }
+
+      const results = await Promise.all(assetPromises);
+
+      englishAudioBuffer = results[0];
+      japaneseAudioBuffer = results[1];
+      if (!body.withoutPicture && results[2]) {
+        imageBuffer = results[2];
+      }
+
+      console.log('[problem/generate] ✅ ステップ1完了: 全アセット生成成功');
+    } catch (generationError) {
+      console.error('[problem/generate] ❌ ステップ1失敗: アセット生成エラー', generationError);
+      throw generationError;
     }
 
-    const [englishAudio, japaneseAudio] = await Promise.all([
-      generateSpeechAndUploadToR2(problem.english, problem.speakers.character1, problemId, 'en'),
-      generateSpeechAndUploadToR2(
-        problem.japaneseReply || problem.english,
-        problem.speakers.character2,
-        problemId,
-        'ja',
-      ),
-    ]);
+    console.log('[problem/generate] 🚀 ステップ2: R2一括アップロード開始');
+
+    // ステップ2: 全アセットを並列で一度にR2アップロード
+    let englishAudio: string;
+    let japaneseAudio: string;
+    let compositeScene: string | null = null;
+
+    try {
+      const uploadPromises: Promise<string>[] = [
+        uploadAudioToR2(englishAudioBuffer, problemId, 'en', problem.speakers.character1),
+        uploadAudioToR2(japaneseAudioBuffer, problemId, 'ja', problem.speakers.character2),
+      ];
+
+      if (imageBuffer) {
+        uploadPromises.push(uploadImageToR2(imageBuffer, problemId, 'composite'));
+      }
+
+      const uploadResults = await Promise.all(uploadPromises);
+
+      englishAudio = uploadResults[0];
+      japaneseAudio = uploadResults[1];
+      if (imageBuffer && uploadResults[2]) {
+        compositeScene = uploadResults[2];
+      }
+
+      console.log('[problem/generate] ✅ ステップ2完了: 全アセット一括アップロード成功');
+    } catch (uploadError) {
+      console.error('[problem/generate] ❌ ステップ2失敗: アップロードエラー', uploadError);
+      throw uploadError;
+    }
 
     const persistAssets = {
-      composite: compositeScene || null,
+      composite: compositeScene,
       audio: {
         english: englishAudio,
         japanese: japaneseAudio,
       },
     };
+
+    console.log('[problem/generate] 💾 ステップ3: データベース保存開始');
 
     let persisted = null;
     if (!body.skipSave) {
@@ -714,8 +758,12 @@ ${problem.scenePrompt}
           },
           assets: persistAssets,
         });
+
+        console.log('[problem/generate] ✅ ステップ3完了: DB保存成功');
       } catch (persistError) {
-        console.error('[problem/generate] persist error', persistError);
+        console.error('[problem/generate] ❌ ステップ3失敗: DB保存エラー', persistError);
+        // DB保存に失敗してもR2ファイルはそのまま残す（削除しない）
+        // ファイルは正常に生成されているので、後で手動でDBに登録可能
       }
     }
 

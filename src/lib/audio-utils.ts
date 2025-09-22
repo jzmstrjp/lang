@@ -46,14 +46,12 @@ export async function generateSpeech(input: string, speaker: 'male' | 'female' |
 }
 
 /**
- * 音声を生成してR2にアップロード（新しい関数）
+ * 音声を生成してBufferを返す（アップロードは別途実行）
  */
-export async function generateSpeechAndUploadToR2(
+export async function generateSpeechBuffer(
   input: string,
   speaker: 'male' | 'female' | 'neutral',
-  problemId: string,
-  language: 'en' | 'ja',
-): Promise<string> {
+): Promise<Buffer> {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
@@ -65,8 +63,18 @@ export async function generateSpeechAndUploadToR2(
   });
 
   const arrayBuffer = await result.arrayBuffer();
-  const audioBuffer = Buffer.from(arrayBuffer);
+  return Buffer.from(arrayBuffer);
+}
 
-  // R2にアップロードしてURLを返す
+/**
+ * 音声を生成してR2にアップロード（レガシー関数、後で削除予定）
+ */
+export async function generateSpeechAndUploadToR2(
+  input: string,
+  speaker: 'male' | 'female' | 'neutral',
+  problemId: string,
+  language: 'en' | 'ja',
+): Promise<string> {
+  const audioBuffer = await generateSpeechBuffer(input, speaker);
   return uploadAudioToR2(audioBuffer, problemId, language, speaker);
 }

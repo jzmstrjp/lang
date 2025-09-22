@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { config } from 'dotenv';
 
 // 環境変数を読み込み
@@ -134,6 +139,47 @@ export async function getFromR2(key: string): Promise<Buffer> {
 
   const bytes = await response.Body.transformToByteArray();
   return Buffer.from(bytes);
+}
+
+/**
+ * R2からファイルを削除
+ */
+export async function deleteFromR2(key: string): Promise<void> {
+  const client = createR2Client();
+
+  const command = new DeleteObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: key,
+  });
+
+  await client.send(command);
+  console.log(`[R2] Deleted file: ${key}`);
+}
+
+/**
+ * URLからキーを抽出してR2から削除
+ */
+export async function deleteFromR2ByUrl(url: string): Promise<void> {
+  const publicDomain = process.env.R2_PUBLIC_DOMAIN;
+  if (!publicDomain || !url.startsWith(publicDomain)) {
+    throw new Error(`Invalid R2 URL: ${url}`);
+  }
+
+  const key = url.replace(`${publicDomain}/`, '');
+  await deleteFromR2(key);
+}
+
+/**
+ * 複数のファイルをR2から削除（ロールバック用）
+ */
+export async function deleteMultipleFromR2(urls: string[]): Promise<void> {
+  const promises = urls.map((url) =>
+    deleteFromR2ByUrl(url).catch((err) => {
+      console.error(`[R2] Failed to delete ${url}:`, err);
+    }),
+  );
+
+  await Promise.all(promises);
 }
 
 /**
