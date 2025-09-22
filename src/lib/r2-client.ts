@@ -69,8 +69,12 @@ export async function uploadToR2(
 
   await client.send(command);
 
-  // パブリックURLを返す
-  return `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${key}`;
+  // R2.dev パブリックURLを返す
+  const publicDomain = process.env.R2_PUBLIC_DOMAIN;
+  if (!publicDomain) {
+    throw new Error('R2_PUBLIC_DOMAIN environment variable is not set');
+  }
+  return `${publicDomain}/${key}`;
 }
 
 /**
