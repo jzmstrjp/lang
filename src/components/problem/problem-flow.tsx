@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { initializeAudioContext } from '@/lib/audio-context';
+import { initializeAudioContext, preloadAndPlayAudio } from '@/lib/audio-context';
 
 type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
@@ -191,9 +191,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           return;
         }
 
-        japaneseAudio = new Audio(japaneseSrc);
-        secondaryAudioRef.current = japaneseAudio;
-
         handleJapaneseEnded = () => {
           if (!isMountedRef.current) {
             return;
@@ -201,47 +198,36 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           queueQuizTransition();
         };
 
-        japaneseAudio.addEventListener('ended', handleJapaneseEnded);
+        // 新しいアプローチ：事前ロードしてから再生
+        preloadAndPlayAudio(japaneseSrc)
+          .then((audio) => {
+            if (!isMountedRef.current) return;
 
-        // 音声ファイルのダウンロード完了を待機してから再生
-        const handleJapaneseCanPlayThrough = () => {
-          secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
-            japaneseAudio
-              ?.play()
-              .catch(() => {
-                console.warn('日本語音声の自動再生に失敗しました。');
-                queueQuizTransition();
-              })
-              .finally(() => {
-                secondaryPlaybackTimeoutRef.current = null;
-              });
-          }, 300);
-        };
+            japaneseAudio = audio;
+            secondaryAudioRef.current = audio;
+            if (handleJapaneseEnded) {
+              audio.addEventListener('ended', handleJapaneseEnded);
+            }
 
-        japaneseAudio.addEventListener('canplaythrough', handleJapaneseCanPlayThrough, {
-          once: true,
-        });
-
-        // タイムアウト処理（10秒経っても読み込まれない場合は次に進む）
-        const japaneseTimeoutId = window.setTimeout(() => {
-          console.warn('日本語音声の読み込みがタイムアウトしました。');
-          queueQuizTransition();
-        }, 10000);
-
-        // 読み込み完了時にタイムアウトをクリア
-        japaneseAudio.addEventListener(
-          'canplaythrough',
-          () => {
-            clearTimeout(japaneseTimeoutId);
-          },
-          { once: true },
-        );
+            secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
+              audio
+                .play()
+                .catch(() => {
+                  console.warn('日本語音声の自動再生に失敗しました。');
+                  queueQuizTransition();
+                })
+                .finally(() => {
+                  secondaryPlaybackTimeoutRef.current = null;
+                });
+            }, 300);
+          })
+          .catch(() => {
+            console.warn('日本語音声の読み込みに失敗しました。');
+            queueQuizTransition();
+          });
       };
 
       if (englishSrc) {
-        englishAudio = new Audio(englishSrc);
-        audioRef.current = englishAudio;
-
         handleEnglishEnded = () => {
           if (!isMountedRef.current) {
             return;
@@ -249,39 +235,33 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           startJapanesePlayback();
         };
 
-        englishAudio.addEventListener('ended', handleEnglishEnded);
+        // 新しいアプローチ：事前ロードしてから再生
+        preloadAndPlayAudio(englishSrc)
+          .then((audio) => {
+            if (!isMountedRef.current) return;
 
-        // 音声ファイルのダウンロード完了を待機してから再生
-        const handleCanPlayThrough = () => {
-          playbackTimeoutRef.current = window.setTimeout(() => {
-            englishAudio
-              ?.play()
-              .catch(() => {
-                console.warn('英語音声の自動再生に失敗しました。');
-                handleEnglishEnded?.();
-              })
-              .finally(() => {
-                playbackTimeoutRef.current = null;
-              });
-          }, 500); // 少し短縮
-        };
+            englishAudio = audio;
+            audioRef.current = audio;
+            if (handleEnglishEnded) {
+              audio.addEventListener('ended', handleEnglishEnded);
+            }
 
-        englishAudio.addEventListener('canplaythrough', handleCanPlayThrough, { once: true });
-
-        // タイムアウト処理（10秒経っても読み込まれない場合は次に進む）
-        const timeoutId = window.setTimeout(() => {
-          console.warn('英語音声の読み込みがタイムアウトしました。');
-          handleEnglishEnded?.();
-        }, 10000);
-
-        // 読み込み完了時にタイムアウトをクリア
-        englishAudio.addEventListener(
-          'canplaythrough',
-          () => {
-            clearTimeout(timeoutId);
-          },
-          { once: true },
-        );
+            playbackTimeoutRef.current = window.setTimeout(() => {
+              audio
+                .play()
+                .catch(() => {
+                  console.warn('英語音声の自動再生に失敗しました。');
+                  handleEnglishEnded?.();
+                })
+                .finally(() => {
+                  playbackTimeoutRef.current = null;
+                });
+            }, 500);
+          })
+          .catch(() => {
+            console.warn('英語音声の読み込みに失敗しました。');
+            handleEnglishEnded?.();
+          });
       } else {
         startJapanesePlayback();
       }
