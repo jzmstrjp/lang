@@ -162,7 +162,7 @@ const INITIAL_ALPHABETS = [
 ];
 
 const GENRE_POOL = ['依頼', '質問', '提案', '意見', '情報共有'] as const;
-const NUANCE_POOL = ['カジュアル', '砕けた', '礼儀正しい'] as const;
+// const NUANCE_POOL = ['カジュアル', '砕けた', '礼儀正しい'] as const;
 const SCENE_POOL = [
   '家庭',
   'オフィス',
@@ -286,7 +286,7 @@ async function generateEnglishSentence(
   let parsed: { english: string; nuance: string };
   try {
     parsed = JSON.parse(rawText);
-  } catch (err) {
+  } catch {
     throw new Error('Failed to parse English generation response as JSON');
   }
 
@@ -665,6 +665,64 @@ ${problem.scenePrompt}
 
     console.log('[problem/generate] 🎯 ステップ1: アセット生成開始');
 
+    // skipSaveが true の場合はBase64で返す（R2アップロードなし）
+    if (body.skipSave) {
+      console.log('[problem/generate] 🧪 テストモード: Base64アセット生成');
+
+      try {
+        // 並列でアセット生成（Base64形式）
+        const assetPromises: Promise<string>[] = [
+          generateSpeech(problem.english, problem.speakers.character1),
+          generateSpeech(problem.japaneseReply || problem.english, problem.speakers.character2),
+        ];
+
+        if (!body.withoutPicture) {
+          assetPromises.push(generateImage(imagePrompt));
+        }
+
+        const results = await Promise.all(assetPromises);
+
+        const englishAudio = results[0];
+        const japaneseAudio = results[1];
+        const compositeScene = !body.withoutPicture && results[2] ? results[2] : null;
+
+        console.log('[problem/generate] ✅ テストモード完了: Base64アセット生成成功');
+
+        const responseAssets = {
+          composite: compositeScene,
+          imagePrompt: imagePrompt,
+          audio: {
+            english: englishAudio,
+            japanese: japaneseAudio,
+          },
+        } as const;
+
+        return NextResponse.json({
+          problem: {
+            type: problem.type,
+            english: problem.english,
+            japaneseReply: problem.japaneseReply,
+            options: problem.options,
+            correctIndex: problem.correctIndex,
+            nuance: problem.nuance,
+            genre: problem.genre,
+            scenePrompt: problem.scenePrompt,
+            sceneId: problem.sceneId,
+            speakers: problem.speakers,
+            wordCount: problem.wordCount,
+            interactionIntent: problem.interactionIntent,
+          },
+          assets: responseAssets,
+        });
+      } catch (testError) {
+        console.error('[problem/generate] ❌ テストモード失敗:', testError);
+        throw testError;
+      }
+    }
+
+    // 通常モード: R2アップロード + DB保存
+    console.log('[problem/generate] 🚀 本番モード: R2アップロード + DB保存');
+
     // ステップ1: 全てのアセットを生成（メモリ内で完了）
     let imageBuffer: Buffer | null = null;
     let englishAudioBuffer: Buffer;
@@ -672,7 +730,7 @@ ${problem.scenePrompt}
 
     try {
       // 並列でアセット生成
-      const assetPromises: Promise<any>[] = [
+      const assetPromises: Promise<Buffer>[] = [
         generateSpeechBuffer(problem.english, problem.speakers.character1),
         generateSpeechBuffer(problem.japaneseReply || problem.english, problem.speakers.character2),
       ];
