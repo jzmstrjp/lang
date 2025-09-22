@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { initializeAudioContext } from '@/lib/audio-utils';
 
 type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
@@ -422,13 +423,20 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
   }, [problemType]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (isFetching) return;
+
+    // モバイルブラウザでの音声再生を有効化
+    await initializeAudioContext();
+
     setPhase('loading');
     void fetchProblem();
   };
 
-  const handleRetryQuiz = () => {
+  const handleRetryQuiz = async () => {
+    // モバイルブラウザでの音声再生を有効化
+    await initializeAudioContext();
+
     setSelectedOption(null);
     if (assets) {
       setAssets((prev) => {
@@ -468,8 +476,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setPhase('scene');
   };
 
-  const handleNextProblem = () => {
+  const handleNextProblem = async () => {
     if (isFetching) return;
+
+    // モバイルブラウザでの音声再生を有効化
+    await initializeAudioContext();
+
     setPhase('loading');
     void fetchProblem();
   };
