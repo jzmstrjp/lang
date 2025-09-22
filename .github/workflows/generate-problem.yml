@@ -113,7 +113,12 @@ jobs:
               }
             }
             
-            await checkLatestProblem();
+            (async () => {
+              await checkLatestProblem();
+            })().catch(error => {
+              console.error('データベース確認エラー:', error);
+              process.exit(1);
+            });
           "
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

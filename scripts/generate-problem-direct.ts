@@ -90,7 +90,7 @@ async function main() {
 if (require.main === module) {
   (async () => {
     await main();
-  })().catch(error => {
+  })().catch((error) => {
     console.error('スクリプト実行エラー:', error);
     process.exit(1);
   });
