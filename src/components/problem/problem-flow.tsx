@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { initializeAudioContext, preloadAndPlayAudio } from '@/lib/audio-context';
 
 type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
@@ -70,6 +69,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [error, setError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchingStatus, setFetchingStatus] = useState<'generating' | 'retrieving' | null>(null);
+  const [isReady, setIsReady] = useState(false); // 問題が準備済みかどうか
+  const [nextProblem, setNextProblem] = useState<ProblemData | null>(null); // 次の問題
+  const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -198,33 +200,22 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           queueQuizTransition();
         };
 
-        // 新しいアプローチ：事前ロードしてから再生
-        preloadAndPlayAudio(japaneseSrc)
-          .then((audio) => {
-            if (!isMountedRef.current) return;
+        japaneseAudio = new Audio(japaneseSrc);
+        secondaryAudioRef.current = japaneseAudio;
 
-            japaneseAudio = audio;
-            secondaryAudioRef.current = audio;
-            if (handleJapaneseEnded) {
-              audio.addEventListener('ended', handleJapaneseEnded);
-            }
+        japaneseAudio.addEventListener('ended', handleJapaneseEnded);
 
-            secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
-              audio
-                .play()
-                .catch(() => {
-                  console.warn('日本語音声の自動再生に失敗しました。');
-                  queueQuizTransition();
-                })
-                .finally(() => {
-                  secondaryPlaybackTimeoutRef.current = null;
-                });
-            }, 300);
-          })
-          .catch(() => {
-            console.warn('日本語音声の読み込みに失敗しました。');
-            queueQuizTransition();
-          });
+        secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
+          japaneseAudio
+            ?.play()
+            .catch(() => {
+              console.warn('日本語音声の自動再生に失敗しました。');
+              queueQuizTransition();
+            })
+            .finally(() => {
+              secondaryPlaybackTimeoutRef.current = null;
+            });
+        }, 300);
       };
 
       if (englishSrc) {
@@ -235,33 +226,22 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           startJapanesePlayback();
         };
 
-        // 新しいアプローチ：事前ロードしてから再生
-        preloadAndPlayAudio(englishSrc)
-          .then((audio) => {
-            if (!isMountedRef.current) return;
+        englishAudio = new Audio(englishSrc);
+        audioRef.current = englishAudio;
 
-            englishAudio = audio;
-            audioRef.current = audio;
-            if (handleEnglishEnded) {
-              audio.addEventListener('ended', handleEnglishEnded);
-            }
+        englishAudio.addEventListener('ended', handleEnglishEnded);
 
-            playbackTimeoutRef.current = window.setTimeout(() => {
-              audio
-                .play()
-                .catch(() => {
-                  console.warn('英語音声の自動再生に失敗しました。');
-                  handleEnglishEnded?.();
-                })
-                .finally(() => {
-                  playbackTimeoutRef.current = null;
-                });
-            }, 500);
-          })
-          .catch(() => {
-            console.warn('英語音声の読み込みに失敗しました。');
-            handleEnglishEnded?.();
-          });
+        playbackTimeoutRef.current = window.setTimeout(() => {
+          englishAudio
+            ?.play()
+            .catch(() => {
+              console.warn('英語音声の自動再生に失敗しました。');
+              handleEnglishEnded?.();
+            })
+            .finally(() => {
+              playbackTimeoutRef.current = null;
+            });
+        }, 1000);
       } else {
         startJapanesePlayback();
       }
@@ -346,51 +326,125 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setError(null);
     setIsFetching(false);
     setFetchingStatus(null);
+    setIsReady(false);
+    setNextProblem(null);
+    setNextAssets(null);
+  }, [problemType]);
+
+  // ページ読み込み時に問題を事前フェッチ
+  useEffect(() => {
+    const prefetchProblem = async () => {
+      setIsFetching(true);
+      setFetchingStatus('retrieving');
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({ type: problemType });
+        const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+
+        if (response.ok) {
+          const data: ApiResponse = await response.json();
+          const image = data.assets?.composite ?? null;
+          const audio = {
+            english: data.assets?.audio?.english,
+            japanese: data.assets?.audio?.japanese,
+          };
+
+          setProblem(data.problem);
+          setAssets({
+            image,
+            imagePrompt: data.assets?.imagePrompt,
+            audio,
+          });
+          setIsReady(true);
+          console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.english);
+
+          // 最初の問題が準備できたら、次の問題も事前フェッチ
+          setTimeout(() => {
+            void prefetchNextProblem();
+          }, 100);
+        } else {
+          throw new Error('問題がありません');
+        }
+      } catch (err) {
+        console.error('[ProblemFlow] 事前フェッチ失敗:', err);
+        setError(err instanceof Error ? err.message : '問題取得に失敗しました');
+      } finally {
+        setIsFetching(false);
+        setFetchingStatus(null);
+      }
+    };
+
+    void prefetchProblem();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problemType]);
+
+  // 次の問題を事前フェッチする関数
+  const prefetchNextProblem = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({ type: problemType });
+      const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+
+      if (response.ok) {
+        const data: ApiResponse = await response.json();
+        const image = data.assets?.composite ?? null;
+        const audio = {
+          english: data.assets?.audio?.english,
+          japanese: data.assets?.audio?.japanese,
+        };
+
+        setNextProblem(data.problem);
+        setNextAssets({
+          image,
+          imagePrompt: data.assets?.imagePrompt,
+          audio,
+        });
+        console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.english);
+      }
+    } catch (err) {
+      console.warn('[ProblemFlow] 次の問題の事前フェッチ失敗:', err);
+    }
   }, [problemType]);
 
   const fetchProblem = useCallback(async () => {
     setIsFetching(true);
-    setError(null);
-
-    const applyResponse = (data: ApiResponse) => {
-      const image = data.assets?.composite ?? null;
-      const audio = {
-        english: data.assets?.audio?.english,
-        japanese: data.assets?.audio?.japanese,
-      };
-
-      setProblem(data.problem);
-      setAssets({
-        image,
-        imagePrompt: data.assets?.imagePrompt,
-        audio,
-      });
-      setSelectedOption(null);
-
-      if (isMountedRef.current) {
-        setPhase('scene');
-      }
-    };
-
-    // 常に既存問題から選択
     setFetchingStatus('retrieving');
-    console.log('[ProblemFlow] DBから既存の問題を取得中...');
+    setError(null);
 
     try {
       const params = new URLSearchParams({ type: problemType });
-      const cachedRes = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+      const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
-      if (cachedRes.ok) {
-        const cached: ApiResponse = await cachedRes.json();
-        console.log('[ProblemFlow] DB取得成功:', cached.problem.english);
-        applyResponse(cached);
+      if (response.ok) {
+        const data: ApiResponse = await response.json();
+        const image = data.assets?.composite ?? null;
+        const audio = {
+          english: data.assets?.audio?.english,
+          japanese: data.assets?.audio?.japanese,
+        };
+
+        setProblem(data.problem);
+        setAssets({
+          image,
+          imagePrompt: data.assets?.imagePrompt,
+          audio,
+        });
+        setSelectedOption(null);
+
+        if (isMountedRef.current) {
+          setPhase('scene');
+        }
+        console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.english);
+
+        // 新しい問題が取得できたら、次の問題も事前フェッチ
+        setTimeout(() => {
+          void prefetchNextProblem();
+        }, 100);
       } else {
-        // DBに問題がない場合はエラーを表示
-        console.log('[ProblemFlow] DB取得失敗、問題が存在しません');
         throw new Error('問題がありません');
       }
     } catch (err) {
-      console.error(err);
+      console.error('[ProblemFlow] 問題取得失敗:', err);
       if (isMountedRef.current) {
         setError(err instanceof Error ? err.message : '問題取得に失敗しました');
         setPhase('landing');
@@ -401,22 +455,18 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setFetchingStatus(null);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problemType]);
 
-  const handleStart = async () => {
-    if (isFetching) return;
+  const handleStart = () => {
+    if (!isReady || !problem || !assets) return;
 
-    // モバイルブラウザでの音声再生を有効化
-    await initializeAudioContext();
-
-    setPhase('loading');
-    void fetchProblem();
+    // 事前フェッチ済みの問題を使って即座にsceneフェーズに移行
+    setSelectedOption(null);
+    setPhase('scene');
   };
 
-  const handleRetryQuiz = async () => {
-    // モバイルブラウザでの音声再生を有効化
-    await initializeAudioContext();
-
+  const handleRetryQuiz = () => {
     setSelectedOption(null);
     if (assets) {
       setAssets((prev) => {
@@ -456,29 +506,46 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setPhase('scene');
   };
 
-  const handleNextProblem = async () => {
+  const handleNextProblem = () => {
     if (isFetching) return;
 
-    // モバイルブラウザでの音声再生を有効化
-    await initializeAudioContext();
+    // 次の問題が事前フェッチ済みの場合は即座に切り替え
+    if (nextProblem && nextAssets) {
+      setProblem(nextProblem);
+      setAssets(nextAssets);
+      setSelectedOption(null);
+      setPhase('scene');
 
-    setPhase('loading');
-    void fetchProblem();
+      // 現在の問題を次の問題用の変数にクリア
+      setNextProblem(null);
+      setNextAssets(null);
+
+      // さらに次の問題を事前フェッチ
+      void prefetchNextProblem();
+    } else {
+      // 事前フェッチされていない場合は従来通り
+      setPhase('loading');
+      void fetchProblem();
+    }
   };
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'landing' && (
-        <section className="flex flex-col items-center gap-4 rounded-3xl border border-[#d8cbb6] bg-[#ffffff] px-6 py-20 text-center shadow-lg shadow-[#d8cbb6]/40">
+        <section className="flex flex-col items-center gap-4 rounded-3xl border border-[#d8cbb6] bg-[#ffffff] px-6 py-16 text-center shadow-lg shadow-[#d8cbb6]/40">
           {error && <p className="text-sm text-rose-500">{error}</p>}
           <button
             type="button"
             onClick={handleStart}
             className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isFetching}
+            disabled={!isReady || !!error}
           >
-            {isFetching ? '生成中…' : '英語学習を始める'}
+            {isFetching && '問題を準備中…'}
+            {!isFetching && !isReady && !error && '準備中…'}
+            {!isFetching && isReady && '英語学習を始める'}
+            {error && 'エラーが発生しました'}
           </button>
+          {isReady && !error && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
         </section>
       )}
 
