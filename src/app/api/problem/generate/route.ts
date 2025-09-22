@@ -371,14 +371,16 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
 - correctIndex は常に 0。
 
 【japaneseReply】
-- japaneseReplyは、englishの日本語訳ではありません。返答です。options[0]（「${english}」の日本語訳）に対する男性の返答です。
+- japaneseReplyは、englishの日本語訳ではありません。englishに対する返答です。options[0]（「${english}」の日本語訳）に対する男性の返答です。
   - 男性が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な表現にすること。
   - japaneseReplyは返答なので、options[0]の内容と同じになることはありません。
 - japaneseReplyを見ることでenglishがどんな英文なのか推測できるような文章にしてください。
   - 例えばjapaneseReplyで「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
   - 悪い例: options[0]が「来週の会議のテーマは何だっけ？」だった場合に「うん、そのことね。」というjapaneseReplyは不適切。japaneseReplyからenglishが何なのか全く推測できない。
   - 良い例: options[0]が「ボールから目を離さないで。」だった場合に「うん、ボールに集中するね。」というjapaneseReplyは適切。japaneseReplyからenglishが何となく推測できる。
-- 「うん、〇〇しよう」「いいね、〇〇だね」「いや、〇〇だと」「そうですね、〇〇ですものね」みたいに「うん」「いや」「いいえ」「ああ」「そうだね」「そうですね」「わかりました」とかを文頭に含めてほしい。
+- 文頭には相槌や感動詞的な応答詞を付けてほしい。
+  - 相槌や感動詞的な応答詞の例: 「うん」「そうだなぁ」「いいね」「ほら」「いや」「いいえ」「ああ」「そうだね」「そうですね」「わかりました」
+  - 文の例: 「うん、〇〇しよう」「どうぞ、〇〇だよ」「いいね、〇〇だね」「いや、〇〇だと」「そうですね、〇〇ですものね」
 - japaneseReplyは、englishをただ日本語訳しただけのようなオウム返しではダメです。
   - 悪い例: Let me share this. → ああ、それについて教えて。
   - 良い例: Let me share this. → うん、教えてくれる？
@@ -394,6 +396,9 @@ function createSystemPrompt(scene: string, genre: string, english: string): stri
 - 2コマ目ではjapaneseReplyでやろうと言った内容を行動に移すこと。
   - 悪い例: セリフが「ベンチに座ろう」なのに「ベンチに向かった」と表現する
   - 良い例: 台詞が「ベンチに座ろう」だから「ベンチに座った」と表現する
+
+【重要】
+- japaneseReplyは、englishの日本語訳であってはなりません。englishに対する返答です。
 `;
 }
 
