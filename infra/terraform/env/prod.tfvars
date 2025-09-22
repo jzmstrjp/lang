@@ -1,5 +1,5 @@
 # CDN用R2バケットのみ管理
-environment                = "prod"
+environment                = "prod-aaa"
 cloudflare_account_id      = "cf-account-id"
 cloudflare_api_token       = "set-in-terraform-cloud"
 cloudflare_zone_id         = "cf-zone-id"
