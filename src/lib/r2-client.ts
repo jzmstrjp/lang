@@ -14,19 +14,19 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'prod-lang-media';
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 
-console.log('[R2] Debug info:', {
-  bucket: R2_BUCKET_NAME,
-  accessKeyLength: R2_ACCESS_KEY_ID?.length,
-  secretKeyLength: R2_SECRET_ACCESS_KEY?.length,
-  endpoint: R2_ENDPOINT,
-});
-
 function ensureR2Config() {
   if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
     throw new Error(
       'R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY must be set in environment variables',
     );
   }
+  
+  console.log('[R2] Debug info:', {
+    bucket: R2_BUCKET_NAME,
+    accessKeyLength: R2_ACCESS_KEY_ID?.length,
+    secretKeyLength: R2_SECRET_ACCESS_KEY?.length,
+    endpoint: R2_ENDPOINT,
+  });
 }
 
 // R2クライアント作成
@@ -41,6 +41,8 @@ function createR2Client() {
       secretAccessKey: R2_SECRET_ACCESS_KEY!,
     },
     forcePathStyle: true, // R2に必要な設定
+    tls: true,
+    maxAttempts: 3,
   });
 }
 
