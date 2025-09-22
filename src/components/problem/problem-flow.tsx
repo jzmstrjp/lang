@@ -532,7 +532,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'landing' && (
-        <section className="flex flex-col items-center gap-4 rounded-3xl border border-[#d8cbb6] bg-[#ffffff] px-6 py-16 text-center shadow-lg shadow-[#d8cbb6]/40">
+        <div className="flex flex-col items-center gap-4 text-center">
           {error && <p className="text-sm text-rose-500">{error}</p>}
           <button
             type="button"
@@ -546,7 +546,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             {error && 'エラーが発生しました'}
           </button>
           {isReady && !error && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
-        </section>
+        </div>
       )}
 
       {phase === 'loading' && (
