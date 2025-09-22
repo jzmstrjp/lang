@@ -52,23 +52,13 @@ jobs:
           INPUT_TYPE="${{ github.event.inputs.problem_type || 'auto' }}"
           WITHOUT_PICTURE="${{ github.event.inputs.without_picture || 'false' }}"
 
-          # ランダム選択の処理
-          if [ "$INPUT_TYPE" = "auto" ]; then
-            TYPES=("short" "medium" "long")
-            TYPE=${TYPES[$RANDOM % ${#TYPES[@]}]}
-            echo "🎲 ランダム選択: $TYPE"
-          else
-            TYPE="$INPUT_TYPE"
-            echo "👤 手動選択: $TYPE"
-          fi
-
           echo "🚀 問題生成を開始します（サーバー起動なし）"
-          echo "📊 Type: $TYPE"
+          echo "📊 Type: $INPUT_TYPE"
           echo "🖼️ Without Picture: $WITHOUT_PICTURE"
           echo ""
 
-          # TypeScriptスクリプトを直接実行
-          npx tsx scripts/generate-problem-direct.ts "$TYPE" "$WITHOUT_PICTURE"
+          # TypeScriptスクリプトを直接実行（API内でランダム選択）
+          npx tsx scripts/generate-problem-direct.ts "$INPUT_TYPE" "$WITHOUT_PICTURE"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

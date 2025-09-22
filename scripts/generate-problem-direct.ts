@@ -35,15 +35,16 @@ async function main() {
 
     // コマンドライン引数から設定を取得
     const args = process.argv.slice(2);
-    const type = (args[0] || 'short') as 'short' | 'medium' | 'long';
+    const typeArg = args[0] || 'auto';
     const withoutPicture = args[1] === 'true';
 
-    console.log(`📊 Type: ${type}`);
+    console.log(`📊 Type: ${typeArg}`);
     console.log(`🖼️ Without Picture: ${withoutPicture}`);
 
     // リクエストオブジェクトを作成
     const requestBody: GenerateRequest = {
-      type,
+      // 'auto'の場合はtypeを未定義にして、API側のランダム選択を使用
+      ...(typeArg !== 'auto' && { type: typeArg as 'short' | 'medium' | 'long' }),
       withoutPicture,
       skipSave: false,
     };
