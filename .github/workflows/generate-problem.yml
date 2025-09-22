@@ -41,10 +41,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set Prisma environment variables
+        run: |
+          echo "PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS=true" >> $GITHUB_ENV
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "🔧 Prisma環境変数を設定しました"
+
       - name: Generate Prisma Client
         run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Generate problem directly (No Server Required!)
         run: |
@@ -55,20 +60,19 @@ jobs:
           echo "🚀 問題生成を開始します（サーバー起動なし）"
           echo "📊 Type: $INPUT_TYPE"
           echo "🖼️ Without Picture: $WITHOUT_PICTURE"
+          echo "🔧 PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS: $PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS"
+          echo "🔧 CI: $CI"
           echo ""
 
           # TypeScriptスクリプトを直接実行（API内でランダム選択）
           npx tsx scripts/generate-problem-direct.ts "$INPUT_TYPE" "$WITHOUT_PICTURE"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # R2アップロード用環境変数（新規追加）
+          # R2アップロード用環境変数
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_PUBLIC_DOMAIN: ${{ secrets.R2_PUBLIC_DOMAIN }}
-          # Prisma prepared statement無効化（GitHub Actions対応）
-          PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS: 'true'
 
       - name: Wait for DB connection cleanup
         run: |
@@ -80,10 +84,7 @@ jobs:
           echo "🔍 データベースの確認中（分離実行）..."
           # 新しいプロセスで完全に分離して実行
           timeout 30 npx tsx scripts/verify-db.ts || echo "⚠️ DB確認はタイムアウトしましたが、問題生成は成功しています"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Prisma prepared statement無効化（GitHub Actions対応）
-          PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS: 'true'
+        # 環境変数は既に$GITHUB_ENVで設定済み
 
       - name: Success Summary
         if: success()
