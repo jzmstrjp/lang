@@ -1,0 +1,16 @@
+# このファイルをterraform.tfvarsにコピーして実際の値を入力してください
+# terraform.tfvarsは.gitignoreに含まれているため、Gitにコミットされません
+
+# Cloudflare設定
+cloudflare_account_id     = "your-cloudflare-account-id"
+cloudflare_api_token      = "your-cloudflare-api-token"
+cloudflare_zone_id        = "your-cloudflare-zone-id"
+
+# R2アクセスキー（CloudflareのR2 APIトークンから取得）
+cloudflare_r2_access_key  = "your-r2-access-key"
+cloudflare_r2_secret_key  = "your-r2-secret-key"
+
+# 環境（dev/prod）
+environment               = "dev"
+cloudflare_r2_bucket_name = "lang-media"
+cloudflare_r2_domain      = "media-dev.example.com"

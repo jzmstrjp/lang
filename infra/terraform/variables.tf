@@ -29,68 +29,10 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
-variable "supabase_access_token" {
-  description = "Supabase personal access token for Terraform provider."
-  type        = string
-  sensitive   = true
-}
+# Supabase関連変数を削除 - 既存のSupabaseプロジェクトを使用
 
-variable "supabase_organization_slug" {
-  description = "Supabase organization slug (例: my-org)。"
-  type        = string
-}
-
-variable "supabase_project_name" {
-  description = "作成する Supabase プロジェクト名。"
-  type        = string
-}
-
-variable "supabase_region" {
-  description = "Supabase プロジェクトのリージョン (例: us-east-1)。"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "supabase_plan" {
-  description = "Supabase プラン (free, pro など)。"
-  type        = string
-  default     = "free"
-}
-
-variable "supabase_db_password" {
-  description = "Supabase プロジェクトのデータベースパスワード。"
-  type        = string
-  sensitive   = true
-}
-
-variable "vercel_team_id" {
-  description = "Optional Vercel team ID. Leave empty if using a personal account."
-  type        = string
-  default     = ""
-}
-
-variable "vercel_project_name" {
-  description = "Name for the Vercel project."
-  type        = string
-}
-
-variable "vercel_api_token" {
-  description = "Vercel API token for managing the project via Terraform."
-  type        = string
-  sensitive   = true
-}
-
-variable "openai_api_key" {
-  description = "OpenAI API key to inject into Vercel environment variables."
-  type        = string
-  sensitive   = true
-}
-
-variable "elevenlabs_api_key" {
-  description = "ElevenLabs API key for TTS."
-  type        = string
-  sensitive   = true
-}
+# Vercel、OpenAI、ElevenLabs関連の変数は削除
+# これらは手動でVercelの環境変数として設定するため、Terraformでは管理しない
 
 variable "cloudflare_r2_access_key" {
   description = "R2 access key ID for application usage."
@@ -104,15 +46,4 @@ variable "cloudflare_r2_secret_key" {
   sensitive   = true
 }
 
-variable "supabase_service_role_key" {
-  description = "Supabase service role key or database connection string (if using Supabase). Use empty string if not applicable."
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "run_local_migrations" {
-  description = "Set to true to run Prisma migrations via local-exec after provisioning (requires npm)."
-  type        = bool
-  default     = false
-}
+# 不要な変数を削除 - 既存インフラを使用

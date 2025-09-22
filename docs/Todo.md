@@ -1,29 +1,183 @@
-# TODO: 永続化・キャッシュ・クラウド対応メモ
+# R2移行プロジェクト - Supabase PostgreSQL → Cloudflare R2
 
-## データ永続化
+## 📊 現状分析
 
-- [x] Prisma スキーマに `word_count` と `interaction_intent` を追加し、migrate + seed を整備
-- [x] 生成した Problem を RDS/Supabase に書き込むサービス層を実装（単発生成もキャッシュ前提に）
-- [x] 問題の重複検出（english + interactionIntent + scene_id）を Prisma レベルで実装し、ユニーク制約 or 事前チェックを導入
-- [ ] 生成ログを保存するテーブル（prompt, model, cost, status）を作成し、異常検知や再生成に備える
-- [ ] 画像がnullのやつの分だけ全て生成して保存するスクリプト
+- **問題**: 音声・画像をBase64でPostgreSQLに保存している（`ProblemAsset`テーブル）
+- **影響**: DBサイズ肥大化、パフォーマンス劣化、コスト増加
+- **解決策**: Cloudflare R2への移行でファイルストレージを分離
 
-## キャッシュ戦略
+## ✅ 完了済み
 
-- [x] `GET /api/problem` でキャッシュ優先（`is_cached=true`）→不足時のみ生成するロジックに切り替え
-- [ ] R2 上の音声／画像 URL を Problem レコードと紐づけ、期限切れチェックと再生成フローを設計
-- [ ] 端末側の一時キャッシュ戦略（prefetch・問題履歴保持）を検討し、UX の遅延を抑える
-- [ ] キャッシュ容量監視と自動クリーンアップ（古い `is_cached=false` のメディア削除）をジョブ化
+- **Terraformコード簡素化**: CDN（R2）のみの管理に変更
+- **既存インフラ活用**: Supabase、Vercel、GitHub Actionsはそのまま利用
+- **設定ファイル準備**: `.env.tfvars`とセキュリティ設定完了
 
-## クラウド構成
+## 🎯 目標アーキテクチャ
 
-- [ ] Terraform で Cloudflare R2 / Supabase / Vercel を IaC 化し、開発・本番環境を分離
-- [ ] GitHub Actions にデプロイ前の lint / typecheck / テストを組み込み、Terraform Plan を自動実行
-- [ ] Secrets / API keys を Terraform Cloud or Secrets Manager に統合し、ローカル `.env` との同期手順を文書化
-- [ ] メトリクス（生成数、キャッシュヒット率、API コスト）をモニタリングできるよう、Supabase Functions or 外部サービスに送信
+### Before (現在)
 
-## クラウド運用
+```
+OpenAI TTS/DALL-E → Base64 → PostgreSQL (ProblemAsset)
+                              ↓
+                         Next.js API → フロントエンド
+```
 
-- [ ] Cloudflare / OpenAI / Supabase の利用料アラートを Terraform か監視サービスで設定
-- [ ] 障害時フォールバック（R2 画像／音声が取れない場合の代替）が動くかをステージングで検証
-- [ ] データバックアップ（Supabase export, R2 バージョニング）ポリシーを策定
+### After (目標)
+
+```
+OpenAI TTS/DALL-E → R2 Upload → Cloudflare R2
+                              ↓ (URL)
+                         PostgreSQL (Problem) → Next.js API → フロントエンド
+                                                      ↓
+                                               CDN経由でメディア配信
+```
+
+## 🗃️ スキーマ変更
+
+### 削除対象
+
+- `ProblemAsset` テーブル全体を削除
+- `Problem.asset` リレーション削除
+
+### 変更対象
+
+- `Problem` テーブルにR2 URL用フィールドを追加（既に存在を確認済み）:
+  - ✅ `audioEnUrl: String?`
+  - ✅ `audioJaUrl: String?`
+  - ✅ `compositeImageUrl: String?`
+
+## 🔄 段階的移行計画
+
+### Phase 0: インフラ準備 🔄
+
+- [x] Terraformコード簡素化（R2のみ）
+- [x] 設定ファイル準備（`.env.tfvars`）
+- [x] セキュリティ設定（`.gitignore`更新）
+- [x] Terraformプロバイダー問題修正（versions.tf追加）
+- [x] Terraform初期化完了
+- [ ] **明日のタスク**: Cloudflare認証情報取得・設定
+  - [ ] Cloudflare Account ID取得
+  - [ ] API Token作成（R2 + DNS権限）
+  - [ ] Zone ID取得
+  - [ ] R2 Access Key/Secret Key作成
+  - [ ] `dev.tfvars`に実際の値を設定
+- [ ] **その後**: Cloudflare R2バケット作成（Terraform実行）
+
+### Phase 1: R2アップロード機能実装
+
+- [ ] R2クライアント用ライブラリ作成 (`src/lib/r2-client.ts`)
+- [ ] 音声ファイル用アップロード関数
+- [ ] 画像ファイル用アップロード関数
+- [ ] 環境変数設定の確認・更新
+
+### Phase 2: API修正
+
+- [ ] `generateSpeech()` - Base64返却をR2アップロード+URL返却に変更
+- [ ] `generateImage()` - Base64返却をR2アップロード+URL返却に変更
+- [ ] `saveGeneratedProblem()` - ProblemAsset保存をProblem URL更新に変更
+- [ ] `fetchCachedProblem()` - asset参照をURL直接参照に変更
+
+### Phase 3: 既存データ移行
+
+- [ ] 移行スクリプト作成
+  - ProblemAssetからBase64データを取得
+  - R2にアップロード
+  - ProblemテーブルのURL欄を更新
+- [ ] 移行実行＆検証
+
+### Phase 4: スキーマクリーンアップ
+
+- [ ] Prismaスキーマから`ProblemAsset`モデル削除
+- [ ] `Problem.asset`リレーション削除
+- [ ] マイグレーション作成・実行
+- [ ] TypeScript型定義更新
+
+### Phase 5: フロントエンド対応
+
+- [ ] `problem-flow.tsx` - asset.composite/audio参照をURL直接参照に変更
+- [ ] APIレスポンス型の更新
+
+### Phase 6: 旧データ削除
+
+- [ ] `problem_assets`テーブル削除
+- [ ] 不要なコード削除
+
+## 🔧 必要な環境変数
+
+### Terraform用（`.env.tfvars`）✅
+
+```bash
+# Cloudflare設定
+cloudflare_account_id     = "your-cloudflare-account-id"
+cloudflare_api_token      = "your-cloudflare-api-token"
+cloudflare_zone_id        = "your-cloudflare-zone-id"
+cloudflare_r2_access_key  = "your-r2-access-key"
+cloudflare_r2_secret_key  = "your-r2-secret-key"
+```
+
+### Vercel環境変数（Terraform完了後に手動設定）
+
+```bash
+# R2アクセス認証
+R2_ACCESS_KEY_ID="your_access_key"
+R2_SECRET_ACCESS_KEY="your_secret_key"
+
+# R2バケット設定
+R2_BUCKET_NAME="lang-media"
+R2_PUBLIC_URL="https://media.example.com"  # CDN経由のパブリックURL
+```
+
+### 追加で必要になる可能性
+
+```bash
+# R2リージョン（必要に応じて）
+R2_REGION="auto"
+
+# アップロード用の署名付きURL有効期限（オプション）
+R2_UPLOAD_EXPIRY_MINUTES=60
+```
+
+## 📝 実装チェックリスト
+
+### ライブラリ・ユーティリティ
+
+- [ ] `src/lib/r2-client.ts` - S3互換APIクライアント
+- [ ] `src/lib/audio-utils.ts` - R2アップロード対応
+- [ ] `src/lib/image-utils.ts` - 画像アップロード用（新規作成）
+
+### API修正
+
+- [ ] `src/app/api/problem/generate/route.ts`
+- [ ] `src/lib/problem-storage.ts`
+
+### スキーマ・DB
+
+- [ ] `prisma/schema.prisma` - ProblemAsset削除
+- [ ] 新しいマイグレーション作成
+- [ ] 移行スクリプト (`scripts/migrate-to-r2.ts`)
+
+### フロントエンド
+
+- [ ] `src/components/problem/problem-flow.tsx`
+- [ ] 型定義更新
+
+### テスト・検証
+
+- [ ] 移行前後でのレスポンス確認
+- [ ] パフォーマンステスト
+- [ ] CDN配信確認
+
+## ⚠️ 注意事項
+
+1. **ダウンタイムなし移行**: 新しいデータはR2、既存データは段階的移行
+2. **ロールバック準備**: 移行失敗時のProblemAsset復元手順
+3. **CDNキャッシュ**: R2→CDN反映の遅延を考慮
+4. **コスト監視**: R2使用量とegress費用の監視
+
+## 📈 期待効果
+
+- **DB容量削減**: 90%以上の削減見込み
+- **レスポンス向上**: メディアファイル分離でAPI高速化
+- **CDN活用**: グローバル配信とキャッシュ効果
+- **スケーラビリティ**: 大量メディアファイル対応
+- **コスト最適化**: egress無料のR2活用
