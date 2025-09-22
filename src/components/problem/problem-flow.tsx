@@ -72,6 +72,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [isReady, setIsReady] = useState(false); // 問題が準備済みかどうか
   const [nextProblem, setNextProblem] = useState<ProblemData | null>(null); // 次の問題
   const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
+  const [imageLoaded, setImageLoaded] = useState(false); // 画像の読み込み状況
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -127,6 +128,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       transitionTimeoutRef.current = null;
     }
 
+    // フェーズが変わるときに画像読み込み状況をリセット
+    if (phase === 'scene') {
+      setImageLoaded(false);
+    }
+
     if (typeof window === 'undefined') {
       return;
     }
@@ -170,6 +176,165 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
 
     if (phase === 'scene') {
+      const englishSrc = assets?.audio?.english;
+      const japaneseSrc = assets?.audio?.japanese;
+
+      let englishAudio: HTMLAudioElement | null = null;
+      let japaneseAudio: HTMLAudioElement | null = null;
+      let handleEnglishEnded: (() => void) | null = null;
+      let handleJapaneseEnded: (() => void) | null = null;
+
+      const queueQuizTransition = () => {
+        if (transitionTimeoutRef.current) {
+          clearTimeout(transitionTimeoutRef.current);
+        }
+        if (isMountedRef.current) {
+          setPhase('quiz');
+        }
+      };
+
+      const startJapanesePlayback = () => {
+        if (japaneseAudio || !japaneseSrc) {
+          queueQuizTransition();
+          return;
+        }
+
+        handleJapaneseEnded = () => {
+          if (!isMountedRef.current) {
+            return;
+          }
+          queueQuizTransition();
+        };
+
+        japaneseAudio = new Audio(japaneseSrc);
+        secondaryAudioRef.current = japaneseAudio;
+
+        japaneseAudio.addEventListener('ended', handleJapaneseEnded);
+
+        secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
+          japaneseAudio
+            ?.play()
+            .catch(() => {
+              console.warn('日本語音声の自動再生に失敗しました。');
+              queueQuizTransition();
+            })
+            .finally(() => {
+              secondaryPlaybackTimeoutRef.current = null;
+            });
+        }, 300);
+      };
+
+      const startAudioPlayback = () => {
+        if (englishSrc) {
+          handleEnglishEnded = () => {
+            if (!isMountedRef.current) {
+              return;
+            }
+            startJapanesePlayback();
+          };
+
+          englishAudio = new Audio(englishSrc);
+          audioRef.current = englishAudio;
+
+          englishAudio.addEventListener('ended', handleEnglishEnded);
+
+          playbackTimeoutRef.current = window.setTimeout(() => {
+            englishAudio
+              ?.play()
+              .catch(() => {
+                console.warn('英語音声の自動再生に失敗しました。');
+                handleEnglishEnded?.();
+              })
+              .finally(() => {
+                playbackTimeoutRef.current = null;
+              });
+          }, 1000);
+        } else {
+          startJapanesePlayback();
+        }
+      };
+
+      // 画像がない場合のみ即座に音声開始（画像がある場合は別のuseEffectで処理）
+      if (!assets?.image) {
+        startAudioPlayback();
+      }
+
+      return () => {
+        if (playbackTimeoutRef.current) {
+          clearTimeout(playbackTimeoutRef.current);
+          playbackTimeoutRef.current = null;
+        }
+        if (secondaryPlaybackTimeoutRef.current) {
+          clearTimeout(secondaryPlaybackTimeoutRef.current);
+          secondaryPlaybackTimeoutRef.current = null;
+        }
+        if (transitionTimeoutRef.current) {
+          clearTimeout(transitionTimeoutRef.current);
+          transitionTimeoutRef.current = null;
+        }
+        if (englishAudio && handleEnglishEnded) {
+          englishAudio.removeEventListener('ended', handleEnglishEnded);
+        }
+        if (japaneseAudio && handleJapaneseEnded) {
+          japaneseAudio.removeEventListener('ended', handleJapaneseEnded);
+        }
+        englishAudio?.pause();
+        if (audioRef.current === englishAudio) {
+          audioRef.current = null;
+        }
+        japaneseAudio?.pause();
+        if (secondaryAudioRef.current === japaneseAudio) {
+          secondaryAudioRef.current = null;
+        }
+      };
+    }
+
+    if (phase === 'quiz') {
+      const englishSrc = assets?.audio?.english;
+      if (!englishSrc) {
+        return;
+      }
+
+      const audio = new Audio(englishSrc);
+      audioRef.current = audio;
+
+      const handleEnded = () => {
+        if (audioRef.current === audio) {
+          audioRef.current = null;
+        }
+      };
+
+      audio.addEventListener('ended', handleEnded);
+
+      playbackTimeoutRef.current = window.setTimeout(() => {
+        audio
+          .play()
+          .catch(() => {
+            console.warn('クイズ用の英語音声の自動再生に失敗しました。');
+          })
+          .finally(() => {
+            playbackTimeoutRef.current = null;
+          });
+      }, 1000);
+
+      return () => {
+        if (playbackTimeoutRef.current) {
+          clearTimeout(playbackTimeoutRef.current);
+          playbackTimeoutRef.current = null;
+        }
+        audio.removeEventListener('ended', handleEnded);
+        audio.pause();
+        if (audioRef.current === audio) {
+          audioRef.current = null;
+        }
+      };
+    }
+  }, [assets, isCorrect, phase]);
+
+  // 画像読み込み完了時の音声再生を別のuseEffectで管理
+  useEffect(() => {
+    if (phase === 'scene' && assets?.image && imageLoaded) {
+      // 画像が読み込まれたら音声再生を開始
       const englishSrc = assets?.audio?.english;
       const japaneseSrc = assets?.audio?.japanese;
 
@@ -275,48 +440,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }
       };
     }
-
-    if (phase === 'quiz') {
-      const englishSrc = assets?.audio?.english;
-      if (!englishSrc) {
-        return;
-      }
-
-      const audio = new Audio(englishSrc);
-      audioRef.current = audio;
-
-      const handleEnded = () => {
-        if (audioRef.current === audio) {
-          audioRef.current = null;
-        }
-      };
-
-      audio.addEventListener('ended', handleEnded);
-
-      playbackTimeoutRef.current = window.setTimeout(() => {
-        audio
-          .play()
-          .catch(() => {
-            console.warn('クイズ用の英語音声の自動再生に失敗しました。');
-          })
-          .finally(() => {
-            playbackTimeoutRef.current = null;
-          });
-      }, 1000);
-
-      return () => {
-        if (playbackTimeoutRef.current) {
-          clearTimeout(playbackTimeoutRef.current);
-          playbackTimeoutRef.current = null;
-        }
-        audio.removeEventListener('ended', handleEnded);
-        audio.pause();
-        if (audioRef.current === audio) {
-          audioRef.current = null;
-        }
-      };
-    }
-  }, [assets, isCorrect, phase]);
+  }, [phase, assets, imageLoaded]);
 
   useEffect(() => {
     setPhase('landing');
@@ -329,6 +453,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setIsReady(false);
     setNextProblem(null);
     setNextAssets(null);
+    setImageLoaded(false);
   }, [problemType]);
 
   // ページ読み込み時に問題を事前フェッチ
@@ -463,11 +588,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     // 事前フェッチ済みの問題を使って即座にsceneフェーズに移行
     setSelectedOption(null);
+    setImageLoaded(false);
     setPhase('scene');
   };
 
   const handleRetryQuiz = () => {
     setSelectedOption(null);
+    setImageLoaded(false);
     if (assets) {
       setAssets((prev) => {
         if (!prev) {
@@ -514,6 +641,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       setProblem(nextProblem);
       setAssets(nextAssets);
       setSelectedOption(null);
+      setImageLoaded(false);
       setPhase('scene');
 
       // 現在の問題を次の問題用の変数にクリア
@@ -569,6 +697,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 className="h-auto w-full max-w-[500px] object-contain"
                 priority
                 unoptimized={Boolean(assets)}
+                onLoad={() => setImageLoaded(true)}
               />
             ) : problem?.scenePrompt ? (
               <div className="w-full max-w-[500px] p-4 text-sm text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
