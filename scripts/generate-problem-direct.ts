@@ -88,5 +88,10 @@ async function main() {
 
 // スクリプトが直接実行された場合のみmainを実行
 if (require.main === module) {
-  main();
+  (async () => {
+    await main();
+  })().catch(error => {
+    console.error('スクリプト実行エラー:', error);
+    process.exit(1);
+  });
 }
