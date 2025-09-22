@@ -67,6 +67,9 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_PUBLIC_DOMAIN: ${{ secrets.R2_PUBLIC_DOMAIN }}
+          # Prisma prepared statement無効化（GitHub Actions対応）
+          PRISMA_CLIENT_ENGINE_TYPE: binary
+          PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS: 'true'
 
       - name: Wait for DB connection cleanup
         run: |
@@ -80,6 +83,9 @@ jobs:
           timeout 30 npx tsx scripts/verify-db.ts || echo "⚠️ DB確認はタイムアウトしましたが、問題生成は成功しています"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Prisma prepared statement無効化（GitHub Actions対応）
+          PRISMA_CLIENT_ENGINE_TYPE: binary
+          PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS: 'true'
 
       - name: Success Summary
         if: success()
