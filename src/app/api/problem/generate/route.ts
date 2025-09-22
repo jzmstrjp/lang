@@ -57,6 +57,27 @@ export const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number }>
   long: { min: 11, max: 20 },
 };
 
+/**
+ * WORD_COUNT_RULESから指定されたタイプの単語数配列を動的に生成
+ * 例: short タイプの場合 [2, 3, 4, 5, 6] を返す
+ */
+function generateWordCountArray(type: ProblemType): number[] {
+  const rule = WORD_COUNT_RULES[type];
+  const wordCounts: number[] = [];
+  for (let i = rule.min; i <= rule.max; i++) {
+    wordCounts.push(i);
+  }
+  return wordCounts;
+}
+
+/**
+ * 指定されたタイプから単語数をランダムに選択
+ */
+function selectRandomWordCount(type: ProblemType): number {
+  const wordCountArray = generateWordCountArray(type);
+  return wordCountArray[Math.floor(Math.random() * wordCountArray.length)];
+}
+
 const LENGTH_POOL = ['short', 'medium', 'long'] as const;
 
 const INITIAL_ALPHABETS = [
@@ -166,7 +187,6 @@ const INITIAL_ALPHABETS = [
 ];
 
 const GENRE_POOL = ['依頼', '質問', '提案', '意見', '情報共有'] as const;
-// const NUANCE_POOL = ['カジュアル', '砕けた', '礼儀正しい'] as const;
 
 const SCENE_POOL = [
   {
@@ -181,16 +201,16 @@ const SCENE_POOL = [
     place: 'オフィス',
     roles: [
       ['部下', '上司'],
-      ['同僚', '同僚'],
+      ['親しい同僚', '親しい同僚'],
       ['新人', '先輩'],
     ],
   },
   {
     place: '公園',
     roles: [
-      ['友人', '友人'],
+      ['親しい友人', '親しい友人'],
       ['母親', '子供'],
-      ['散歩者', '散歩者'],
+      ['父親', '子供'],
     ],
   },
   {
@@ -198,7 +218,7 @@ const SCENE_POOL = [
     roles: [
       ['旅行者', '現地ガイド'],
       ['観光客', 'ホテルスタッフ'],
-      ['友人', '友人'],
+      ['客', '　店員'],
     ],
   },
   {
@@ -206,7 +226,7 @@ const SCENE_POOL = [
     roles: [
       ['学生', '先生'],
       ['生徒', '先輩'],
-      ['同級生', '同級生'],
+      ['親しい同級生', '親しい同級生'],
     ],
   },
   {
@@ -214,7 +234,7 @@ const SCENE_POOL = [
     roles: [
       ['患者', '医師'],
       ['患者', '看護師'],
-      ['家族', '医師'],
+      ['医師', '患者'],
     ],
   },
   {
@@ -222,15 +242,15 @@ const SCENE_POOL = [
     roles: [
       ['乗客', '駅員'],
       ['旅行者', '案内係'],
-      ['友人', '友人'],
+      ['親しい友人', '親しい友人'],
     ],
   },
   {
     place: '飲食店',
     roles: [
       ['客', '店員'],
-      ['客', 'シェフ'],
-      ['友人', '友人'],
+      ['店員', '客'],
+      ['親しい友人', '親しい友人'],
     ],
   },
   {
@@ -238,31 +258,31 @@ const SCENE_POOL = [
     roles: [
       ['会員', 'インストラクター'],
       ['初心者', 'コーチ'],
-      ['仲間', '仲間'],
+      ['親しい仲間', '親しい仲間'],
     ],
   },
   {
     place: 'ショッピングモール',
     roles: [
       ['客', '店員'],
-      ['買い物客', '案内係'],
-      ['友人', '友人'],
+      ['案内係', '買い物客'],
+      ['親しい友人', '親しい友人'],
     ],
   },
   {
     place: '結婚式',
     roles: [
-      ['ゲスト', 'スタッフ'],
-      ['友人', '友人'],
-      ['親族', '親族'],
+      ['ゲスト', '式場スタッフ'],
+      ['親しい友人', '親しい友人'],
+      ['親族', '新郎'],
     ],
   },
   {
     place: '電話',
     roles: [
       ['顧客', 'オペレーター'],
-      ['友人', '友人'],
-      ['家族', '家族'],
+      ['親しい友人', '親しい友人'],
+      ['妻', '夫'],
     ],
   },
 ] as const;
@@ -320,41 +340,24 @@ async function generateEnglishSentence(
   scene: string,
   genre: string,
   characterRoles: { character1: string; character2: string },
+  targetWordCount: number,
 ): Promise<{ english: string; nuance: string }> {
   ensureApiKey();
 
-  const wordCountRule = WORD_COUNT_RULES[type];
-
-  const prompt = `あなたは英語学習アプリの出題担当です。以下の条件を満たす英文を1つだけ生成してください。
+  const prompt = `以下の条件を満たす英文を生成してください。
 
 【条件】
-- 英文は ${initialAlphabet} から始まること
-  - 例: ${initialAlphabet} が C であれば「Can you 〜 ?」など
-- 日常やビジネスでよく使うような自然な英文にしてください。
-- ${scene}で${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して言いそうな英文を生成してください。
-- 具体的な文章にしてください。
-  - 悪い例: 「Pass me that.」
-  - 良い例: 「Pass me the salt.」
-
-- 単語数は${wordCountRule.min}語から${wordCountRule.max}語の範囲内（必須）
-- ニュアンスは場面と関係性に合わせて「カジュアル」「砕けた」「礼儀正しい」のいずれかを適切に選択
-
-【重要な制約】
-- 単語数は空白で区切られた語の数です（例：「Can you help me?」= 4語）
-- 必ず${wordCountRule.min}語以上${wordCountRule.max}語以下にしてください
-- この制約は絶対に守ってください
-
-【ニュアンスの選択基準】
-- ${characterRoles.character1}と${characterRoles.character2}の関係性を考慮
-- オフィス・病院・学校などフォーマルな場面や、上司・医師・先生など上位の立場への発話 → 「礼儀正しい」
-- 家庭・公園・旅行先などプライベートな場面や、友人・同僚・家族など対等/親しい関係 → 「カジュアル」または「砕けた」
-- 場面と関係性を考慮して最適なニュアンスを選択してください
+- ${targetWordCount}単語で構成された英文であること。
+- 最初の1文字は${initialAlphabet}であること。
+- ${scene}で${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して言う台詞として自然であること。
+- その場面でよく使われる自然な英文にしてください。
+- 二人の関係性や場面に合わせたニュアンスの英文であること（カジュアル または フォーマル）
 
 【出力】
 以下のJSON形式で出力してください：
 {
   "english": "生成された英文",
-  "nuance": "選択されたニュアンス（カジュアル/砕けた/礼儀正しい）"
+  "nuance": "カジュアル または フォーマル"
 }`;
 
   const response = await openai.chat.completions.create({
@@ -362,12 +365,8 @@ async function generateEnglishSentence(
     temperature: 0.7,
     messages: [
       {
-        role: 'system',
-        content: prompt,
-      },
-      {
         role: 'user',
-        content: `${initialAlphabet} から始まる英文を生成してください。単語数は必ず${wordCountRule.min}語から${wordCountRule.max}語の範囲内にしてください。`,
+        content: prompt,
       },
     ],
   });
@@ -392,10 +391,8 @@ async function generateEnglishSentence(
   }
 
   const wordCount = countWords(parsed.english);
-  if (wordCount < wordCountRule.min || wordCount > wordCountRule.max) {
-    throw new Error(
-      `Word count ${wordCount} is out of range ${wordCountRule.min}-${wordCountRule.max}`,
-    );
+  if (wordCount !== targetWordCount) {
+    throw new Error(`Word count ${wordCount} does not match target word count ${targetWordCount}`);
   }
 
   return { english: parsed.english, nuance: parsed.nuance };
@@ -410,6 +407,7 @@ async function generateUniqueEnglish(
   scene: string,
   genre: string,
   characterRoles: { character1: string; character2: string },
+  targetWordCount: number,
 ): Promise<{ english: string; nuance: string }> {
   const maxRetries = 10;
 
@@ -426,6 +424,7 @@ async function generateUniqueEnglish(
       scene,
       genre,
       characterRoles,
+      targetWordCount,
     );
 
     // メモリ内でSetを使って高速チェック
@@ -453,19 +452,14 @@ function createSystemPrompt(
   english: string,
   characterRoles: { character1: string; character2: string },
 ): string {
-  return `あなたは英語学習アプリの出題担当です。以下の仕様を満たす JSON オブジェクトのみを返してください。
-  ${characterRoles.character2}（男性）の日本語での返事をヒントに${characterRoles.character1}（女性）の英語台詞「${english}」の意味を当てるクイズを作成したいのです。
-
-【提供された英文】
-"${english}"
+  return `以下の仕様を満たす JSON オブジェクトのみを返してください。
 
 【出力フィールド】
 - english, japaneseReply, options(配列), correctIndex, scenePrompt, speakers, interactionIntent。
-  ※englishフィールドには上記の英文「${english}」をそのまま含めてください。
+- englishフィールドの内容: ${english}
 
-【会話デザイン】
-- ${scene}で、${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して「${english}」と言います。
-- この英文「${english}」に対して${characterRoles.character2}（男性）が自然に返答する日本語台詞を japaneseReply フィールドに入れること。
+【このJSONオブジェクトを作成する目的】
+  ${characterRoles.character2}（男性）の日本語での返事をヒントに${characterRoles.character1}（女性）の英語台詞「${english}」の意味を当てるクイズを作成したい。
 
 【選択肢】
 - options は日本語4文（全て自然な口語）。
@@ -473,19 +467,20 @@ function createSystemPrompt(
   - 悪い例: 「You should try this park.」→「この公園を試してみた方がいいよ。」
   - 良い例: 「You should try this park.」→「この公園、ぜひ行ってみてください。」
 - options[0] は英文のフォーマルさ・カジュアルさ・丁寧さのレベルを日本語でも同等に保つこと。例：「Could you please...」→「〜していただけませんか」、「Can you...」→「〜してくれる？」、「Help me」→「手伝って」。
-- options[1], options[2], options[3] は誤答。この場面で${characterRoles.character1}（女性）が言わないはずのセリフ。
+- options[1], options[2], options[3] は誤答。この場面で${characterRoles.character1}（女性）が言うはずのない無関係な日本語セリフです。
 - correctIndex は常に 0。
 
 【japaneseReply】
+- ${scene}で、${characterRoles.character1}（女性）が${characterRoles.character2}（男性）に対して「${english}」と言います。それに対する${characterRoles.character2}（男性）の返答の日本語文をjapaneseReplyフィールドに入れること。
 - japaneseReplyは、englishの日本語訳ではありません。englishに対する返答です。options[0]（「${english}」の日本語訳）に対する${characterRoles.character2}（男性）の返答です。
   - ${characterRoles.character2}（男性）が即座に返す自然で簡潔な口語文。日本人が実際に使う自然な台詞を生成してください。
   - japaneseReplyは返答なので、options[0]の内容と同じになることはありません。
-- japaneseReplyを見ることでenglishがどんな英文なのか推測できるような文章にしてください。
+- japaneseReplyを読むことでenglishがどんな英文なのか推測できるような文章にしてください。
   - 例えばjapaneseReplyで「はい、〇〇どうぞ」と返答することで「何かを要求するenglishなのだろうな」と推測できるように。
   - 悪い例: options[0]が「来週の会議のテーマは何だっけ？」だった場合に「うん、そのことね。」というjapaneseReplyは不適切。japaneseReplyからenglishが何なのか全く推測できない。
   - 良い例: options[0]が「ボールから目を離さないで。」だった場合に「うん、ボールに集中するね。」というjapaneseReplyは適切。japaneseReplyからenglishが何となく推測できる。
-- 文頭には相槌や感動詞的な応答詞を付けてほしい。
-  - 相槌や感動詞的な応答詞の例: 「うん」「そうだなぁ」「いいね」「ほら」「いや」「いいえ」「ああ」「そうだね」「そうですね」「わかりました」
+- 文頭には適切な相槌や感動詞を付けてほしい。
+  - 相槌や感動詞の例: 「うん」「はい」「そうだなぁ」「どうぞ」「いいね」「ほら」「いや」「いいえ」「ああ」「そうだね」「そうですね」「わかりました」など
   - 文の例: 「うん、〇〇しよう」「どうぞ、〇〇だよ」「いいね、〇〇だね」「いや、〇〇だと」「そうですね、〇〇ですものね」
 - japaneseReplyは、englishをただ日本語訳しただけのようなオウム返しではダメです。
   - 悪い例: Let me share this. → ああ、それについて教えて。
@@ -514,7 +509,8 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     initialAlphabet = selected.initialAlphabet;
   }
 
-  const wordCountRule = WORD_COUNT_RULES[type];
+  // 単語数を決めうち
+  const targetWordCount = selectRandomWordCount(type);
 
   // ランダムにsceneとgenreを選択
   const sceneData = SCENE_POOL[Math.floor(Math.random() * SCENE_POOL.length)];
@@ -534,6 +530,7 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     scene,
     genre,
     characterRoles,
+    targetWordCount,
   );
 
   // 3. systemPromptを作成して、生成された英文を元に問題の詳細を作成
@@ -543,14 +540,8 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     temperature: 0.7,
     messages: [
       {
-        role: 'system',
-        content: systemPrompt,
-      },
-      {
         role: 'user',
-        content: `以下の英文を使って問題を作成してください。英文: "${english}"
-        
-この英文に対する日本語の返答、選択肢、scenePromptなどを生成してください。`,
+        content: systemPrompt,
       },
     ],
   });
@@ -650,9 +641,9 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
     wordCount,
   };
 
-  if (wordCount < wordCountRule.min || wordCount > wordCountRule.max) {
+  if (wordCount !== targetWordCount) {
     console.warn(
-      `[problem/generate] english word count ${wordCount} out of range ${wordCountRule.min}-${wordCountRule.max} for type ${type}.`,
+      `[problem/generate] english word count ${wordCount} does not match target word count ${targetWordCount} for type ${type}.`,
     );
   }
 
@@ -755,10 +746,11 @@ export async function POST(req: Request) {
     const body: GenerateRequest = await req.json().catch(() => ({}));
     const problem = await generateProblem(body);
 
-    const imagePrompt = `実写風の2コマ漫画。
-縦に2コマ。
-上下のコマの間に20ピクセルの白い境界線。
-上下のコマの高さは完全に同じです。
+    const imagePrompt = `実写風の2コマ漫画を生成してください。
+縦に2コマです。
+漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
+上下のコマの高さは完全に同じであること。
+上下のコマの間に高さ20ピクセルの白い境界線が必要です。
 
 【場所】
 ${problem.sceneId}
@@ -767,15 +759,20 @@ ${problem.sceneId}
 ${problem.characterRoles.character1}（女性）
 ${problem.characterRoles.character2}（男性）
 
+【ストーリー】
+${problem.characterRoles.character1}（女性）が${problem.characterRoles.character2}（男性）に対して「${problem.english}」と言う。それに対し、${problem.characterRoles.character2}（男性）が「${problem.japaneseReply}」と答える。
+
 【1コマ目】
-${problem.characterRoles.character1}（女性）が「${problem.english}」と言っている。
+- ${problem.sceneId}で${problem.characterRoles.character1}（女性）が「${problem.english}」と言っている様子を描いてください。
+- ${problem.characterRoles.character2}（男性）はまだ描かないこと。
 
 【2コマ目】
-それを聞いた${problem.characterRoles.character2}（男性）が「${problem.japaneseReply}」と反応した。
+- ${problem.characterRoles.character1}（女性）の台詞を聞いた${problem.characterRoles.character2}（男性）が${problem.sceneId}で「${problem.japaneseReply}」と反応した様子を描いてください。
 
 【備考】
-台詞に合ったジェスチャーと表情を描写してください。
-漫画ですが、吹き出し・台詞はなし。自然で生成AIっぽくないテイスト。`;
+- 場所や場面に合わせた表情やジェスチャーを描写してください。
+- 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
+- 自然で生成AIっぽくないテイストで描写してください。`;
 
     // 一意のproblemId生成（タイムスタンプベース）
     const problemId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
