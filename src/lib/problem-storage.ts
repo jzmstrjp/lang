@@ -9,6 +9,7 @@ export type SpeakerLabel = 'male' | 'female' | 'neutral';
 export type PersistGeneratedProblemInput = {
   problem: {
     type: ProblemType;
+    initialAlphabet: string;
     english: string;
     japaneseReply: string;
     options: string[];
@@ -129,6 +130,7 @@ export async function saveGeneratedProblem(
 
   const baseData = {
     type: input.problem.type,
+    initial_alphabet: input.problem.initialAlphabet,
     english: input.problem.english,
     japaneseReply: input.problem.japaneseReply,
     options: input.problem.options,

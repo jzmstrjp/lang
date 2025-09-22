@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+const WITHOUT_PICTURE = false;
+
 type GeneratedProblem = {
   english: string;
   japaneseReply: string;
   scenePrompt: string;
   type: string;
+  sceneId: string;
   nuance: string;
   genre: string;
   interactionIntent: string;
@@ -41,7 +44,7 @@ export default function PromptTestPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type, withoutPicture: true, skipSave: true }),
+        body: JSON.stringify({ type, withoutPicture: WITHOUT_PICTURE, skipSave: true }),
       });
 
       if (!response.ok) {
@@ -231,9 +234,9 @@ export default function PromptTestPage() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                  <span className="font-semibold text-yellow-800">タイプ:</span>
-                  <p className="text-yellow-700">{problem.type}</p>
+                <div className="bg-purple-50 border border-purple-200 rounded p-3">
+                  <span className="font-semibold text-purple-800">問題タイプ:</span>
+                  <p className="text-purple-700">{problem.type}</p>
                 </div>
                 <div className="bg-pink-50 border border-pink-200 rounded p-3">
                   <span className="font-semibold text-pink-800">ニュアンス:</span>

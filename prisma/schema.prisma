@@ -25,6 +25,7 @@ enum InteractionIntent {
 model Problem {
   id                String             @id @default(cuid())
   type              ProblemType
+  initial_alphabet  String
   english           String
   japaneseReply     String
   options           Json
@@ -47,6 +48,7 @@ model Problem {
   updatedAt         DateTime           @updatedAt
   asset             ProblemAsset?
 
+  @@index([type, initial_alphabet])
   @@index([type, isCached, qualityCheck])
   @@index([sceneId])
   @@unique([english, interactionIntent, sceneId])

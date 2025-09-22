@@ -4,12 +4,12 @@ const links = [
   {
     href: '/problems/short',
     label: 'short',
-    description: '短い文 (2〜4語)',
+    description: '短い文 (2〜6語)',
   },
   {
     href: '/problems/middle',
     label: 'middle',
-    description: '中くらいの文 (6〜10語)',
+    description: '中くらいの文 (7〜10語)',
   },
   {
     href: '/problems/long',
