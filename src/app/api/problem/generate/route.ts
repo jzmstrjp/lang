@@ -390,11 +390,6 @@ async function generateEnglishSentence(
     );
   }
 
-  const wordCount = countWords(parsed.english);
-  if (wordCount !== targetWordCount) {
-    throw new Error(`Word count ${wordCount} does not match target word count ${targetWordCount}`);
-  }
-
   return { english: parsed.english, nuance: parsed.nuance };
 }
 
