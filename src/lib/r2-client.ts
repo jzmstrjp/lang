@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { config } from 'dotenv';
+import type { VoiceGender } from '../config/voice';
 
 // 環境変数を読み込み
 if (typeof window === 'undefined') {
@@ -89,7 +90,7 @@ export async function uploadAudioToR2(
   audioBuffer: Buffer,
   problemId: string,
   language: 'en' | 'ja',
-  speaker: 'male' | 'female' | 'neutral',
+  speaker: VoiceGender,
 ): Promise<string> {
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `audio/${timestamp}/${problemId}_${language}_${speaker}.mp3`;

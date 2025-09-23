@@ -1,4 +1,4 @@
-import type { InteractionIntent, Prisma, Problem, ProblemType } from '@prisma/client';
+import type { Prisma, Problem } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 const RANDOM_SAMPLE_SIZE = Number(process.env.PROBLEM_CACHE_SAMPLE_SIZE ?? '20');
@@ -6,28 +6,18 @@ const AUTO_APPROVE_NEW_PROBLEMS = true;
 
 export type SpeakerLabel = 'male' | 'female' | 'neutral';
 
+// Prismaの型を拡張して使用
+type ProblemWithStringArray = Omit<Problem, 'incorrectOptions'> & {
+  incorrectOptions: string[];
+};
+
 export type PersistGeneratedProblemInput = {
-  problem: {
-    type: ProblemType;
-    initialAlphabet: string;
-    english: string;
-    japaneseReply: string;
-    options: string[];
-    correctIndex: number;
-    sceneId: string;
-    scenePrompt: string;
-    nuance?: string | null;
-    genre?: string | null;
-    patternGroup?: string | null;
-    wordCount: number;
-    interactionIntent: InteractionIntent;
-    speakers: {
-      character1: SpeakerLabel;
-      character2: SpeakerLabel;
-    };
-  };
+  problem: Omit<
+    ProblemWithStringArray,
+    'id' | 'createdAt' | 'updatedAt' | 'audioEnUrl' | 'audioJaUrl' | 'imageUrl'
+  >;
   assets: {
-    composite: string | null;
+    imageUrl: string | null;
     audio: {
       english: string;
       japanese: string | null;
@@ -36,25 +26,9 @@ export type PersistGeneratedProblemInput = {
 };
 
 export type CachedProblemResponse = {
-  problem: {
-    id: string;
-    type: ProblemType;
-    english: string;
-    japaneseReply: string;
-    options: string[];
-    correctIndex: number;
-    nuance: string;
-    genre: string;
-    scenePrompt: string;
-    speakers: {
-      character1: SpeakerLabel;
-      character2: SpeakerLabel;
-    };
-    wordCount: number;
-    interactionIntent: InteractionIntent;
-  };
+  problem: ProblemWithStringArray;
   assets: {
-    composite: string | null;
+    imageUrl: string | null;
     audio: {
       english: string;
       japanese: string;
@@ -68,12 +42,18 @@ type FetchOptions = {
   requireQualityCheck?: boolean;
 };
 
-const DEFAULT_GENRE = 'general';
-const DEFAULT_NUANCE = 'neutral';
-
-function toStringArray(value: Problem['options']): string[] {
+function parseIncorrectOptions(value: Problem['incorrectOptions']): string[] {
   if (Array.isArray(value)) {
     return value.map((item) => String(item));
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
   }
 
   return [];
@@ -84,32 +64,15 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
     return null;
   }
 
-  const options = toStringArray(record.options);
-  if (!options.length) {
-    return null;
-  }
+  const incorrectOptions = parseIncorrectOptions(record.incorrectOptions);
 
-  // R2 URL直接参照に変更
   return {
     problem: {
-      id: record.id,
-      type: record.type,
-      english: record.english,
-      japaneseReply: record.japaneseReply,
-      options,
-      correctIndex: record.correctIndex,
-      nuance: record.nuance ?? DEFAULT_NUANCE,
-      genre: record.genre ?? DEFAULT_GENRE,
-      scenePrompt: record.scenePrompt,
-      speakers: {
-        character1: (record.speakersSceneA as SpeakerLabel) ?? 'neutral',
-        character2: (record.speakersSceneB as SpeakerLabel) ?? 'neutral',
-      },
-      wordCount: record.wordCount,
-      interactionIntent: record.interactionIntent,
+      ...record,
+      incorrectOptions, // JsonValueから変換したstring[]
     },
     assets: {
-      composite: record.compositeImageUrl || null,
+      imageUrl: record.imageUrl || null,
       audio: {
         english: record.audioEnUrl || '',
         japanese: record.audioJaUrl || '',
@@ -121,59 +84,53 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
 export async function saveGeneratedProblem(
   input: PersistGeneratedProblemInput,
 ): Promise<CachedProblemResponse | null> {
-  const uniqueWhere = {
-    english_interactionIntent_sceneId: {
-      english: input.problem.english,
-      interactionIntent: input.problem.interactionIntent,
-      sceneId: input.problem.sceneId,
-    },
-  };
-
   const problemData = {
-    type: input.problem.type,
-    initial_alphabet: input.problem.initialAlphabet,
-    english: input.problem.english,
-    japaneseReply: input.problem.japaneseReply,
-    options: input.problem.options,
-    correctIndex: input.problem.correctIndex,
-    sceneId: input.problem.sceneId,
-    scenePrompt: input.problem.scenePrompt,
-    speakersSceneA: input.problem.speakers.character1,
-    speakersSceneB: input.problem.speakers.character2,
-    nuance: input.problem.nuance ?? null,
-    genre: input.problem.genre ?? null,
-    patternGroup: input.problem.patternGroup ?? null,
     wordCount: input.problem.wordCount,
-    interactionIntent: input.problem.interactionIntent,
-    isCached: true,
-    qualityCheck: AUTO_APPROVE_NEW_PROBLEMS,
-    // R2 URL直接保存
+    englishSentence: input.problem.englishSentence,
+    japaneseSentence: input.problem.japaneseSentence,
+    japaneseReply: input.problem.japaneseReply,
+    incorrectOptions: input.problem.incorrectOptions,
     audioEnUrl: input.assets.audio.english,
     audioJaUrl: input.assets.audio.japanese || null,
-    compositeImageUrl: input.assets.composite,
+    imageUrl: input.assets.imageUrl,
+    senderVoice: input.problem.senderVoice,
+    senderRole: input.problem.senderRole,
+    receiverVoice: input.problem.receiverVoice,
+    receiverRole: input.problem.receiverRole,
+    place: input.problem.place,
   } as const;
 
-  const record = await prisma.problem.upsert({
-    where: uniqueWhere,
-    create: problemData,
-    update: problemData,
+  const record = await prisma.problem.create({
+    data: problemData,
   });
 
   return mapRecordToResponse(record);
 }
 
 export async function fetchCachedProblem(
-  type: ProblemType,
+  length: 'short' | 'medium' | 'long',
   options: FetchOptions = {},
 ): Promise<CachedProblemResponse | null> {
+  let wordCountRange: { gte?: number; lte?: number };
+
+  switch (length) {
+    case 'short':
+      wordCountRange = { lte: 3 };
+      break;
+    case 'medium':
+      wordCountRange = { gte: 4, lte: 8 };
+      break;
+    case 'long':
+      wordCountRange = { gte: 9 };
+      break;
+  }
+
   const where: Prisma.ProblemWhereInput = {
-    type,
-    isCached: true,
-    ...(options.requireQualityCheck === false ? {} : { qualityCheck: true }),
+    wordCount: wordCountRange,
   };
 
   const total = await prisma.problem.count({ where });
-  console.log(`[fetchCachedProblem] ${type}タイプの問題数: ${total}`);
+  console.log(`[fetchCachedProblem] ${length}タイプの問題数: ${total}`);
 
   if (total === 0) {
     return null;
@@ -199,7 +156,7 @@ export async function fetchCachedProblem(
   const chosenIndex = Math.floor(Math.random() * records.length);
   const chosen = records[chosenIndex];
   console.log(
-    `[fetchCachedProblem] ${records.length}件中${chosenIndex}番目を選択: "${chosen.english}"`,
+    `[fetchCachedProblem] ${records.length}件中${chosenIndex}番目を選択: "${chosen.englishSentence}"`,
   );
 
   return mapRecordToResponse(chosen);

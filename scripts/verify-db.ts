@@ -12,14 +12,7 @@ let prisma: PrismaClient | null = null;
 function getPrismaClient() {
   if (!prisma) {
     prisma = new PrismaClient({
-      datasourceUrl: process.env.DATABASE_URL,
       log: ['error'],
-      // 接続プールの設定を追加
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
     });
   }
   return prisma;
@@ -35,13 +28,14 @@ async function main() {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        english: true,
+        englishSentence: true,
+        japaneseSentence: true,
         japaneseReply: true,
-        type: true,
-        createdAt: true,
         wordCount: true,
-        genre: true,
-        nuance: true,
+        createdAt: true,
+        place: true,
+        senderRole: true,
+        receiverRole: true,
       },
     });
 
@@ -51,12 +45,13 @@ async function main() {
       console.log('✅ 最新の問題がDBに保存されています');
       console.log('💾 ===============================================');
       console.log('🆔 ID:', latest.id);
-      console.log('📊 Type:', latest.type);
-      console.log('📚 English:', latest.english);
-      console.log('🗾 Japanese:', latest.japaneseReply);
-      console.log('📝 Word Count:', latest.wordCount);
-      console.log('🎭 Genre:', latest.genre);
-      console.log('💬 Nuance:', latest.nuance);
+      console.log('📊 Word Count:', latest.wordCount);
+      console.log('📚 English:', latest.englishSentence);
+      console.log('🗾 Japanese Sentence:', latest.japaneseSentence);
+      console.log('💬 Japanese Reply:', latest.japaneseReply);
+      console.log('📍 Place:', latest.place);
+      console.log('👤 Sender Role:', latest.senderRole);
+      console.log('👥 Receiver Role:', latest.receiverRole);
       console.log('⏰ Created:', latest.createdAt);
       console.log('');
     } else {

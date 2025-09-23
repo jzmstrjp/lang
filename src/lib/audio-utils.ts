@@ -1,6 +1,12 @@
 import OpenAI from 'openai';
 import { config } from 'dotenv';
 import { uploadAudioToR2 } from './r2-client';
+import {
+  getVoiceFromGender,
+  getModelFromGender,
+  TTS_CONFIG,
+  type VoiceGender,
+} from '../config/voice';
 
 // 環境変数を読み込み（シーダーから使用する場合のため）
 if (typeof window === 'undefined') {
@@ -18,26 +24,23 @@ function ensureApiKey() {
   }
 }
 
-function speakerToVoice(speaker: 'male' | 'female' | 'neutral'): string {
-  switch (speaker) {
-    case 'male':
-      return 'echo';
-    case 'female':
-      return 'nova';
-    default:
-      return 'alloy';
-  }
+// 音声設定は src/config/voice.ts で一元管理されるようになりました
+// この関数は後方互換性のために残していますが、新しいコードでは getVoiceFromGender を使用してください
+function speakerToVoice(speaker: VoiceGender): string {
+  return getVoiceFromGender(speaker);
 }
 
-export async function generateSpeech(input: string, speaker: 'male' | 'female' | 'neutral') {
+export async function generateSpeech(input: string, speaker: VoiceGender) {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
+  const model = getModelFromGender(speaker);
 
   const result = await openai.audio.speech.create({
-    model: 'gpt-4o-mini-tts',
+    model,
     voice,
     input,
+    speed: TTS_CONFIG.speed,
   });
 
   const arrayBuffer = await result.arrayBuffer();
@@ -48,18 +51,17 @@ export async function generateSpeech(input: string, speaker: 'male' | 'female' |
 /**
  * 音声を生成してBufferを返す（アップロードは別途実行）
  */
-export async function generateSpeechBuffer(
-  input: string,
-  speaker: 'male' | 'female' | 'neutral',
-): Promise<Buffer> {
+export async function generateSpeechBuffer(input: string, speaker: VoiceGender): Promise<Buffer> {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
+  const model = getModelFromGender(speaker);
 
   const result = await openai.audio.speech.create({
-    model: 'gpt-4o-mini-tts',
+    model,
     voice,
     input,
+    speed: TTS_CONFIG.speed,
   });
 
   const arrayBuffer = await result.arrayBuffer();
@@ -71,7 +73,7 @@ export async function generateSpeechBuffer(
  */
 export async function generateSpeechAndUploadToR2(
   input: string,
-  speaker: 'male' | 'female' | 'neutral',
+  speaker: VoiceGender,
   problemId: string,
   language: 'en' | 'ja',
 ): Promise<string> {

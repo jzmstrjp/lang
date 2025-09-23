@@ -3,11 +3,9 @@ import { NextResponse } from 'next/server';
 import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
 import { generateImageBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
+import type { VoiceGender } from '@/config/voice';
 
-import type {
-  InteractionIntent as PrismaInteractionIntent,
-  ProblemType as PrismaProblemType,
-} from '@prisma/client';
+import type { Problem } from '@prisma/client';
 
 import { saveGeneratedProblem } from '@/lib/problem-storage';
 import { prisma } from '@/lib/prisma';
@@ -16,42 +14,25 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export type ProblemType = PrismaProblemType;
+export type ProblemLength = 'short' | 'medium' | 'long';
 
 type GenerateRequest = {
-  type?: ProblemType;
+  type?: ProblemLength;
   nuance?: string;
   genre?: (typeof GENRE_POOL)[number];
   withoutPicture?: boolean;
   skipSave?: boolean;
 };
 
-type InteractionIntent = PrismaInteractionIntent;
-
-type GeneratedProblem = {
-  type: ProblemType;
-  initialAlphabet: string;
-  english: string;
-  japaneseReply: string;
-  options: string[];
-  correctIndex: number;
-  nuance: string;
-  genre: string;
-  scenePrompt: string;
-  sceneId: string;
-  speakers: {
-    character1: 'male' | 'female' | 'neutral';
-    character2: 'male' | 'female' | 'neutral';
-  };
-  characterRoles: {
-    character1: string;
-    character2: string;
-  };
-  wordCount: number;
-  interactionIntent: InteractionIntent;
+// Prismaの型を拡張して使用
+type GeneratedProblem = Omit<
+  Problem,
+  'id' | 'createdAt' | 'updatedAt' | 'audioEnUrl' | 'audioJaUrl' | 'imageUrl' | 'incorrectOptions'
+> & {
+  incorrectOptions: string[];
 };
 
-export const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number }> = {
+export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number }> = {
   short: { min: 2, max: 6 },
   medium: { min: 7, max: 10 },
   long: { min: 11, max: 20 },
@@ -61,7 +42,7 @@ export const WORD_COUNT_RULES: Record<ProblemType, { min: number; max: number }>
  * WORD_COUNT_RULESから指定されたタイプの単語数配列を動的に生成
  * 例: short タイプの場合 [2, 3, 4, 5, 6] を返す
  */
-function generateWordCountArray(type: ProblemType): number[] {
+function generateWordCountArray(type: ProblemLength): number[] {
   const rule = WORD_COUNT_RULES[type];
   const wordCounts: number[] = [];
   for (let i = rule.min; i <= rule.max; i++) {
@@ -73,7 +54,7 @@ function generateWordCountArray(type: ProblemType): number[] {
 /**
  * 指定されたタイプから単語数をランダムに選択
  */
-function selectRandomWordCount(type: ProblemType): number {
+function selectRandomWordCount(type: ProblemLength): number {
   const wordCountArray = generateWordCountArray(type);
   return wordCountArray[Math.floor(Math.random() * wordCountArray.length)];
 }
@@ -287,7 +268,7 @@ const SCENE_POOL = [
   },
 ] as const;
 
-function mapProblemType(type?: string): ProblemType {
+function mapProblemLength(type?: string): ProblemLength {
   if (type === 'medium' || type === 'long') {
     return type;
   }
@@ -303,39 +284,40 @@ function ensureApiKey() {
 /**
  * 指定されたtypeとinitial_alphabetの組み合わせで既存の英文を全件取得
  */
-async function getExistingEnglishTexts(
-  type: ProblemType,
-  initialAlphabet: string,
-): Promise<Set<string>> {
+async function getExistingEnglishTexts(length: ProblemLength): Promise<Set<string>> {
+  let wordCountRange: { gte?: number; lte?: number };
+
+  switch (length) {
+    case 'short':
+      wordCountRange = { lte: 3 };
+      break;
+    case 'medium':
+      wordCountRange = { gte: 4, lte: 8 };
+      break;
+    case 'long':
+      wordCountRange = { gte: 9 };
+      break;
+  }
+
   const whereClause = {
-    type,
-    initial_alphabet: initialAlphabet,
+    wordCount: wordCountRange,
   };
 
   const existing = await prisma.problem.findMany({
     where: whereClause,
     select: {
-      english: true,
+      englishSentence: true,
     },
   });
 
-  return new Set(existing.map((item) => item.english));
-}
-
-/**
- * LENGTH_POOLからランダムにtypeを選択し、INITIAL_ALPHABETSからランダムにアルファベットを選択
- */
-function selectRandomTypeAndAlphabet(): { type: ProblemType; initialAlphabet: string } {
-  const type = LENGTH_POOL[Math.floor(Math.random() * LENGTH_POOL.length)] as ProblemType;
-  const initialAlphabet = INITIAL_ALPHABETS[Math.floor(Math.random() * INITIAL_ALPHABETS.length)];
-  return { type, initialAlphabet };
+  return new Set(existing.map((item) => item.englishSentence));
 }
 
 /**
  * 指定されたアルファベットで始まる英文とニュアンスを生成
  */
 async function generateEnglishSentence(
-  type: ProblemType,
+  type: ProblemLength,
   initialAlphabet: string,
   scene: string,
   genre: string,
@@ -397,8 +379,7 @@ async function generateEnglishSentence(
  * 重複のない英文を生成（最大10回リトライ）
  */
 async function generateUniqueEnglish(
-  type: ProblemType,
-  initialAlphabet: string,
+  length: ProblemLength,
   scene: string,
   genre: string,
   characterRoles: { character1: string; character2: string },
@@ -407,15 +388,15 @@ async function generateUniqueEnglish(
   const maxRetries = 10;
 
   // 1回だけDBアクセスして既存の英文を取得
-  const existingEnglishTexts = await getExistingEnglishTexts(type, initialAlphabet);
+  const existingEnglishTexts = await getExistingEnglishTexts(length);
   console.log(
-    `[generateUniqueEnglish] Found ${existingEnglishTexts.size} existing English texts for ${type}/${initialAlphabet}`,
+    `[generateUniqueEnglish] Found ${existingEnglishTexts.size} existing English texts for ${length}`,
   );
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const result = await generateEnglishSentence(
-      type,
-      initialAlphabet,
+      length,
+      'A', // 固定値として'A'を使用
       scene,
       genre,
       characterRoles,
@@ -490,29 +471,24 @@ function createSystemPrompt(
 async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem> {
   ensureApiKey();
 
-  // 1. LENGTH_POOLとINITIAL_ALPHABETSからランダム選択（リクエストで指定されていない場合）
-  let type: ProblemType;
-  let initialAlphabet: string;
+  // 1. LENGTH_POOLからランダム選択（リクエストで指定されていない場合）
+  let length: ProblemLength;
 
   if (input.type) {
-    type = mapProblemType(input.type);
-    // typeが指定されている場合でも、initial_alphabetはランダム選択
-    initialAlphabet = INITIAL_ALPHABETS[Math.floor(Math.random() * INITIAL_ALPHABETS.length)];
+    length = mapProblemLength(input.type);
   } else {
-    const selected = selectRandomTypeAndAlphabet();
-    type = selected.type;
-    initialAlphabet = selected.initialAlphabet;
+    length = LENGTH_POOL[Math.floor(Math.random() * LENGTH_POOL.length)] as ProblemLength;
   }
 
   // 単語数を決めうち
-  const targetWordCount = selectRandomWordCount(type);
+  const targetWordCount = selectRandomWordCount(length);
 
   // ランダムにsceneとgenreを選択
   const sceneData = SCENE_POOL[Math.floor(Math.random() * SCENE_POOL.length)];
   const selectedRolePair = sceneData.roles[Math.floor(Math.random() * sceneData.roles.length)];
   const genre = GENRE_POOL[Math.floor(Math.random() * GENRE_POOL.length)];
 
-  const scene = sceneData.place;
+  const place = sceneData.place;
   const characterRoles = {
     character1: selectedRolePair[0],
     character2: selectedRolePair[1],
@@ -520,16 +496,15 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 
   // 2. 重複のない英文を生成（ニュアンスはAIが自動選択）
   const { english, nuance } = await generateUniqueEnglish(
-    type,
-    initialAlphabet,
-    scene,
+    length,
+    place,
     genre,
     characterRoles,
     targetWordCount,
   );
 
   // 3. systemPromptを作成して、生成された英文を元に問題の詳細を作成
-  const systemPrompt = createSystemPrompt(scene, genre, english, characterRoles);
+  const systemPrompt = createSystemPrompt(place, genre, english, characterRoles);
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     temperature: 0.7,
@@ -570,8 +545,10 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
   type ModelResponse = {
     english: string;
     japanese?: string;
+    japaneseSentence?: string;
     japaneseReply?: string;
     options: unknown;
+    incorrectOptions: unknown;
     correctIndex?: number;
     scenePrompt?: string;
     speakers?: {
@@ -597,93 +574,58 @@ async function generateProblem(input: GenerateRequest): Promise<GeneratedProblem
 
   if (
     typeof parsed.english !== 'string' ||
-    (typeof parsed.japanese !== 'string' && typeof parsed.japaneseReply !== 'string') ||
-    !Array.isArray(parsed.options)
+    (typeof parsed.japanese !== 'string' && typeof parsed.japaneseSentence !== 'string') ||
+    typeof parsed.japaneseReply !== 'string' ||
+    (!Array.isArray(parsed.options) && !Array.isArray(parsed.incorrectOptions))
   ) {
     console.error('[problem/generate] Missing fields in response:', {
       hasEnglish: typeof parsed.english === 'string',
       hasJapanese: typeof parsed.japanese === 'string',
+      hasJapaneseSentence: typeof parsed.japaneseSentence === 'string',
       hasJapaneseReply: typeof parsed.japaneseReply === 'string',
       hasOptions: Array.isArray(parsed.options),
+      hasIncorrectOptions: Array.isArray(parsed.incorrectOptions),
       actualResponse: parsed,
     });
     throw new Error('Model response missing required fields');
   }
 
-  const options = parsed.options.map((option: unknown) => String(option));
+  // 新しいスキーマに合わせた処理
+  const japaneseSentence = parsed.japaneseSentence || parsed.japanese || '';
+  const incorrectOptions = Array.isArray(parsed.incorrectOptions)
+    ? parsed.incorrectOptions.map((option: unknown) => String(option))
+    : Array.isArray(parsed.options)
+      ? parsed.options.slice(1).map((option: unknown) => String(option)) // 最初を除いた残り
+      : [];
 
-  const baseProblem = {
-    type,
-    initialAlphabet,
-    english: parsed.english || english, // 生成された英文を使用
-    japaneseReply: parsed.japaneseReply ?? parsed.japanese ?? '',
-    options,
-    correctIndex: typeof parsed.correctIndex === 'number' ? parsed.correctIndex : 0,
-    nuance,
-    genre,
-    sceneId: scene,
-    scenePrompt:
-      parsed.scenePrompt ??
-      `${characterRoles.character1}（女性）が、${scene}で${characterRoles.character2}（男性）に対して何か${genre}をする。${characterRoles.character2}がそれに応じて行動する。`,
-    speakers: normalizeSpeakers(),
-    characterRoles,
-    interactionIntent: mapInteractionIntent(parsed.interactionIntent),
-  };
+  // 音声の性別を決定
+  const senderVoice =
+    characterRoles.character1.includes('女性') ||
+    characterRoles.character1.includes('娘') ||
+    characterRoles.character1.includes('母親')
+      ? 'female'
+      : 'male';
+  const receiverVoice =
+    characterRoles.character2.includes('女性') ||
+    characterRoles.character2.includes('娘') ||
+    characterRoles.character2.includes('母親')
+      ? 'female'
+      : 'male';
 
-  const wordCount = countWords(baseProblem.english);
   const problem: GeneratedProblem = {
-    ...baseProblem,
-    wordCount,
+    wordCount: targetWordCount,
+    englishSentence: parsed.english || english,
+    japaneseSentence,
+    japaneseReply: parsed.japaneseReply ?? '',
+    incorrectOptions,
+    senderVoice,
+    senderRole: characterRoles.character1,
+    receiverVoice,
+    receiverRole: characterRoles.character2,
+    place,
   };
 
-  if (wordCount !== targetWordCount) {
-    console.warn(
-      `[problem/generate] english word count ${wordCount} does not match target word count ${targetWordCount} for type ${type}.`,
-    );
-  }
-
-  return shuffleProblem(problem);
-}
-
-function mapInteractionIntent(value?: string): InteractionIntent {
-  if (!value) return 'request';
-  const normalized = value.toLowerCase();
-  switch (normalized) {
-    case 'request':
-    case 'question':
-    case 'proposal':
-    case 'opinion':
-    case 'agreement':
-    case 'info':
-      return normalized;
-    default:
-      return 'request';
-  }
-}
-
-function normalizeSpeakers(): GeneratedProblem['speakers'] {
-  // 固定設定: Panel 1 (character1) = 女性が話す、Panel 2 (character2) = 男性が応じる
-  return {
-    character1: 'female', // 1コマ目：女性がお願い・提案
-    character2: 'male', // 2コマ目：男性が応じる
-  };
-}
-
-function shuffleProblem(problem: GeneratedProblem): GeneratedProblem {
-  const zipped = problem.options.map((option, index) => ({ option, index }));
-  for (let i = zipped.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-  }
-
-  const shuffledOptions = zipped.map((item) => item.option);
-  const newCorrectIndex = zipped.findIndex((item) => item.index === problem.correctIndex);
-
-  return {
-    ...problem,
-    options: shuffledOptions,
-    correctIndex: newCorrectIndex === -1 ? 0 : newCorrectIndex,
-  };
+  return problem;
 }
 
 function countWords(text: string): number {
@@ -748,21 +690,21 @@ export async function POST(req: Request) {
 上下のコマの間に高さ20ピクセルの白い境界線が必要です。
 
 【場所】
-${problem.sceneId}
+${problem.place}
 
 【登場人物】
-${problem.characterRoles.character1}（女性）
-${problem.characterRoles.character2}（男性）
+${problem.senderRole}（送信者）
+${problem.receiverRole}（受信者）
 
 【ストーリー】
-${problem.characterRoles.character1}（女性）が${problem.characterRoles.character2}（男性）に対して「${problem.english}」と言う。それに対し、${problem.characterRoles.character2}（男性）が「${problem.japaneseReply}」と答える。
+${problem.senderRole}が${problem.receiverRole}に対して「${problem.englishSentence}」と言う。それに対し、${problem.receiverRole}が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
-- ${problem.sceneId}で${problem.characterRoles.character1}（女性）が「${problem.english}」と言っている様子を描いてください。
-- ${problem.characterRoles.character2}（男性）はまだ描かないこと。
+- ${problem.place}で${problem.senderRole}が「${problem.englishSentence}」と言っている様子を描いてください。
+- ${problem.receiverRole}はまだ描かないこと。
 
 【2コマ目】
-- ${problem.characterRoles.character1}（女性）の台詞を聞いた${problem.characterRoles.character2}（男性）が${problem.sceneId}で「${problem.japaneseReply}」と反応した様子を描いてください。
+- ${problem.senderRole}の台詞を聞いた${problem.receiverRole}が${problem.place}で「${problem.japaneseReply}」と反応した様子を描いてください。
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写してください。
@@ -781,8 +723,11 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
       try {
         // 並列でアセット生成（Base64形式）
         const assetPromises: Promise<string>[] = [
-          generateSpeech(problem.english, problem.speakers.character1),
-          generateSpeech(problem.japaneseReply || problem.english, problem.speakers.character2),
+          generateSpeech(problem.englishSentence, problem.senderVoice as VoiceGender),
+          generateSpeech(
+            problem.japaneseReply || problem.englishSentence,
+            problem.receiverVoice as VoiceGender,
+          ),
         ];
 
         if (!body.withoutPicture) {
@@ -808,19 +753,16 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
 
         return NextResponse.json({
           problem: {
-            type: problem.type,
-            english: problem.english,
-            japaneseReply: problem.japaneseReply,
-            options: problem.options,
-            correctIndex: problem.correctIndex,
-            nuance: problem.nuance,
-            genre: problem.genre,
-            scenePrompt: problem.scenePrompt,
-            sceneId: problem.sceneId,
-            speakers: problem.speakers,
-            characterRoles: problem.characterRoles,
             wordCount: problem.wordCount,
-            interactionIntent: problem.interactionIntent,
+            englishSentence: problem.englishSentence,
+            japaneseSentence: problem.japaneseSentence,
+            japaneseReply: problem.japaneseReply,
+            incorrectOptions: problem.incorrectOptions,
+            senderVoice: problem.senderVoice,
+            senderRole: problem.senderRole,
+            receiverVoice: problem.receiverVoice,
+            receiverRole: problem.receiverRole,
+            place: problem.place,
           },
           assets: responseAssets,
         });
@@ -841,8 +783,11 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
     try {
       // 並列でアセット生成
       const assetPromises: Promise<Buffer>[] = [
-        generateSpeechBuffer(problem.english, problem.speakers.character1),
-        generateSpeechBuffer(problem.japaneseReply || problem.english, problem.speakers.character2),
+        generateSpeechBuffer(problem.englishSentence, problem.senderVoice as VoiceGender),
+        generateSpeechBuffer(
+          problem.japaneseReply || problem.englishSentence,
+          problem.receiverVoice as VoiceGender,
+        ),
       ];
 
       if (!body.withoutPicture) {
@@ -872,8 +817,8 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
 
     try {
       const uploadPromises: Promise<string>[] = [
-        uploadAudioToR2(englishAudioBuffer, problemId, 'en', problem.speakers.character1),
-        uploadAudioToR2(japaneseAudioBuffer, problemId, 'ja', problem.speakers.character2),
+        uploadAudioToR2(englishAudioBuffer, problemId, 'en', problem.senderVoice as VoiceGender),
+        uploadAudioToR2(japaneseAudioBuffer, problemId, 'ja', problem.receiverVoice as VoiceGender),
       ];
 
       if (imageBuffer) {
@@ -895,7 +840,7 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
     }
 
     const persistAssets = {
-      composite: compositeScene,
+      imageUrl: compositeScene,
       audio: {
         english: englishAudio,
         japanese: japaneseAudio,
@@ -909,20 +854,16 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
       try {
         persisted = await saveGeneratedProblem({
           problem: {
-            type: problem.type,
-            initialAlphabet: problem.initialAlphabet,
-            english: problem.english,
-            japaneseReply: problem.japaneseReply,
-            options: problem.options,
-            correctIndex: problem.correctIndex,
-            sceneId: problem.sceneId,
-            scenePrompt: problem.scenePrompt,
-            nuance: problem.nuance,
-            genre: problem.genre,
-            patternGroup: undefined,
             wordCount: problem.wordCount,
-            interactionIntent: problem.interactionIntent,
-            speakers: problem.speakers,
+            englishSentence: problem.englishSentence,
+            japaneseSentence: problem.japaneseSentence,
+            japaneseReply: problem.japaneseReply,
+            incorrectOptions: problem.incorrectOptions,
+            senderVoice: problem.senderVoice,
+            senderRole: problem.senderRole,
+            receiverVoice: problem.receiverVoice,
+            receiverRole: problem.receiverRole,
+            place: problem.place,
           },
           assets: persistAssets,
         });
@@ -948,7 +889,7 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
     }
 
     const responseAssets = {
-      composite: compositeScene,
+      imageUrl: compositeScene,
       imagePrompt: imagePrompt, // 常に画像プロンプトを含める
       audio: {
         english: englishAudio,
@@ -958,18 +899,16 @@ ${problem.characterRoles.character1}（女性）が${problem.characterRoles.char
 
     return NextResponse.json({
       problem: {
-        type: problem.type,
-        english: problem.english,
-        japaneseReply: problem.japaneseReply,
-        options: problem.options,
-        correctIndex: problem.correctIndex,
-        nuance: problem.nuance,
-        genre: problem.genre,
-        scenePrompt: problem.scenePrompt,
-        speakers: problem.speakers,
-        characterRoles: problem.characterRoles,
         wordCount: problem.wordCount,
-        interactionIntent: problem.interactionIntent,
+        englishSentence: problem.englishSentence,
+        japaneseSentence: problem.japaneseSentence,
+        japaneseReply: problem.japaneseReply,
+        incorrectOptions: problem.incorrectOptions,
+        senderVoice: problem.senderVoice,
+        senderRole: problem.senderRole,
+        receiverVoice: problem.receiverVoice,
+        receiverRole: problem.receiverRole,
+        place: problem.place,
       },
       assets: responseAssets,
     });

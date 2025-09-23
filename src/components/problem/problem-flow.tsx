@@ -2,10 +2,9 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Problem } from '@prisma/client';
 
 type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
-
-type ProblemType = 'short' | 'medium' | 'long';
 
 export type ProblemLength = 'short' | 'medium' | 'long';
 
@@ -13,23 +12,9 @@ type ProblemFlowProps = {
   length: ProblemLength;
 };
 
-type InteractionIntent = 'request' | 'question' | 'opinion' | 'agreement' | 'info';
-
-type ProblemData = {
-  type: ProblemType;
-  english: string;
-  japaneseReply: string;
-  options: string[];
-  correctIndex: number;
-  nuance: string;
-  genre: string;
-  scenePrompt?: string;
-  speakers: {
-    sceneA: 'male' | 'female' | 'neutral';
-    sceneB: 'male' | 'female' | 'neutral';
-  };
-  wordCount?: number;
-  interactionIntent?: InteractionIntent;
+// Prismaで自動生成された型を拡張して、incorrectOptionsを型安全にする
+type ProblemData = Omit<Problem, 'incorrectOptions'> & {
+  incorrectOptions: string[];
 };
 
 type AssetsData = {
@@ -42,7 +27,7 @@ type AssetsData = {
 };
 
 type ApiAssets = {
-  composite?: string;
+  imageUrl?: string;
   imagePrompt?: string;
   audio?: {
     english?: string;
@@ -55,17 +40,15 @@ type ApiResponse = {
   assets: ApiAssets;
 };
 
-const PROBLEM_TYPE_MAP: Record<ProblemLength, ProblemType> = {
-  short: 'short',
-  medium: 'medium',
-  long: 'long',
-};
+// ProblemType enum が削除されたため、直接文字列を使用
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [assets, setAssets] = useState<AssetsData | null>(null);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+  const [correctIndex, setCorrectIndex] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchingStatus, setFetchingStatus] = useState<'generating' | 'retrieving' | null>(null);
@@ -82,8 +65,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const transitionTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
 
-  const problemType = PROBLEM_TYPE_MAP[length];
-  const isCorrect = problem != null && selectedOption === problem.correctIndex;
+  // ProblemLength を直接使用
+  // 正解判定：selectedOption が correctIndex と一致するか
+  const isCorrect = problem != null && selectedOption === correctIndex;
 
   // 英語音声を再生する関数
   const playEnglishAudio = useCallback(() => {
@@ -534,7 +518,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setNextAssets(null);
     setImageLoaded(false);
     setIsAudioPlaying(false);
-  }, [problemType]);
+  }, [length]);
 
   // ページ読み込み時に問題を事前フェッチ
   useEffect(() => {
@@ -544,16 +528,28 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       setError(null);
 
       try {
-        const params = new URLSearchParams({ type: problemType });
+        const params = new URLSearchParams({ type: length });
         const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
         if (response.ok) {
           const data: ApiResponse = await response.json();
-          const image = data.assets?.composite ?? null;
+          const image = data.assets?.imageUrl ?? null;
           const audio = {
             english: data.assets?.audio?.english,
             japanese: data.assets?.audio?.japanese,
           };
+
+          // 選択肢をシャッフルして設定
+          const allOptions = [data.problem.japaneseSentence, ...data.problem.incorrectOptions];
+          const zipped = allOptions.map((option, index) => ({ option, index }));
+
+          for (let i = zipped.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+          }
+
+          const shuffled = zipped.map((item) => item.option);
+          const newCorrectIndex = zipped.findIndex((item) => item.index === 0);
 
           setProblem(data.problem);
           setAssets({
@@ -561,8 +557,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             imagePrompt: data.assets?.imagePrompt,
             audio,
           });
+          setShuffledOptions(shuffled);
+          setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
           setIsReady(true);
-          console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.english);
+          console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
 
           // 最初の問題が準備できたら、次の問題も事前フェッチ
           setTimeout(() => {
@@ -582,17 +580,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     void prefetchProblem();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problemType]);
+  }, [length]);
 
   // 次の問題を事前フェッチする関数
   const prefetchNextProblem = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ type: problemType });
+      const params = new URLSearchParams({ type: length });
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
         const data: ApiResponse = await response.json();
-        const image = data.assets?.composite ?? null;
+        const image = data.assets?.imageUrl ?? null;
         const audio = {
           english: data.assets?.audio?.english,
           japanese: data.assets?.audio?.japanese,
@@ -604,12 +602,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           imagePrompt: data.assets?.imagePrompt,
           audio,
         });
-        console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.english);
+        console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.englishSentence);
       }
     } catch (err) {
       console.warn('[ProblemFlow] 次の問題の事前フェッチ失敗:', err);
     }
-  }, [problemType]);
+  }, [length]);
 
   const fetchProblem = useCallback(async () => {
     setIsFetching(true);
@@ -617,16 +615,28 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setError(null);
 
     try {
-      const params = new URLSearchParams({ type: problemType });
+      const params = new URLSearchParams({ type: length });
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
         const data: ApiResponse = await response.json();
-        const image = data.assets?.composite ?? null;
+        const image = data.assets?.imageUrl ?? null;
         const audio = {
           english: data.assets?.audio?.english,
           japanese: data.assets?.audio?.japanese,
         };
+
+        // 選択肢をシャッフルして設定
+        const allOptions = [data.problem.japaneseSentence, ...data.problem.incorrectOptions];
+        const zipped = allOptions.map((option, index) => ({ option, index }));
+
+        for (let i = zipped.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+        }
+
+        const shuffled = zipped.map((item) => item.option);
+        const newCorrectIndex = zipped.findIndex((item) => item.index === 0);
 
         setProblem(data.problem);
         setAssets({
@@ -634,12 +644,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           imagePrompt: data.assets?.imagePrompt,
           audio,
         });
+        setShuffledOptions(shuffled);
+        setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
         setSelectedOption(null);
 
         if (isMountedRef.current) {
           setPhase('scene');
         }
-        console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.english);
+        console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
 
         // 新しい問題が取得できたら、次の問題も事前フェッチ
         setTimeout(() => {
@@ -661,7 +673,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problemType]);
+  }, [length]);
 
   const handleStart = () => {
     if (!isReady || !problem || !assets) return;
@@ -681,8 +693,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           return prev;
         }
 
-        const zipped = problem?.options.map((option, index) => ({ option, index })) ?? [];
-        if (!problem || zipped.length === 0) {
+        if (!problem) {
+          return prev;
+        }
+
+        // 新しいスキーマでは japaneseSentence が正解、incorrectOptions が不正解
+        const allOptions = [problem.japaneseSentence, ...problem.incorrectOptions];
+        const zipped = allOptions.map((option, index) => ({ option, index }));
+        if (zipped.length === 0) {
           return prev;
         }
 
@@ -692,19 +710,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }
 
         const reshuffledOptions = zipped.map((item) => item.option);
-        const correctIndex = zipped.findIndex((item) => item.index === problem.correctIndex);
+        const newCorrectIndex = zipped.findIndex((item) => item.index === 0); // 正解は元々 index 0
 
-        setProblem((prevProblem) => {
-          if (!prevProblem) {
-            return prevProblem;
-          }
-
-          return {
-            ...prevProblem,
-            options: reshuffledOptions,
-            correctIndex: correctIndex === -1 ? 0 : correctIndex,
-          };
-        });
+        setShuffledOptions(reshuffledOptions);
+        setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
 
         return prev;
       });
@@ -718,8 +727,22 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
     if (nextProblem && nextAssets) {
+      // 次の問題の選択肢をシャッフル
+      const allOptions = [nextProblem.japaneseSentence, ...nextProblem.incorrectOptions];
+      const zipped = allOptions.map((option, index) => ({ option, index }));
+
+      for (let i = zipped.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+      }
+
+      const shuffled = zipped.map((item) => item.option);
+      const newCorrectIndex = zipped.findIndex((item) => item.index === 0);
+
       setProblem(nextProblem);
       setAssets(nextAssets);
+      setShuffledOptions(shuffled);
+      setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
       setSelectedOption(null);
       setImageLoaded(false);
       setPhase('scene');
@@ -779,10 +802,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 unoptimized={Boolean(assets)}
                 onLoad={() => setImageLoaded(true)}
               />
-            ) : problem?.scenePrompt ? (
+            ) : problem ? (
               <div className="w-full max-w-[500px] p-4 text-sm text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-                <h3 className="font-semibold mb-2 text-[#2f8f9d]">シーンプロンプト:</h3>
-                <p className="whitespace-pre-wrap">{problem.scenePrompt}</p>
+                <h3 className="font-semibold mb-2 text-[#2f8f9d]">シーン:</h3>
+                <p className="whitespace-pre-wrap">
+                  {problem.place}で{problem.senderRole}が{problem.receiverRole}に話しかけています。
+                </p>
               </div>
             ) : (
               <div className="w-full max-w-[500px] p-8 text-center bg-white rounded-lg border border-[#d8cbb6]">
@@ -807,7 +832,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             </button>
           </div>
           <ul className="grid gap-3">
-            {problem.options.map((option, index) => (
+            {shuffledOptions.map((option, index) => (
               <li key={`${option}-${index}`}>
                 <button
                   type="button"
@@ -840,9 +865,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             </h2>
             {isCorrect && (
               <>
-                <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">{problem.english}</p>
                 <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">
-                  {problem.options[problem.correctIndex]}
+                  {problem.englishSentence}
+                </p>
+                <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">
+                  {problem.japaneseSentence}
                 </p>
               </>
             )}

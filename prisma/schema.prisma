@@ -8,48 +8,27 @@ datasource db {
 }
 
 model Problem {
-  id                String            @id @default(cuid())
-  type              ProblemType
-  english           String
-  japaneseReply     String
-  options           Json
-  correctIndex      Int
-  audioEnUrl        String?
-  audioJaUrl        String?
-  compositeImageUrl String?
-  sceneId           String
-  scenePrompt       String
-  speakersSceneA    String
-  speakersSceneB    String
-  nuance            String?
-  genre             String?
-  patternGroup      String?
-  wordCount         Int
-  interactionIntent InteractionIntent
-  isCached          Boolean           @default(false)
-  qualityCheck      Boolean           @default(false)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  initial_alphabet  String
+  id               String      @id @default(cuid())
+  wordCount        Int
+  englishSentence  String
+  japaneseSentence String
+  japaneseReply    String
+  incorrectOptions Json
+  audioEnUrl       String?
+  audioJaUrl       String?
+  imageUrl         String?
+  senderVoice      VoiceType
+  senderRole       String
+  receiverVoice    VoiceType
+  receiverRole     String
+  place            String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
-  @@unique([english, interactionIntent, sceneId])
-  @@index([type, initial_alphabet])
-  @@index([type, isCached, qualityCheck])
-  @@index([sceneId])
   @@map("problems")
 }
 
-enum ProblemType {
-  short
-  medium
-  long
-}
-
-enum InteractionIntent {
-  request
-  question
-  proposal
-  opinion
-  agreement
-  info
+enum VoiceType {
+  male
+  female
 }
