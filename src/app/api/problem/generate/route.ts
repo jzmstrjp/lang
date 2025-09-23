@@ -462,7 +462,7 @@ function createSystemPrompt(
   - 悪い例: 「You should try this park.」→「この公園を試してみた方がいいよ。」
   - 良い例: 「You should try this park.」→「この公園、ぜひ行ってみてください。」
 - options[0] は英文のフォーマルさ・カジュアルさ・丁寧さのレベルを日本語でも同等に保つこと。例：「Could you please...」→「〜していただけませんか」、「Can you...」→「〜してくれる？」、「Help me」→「手伝って」。
-- options[1], options[2], options[3] は誤答。この場面で${characterRoles.character1}（女性）が言うはずのない無関係な日本語セリフです。
+- options[1], options[2], options[3] は誤答。この場面で${characterRoles.character1}（女性）が言うはずのない無関係な日本語セリフです。文字数はoptions[0]と同じくらいにしてください。
 - correctIndex は常に 0。
 
 【japaneseReply】
