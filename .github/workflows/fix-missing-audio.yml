@@ -84,22 +84,8 @@ jobs:
         run: |
           echo "🔍 音声URLがnullなレコードを事前チェック中..."
 
-          # 簡単なクエリで件数だけチェック（ログ出力を抑制）
-          MISSING_COUNT=$(NODE_ENV=production npx tsx -e "
-            import { prisma } from './src/lib/prisma';
-            (async () => {
-              try {
-                const count = await prisma.problem.count({
-                  where: { OR: [{ audioEnUrl: null }, { audioJaUrl: null }] }
-                });
-                process.stdout.write(count.toString());
-                await prisma.\$disconnect();
-              } catch (error) {
-                process.stdout.write('0');
-                await prisma.\$disconnect();
-              }
-            })();
-          " 2>/dev/null | tail -1)
+          # 統合されたスクリプトのチェックのみモードを使用（ログ出力を抑制）
+          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-audio.ts --check-only 2>/dev/null | tail -1)
 
           # 数値であることを確認
           if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
@@ -137,10 +123,10 @@ jobs:
           if [ "$INPUT_DRY_RUN" = "true" ]; then
             echo "🧪 ドライランモードで実行中（実際の音声生成・アップロードは行いません）"
             # ドライラン用のロジックがある場合はここで分岐
-            npx tsx scripts/fix-missing-audio.ts
+            npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
           else
             echo "🎤 本番モードで実行中（実際に音声を生成・アップロードします）"
-            npx tsx scripts/fix-missing-audio.ts
+            npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
           fi
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -162,21 +148,7 @@ jobs:
           echo "🔍 修復後のデータベース状態を確認中..."
 
           # 修復後の件数をチェック（ログ出力を抑制）
-          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx -e "
-            import { prisma } from './src/lib/prisma';
-            (async () => {
-              try {
-                const count = await prisma.problem.count({
-                  where: { OR: [{ audioEnUrl: null }, { audioJaUrl: null }] }
-                });
-                process.stdout.write(count.toString());
-              } catch (error) {
-                process.stdout.write('UNKNOWN');
-              } finally {
-                await prisma.\$disconnect();
-              }
-            })();
-          " 2>/dev/null | tail -1 || echo "TIMEOUT")
+          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-audio.ts --check-only 2>/dev/null | tail -1 || echo "TIMEOUT")
 
           if [ "$REMAINING_COUNT" = "TIMEOUT" ]; then
             echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"

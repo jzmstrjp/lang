@@ -9,19 +9,26 @@ import { generateSpeechBuffer } from '../src/lib/audio-utils';
 import { uploadAudioToR2 } from '../src/lib/r2-client';
 import type { VoiceGender } from '../src/config/voice';
 
-async function main() {
+async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
-    console.log('🚀 音声URL修復スクリプトを開始します...');
+    if (checkOnly) {
+      console.log('🔍 音声URLチェックモードで実行中...');
+    } else {
+      console.log('🚀 音声URL修復スクリプトを開始します...');
+      console.log(`📊 処理件数上限: ${batchSize}件`);
+    }
 
-    // 環境変数のチェック
-    const requiredEnvs = [
-      'OPENAI_API_KEY',
-      'DATABASE_URL',
-      'R2_BUCKET_NAME',
-      'R2_ACCESS_KEY_ID',
-      'R2_SECRET_ACCESS_KEY',
-      'R2_PUBLIC_DOMAIN',
-    ];
+    // 環境変数のチェック（チェックのみモードでは音声生成用環境変数は不要）
+    const requiredEnvs = checkOnly 
+      ? ['DATABASE_URL']
+      : [
+          'OPENAI_API_KEY',
+          'DATABASE_URL',
+          'R2_BUCKET_NAME',
+          'R2_ACCESS_KEY_ID',
+          'R2_SECRET_ACCESS_KEY',
+          'R2_PUBLIC_DOMAIN',
+        ];
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);
 
     if (missingEnvs.length > 0) {
@@ -29,6 +36,29 @@ async function main() {
       missingEnvs.forEach((env) => console.error(`  - ${env}`));
       process.exit(1);
     }
+
+    // まず件数をチェック
+    if (!checkOnly) {
+      console.log('🔍 音声URLがnullなレコードを事前チェック中...');
+    }
+    const totalMissingCount = await prisma.problem.count({
+      where: {
+        OR: [{ audioEnUrl: null }, { audioJaUrl: null }],
+      },
+    });
+
+    if (checkOnly) {
+      // チェックのみモードの場合は件数を出力して終了
+      process.stdout.write(totalMissingCount.toString());
+      return;
+    }
+
+    if (totalMissingCount === 0) {
+      console.log('✅ 音声URLがnullなレコードは見つかりませんでした');
+      return;
+    }
+
+    console.log(`📊 ${totalMissingCount}件の音声URLがnullなレコードが見つかりました`);
 
     // audioEnUrl または audioJaUrl が null のレコードを10件取得
     console.log('📋 音声URLがnullなレコードを検索中...');
@@ -46,14 +76,16 @@ async function main() {
         audioEnUrl: true,
         audioJaUrl: true,
       },
-      take: 10,
+      take: batchSize,
       orderBy: {
         createdAt: 'desc', // 新しいものから処理
       },
     });
 
+    // この時点では必ずレコードが存在するはずなので、0件の場合はエラー
     if (problemsWithMissingAudio.length === 0) {
-      console.log('✅ 音声URLがnullなレコードは見つかりませんでした。');
+      console.error('⚠️ 事前チェックではレコードが見つかりましたが、取得できませんでした');
+      console.error('   データベース状態が変更された可能性があります');
       return;
     }
 
@@ -163,8 +195,33 @@ async function main() {
 
 // スクリプトが直接実行された場合のみmainを実行
 if (require.main === module) {
+  // コマンドライン引数の解析
+  const args = process.argv.slice(2);
+  let batchSize = 10; // デフォルト値
+  let checkOnly = false;
+
+  // --check-only フラグの確認
+  if (args.includes('--check-only')) {
+    checkOnly = true;
+    const checkIndex = args.indexOf('--check-only');
+    args.splice(checkIndex, 1); // フラグを配列から削除
+  }
+
+  // 件数の取得（残った引数の最初）
+  const batchSizeArg = args[0];
+  if (batchSizeArg) {
+    const parsed = parseInt(batchSizeArg, 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      console.error('❌ 処理件数は正の整数で指定してください');
+      console.error('   使用例: npm run fix-missing-audio 3');
+      console.error('   チェックのみ: npx tsx scripts/fix-missing-audio.ts --check-only');
+      process.exit(1);
+    }
+    batchSize = parsed;
+  }
+
   (async () => {
-    await main();
+    await main(batchSize, checkOnly);
   })().catch((error) => {
     console.error('スクリプト実行エラー:', error);
     process.exit(1);
