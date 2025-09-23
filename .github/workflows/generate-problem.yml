@@ -21,8 +21,8 @@ on:
         type: boolean
 
   # 10分ごとに実行 - ランダムタイプで生成
-  schedule:
-    - cron: '*/10 * * * *'
+  # schedule:
+  #   - cron: '*/10 * * * *'
 
 jobs:
   generate-problem:
