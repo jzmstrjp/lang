@@ -73,6 +73,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [nextProblem, setNextProblem] = useState<ProblemData | null>(null); // 次の問題
   const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
   const [imageLoaded, setImageLoaded] = useState(false); // 画像の読み込み状況
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false); // 音声再生中かどうか
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -101,19 +102,31 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       if (audioRef.current === audio) {
         audioRef.current = null;
       }
+      setIsAudioPlaying(false);
+    };
+
+    const handleError = () => {
+      console.warn('英語音声の再生に失敗しました。');
+      setIsAudioPlaying(false);
     };
 
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    setIsAudioPlaying(true);
     audio.play().catch(() => {
       console.warn('英語音声の再生に失敗しました。');
+      setIsAudioPlaying(false);
     });
 
     return () => {
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
       audio.pause();
       if (audioRef.current === audio) {
         audioRef.current = null;
       }
+      setIsAudioPlaying(false);
     };
   }, [assets?.audio?.english]);
 
@@ -166,6 +179,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       setImageLoaded(false);
     }
 
+    // フェーズが変わるときに音声再生状態を設定
+    // scene, quizフェーズでは音声が自動再生されるため、最初からdisabledにする
+    // resultフェーズでは正解時のみ音声が再生される
+    if (phase === 'scene' || phase === 'quiz') {
+      setIsAudioPlaying(true);
+    } else if (phase === 'result' && isCorrect) {
+      setIsAudioPlaying(true);
+    } else {
+      setIsAudioPlaying(false);
+    }
+
     if (typeof window === 'undefined') {
       return;
     }
@@ -183,13 +207,24 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         if (audioRef.current === audio) {
           audioRef.current = null;
         }
+        setIsAudioPlaying(false);
+      };
+
+      const handleError = () => {
+        console.warn('正解音声の再生に失敗しました。');
+        setIsAudioPlaying(false);
       };
 
       audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
       playbackTimeoutRef.current = window.setTimeout(() => {
+        setIsAudioPlaying(true);
         audio
           .play()
-          .catch(() => console.warn('正解音声の再生に失敗しました。'))
+          .catch(() => {
+            console.warn('正解音声の再生に失敗しました。');
+            setIsAudioPlaying(false);
+          })
           .finally(() => {
             playbackTimeoutRef.current = null;
           });
@@ -272,10 +307,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           englishAudio.addEventListener('ended', handleEnglishEnded);
 
           playbackTimeoutRef.current = window.setTimeout(() => {
+            setIsAudioPlaying(true);
             englishAudio
               ?.play()
               .catch(() => {
                 console.warn('英語音声の自動再生に失敗しました。');
+                setIsAudioPlaying(false);
                 handleEnglishEnded?.();
               })
               .finally(() => {
@@ -335,15 +372,24 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         if (audioRef.current === audio) {
           audioRef.current = null;
         }
+        setIsAudioPlaying(false);
+      };
+
+      const handleError = () => {
+        console.warn('クイズ用の英語音声の自動再生に失敗しました。');
+        setIsAudioPlaying(false);
       };
 
       audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
 
       playbackTimeoutRef.current = window.setTimeout(() => {
+        setIsAudioPlaying(true);
         audio
           .play()
           .catch(() => {
             console.warn('クイズ用の英語音声の自動再生に失敗しました。');
+            setIsAudioPlaying(false);
           })
           .finally(() => {
             playbackTimeoutRef.current = null;
@@ -487,6 +533,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setNextProblem(null);
     setNextAssets(null);
     setImageLoaded(false);
+    setIsAudioPlaying(false);
   }, [problemType]);
 
   // ページ読み込み時に問題を事前フェッチ
@@ -754,9 +801,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               type="button"
               onClick={playEnglishAudio}
               className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-4 py-2 text-sm font-medium text-[#ffffff] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffffff] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!assets?.audio?.english}
+              disabled={!assets?.audio?.english || isAudioPlaying}
             >
-              もう一度聞く
+              {isAudioPlaying ? '再生中...' : 'もう一度聞く'}
             </button>
           </div>
           <ul className="grid gap-3">
@@ -768,7 +815,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                     setSelectedOption(index);
                     setPhase('result');
                   }}
-                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]"
+                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isAudioPlaying}
                 >
                   {option}
                 </button>
@@ -804,7 +852,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <button
                 type="button"
                 onClick={handleRetryQuiz}
-                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
+                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isAudioPlaying}
               >
                 再挑戦
               </button>
@@ -814,7 +863,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 type="button"
                 onClick={handleNextProblem}
                 className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition hover:bg-[#c3684f] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isFetching}
+                disabled={isFetching || isAudioPlaying}
               >
                 {isFetching ? '生成中…' : '次の問題へ'}
               </button>
