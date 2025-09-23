@@ -84,25 +84,37 @@ jobs:
         run: |
           echo "🔍 音声URLがnullなレコードを事前チェック中..."
 
-          # 簡単なクエリで件数だけチェック
-          MISSING_COUNT=$(npx tsx -e "
+          # 簡単なクエリで件数だけチェック（ログ出力を抑制）
+          MISSING_COUNT=$(NODE_ENV=production npx tsx -e "
             import { prisma } from './src/lib/prisma';
             (async () => {
-              const count = await prisma.problem.count({
-                where: { OR: [{ audioEnUrl: null }, { audioJaUrl: null }] }
-              });
-              console.log(count);
-              await prisma.\$disconnect();
+              try {
+                const count = await prisma.problem.count({
+                  where: { OR: [{ audioEnUrl: null }, { audioJaUrl: null }] }
+                });
+                process.stdout.write(count.toString());
+                await prisma.\$disconnect();
+              } catch (error) {
+                process.stdout.write('0');
+                await prisma.\$disconnect();
+              }
             })();
-          ")
+          " 2>/dev/null | tail -1)
 
-          echo "missing_count=$MISSING_COUNT" >> $GITHUB_OUTPUT
-
-          if [ "$MISSING_COUNT" -eq 0 ]; then
-            echo "✅ 音声URLがnullなレコードは見つかりませんでした"
-            echo "should_run=false" >> $GITHUB_OUTPUT
+          # 数値であることを確認
+          if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
+            echo "missing_count=$MISSING_COUNT" >> $GITHUB_OUTPUT
+            
+            if [ "$MISSING_COUNT" -eq 0 ]; then
+              echo "✅ 音声URLがnullなレコードは見つかりませんでした"
+              echo "should_run=false" >> $GITHUB_OUTPUT
+            else
+              echo "📊 $MISSING_COUNT件の音声URLがnullなレコードが見つかりました"
+              echo "should_run=true" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "📊 $MISSING_COUNT件の音声URLがnullなレコードが見つかりました"
+            echo "⚠️ レコード数の取得に失敗しました。スクリプトを実行します。"
+            echo "missing_count=unknown" >> $GITHUB_OUTPUT
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
         env:
@@ -149,32 +161,39 @@ jobs:
         run: |
           echo "🔍 修復後のデータベース状態を確認中..."
 
-          # 修復後の件数をチェック
-          REMAINING_COUNT=$(timeout 30 npx tsx -e "
+          # 修復後の件数をチェック（ログ出力を抑制）
+          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx -e "
             import { prisma } from './src/lib/prisma';
             (async () => {
               try {
                 const count = await prisma.problem.count({
                   where: { OR: [{ audioEnUrl: null }, { audioJaUrl: null }] }
                 });
-                console.log(count);
+                process.stdout.write(count.toString());
               } catch (error) {
-                console.error('DB確認エラー:', error);
-                console.log('UNKNOWN');
+                process.stdout.write('UNKNOWN');
               } finally {
                 await prisma.\$disconnect();
               }
             })();
-          " || echo "TIMEOUT")
+          " 2>/dev/null | tail -1 || echo "TIMEOUT")
 
           if [ "$REMAINING_COUNT" = "TIMEOUT" ]; then
             echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"
           elif [ "$REMAINING_COUNT" = "UNKNOWN" ]; then
             echo "⚠️ DB確認でエラーが発生しましたが、スクリプトは正常に実行されました"
-          else
+          elif [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
             echo "📊 修復後の音声URLがnullなレコード数: $REMAINING_COUNT件"
-            FIXED_COUNT=$((steps.check_missing.outputs.missing_count - REMAINING_COUNT))
-            echo "✅ $FIXED_COUNT件のレコードの音声URLを修復しました"
+            
+            # 修復前の件数が数値の場合のみ差分を計算
+            if [[ "${{ steps.check_missing.outputs.missing_count }}" =~ ^[0-9]+$ ]]; then
+              FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
+              echo "✅ $FIXED_COUNT件のレコードの音声URLを修復しました"
+            else
+              echo "✅ 音声URL修復処理が完了しました"
+            fi
+          else
+            echo "⚠️ 修復後の状態確認で予期しない結果: $REMAINING_COUNT"
           fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
