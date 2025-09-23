@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { WORD_COUNT_RULES } from './api/problem/generate/route';
+import { WORD_COUNT_RULES } from '@/config/problem';
 
 const links = [
   {

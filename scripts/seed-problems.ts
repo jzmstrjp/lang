@@ -7,7 +7,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { SeedProblemData, CreateProblemData } from '../src/types/problem';
-import { WORD_COUNT_RULES, type ProblemLength } from '../src/app/api/problem/generate/route';
+import { WORD_COUNT_RULES, type ProblemLength } from '../src/config/problem';
 import path from 'path';
 import fs from 'fs';
 

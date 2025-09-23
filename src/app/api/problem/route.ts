@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { WORD_COUNT_RULES, type ProblemLength } from './generate/route';
+import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
 export async function GET(request: Request) {
   try {

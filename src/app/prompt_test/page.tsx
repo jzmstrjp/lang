@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-const WITHOUT_PICTURE = true;
+const WITHOUT_PICTURE = false;
 
 type GeneratedProblem = {
   english: string;
@@ -43,12 +43,12 @@ export default function PromptTestPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/problem/generate', {
+      const response = await fetch('/api/problem/test-generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type, withoutPicture: WITHOUT_PICTURE, skipSave: true }),
+        body: JSON.stringify({ type, withoutPicture: WITHOUT_PICTURE }),
       });
 
       if (!response.ok) {

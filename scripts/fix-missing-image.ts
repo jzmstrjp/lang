@@ -5,8 +5,7 @@
  */
 
 import { prisma } from '../src/lib/prisma';
-import { generateImageBuffer } from '../src/lib/image-utils';
-import { uploadImageToR2 } from '../src/lib/r2-client';
+import { generateAndUploadImageAsset } from '../src/lib/problem-generator';
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
@@ -108,44 +107,19 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         console.log(`   送信者: ${problem.senderRole}`);
         console.log(`   受信者: ${problem.receiverRole}`);
 
-        // 画像プロンプトを生成（route.tsからコピー）
-        const imagePrompt = `実写風の2コマ漫画を生成してください。
-縦に2コマです。
-漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-上下のコマの高さは完全に同じであること。
-上下のコマの間に高さ20ピクセルの白い境界線が必要です。
+        console.log('   🎨 画像を生成・アップロード中...');
 
-【場所】
-${problem.place}
-
-【登場人物】
-${problem.senderRole}（送信者）
-${problem.receiverRole}（受信者）
-
-【ストーリー】
-${problem.senderRole}が${problem.receiverRole}に対して「${problem.englishSentence}」と言う。それに対し、${problem.receiverRole}が「${problem.japaneseReply}」と答える。
-
-【1コマ目】
-- ${problem.place}で${problem.senderRole}が「${problem.englishSentence}」と言っている様子を描いてください。
-- ${problem.receiverRole}はまだ描かないこと。
-
-【2コマ目】
-- ${problem.senderRole}の台詞を聞いた${problem.receiverRole}が${problem.place}で「${problem.japaneseReply}」と反応した様子を描いてください。
-
-【備考】
-- 場所や場面に合わせた表情やジェスチャーを描写してください。
-- 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-- 自然で生成AIっぽくないテイストで描写してください。`;
-
-        console.log('   🎨 画像を生成中...');
-
-        // 画像を生成
-        const imageBuffer = await generateImageBuffer(imagePrompt);
-
-        console.log('   ☁️ R2に画像をアップロード中...');
-
-        // R2にアップロード
-        const imageUrl = await uploadImageToR2(imageBuffer, problem.id, 'composite');
+        // 共通ロジックを使用して画像生成・アップロード
+        const imageUrl = await generateAndUploadImageAsset(
+          {
+            place: problem.place,
+            senderRole: problem.senderRole,
+            receiverRole: problem.receiverRole,
+            englishSentence: problem.englishSentence,
+            japaneseReply: problem.japaneseReply,
+          } as any,
+          problem.id,
+        );
 
         console.log(`   ✅ 画像アップロード完了: ${imageUrl}`);
 

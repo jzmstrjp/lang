@@ -5,8 +5,7 @@
  */
 
 import { prisma } from '../src/lib/prisma';
-import { generateSpeechBuffer } from '../src/lib/audio-utils';
-import { uploadAudioToR2 } from '../src/lib/r2-client';
+import { generateAndUploadAudioAssets } from '../src/lib/problem-generator';
 import type { VoiceGender } from '../src/config/voice';
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
@@ -108,47 +107,40 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
 
         const updateData: { audioEnUrl?: string; audioJaUrl?: string } = {};
 
-        // 英語音声が欠けている場合（直列実行）
-        if (!problem.audioEnUrl) {
-          console.log('   🎤 [1/2] 英語音声を生成中...');
+        // 音声が欠けているかチェック
+        const needsEnglish = !problem.audioEnUrl;
+        const needsJapanese = !problem.audioJaUrl;
 
-          const englishAudioBuffer = await generateSpeechBuffer(
-            problem.englishSentence,
-            problem.senderVoice as VoiceGender,
-          );
+        if (needsEnglish || needsJapanese) {
+          console.log('   🎤 音声を生成中...');
 
-          const englishAudioUrl = await uploadAudioToR2(
-            englishAudioBuffer,
+          // 共通ロジックを使用して音声生成・アップロード
+          const audioAssets = await generateAndUploadAudioAssets(
+            {
+              englishSentence: problem.englishSentence,
+              japaneseReply: problem.japaneseReply,
+              senderVoice: problem.senderVoice,
+              receiverVoice: problem.receiverVoice,
+            } as any,
             problem.id,
-            'en',
-            problem.senderVoice as VoiceGender,
           );
 
-          updateData.audioEnUrl = englishAudioUrl;
-          console.log(`   ✅ 英語音声アップロード完了: ${englishAudioUrl}`);
-        } else {
+          if (needsEnglish) {
+            updateData.audioEnUrl = audioAssets.english;
+            console.log(`   ✅ 英語音声アップロード完了: ${audioAssets.english}`);
+          }
+
+          if (needsJapanese) {
+            updateData.audioJaUrl = audioAssets.japanese;
+            console.log(`   ✅ 日本語音声アップロード完了: ${audioAssets.japanese}`);
+          }
+        }
+
+        if (!needsEnglish) {
           console.log(`   ✓ 英語音声は既に存在: ${problem.audioEnUrl}`);
         }
 
-        // 日本語音声が欠けている場合（直列実行）
-        if (!problem.audioJaUrl) {
-          console.log('   🎤 [2/2] 日本語音声を生成中...');
-
-          const japaneseAudioBuffer = await generateSpeechBuffer(
-            problem.japaneseReply,
-            problem.receiverVoice as VoiceGender,
-          );
-
-          const japaneseAudioUrl = await uploadAudioToR2(
-            japaneseAudioBuffer,
-            problem.id,
-            'ja',
-            problem.receiverVoice as VoiceGender,
-          );
-
-          updateData.audioJaUrl = japaneseAudioUrl;
-          console.log(`   ✅ 日本語音声アップロード完了: ${japaneseAudioUrl}`);
-        } else {
+        if (!needsJapanese) {
           console.log(`   ✓ 日本語音声は既に存在: ${problem.audioJaUrl}`);
         }
 
