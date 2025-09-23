@@ -25,6 +25,7 @@ model Problem {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
+  @@unique([englishSentence, japaneseReply], name: "unique_problem_pair")
   @@map("problems")
 }
 

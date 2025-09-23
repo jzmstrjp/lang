@@ -19,7 +19,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
     }
 
     // 環境変数のチェック（チェックのみモードでは音声生成用環境変数は不要）
-    const requiredEnvs = checkOnly 
+    const requiredEnvs = checkOnly
       ? ['DATABASE_URL']
       : [
           'OPENAI_API_KEY',

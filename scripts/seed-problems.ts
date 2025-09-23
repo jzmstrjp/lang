@@ -7,6 +7,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { SeedProblemData, CreateProblemData } from '../src/types/problem';
+import { WORD_COUNT_RULES, type ProblemLength } from '../src/app/api/problem/generate/route';
 import path from 'path';
 import fs from 'fs';
 
@@ -44,30 +45,39 @@ function analyzeWordCountDistribution(seedData: SeedProblemData[]): void {
     return { wordCount, sentence: problem.englishSentence };
   });
 
-  // 統計情報を表示
-  const stats = {
-    short: distribution.filter((d) => d.wordCount <= 3),
-    medium: distribution.filter((d) => d.wordCount >= 4 && d.wordCount <= 8),
-    long: distribution.filter((d) => d.wordCount >= 9),
-  };
+  // WORD_COUNT_RULESを使って動的に統計情報を作成
+  const stats: Record<ProblemLength, { count: number; example?: string }> = {} as any;
+
+  (['short', 'medium', 'long'] as ProblemLength[]).forEach((type) => {
+    const rule = WORD_COUNT_RULES[type];
+    const filtered = distribution.filter((d) => d.wordCount >= rule.min && d.wordCount <= rule.max);
+    stats[type] = {
+      count: filtered.length,
+      example: filtered.length > 0 ? filtered[0].sentence : undefined,
+    };
+  });
 
   console.log('\n📊 単語数分布分析:');
-  console.log(`  🟢 Short (1-3語): ${stats.short.length}個`);
-  console.log(`  🟡 Medium (4-8語): ${stats.medium.length}個`);
-  console.log(`  🔴 Long (9語以上): ${stats.long.length}個`);
+  console.log(
+    `  🟢 Short (${WORD_COUNT_RULES.short.min}-${WORD_COUNT_RULES.short.max}語): ${stats.short.count}個`,
+  );
+  console.log(
+    `  🟡 Medium (${WORD_COUNT_RULES.medium.min}-${WORD_COUNT_RULES.medium.max}語): ${stats.medium.count}個`,
+  );
+  console.log(`  🔴 Long (${WORD_COUNT_RULES.long.min}語以上): ${stats.long.count}個`);
 
   // 各カテゴリの例を表示
-  if (stats.short.length > 0) {
-    const example = stats.short[0];
-    console.log(`    例: "${example.sentence}" (${example.wordCount}語)`);
+  if (stats.short.example) {
+    const example = distribution.find((d) => d.sentence === stats.short.example);
+    console.log(`    例: "${stats.short.example}" (${example?.wordCount}語)`);
   }
-  if (stats.medium.length > 0) {
-    const example = stats.medium[0];
-    console.log(`    例: "${example.sentence}" (${example.wordCount}語)`);
+  if (stats.medium.example) {
+    const example = distribution.find((d) => d.sentence === stats.medium.example);
+    console.log(`    例: "${stats.medium.example}" (${example?.wordCount}語)`);
   }
-  if (stats.long.length > 0) {
-    const example = stats.long[0];
-    console.log(`    例: "${example.sentence}" (${example.wordCount}語)`);
+  if (stats.long.example) {
+    const example = distribution.find((d) => d.sentence === stats.long.example);
+    console.log(`    例: "${stats.long.example}" (${example?.wordCount}語)`);
   }
 }
 
@@ -160,6 +170,13 @@ async function main() {
       // 単語数分布を分析
       analyzeWordCountDistribution(seedData);
 
+      // 重複チェック
+      const uniqueKeys = new Set(seedData.map((p) => `${p.englishSentence}||${p.japaneseReply}`));
+      const duplicateCount = seedData.length - uniqueKeys.size;
+      if (duplicateCount > 0) {
+        console.log(`⚠️  データ内重複: ${duplicateCount}個`);
+      }
+
       // データを変換（各問題の英文単語数に基づいてlengthTypeを決定）
       const createData = transformSeedData(seedData);
 
@@ -170,7 +187,11 @@ async function main() {
           skipDuplicates: true, // 重複をスキップ
         });
 
+        const skippedCount = createData.length - result.count;
         console.log(`✅ ${result.count}個の問題を挿入 (${filename})`);
+        if (skippedCount > 0) {
+          console.log(`⏭️  ${skippedCount}個をスキップ (DB重複)`);
+        }
         totalInserted += result.count;
       } catch (error) {
         console.error(`❌ 挿入エラー (${filename}):`, error);
