@@ -1,13 +1,15 @@
 import { SeedProblemData } from '../src/types/problem';
 
-// - incorrectOptions の要素たちは japaneseSentence と同じくらいの文字数で生成すること
+// - incorrectOptions の要素たちは japaneseSentence とほぼ同じ文字数で生成すること
+// - incorrectOptionsの内容は、依頼や質問や提案や意見や情報共有のような、話しかける形式のセリフであること。japaneseSentenceとは無関係なセリフであること。
+// - 日本語の文について。「500円」などの数値は「五百円」と表記すること
 
 const problems: SeedProblemData[] = [
   {
     englishSentence: 'Are you okay?',
-    japaneseSentence: '大丈夫？',
+    japaneseSentence: '大丈夫？', // 4文字
     japaneseReply: 'うん、大丈夫だよ。',
-    incorrectOptions: ['危ないよ。', '眠いよ。', 'すぐ帰るよ。'],
+    incorrectOptions: ['宿題は？', '遊ぶ？', '来ます？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -19,9 +21,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Where is the station?',
-    japaneseSentence: '駅はどこですか？',
+    japaneseSentence: '駅はどこですか？', // 8文字
     japaneseReply: 'この道をまっすぐ行くとあります。',
-    incorrectOptions: ['駅で働いています。', '駅は嫌いです。', '駅に行きたくないです。'],
+    incorrectOptions: ['明日は会えますか？', '宿題は終わった？', '遊園地行きますか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -33,9 +35,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Water, please.',
-    japaneseSentence: '水をください。',
+    japaneseSentence: '水をください。', // 7文字
     japaneseReply: 'かしこまりました。',
-    incorrectOptions: ['水が嫌いです。', '水は高いです。', '水は外にあります。'],
+    incorrectOptions: ['電気を消してね。', '宿題を見せて。', '遊びに行こう。'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -47,9 +49,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'How much is this?',
-    japaneseSentence: 'これいくらですか？',
-    japaneseReply: '500円です。',
-    incorrectOptions: ['今日は雨です。', '安くないです。', 'わかりません。'],
+    japaneseSentence: 'これいくらですか？', // 9文字
+    japaneseReply: '五百円です。',
+    incorrectOptions: ['明日も来ますか？', '宿題を見ましたか？', '友達と会いますか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -61,9 +63,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Where do you live?',
-    japaneseSentence: 'どこに住んでいますか？',
+    japaneseSentence: 'どこに住んでいますか？', // 11文字
     japaneseReply: '東京に住んでいます。',
-    incorrectOptions: ['学校に行きます。', '今日は忙しいです。', '仕事は楽しいです。'],
+    incorrectOptions: [
+      '明日の予定はどうですか？',
+      '一緒に散歩しませんか？',
+      '新しい本を読みましたか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -75,9 +81,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Do you have plans for tomorrow?',
-    japaneseSentence: '明日の予定はありますか？',
+    japaneseSentence: '明日の予定はありますか？', // 12文字
     japaneseReply: 'はい、友達と会います。',
-    incorrectOptions: ['今日は疲れました。', 'お金がありません。', '家が遠いです。'],
+    incorrectOptions: [
+      '週末に一緒に出かけませんか？',
+      'その本を読んでみませんか？',
+      '新しい店に行きませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -89,9 +99,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Excuse me, where is the restroom?',
-    japaneseSentence: 'すみません、トイレはどこですか？',
+    japaneseSentence: 'すみません、トイレはどこですか？', // 14文字
     japaneseReply: '奥の左にあります。',
-    incorrectOptions: ['お金が必要です。', '外は寒いです。', '駅にあります。'],
+    incorrectOptions: [
+      '明日の試合は何時から始まりますか？',
+      '新しいアプリを試しましたか？',
+      '週末に買い物に行きませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -103,9 +117,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'What time is it now?',
-    japaneseSentence: '今何時ですか？',
-    japaneseReply: '3時です。',
-    incorrectOptions: ['今日は日曜日です。', '駅は遠いです。', '私は元気です。'],
+    japaneseSentence: '今何時ですか？', // 7文字
+    japaneseReply: '三時です。',
+    incorrectOptions: ['宿題は終わった？', '今日は来ますか？', '何を食べますか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -117,9 +131,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'What is your name?',
-    japaneseSentence: '名前は何ですか？',
+    japaneseSentence: '名前は何ですか？', // 7文字
     japaneseReply: '田中です。',
-    incorrectOptions: ['元気です。', 'お腹がすきました。', '今日は雨です。'],
+    incorrectOptions: ['明日来ますか？', '何をしますか？', '宿題終わった？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -131,9 +145,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Help!',
-    japaneseSentence: '助けて！',
+    japaneseSentence: '助けて！', // 4文字
     japaneseReply: '大丈夫ですか？警察を呼びますか？',
-    incorrectOptions: ['いい天気ですね。', 'お腹がすきました。', '遊びに行きましょう。'],
+    incorrectOptions: ['逃げる？', '急ぐ？', '来ます？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -145,9 +159,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'What day is it today?',
-    japaneseSentence: '今日は何曜日ですか？',
+    japaneseSentence: '今日は何曜日ですか？', // 10文字
     japaneseReply: '火曜日です。',
-    incorrectOptions: ['5時です。', '駅に行きます。', '元気です。'],
+    incorrectOptions: [
+      '明日の予定はどうですか？',
+      '新しい映画を見ましたか？',
+      '一緒に散歩しませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -159,9 +177,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'What’s your hobby?',
-    japaneseSentence: '趣味は何ですか？',
+    japaneseSentence: '趣味は何ですか？', // 7文字
     japaneseReply: '読書が好きです。',
-    incorrectOptions: ['駅に行きます。', '今日は雨です。', '私は会社員です。'],
+    incorrectOptions: ['最近どうですか？', '宿題終わった？', '何を食べます？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -173,9 +191,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Whose bag is this?',
-    japaneseSentence: 'これは誰のカバンですか？',
+    japaneseSentence: 'これは誰のカバンですか？', // 11文字
     japaneseReply: '私のカバンです。',
-    incorrectOptions: ['駅にあります。', '雨が降っています。', '美味しいです。'],
+    incorrectOptions: [
+      '明日の天気はどうなりますか？',
+      '新しい本を読んでみませんか？',
+      '週末に一緒に出かけませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -187,9 +209,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Is this seat free?',
-    japaneseSentence: '席、空いていますか？',
+    japaneseSentence: '席、空いていますか？', // 10文字
     japaneseReply: 'はい、どうぞ。',
-    incorrectOptions: ['駅は遠いです。', 'お金がありません。', '今日は眠いです。'],
+    incorrectOptions: ['明日も暇ですか？', '友達と会いますか？', '映画を見ますか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -201,9 +223,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Where is the hospital?',
-    japaneseSentence: '病院はどこですか？',
+    japaneseSentence: '病院はどこですか？', // 8文字
     japaneseReply: 'あの角を左に曲がるとあります。',
-    incorrectOptions: ['学校に行きます。', '私は医者です。', '今日は忙しいです。'],
+    incorrectOptions: ['明日は来ますか？', '宿題を見ましたか？', '何を食べますか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -215,9 +237,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Are you sleepy?',
-    japaneseSentence: '眠いですか？',
+    japaneseSentence: '眠いですか？', // 6文字
     japaneseReply: 'はい、少し眠いです。',
-    incorrectOptions: ['駅に行きます。', 'お金がありません。', '今日は雨です。'],
+    incorrectOptions: ['遊びますか？', '会いますか？', '宿題する？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -229,9 +251,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Excuse me, do you speak English?',
-    japaneseSentence: 'すみません、英語は話せますか？',
+    japaneseSentence: 'すみません、英語は話せますか？', // 14文字
     japaneseReply: '少しだけ話せます。',
-    incorrectOptions: ['私は学生です。', '駅は遠いです。', '今日は日曜日です。'],
+    incorrectOptions: [
+      '今度一緒に旅行に行きませんか？',
+      '明日の予定を確認してもらえますか？',
+      '新しい映画をもう見ましたか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -243,9 +269,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Coffee, please.',
-    japaneseSentence: 'コーヒーをください。',
+    japaneseSentence: 'コーヒーをください。', // 9文字
     japaneseReply: 'かしこまりました。',
-    incorrectOptions: ['私は医者です。', '今日は暑いです。', '駅に行きます。'],
+    incorrectOptions: [
+      '新しい本を読みましたか？',
+      '明日の予定はどうですか？',
+      '今度一緒に出かけませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -257,9 +287,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Did you finish your homework?',
-    japaneseSentence: '宿題は終わりましたか？',
+    japaneseSentence: '宿題は終わりましたか？', // 11文字
     japaneseReply: 'はい、もう終わりました。',
-    incorrectOptions: ['今日は暑いです。', '駅に行きます。', '私は眠いです。'],
+    incorrectOptions: [
+      '週末は家で過ごしますか？',
+      '最近新しい趣味を始めましたか？',
+      '明日の会議に出席しますか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -271,9 +305,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'I’m hungry.',
-    japaneseSentence: 'お腹がすきました。',
+    japaneseSentence: 'お腹がすきました。', // 9文字
     japaneseReply: 'じゃあ、ご飯を食べに行きましょう。',
-    incorrectOptions: ['今日は日曜日です。', '駅は近いです。', '私は学生です。'],
+    incorrectOptions: ['今日は眠いですね。', '明日は忙しいですか？', '新しい服を買いましたか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -285,9 +319,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'It’s hot today.',
-    japaneseSentence: '今日は暑いですね。',
+    japaneseSentence: '今日は暑いですね。', // 8文字
     japaneseReply: '本当に暑いですね。アイスを食べたいです。',
-    incorrectOptions: ['駅に行きます。', '私は先生です。', 'お金がありません。'],
+    incorrectOptions: ['明日は寒いですか？', '新しい本を読みましたか？', '今度映画を見ませんか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -299,9 +333,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Where is the bus stop?',
-    japaneseSentence: 'バス停はどこですか？',
+    japaneseSentence: 'バス停はどこですか？', // 9文字
     japaneseReply: 'あの建物の前にあります。',
-    incorrectOptions: ['駅は近いです。', '今日は眠いです。', '私は元気です。'],
+    incorrectOptions: [
+      '昨日の試合は見ましたか？',
+      '週末に出かけませんか？',
+      '明日の予定はありますか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -313,9 +351,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Will it rain tomorrow?',
-    japaneseSentence: '明日、雨が降りますか？',
+    japaneseSentence: '明日、雨が降りますか？', // 10文字
     japaneseReply: '天気予報では晴れです。',
-    incorrectOptions: ['今日は暑いです。', '私は医者です。', '駅に行きます。'],
+    incorrectOptions: [
+      '週末に旅行に行きませんか？',
+      '昨日はよく眠れましたか？',
+      '新しいカフェに行きませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -327,9 +369,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Please turn off the light.',
-    japaneseSentence: '電気を消してください。',
+    japaneseSentence: '電気を消してください。', // 10文字
     japaneseReply: 'はい、わかりました。',
-    incorrectOptions: ['駅は近いです。', '今日は日曜日です。', '私は学生です。'],
+    incorrectOptions: [
+      '宿題を手伝ってくれますか？',
+      '今度映画を一緒に見ませんか？',
+      '明日の天気はどうですか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -341,9 +387,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'What would you like to drink?',
-    japaneseSentence: '何を飲みますか？',
+    japaneseSentence: '何を飲みますか？', // 7文字
     japaneseReply: 'コーヒーをお願いします。',
-    incorrectOptions: ['駅に行きます。', '今日は雨です。', '私は眠いです。'],
+    incorrectOptions: ['今日は眠いですか？', '宿題は終わった？', '新しい服を買った？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -355,9 +401,9 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'How old are you?',
-    japaneseSentence: '何歳ですか？',
-    japaneseReply: '20歳です。',
-    incorrectOptions: ['今日は雨です。', '私は先生です。', '駅に行きます。'],
+    japaneseSentence: '何歳ですか？', // 6文字
+    japaneseReply: '二十歳です。',
+    incorrectOptions: ['眠いですか？', '遊びますか？', '来ますか？'],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -369,9 +415,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Did you enjoy the trip?',
-    japaneseSentence: '旅行は楽しかったですか？',
+    japaneseSentence: '旅行は楽しかったですか？', // 12文字
     japaneseReply: 'はい、とても楽しかったです。',
-    incorrectOptions: ['今日は雨です。', '駅に行きます。', '私は眠いです。'],
+    incorrectOptions: [
+      '昨日は忙しかったですか？',
+      '今度映画を見に行きませんか？',
+      '最近体調はどうですか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -383,9 +433,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Does this train go to Shinjuku?',
-    japaneseSentence: 'この電車は新宿に行きますか？',
+    japaneseSentence: 'この電車は新宿に行きますか？', // 12文字
     japaneseReply: 'はい、新宿に行きます。',
-    incorrectOptions: ['今日は雨です。', '私は医者です。', '駅に行きます。'],
+    incorrectOptions: [
+      '昨日はよく眠れましたか？',
+      '今度旅行に行きませんか？',
+      '週末に集まりませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
@@ -397,9 +451,13 @@ const problems: SeedProblemData[] = [
   },
   {
     englishSentence: 'Are you free this weekend?',
-    japaneseSentence: '今週末、暇ですか？',
+    japaneseSentence: '今週末、暇ですか？', // 9文字
     japaneseReply: 'はい、空いています。',
-    incorrectOptions: ['駅に行きます。', '私は医者です。', '今日は眠いです。'],
+    incorrectOptions: [
+      '昨日は眠れましたか？',
+      '新しい本を買いましたか？',
+      '週末に出かけませんか？',
+    ],
     audioEnUrl: null,
     audioJaUrl: null,
     imageUrl: null,
