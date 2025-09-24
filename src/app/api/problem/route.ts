@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       // 音声URLが両方とも存在するレコードのみを対象にする
       audioEnUrl: { not: null },
       audioJaUrl: { not: null },
+      audioEnReplyUrl: { not: null },
     } as Prisma.ProblemWhereInput;
 
     const totalCount = await prisma.problem.count({
@@ -72,6 +73,7 @@ export async function GET(request: Request) {
         audio: {
           english: problem.audioEnUrl || '',
           japanese: problem.audioJaUrl || '',
+          englishReply: problem.audioEnReplyUrl || '',
         },
       },
     };
