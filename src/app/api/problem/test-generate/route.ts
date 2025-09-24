@@ -70,9 +70,6 @@ export async function POST(req: Request) {
         scenePrompt: imagePrompt,
         type: body.type || 'short',
         sceneId: problem.place,
-        nuance: 'カジュアル', // 仮の値
-        genre: '会話', // 仮の値
-        interactionIntent: '日常会話', // 仮の値
         options: [problem.japaneseSentence, ...problem.incorrectOptions],
         correctIndex: 0,
         characterRoles: {

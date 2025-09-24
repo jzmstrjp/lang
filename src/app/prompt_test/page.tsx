@@ -11,9 +11,6 @@ type GeneratedProblem = {
   scenePrompt: string;
   type: string;
   sceneId: string;
-  nuance: string;
-  genre: string;
-  interactionIntent: string;
   options: string[];
   correctIndex: number;
   characterRoles?: {
@@ -231,29 +228,16 @@ export default function PromptTestPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-purple-50 border border-purple-200 rounded p-3">
                   <span className="font-semibold text-purple-800">シーン:</span>
                   <p className="text-purple-700">{problem.sceneId}</p>
                 </div>
-                <div className="bg-pink-50 border border-pink-200 rounded p-3">
-                  <span className="font-semibold text-pink-800">ニュアンス:</span>
-                  <p className="text-pink-700">{problem.nuance}</p>
-                </div>
-                <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
-                  <span className="font-semibold text-indigo-800">ジャンル:</span>
-                  <p className="text-indigo-700">{problem.genre}</p>
-                </div>
-                <div className="bg-teal-50 border border-teal-200 rounded p-3">
-                  <span className="font-semibold text-teal-800">会話意図:</span>
-                  <p className="text-teal-700">{problem.interactionIntent}</p>
-                </div>
                 {problem.characterRoles && (
-                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3 col-span-2">
+                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3">
                     <span className="font-semibold text-cyan-800">キャラクター:</span>
                     <p className="text-cyan-700">
-                      {problem.characterRoles.character1}（女性） →{' '}
-                      {problem.characterRoles.character2}（男性）
+                      {problem.characterRoles.character1} → {problem.characterRoles.character2}
                     </p>
                   </div>
                 )}

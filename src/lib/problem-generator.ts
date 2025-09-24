@@ -3,37 +3,37 @@ import { generateImageBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
 import type { ProblemLength } from '@/config/problem';
+import type { Problem, VoiceType } from '@prisma/client';
 
 export type GenerateRequest = {
   type?: ProblemLength;
   withoutPicture?: boolean;
 };
 
-// Prismaの型を拡張して使用
-export type GeneratedProblem = {
-  wordCount: number;
-  englishSentence: string;
-  japaneseSentence: string;
-  japaneseReply: string;
+// Prismaの型を利用
+export type GeneratedProblem = Omit<
+  Problem,
+  'id' | 'audioEnUrl' | 'audioJaUrl' | 'imageUrl' | 'createdAt' | 'updatedAt' | 'incorrectOptions'
+> & {
   incorrectOptions: string[];
-  senderVoice: string;
-  senderRole: string;
-  receiverVoice: string;
-  receiverRole: string;
-  place: string;
 };
+
+/**
+ * VoiceTypeをVoiceGenderに変換
+ */
+function voiceTypeToVoiceGender(voiceType: VoiceType): VoiceGender {
+  return voiceType as VoiceGender; // PrismaのVoiceTypeはVoiceGenderのサブセット
+}
 
 /**
  * 性別の英語表記を日本語にマッピング
  */
-function getGenderInJapanese(voiceGender: string): string {
-  switch (voiceGender) {
+function getGenderInJapanese(voiceType: VoiceType): string {
+  switch (voiceType) {
     case 'male':
       return '男性';
     case 'female':
       return '女性';
-    case 'neutral':
-      return '';
     default:
       return '';
   }
@@ -119,8 +119,8 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
   japanese: string;
 }> {
   const [englishAudio, japaneseAudio] = await Promise.all([
-    generateSpeech(problem.englishSentence, problem.senderVoice as VoiceGender),
-    generateSpeech(problem.japaneseReply, problem.receiverVoice as VoiceGender),
+    generateSpeech(problem.englishSentence, voiceTypeToVoiceGender(problem.senderVoice)),
+    generateSpeech(problem.japaneseReply, voiceTypeToVoiceGender(problem.receiverVoice)),
   ]);
 
   return {
@@ -140,13 +140,23 @@ export async function generateAndUploadAudioAssets(
   japanese: string;
 }> {
   const [englishAudioBuffer, japaneseAudioBuffer] = await Promise.all([
-    generateSpeechBuffer(problem.englishSentence, problem.senderVoice as VoiceGender),
-    generateSpeechBuffer(problem.japaneseReply, problem.receiverVoice as VoiceGender),
+    generateSpeechBuffer(problem.englishSentence, voiceTypeToVoiceGender(problem.senderVoice)),
+    generateSpeechBuffer(problem.japaneseReply, voiceTypeToVoiceGender(problem.receiverVoice)),
   ]);
 
   const [englishAudio, japaneseAudio] = await Promise.all([
-    uploadAudioToR2(englishAudioBuffer, problemId, 'en', problem.senderVoice as VoiceGender),
-    uploadAudioToR2(japaneseAudioBuffer, problemId, 'ja', problem.receiverVoice as VoiceGender),
+    uploadAudioToR2(
+      englishAudioBuffer,
+      problemId,
+      'en',
+      voiceTypeToVoiceGender(problem.senderVoice),
+    ),
+    uploadAudioToR2(
+      japaneseAudioBuffer,
+      problemId,
+      'ja',
+      voiceTypeToVoiceGender(problem.receiverVoice),
+    ),
   ]);
 
   return {
