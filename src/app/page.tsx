@@ -41,14 +41,15 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-[#2a2b3c] sm:px-6">
-      <p className="text-center font-bold mb-4 text-2xl">
+    <main className="mx-auto flex min-h-[calc(80vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-[#2a2b3c] sm:px-6">
+      <p className="text-center font-bold mb-4 text-2xl sm:text-3xl leading-normal sm:leading-loose">
         なぜだか
-        <br />
+        <br className="block sm:hidden" />
+        <span className="hidden sm:inline">　</span>
         いつのまにか
         <br />
         英語が聞き取れる
-        <br />
+        <br className="block sm:hidden" />
         ようになるサイト
       </p>
       <nav className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:gap-6">

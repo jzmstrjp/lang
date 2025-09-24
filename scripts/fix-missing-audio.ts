@@ -36,28 +36,16 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
       process.exit(1);
     }
 
-    // まず件数をチェック
-    if (!checkOnly) {
-      console.log('🔍 音声URLがnullなレコードを事前チェック中...');
-    }
-    const totalMissingCount = await prisma.problem.count({
-      where: {
-        OR: [{ audioEnUrl: null }, { audioJaUrl: null }, { audioEnReplyUrl: null }],
-      },
-    });
-
     if (checkOnly) {
       // チェックのみモードの場合は件数を出力して終了
+      const totalMissingCount = await prisma.problem.count({
+        where: {
+          OR: [{ audioEnUrl: null }, { audioJaUrl: null }, { audioEnReplyUrl: null }],
+        },
+      });
       process.stdout.write(totalMissingCount.toString());
       return;
     }
-
-    if (totalMissingCount === 0) {
-      console.log('✅ 音声URLがnullなレコードは見つかりませんでした');
-      return;
-    }
-
-    console.log(`📊 ${totalMissingCount}件の音声URLがnullなレコードが見つかりました`);
 
     // audioEnUrl、audioJaUrl、または audioEnReplyUrl が null のレコードを取得
     console.log('📋 音声URLがnullなレコードを検索中...');
@@ -83,10 +71,8 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
       },
     });
 
-    // この時点では必ずレコードが存在するはずなので、0件の場合はエラー
     if (problemsWithMissingAudio.length === 0) {
-      console.error('⚠️ 事前チェックではレコードが見つかりましたが、取得できませんでした');
-      console.error('   データベース状態が変更された可能性があります');
+      console.log('✅ 音声URLがnullなレコードは見つかりませんでした');
       return;
     }
 

@@ -9,11 +9,6 @@ on:
         required: false
         default: '10'
         type: string
-      dry_run:
-        description: 'ドライラン（実際のアップロードは行わない）'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   fix-missing-audio:
@@ -110,24 +105,15 @@ jobs:
         if: steps.check_missing.outputs.should_run == 'true'
         run: |
           INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '10' }}"
-          INPUT_DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
 
           echo "🚀 音声URL修復スクリプトを開始します"
           echo "📊 処理件数上限: $INPUT_BATCH_SIZE件"
-          echo "🧪 ドライラン: $INPUT_DRY_RUN"
           echo "🔧 PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS: $PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS"
           echo "🔧 CI: $CI"
           echo ""
 
-          # TypeScriptスクリプトを直接実行
-          if [ "$INPUT_DRY_RUN" = "true" ]; then
-            echo "🧪 ドライランモードで実行中（実際の音声生成・アップロードは行いません）"
-            # ドライラン用のロジックがある場合はここで分岐
-            npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
-          else
-            echo "🎤 本番モードで実行中（実際に音声を生成・アップロードします）"
-            npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
-          fi
+          echo "🎤 音声を生成・アップロードします"
+          npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # R2アップロード用環境変数

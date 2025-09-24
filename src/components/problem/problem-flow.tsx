@@ -698,7 +698,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'landing' && (
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="mt-16 flex flex-col items-center gap-4 text-center">
           {error && <p className="text-sm text-rose-500">{error}</p>}
           <button
             type="button"
@@ -757,16 +757,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       {phase === 'quiz' && problem && (
         <section className="grid gap-8">
-          <div className="flex items-center gap-4">
+          <div>
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
-            <button
-              type="button"
-              onClick={playEnglishAudio}
-              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-4 py-2 text-sm font-medium text-[#ffffff] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffffff] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!assets?.audio?.english || isAudioPlaying}
-            >
-              {isAudioPlaying ? '再生中...' : 'もう一度聞く'}
-            </button>
           </div>
           <ul className="grid gap-3">
             {shuffledOptions.map((option, index) => (
@@ -785,6 +777,16 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               </li>
             ))}
           </ul>
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={playEnglishAudio}
+              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!assets?.audio?.english || isAudioPlaying}
+            >
+              {isAudioPlaying ? '再生中...' : 'もう一度聞く'}
+            </button>
+          </div>
         </section>
       )}
 

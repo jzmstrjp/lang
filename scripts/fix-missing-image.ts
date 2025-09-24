@@ -53,28 +53,16 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
       process.exit(1);
     }
 
-    // まず件数をチェック
-    if (!checkOnly) {
-      console.log('🔍 画像URLがnullなレコードを事前チェック中...');
-    }
-    const totalMissingCount = await prisma.problem.count({
-      where: {
-        imageUrl: null,
-      },
-    });
-
     if (checkOnly) {
       // チェックのみモードの場合は件数を出力して終了
+      const totalMissingCount = await prisma.problem.count({
+        where: {
+          imageUrl: null,
+        },
+      });
       process.stdout.write(totalMissingCount.toString());
       return;
     }
-
-    if (totalMissingCount === 0) {
-      console.log('✅ 画像URLがnullなレコードは見つかりませんでした');
-      return;
-    }
-
-    console.log(`📊 ${totalMissingCount}件の画像URLがnullなレコードが見つかりました`);
 
     // imageUrl が null のレコードを指定件数取得
     console.log('📋 画像URLがnullなレコードを検索中...');
@@ -96,18 +84,15 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         receiverVoice: true,
         receiverRole: true,
         place: true,
-        imageUrl: true,
       },
       take: batchSize,
       orderBy: {
-        createdAt: 'desc', // 新しいものから処理
+        wordCount: 'asc', // 単語数が少ないものから処理
       },
     });
 
-    // この時点では必ずレコードが存在するはずなので、0件の場合はエラー
     if (problemsWithMissingImage.length === 0) {
-      console.error('⚠️ 事前チェックではレコードが見つかりましたが、取得できませんでした');
-      console.error('   データベース状態が変更された可能性があります');
+      console.log('✅ 画像URLがnullなレコードは見つかりませんでした');
       return;
     }
 
