@@ -109,8 +109,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-${problem.senderRole}${senderGenderText}
-${problem.receiverRole}${receiverGenderText}
+- ${problem.senderRole}${senderGenderText}
+- ${problem.receiverRole}${receiverGenderText}
 
 【ストーリー】
 ${problem.senderRole}${senderGenderText}が${problem.receiverRole}${receiverGenderText}に対して「${problem.englishSentence}」と言う。それに対し、${problem.receiverRole}${receiverGenderText}が「${problem.japaneseReply}」と答える。
