@@ -2,7 +2,6 @@ import type { Prisma, Problem } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 const RANDOM_SAMPLE_SIZE = Number(process.env.PROBLEM_CACHE_SAMPLE_SIZE ?? '20');
-const AUTO_APPROVE_NEW_PROBLEMS = true;
 
 export type SpeakerLabel = 'male' | 'female' | 'neutral';
 
@@ -114,8 +113,9 @@ export async function saveGeneratedProblem(
 
 export async function fetchCachedProblem(
   length: 'short' | 'medium' | 'long',
-  options: FetchOptions = {},
+  _options: FetchOptions = {},
 ): Promise<CachedProblemResponse | null> {
+  void _options; // 保留オプションのlint回避
   let wordCountRange: { gte?: number; lte?: number };
 
   switch (length) {

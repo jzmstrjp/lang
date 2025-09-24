@@ -4,8 +4,26 @@
  * 画像URLがnullなProblemsレコードを取得して画像を生成・R2アップロード・DB更新するスクリプト
  */
 
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
-import { generateAndUploadImageAsset } from '../src/lib/problem-generator';
+import { generateAndUploadImageAsset, type GeneratedProblem } from '../src/lib/problem-generator';
+
+function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item));
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
@@ -67,9 +85,15 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
       },
       select: {
         id: true,
+        wordCount: true,
         englishSentence: true,
+        japaneseSentence: true,
         japaneseReply: true,
+        englishReply: true,
+        incorrectOptions: true,
+        senderVoice: true,
         senderRole: true,
+        receiverVoice: true,
         receiverRole: true,
         place: true,
         imageUrl: true,
@@ -110,16 +134,21 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         console.log('   🎨 画像を生成・アップロード中...');
 
         // 共通ロジックを使用して画像生成・アップロード
-        const imageUrl = await generateAndUploadImageAsset(
-          {
-            place: problem.place,
-            senderRole: problem.senderRole,
-            receiverRole: problem.receiverRole,
-            englishSentence: problem.englishSentence,
-            japaneseReply: problem.japaneseReply,
-          } as any,
-          problem.id,
-        );
+        const generatedProblem: GeneratedProblem = {
+          wordCount: problem.wordCount,
+          englishSentence: problem.englishSentence,
+          japaneseSentence: problem.japaneseSentence,
+          japaneseReply: problem.japaneseReply,
+          englishReply: problem.englishReply,
+          incorrectOptions: normalizeIncorrectOptions(problem.incorrectOptions),
+          senderVoice: problem.senderVoice,
+          senderRole: problem.senderRole,
+          receiverVoice: problem.receiverVoice,
+          receiverRole: problem.receiverRole,
+          place: problem.place,
+        };
+
+        const imageUrl = await generateAndUploadImageAsset(generatedProblem, problem.id);
 
         console.log(`   ✅ 画像アップロード完了: ${imageUrl}`);
 

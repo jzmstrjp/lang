@@ -46,7 +46,11 @@ function analyzeWordCountDistribution(seedData: SeedProblemData[]): void {
   });
 
   // WORD_COUNT_RULESを使って動的に統計情報を作成
-  const stats: Record<ProblemLength, { count: number; example?: string }> = {} as any;
+  const stats: Record<ProblemLength, { count: number; example?: string }> = {
+    short: { count: 0 },
+    medium: { count: 0 },
+    long: { count: 0 },
+  };
 
   (['short', 'medium', 'long'] as ProblemLength[]).forEach((type) => {
     const rule = WORD_COUNT_RULES[type];
