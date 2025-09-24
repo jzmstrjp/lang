@@ -23,6 +23,7 @@ type AssetsData = {
   audio: {
     english?: string;
     japanese?: string;
+    englishReply?: string;
   };
 };
 
@@ -32,6 +33,7 @@ type ApiAssets = {
   audio?: {
     english?: string;
     japanese?: string;
+    englishReply?: string;
   };
 };
 
@@ -57,6 +59,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
   const [imageLoaded, setImageLoaded] = useState(false); // 画像の読み込み状況
   const [isAudioPlaying, setIsAudioPlaying] = useState(false); // 音声再生中かどうか
+  const [isEnglishMode, setIsEnglishMode] = useState(false); // 完全英語モード
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -64,6 +67,33 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const secondaryPlaybackTimeoutRef = useRef<number | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
+
+  // 完全英語モードの設定をlocalStorageから読み込み
+  useEffect(() => {
+    const savedMode = localStorage.getItem('englishMode');
+    if (savedMode === 'true') {
+      setIsEnglishMode(true);
+    }
+
+    // localStorageの変更を監視
+    const handleStorageChange = () => {
+      const savedMode = localStorage.getItem('englishMode');
+      setIsEnglishMode(savedMode === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // ページ内でのlocalStorage変更を検知するため、定期的にチェック
+    const interval = setInterval(() => {
+      const savedMode = localStorage.getItem('englishMode');
+      setIsEnglishMode(savedMode === 'true');
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // ProblemLength を直接使用
   // 正解判定：selectedOption が correctIndex と一致するか
@@ -246,7 +276,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       };
 
       const startJapanesePlayback = () => {
-        if (japaneseAudio || !japaneseSrc) {
+        // 完全英語モードの場合は英語返答音声を再生
+        const audioSrc = isEnglishMode ? assets?.audio?.englishReply : japaneseSrc;
+
+        if (japaneseAudio || !audioSrc) {
           queueQuizTransition();
           return;
         }
@@ -258,7 +291,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           queueQuizTransition();
         };
 
-        japaneseAudio = new Audio(japaneseSrc);
+        japaneseAudio = new Audio(audioSrc);
         secondaryAudioRef.current = japaneseAudio;
 
         japaneseAudio.addEventListener('ended', handleJapaneseEnded);
@@ -267,7 +300,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           japaneseAudio
             ?.play()
             .catch(() => {
-              console.warn('日本語音声の自動再生に失敗しました。');
+              const audioType = isEnglishMode ? '英語返答音声' : '日本語音声';
+              console.warn(`${audioType}の自動再生に失敗しました。`);
               queueQuizTransition();
             })
             .finally(() => {
@@ -392,118 +426,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }
       };
     }
-  }, [assets, isCorrect, phase]);
-
-  // 画像読み込み完了時の音声再生を別のuseEffectで管理
-  useEffect(() => {
-    if (phase === 'scene' && assets?.image && imageLoaded) {
-      // 画像が読み込まれたら音声再生を開始
-      const englishSrc = assets?.audio?.english;
-      const japaneseSrc = assets?.audio?.japanese;
-
-      let englishAudio: HTMLAudioElement | null = null;
-      let japaneseAudio: HTMLAudioElement | null = null;
-      let handleEnglishEnded: (() => void) | null = null;
-      let handleJapaneseEnded: (() => void) | null = null;
-
-      const queueQuizTransition = () => {
-        if (transitionTimeoutRef.current) {
-          clearTimeout(transitionTimeoutRef.current);
-        }
-        if (isMountedRef.current) {
-          setPhase('quiz');
-        }
-      };
-
-      const startJapanesePlayback = () => {
-        if (japaneseAudio || !japaneseSrc) {
-          queueQuizTransition();
-          return;
-        }
-
-        handleJapaneseEnded = () => {
-          if (!isMountedRef.current) {
-            return;
-          }
-          queueQuizTransition();
-        };
-
-        japaneseAudio = new Audio(japaneseSrc);
-        secondaryAudioRef.current = japaneseAudio;
-
-        japaneseAudio.addEventListener('ended', handleJapaneseEnded);
-
-        secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
-          japaneseAudio
-            ?.play()
-            .catch(() => {
-              console.warn('日本語音声の自動再生に失敗しました。');
-              queueQuizTransition();
-            })
-            .finally(() => {
-              secondaryPlaybackTimeoutRef.current = null;
-            });
-        }, 300);
-      };
-
-      if (englishSrc) {
-        handleEnglishEnded = () => {
-          if (!isMountedRef.current) {
-            return;
-          }
-          startJapanesePlayback();
-        };
-
-        englishAudio = new Audio(englishSrc);
-        audioRef.current = englishAudio;
-
-        englishAudio.addEventListener('ended', handleEnglishEnded);
-
-        playbackTimeoutRef.current = window.setTimeout(() => {
-          englishAudio
-            ?.play()
-            .catch(() => {
-              console.warn('英語音声の自動再生に失敗しました。');
-              handleEnglishEnded?.();
-            })
-            .finally(() => {
-              playbackTimeoutRef.current = null;
-            });
-        }, 1000);
-      } else {
-        startJapanesePlayback();
-      }
-
-      return () => {
-        if (playbackTimeoutRef.current) {
-          clearTimeout(playbackTimeoutRef.current);
-          playbackTimeoutRef.current = null;
-        }
-        if (secondaryPlaybackTimeoutRef.current) {
-          clearTimeout(secondaryPlaybackTimeoutRef.current);
-          secondaryPlaybackTimeoutRef.current = null;
-        }
-        if (transitionTimeoutRef.current) {
-          clearTimeout(transitionTimeoutRef.current);
-          transitionTimeoutRef.current = null;
-        }
-        if (englishAudio && handleEnglishEnded) {
-          englishAudio.removeEventListener('ended', handleEnglishEnded);
-        }
-        if (japaneseAudio && handleJapaneseEnded) {
-          japaneseAudio.removeEventListener('ended', handleJapaneseEnded);
-        }
-        englishAudio?.pause();
-        if (audioRef.current === englishAudio) {
-          audioRef.current = null;
-        }
-        japaneseAudio?.pause();
-        if (secondaryAudioRef.current === japaneseAudio) {
-          secondaryAudioRef.current = null;
-        }
-      };
-    }
-  }, [phase, assets, imageLoaded]);
+  }, [assets, isCorrect, phase, isEnglishMode]);
 
   useEffect(() => {
     setPhase('landing');
@@ -537,6 +460,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           const audio = {
             english: data.assets?.audio?.english,
             japanese: data.assets?.audio?.japanese,
+            englishReply: data.assets?.audio?.englishReply,
           };
 
           // 選択肢をシャッフルして設定
@@ -594,6 +518,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const audio = {
           english: data.assets?.audio?.english,
           japanese: data.assets?.audio?.japanese,
+          englishReply: data.assets?.audio?.englishReply,
         };
 
         setNextProblem(data.problem);
@@ -624,6 +549,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const audio = {
           english: data.assets?.audio?.english,
           japanese: data.assets?.audio?.japanese,
+          englishReply: data.assets?.audio?.englishReply,
         };
 
         // 選択肢をシャッフルして設定
@@ -803,12 +729,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 onLoad={() => setImageLoaded(true)}
               />
             ) : problem ? (
-              <div className="w-full max-w-[500px] p-4 text-sm text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-                <h3 className="font-semibold mb-2 text-[#2f8f9d]">シーン:</h3>
-                <p className="whitespace-pre-wrap">
+              <div className="w-full max-w-[500px] p-6 text-base text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+                <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
+                <p className="whitespace-pre-wrap mb-3 text-base">
                   {problem.place}で{problem.senderRole}が{problem.receiverRole}に話しかけています。
                 </p>
-                <p className="whitespace-pre-wrap">{problem.receiverRole}がそれに答えます。</p>
+                <p className="whitespace-pre-wrap text-base">
+                  {problem.receiverRole}がそれに答えます。
+                </p>
               </div>
             ) : (
               <div className="w-full max-w-[500px] p-8 text-center bg-white rounded-lg border border-[#d8cbb6]">

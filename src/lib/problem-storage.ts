@@ -14,13 +14,14 @@ type ProblemWithStringArray = Omit<Problem, 'incorrectOptions'> & {
 export type PersistGeneratedProblemInput = {
   problem: Omit<
     ProblemWithStringArray,
-    'id' | 'createdAt' | 'updatedAt' | 'audioEnUrl' | 'audioJaUrl' | 'imageUrl'
+    'id' | 'createdAt' | 'updatedAt' | 'audioEnUrl' | 'audioJaUrl' | 'audioEnReplyUrl' | 'imageUrl'
   >;
   assets: {
     imageUrl: string | null;
     audio: {
       english: string;
       japanese: string | null;
+      englishReply?: string | null;
     };
   };
 };
@@ -32,6 +33,7 @@ export type CachedProblemResponse = {
     audio: {
       english: string;
       japanese: string;
+      englishReply?: string;
     };
   };
 };
@@ -76,6 +78,7 @@ function mapRecordToResponse(record: ProblemRecord | null): CachedProblemRespons
       audio: {
         english: record.audioEnUrl || '',
         japanese: record.audioJaUrl || '',
+        englishReply: record.audioEnReplyUrl || '',
       },
     },
   };
@@ -89,9 +92,11 @@ export async function saveGeneratedProblem(
     englishSentence: input.problem.englishSentence,
     japaneseSentence: input.problem.japaneseSentence,
     japaneseReply: input.problem.japaneseReply,
+    englishReply: input.problem.englishReply || '',
     incorrectOptions: input.problem.incorrectOptions,
     audioEnUrl: input.assets.audio.english,
     audioJaUrl: input.assets.audio.japanese || null,
+    audioEnReplyUrl: input.assets.audio.englishReply || null,
     imageUrl: input.assets.imageUrl,
     senderVoice: input.problem.senderVoice,
     senderRole: input.problem.senderRole,

@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { WORD_COUNT_RULES } from '@/config/problem';
 
 const links = [
@@ -20,6 +23,23 @@ const links = [
 ];
 
 export default function Home() {
+  const [isEnglishMode, setIsEnglishMode] = useState(false);
+
+  // localStorageから設定を読み込み
+  useEffect(() => {
+    const savedMode = localStorage.getItem('englishMode');
+    if (savedMode === 'true') {
+      setIsEnglishMode(true);
+    }
+  }, []);
+
+  // 設定変更時にlocalStorageに保存
+  const toggleEnglishMode = () => {
+    const newMode = !isEnglishMode;
+    setIsEnglishMode(newMode);
+    localStorage.setItem('englishMode', newMode.toString());
+  };
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-[#2a2b3c] sm:px-6">
       <nav className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:gap-6">
@@ -34,6 +54,25 @@ export default function Home() {
           </Link>
         ))}
       </nav>
+
+      {/* 完全英語モード切り替えスイッチ */}
+      <div onClick={toggleEnglishMode} className="cursor-pointer flex items-center justify-start bg-[#ffffff]">
+        <button
+          
+          className={`mr-2 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            isEnglishMode ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+              isEnglishMode ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </button>
+        <div className="flex flex-col">
+          <span className="font-bold">完全英語モード</span>
+        </div>
+      </div>
     </main>
   );
 }
