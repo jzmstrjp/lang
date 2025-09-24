@@ -5,7 +5,12 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { config } from 'dotenv';
+import { gzip } from 'zlib';
+import { promisify } from 'util';
 import type { VoiceGender } from '../config/voice';
+import { compressionConfig } from '../config/compression';
+
+const gzipAsync = promisify(gzip);
 
 // 環境変数を読み込み
 if (typeof window === 'undefined') {
@@ -60,14 +65,49 @@ export async function uploadToR2(
   buffer: Buffer,
   contentType: string,
   metadata?: Record<string, string>,
+  compress?: boolean,
 ): Promise<string> {
   const client = createR2Client();
+
+  let body = buffer;
+  let finalContentType = contentType;
+  let contentEncoding: string | undefined;
+
+  // 圧縮設定の確認
+  const shouldCompress =
+    compress !== false &&
+    compressionConfig.enabled &&
+    buffer.length > compressionConfig.minSizeForCompression;
+
+  if (shouldCompress) {
+    try {
+      const compressedBuffer = await gzipAsync(buffer);
+
+      // 設定された最小圧縮率を満たす場合のみ圧縮版を使用
+      const compressionRatio = 1 - compressedBuffer.length / buffer.length;
+      if (compressionRatio >= compressionConfig.minCompressionRatio) {
+        body = compressedBuffer;
+        contentEncoding = 'gzip';
+
+        console.log(
+          `[R2] 圧縮効果: ${buffer.length} → ${compressedBuffer.length} bytes (${Math.round(compressionRatio * 100)}% 削減)`,
+        );
+      } else {
+        console.log(
+          `[R2] 圧縮効果が設定値(${Math.round(compressionConfig.minCompressionRatio * 100)}%)未満のため元のファイルを使用: ${buffer.length} bytes`,
+        );
+      }
+    } catch (error) {
+      console.warn(`[R2] 圧縮エラー、元のファイルを使用: ${error}`);
+    }
+  }
 
   const command = new PutObjectCommand({
     Bucket: R2_BUCKET_NAME,
     Key: key,
-    Body: buffer,
-    ContentType: contentType,
+    Body: body,
+    ContentType: finalContentType,
+    ContentEncoding: contentEncoding,
     Metadata: metadata,
     // パブリックアクセス設定
     ACL: 'public-read',
@@ -91,16 +131,26 @@ export async function uploadAudioToR2(
   problemId: string,
   language: 'en' | 'ja' | 'en-reply',
   speaker: VoiceGender,
+  compress?: boolean,
 ): Promise<string> {
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `audio/${timestamp}/${problemId}_${language}_${speaker}.mp3`;
 
-  return uploadToR2(key, audioBuffer, 'audio/mpeg', {
-    problemId,
-    language,
-    speaker,
-    type: 'audio',
-  });
+  // 設定から音声圧縮の有効性を判定
+  const shouldCompress = compress !== false && compressionConfig.audio.compressMP3;
+
+  return uploadToR2(
+    key,
+    audioBuffer,
+    'audio/mpeg',
+    {
+      problemId,
+      language,
+      speaker,
+      type: 'audio',
+    },
+    shouldCompress,
+  );
 }
 
 /**
@@ -110,15 +160,95 @@ export async function uploadImageToR2(
   imageBuffer: Buffer,
   problemId: string,
   imageType: 'composite',
+  compress?: boolean,
 ): Promise<string> {
+  // 設定でWebPが有効な場合はWebP形式でアップロード
+  if (compressionConfig.image.useWebP) {
+    return uploadImageAsWebPToR2(
+      imageBuffer,
+      problemId,
+      imageType,
+      compressionConfig.image.webpQuality,
+    );
+  }
+
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `images/${timestamp}/${problemId}_${imageType}.png`;
 
-  return uploadToR2(key, imageBuffer, 'image/png', {
-    problemId,
-    imageType,
-    type: 'image',
-  });
+  // 設定から画像圧縮の有効性を判定
+  const shouldCompress = compress !== false && compressionConfig.image.pngCompression;
+
+  return uploadToR2(
+    key,
+    imageBuffer,
+    'image/png',
+    {
+      problemId,
+      imageType,
+      type: 'image',
+    },
+    shouldCompress,
+  );
+}
+
+/**
+ * 画像ファイルをWebP形式でR2にアップロード（より高い圧縮率）
+ * sharpライブラリが必要
+ */
+export async function uploadImageAsWebPToR2(
+  imageBuffer: Buffer,
+  problemId: string,
+  imageType: 'composite',
+  quality: number = compressionConfig.image.webpQuality,
+): Promise<string> {
+  try {
+    // sharpライブラリをdynamic importで読み込み
+    const sharp = (await import('sharp')).default;
+
+    // WebP形式に変換（品質設定で圧縮率調整）
+    const webpBuffer = await sharp(imageBuffer).webp({ quality }).toBuffer();
+
+    const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const key = `images/${timestamp}/${problemId}_${imageType}.webp`;
+
+    console.log(
+      `[R2] WebP変換: ${imageBuffer.length} → ${webpBuffer.length} bytes (${Math.round((1 - webpBuffer.length / imageBuffer.length) * 100)}% 削減)`,
+    );
+
+    return uploadToR2(
+      key,
+      webpBuffer,
+      'image/webp',
+      {
+        problemId,
+        imageType,
+        type: 'image',
+        format: 'webp',
+        quality: quality.toString(),
+      },
+      false,
+    ); // WebPは既に圧縮済みなのでgzip圧縮は無効
+  } catch (error) {
+    console.error('[R2] WebP変換エラーの詳細:', error);
+    console.warn('[R2] WebP変換に失敗、PNG形式でアップロード');
+
+    // フォールバック: 通常のPNG形式でアップロード（無限ループを防ぐため直接処理）
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const key = `images/${timestamp}/${problemId}_${imageType}.png`;
+    const shouldCompress = compressionConfig.image.pngCompression;
+
+    return uploadToR2(
+      key,
+      imageBuffer,
+      'image/png',
+      {
+        problemId,
+        imageType,
+        type: 'image',
+      },
+      shouldCompress,
+    );
+  }
 }
 
 /**
