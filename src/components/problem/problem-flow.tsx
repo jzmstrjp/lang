@@ -99,6 +99,21 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   // 正解判定：selectedOption が correctIndex と一致するか
   const isCorrect = problem != null && selectedOption === correctIndex;
 
+  // 役割名を表示用に調整する関数（同じ役割の場合はA・Bを付ける）
+  const getSenderDisplayName = () => {
+    if (!problem) return '';
+    return problem.senderRole === problem.receiverRole
+      ? `${problem.senderRole}A`
+      : problem.senderRole;
+  };
+
+  const getReceiverDisplayName = () => {
+    if (!problem) return '';
+    return problem.senderRole === problem.receiverRole
+      ? `${problem.receiverRole}B`
+      : problem.receiverRole;
+  };
+
   // 英語音声を再生する関数
   const playEnglishAudio = useCallback(() => {
     if (!assets?.audio?.english) return;
@@ -732,10 +747,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <div className="w-full max-w-[500px] p-6 text-base text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
                 <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
                 <p className="whitespace-pre-wrap mb-3 text-base">
-                  {problem.place}で{problem.senderRole}が{problem.receiverRole}に話しかけています。
-                </p>
-                <p className="whitespace-pre-wrap text-base">
-                  {problem.receiverRole}がそれに答えます。
+                  <span className="font-bold">{problem.place}</span> で{' '}
+                  <span className="font-bold">{getSenderDisplayName()}</span> が{' '}
+                  <span className="font-bold">{getReceiverDisplayName()}</span> に話しかけています。
                 </p>
               </div>
             ) : (

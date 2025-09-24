@@ -56,10 +56,16 @@ export default function Home() {
       </nav>
 
       {/* 完全英語モード切り替えスイッチ */}
-      <div onClick={toggleEnglishMode} className="cursor-pointer flex items-center justify-start bg-[#ffffff]">
+      <div
+        onClick={toggleEnglishMode}
+        className="cursor-pointer flex items-center justify-start mt-4"
+      >
+        <div className="flex flex-col mr-2">
+          <span className="font-bold transition-opacity">完全英語モード</span>
+        </div>
+
         <button
-          
-          className={`mr-2 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
             isEnglishMode ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'
           }`}
         >
@@ -69,9 +75,6 @@ export default function Home() {
             }`}
           />
         </button>
-        <div className="flex flex-col">
-          <span className="font-bold">完全英語モード</span>
-        </div>
       </div>
     </main>
   );
