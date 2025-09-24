@@ -443,6 +443,129 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
   }, [assets, isCorrect, phase, isEnglishMode]);
 
+  // 画像ロード完了時に音声を開始するuseEffect
+  useEffect(() => {
+    if (phase !== 'scene' || !imageLoaded || !assets?.image) {
+      return;
+    }
+
+    // 画像がロードされた場合に音声を開始
+    const englishSrc = assets?.audio?.english;
+    const japaneseSrc = assets?.audio?.japanese;
+
+    let englishAudio: HTMLAudioElement | null = null;
+    let japaneseAudio: HTMLAudioElement | null = null;
+    let handleEnglishEnded: (() => void) | null = null;
+    let handleJapaneseEnded: (() => void) | null = null;
+
+    const queueQuizTransition = () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+      if (isMountedRef.current) {
+        setPhase('quiz');
+      }
+    };
+
+    const startJapanesePlayback = () => {
+      // 完全英語モードの場合は英語返答音声を再生
+      const audioSrc = isEnglishMode ? assets?.audio?.englishReply : japaneseSrc;
+
+      if (japaneseAudio || !audioSrc) {
+        queueQuizTransition();
+        return;
+      }
+
+      handleJapaneseEnded = () => {
+        if (!isMountedRef.current) {
+          return;
+        }
+        queueQuizTransition();
+      };
+
+      japaneseAudio = new Audio(audioSrc);
+      secondaryAudioRef.current = japaneseAudio;
+
+      japaneseAudio.addEventListener('ended', handleJapaneseEnded);
+
+      secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
+        japaneseAudio
+          ?.play()
+          .catch(() => {
+            const audioType = isEnglishMode ? '英語返答音声' : '日本語音声';
+            console.warn(`${audioType}の自動再生に失敗しました。`);
+            queueQuizTransition();
+          })
+          .finally(() => {
+            secondaryPlaybackTimeoutRef.current = null;
+          });
+      }, 300);
+    };
+
+    const startAudioPlayback = () => {
+      if (englishSrc) {
+        handleEnglishEnded = () => {
+          if (!isMountedRef.current) {
+            return;
+          }
+          startJapanesePlayback();
+        };
+
+        englishAudio = new Audio(englishSrc);
+        audioRef.current = englishAudio;
+
+        englishAudio.addEventListener('ended', handleEnglishEnded);
+
+        playbackTimeoutRef.current = window.setTimeout(() => {
+          setIsAudioPlaying(true);
+          englishAudio
+            ?.play()
+            .catch(() => {
+              console.warn('英語音声の自動再生に失敗しました。');
+              setIsAudioPlaying(false);
+              handleEnglishEnded?.();
+            })
+            .finally(() => {
+              playbackTimeoutRef.current = null;
+            });
+        }, 500); // 画像ロード完了後は少し短い待機時間
+      } else {
+        startJapanesePlayback();
+      }
+    };
+
+    startAudioPlayback();
+
+    return () => {
+      if (playbackTimeoutRef.current) {
+        clearTimeout(playbackTimeoutRef.current);
+        playbackTimeoutRef.current = null;
+      }
+      if (secondaryPlaybackTimeoutRef.current) {
+        clearTimeout(secondaryPlaybackTimeoutRef.current);
+        secondaryPlaybackTimeoutRef.current = null;
+      }
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+      }
+      if (englishAudio && handleEnglishEnded) {
+        englishAudio.removeEventListener('ended', handleEnglishEnded);
+      }
+      if (japaneseAudio && handleJapaneseEnded) {
+        japaneseAudio.removeEventListener('ended', handleJapaneseEnded);
+      }
+      englishAudio?.pause();
+      if (audioRef.current === englishAudio) {
+        audioRef.current = null;
+      }
+      japaneseAudio?.pause();
+      if (secondaryAudioRef.current === japaneseAudio) {
+        secondaryAudioRef.current = null;
+      }
+    };
+  }, [phase, imageLoaded, assets, isEnglishMode]);
+
   useEffect(() => {
     setPhase('landing');
     setProblem(null);
