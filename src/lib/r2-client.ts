@@ -70,7 +70,7 @@ export async function uploadToR2(
   const client = createR2Client();
 
   let body = buffer;
-  let finalContentType = contentType;
+  const finalContentType = contentType;
   let contentEncoding: string | undefined;
 
   // 圧縮設定の確認
