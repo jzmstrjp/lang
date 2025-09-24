@@ -769,7 +769,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                     setSelectedOption(index);
                     setPhase('result');
                   }}
-                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={isAudioPlaying}
                 >
                   {option}
