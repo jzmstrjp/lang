@@ -40,11 +40,20 @@ function getGenderInJapanese(voiceType: VoiceType): string {
 }
 
 /**
- * probrem1.tsからランダムに1件の問題データを取得
+ * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
-async function getRandomProblemFromSeed(): Promise<GeneratedProblem> {
-  // probrem1.tsのデータを動的にインポート
-  const { default: problems } = await import('../../probremData/probrem1');
+async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
+  // 問題タイプに応じてファイルを選択
+  let problems;
+  if (type === 'long') {
+    // 長文の場合はprobrem2.tsから取得
+    const { default: longProblems } = await import('../../probremData/probrem2');
+    problems = longProblems;
+  } else {
+    // 短文・中文の場合はprobrem1.tsから取得
+    const { default: shortMediumProblems } = await import('../../probremData/probrem1');
+    problems = shortMediumProblems;
+  }
 
   // ランダムに1件選択
   const randomIndex = Math.floor(Math.random() * problems.length);
@@ -70,9 +79,9 @@ async function getRandomProblemFromSeed(): Promise<GeneratedProblem> {
 /**
  * 問題生成のメイン関数
  */
-export async function generateProblem(): Promise<GeneratedProblem> {
-  // シンプルに probrem1.ts からランダムに1件取得するだけ
-  return await getRandomProblemFromSeed();
+export async function generateProblem(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
+  // 問題タイプに応じて適切なファイルからランダムに1件取得
+  return await getRandomProblemFromSeed(type);
 }
 
 /**

@@ -40,8 +40,8 @@ export async function POST(req: Request) {
 
     console.log('[test-generate] 問題生成開始');
 
-    // 問題を生成
-    const problem = await generateProblem();
+    // 問題を生成（問題タイプを渡す）
+    const problem = await generateProblem(body.type || 'short');
 
     console.log('[test-generate] 問題生成完了、アセット生成開始');
 
