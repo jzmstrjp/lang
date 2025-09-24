@@ -9,6 +9,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Excuse me, is there a convenience store nearby?',
     japaneseSentence: 'すみません、この近くにコンビニはありますか？',
     japaneseReply: 'はい、あの角を曲がったところにありますよ。',
+    englishReply: 'Yes, there is one just around the corner.',
     incorrectOptions: [
       '明日の打ち合わせは何時から始まりますか？',
       '今度一緒に旅行に行きませんか？',
@@ -27,6 +28,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'The movie we watched yesterday was really interesting, wasn’t it?',
     japaneseSentence: '昨日見た映画はとても面白かったですね。',
     japaneseReply: 'そうですね。特に最後のシーンが印象的でした。',
+    englishReply: 'Yes, especially the last scene was memorable.',
     incorrectOptions: [
       '新しくできたカフェにもう行きましたか？',
       '来週のテストは難しいと思いませんか？',
@@ -45,6 +47,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Does this train go to the airport?',
     japaneseSentence: 'この電車に乗れば空港まで行けますか？',
     japaneseReply: 'はい、直通で空港まで行けます。',
+    englishReply: 'Yes, this train goes directly to the airport.',
     incorrectOptions: [
       'その荷物を少し持ってあげましょうか？',
       '駅前で新しい店がオープンしたそうですよ。',
@@ -63,6 +66,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Excuse me, do you have any tables available without a reservation?',
     japaneseSentence: 'すみません、予約していないのですが席はありますか？',
     japaneseReply: '少々お待ちください。はい、大丈夫です、ご案内します。',
+    englishReply: 'Please wait a moment. Yes, we have a table for you.',
     incorrectOptions: [
       '最近体調を崩してしまって会社を休みました。',
       '新しいプロジェクトのメンバーに入りませんか？',
@@ -81,6 +85,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you send me the materials from last week’s meeting by email?',
     japaneseSentence: '先週の会議の資料をメールで送っていただけますか？',
     japaneseReply: 'はい、後ほどお送りします。',
+    englishReply: 'Yes, I’ll send them to you later.',
     incorrectOptions: [
       '最近習い始めたギターがすごく楽しいんです。',
       '次の休みに映画を一緒に見に行きませんか？',
@@ -99,6 +104,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you help me carry this heavy box upstairs?',
     japaneseSentence: 'すみません、この重い箱を二階まで運ぶのを手伝ってもらえますか？',
     japaneseReply: 'もちろんです。一緒に運びましょう。',
+    englishReply: 'Of course. Let’s carry it together.',
     incorrectOptions: [
       '昨日のプレゼンはとてもよくできていましたね。',
       '駅までタクシーを呼んでいただけませんか？',
@@ -117,6 +123,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Do you know where I can buy a SIM card around here?',
     japaneseSentence: 'この辺りでSIMカードを買える場所を知っていますか？',
     japaneseReply: 'はい、駅前の電気屋で買えますよ。',
+    englishReply: 'Yes, you can buy one at the electronics store near the station.',
     incorrectOptions: [
       'その新しいアプリはもう試してみましたか？',
       '明日の朝一緒にジョギングしませんか？',
@@ -135,6 +142,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would it be possible to change my appointment to next Monday?',
     japaneseSentence: '予約を来週の月曜日に変更することは可能ですか？',
     japaneseReply: 'はい、大丈夫です。変更しておきます。',
+    englishReply: 'Yes, that’s fine. I’ll change it to Monday.',
     incorrectOptions: [
       'この近くでおすすめのレストランはありますか？',
       '明日から新しい仕事が始まるんです。',
@@ -153,6 +161,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you tell me how long it takes to get to the museum from here?',
     japaneseSentence: 'ここから博物館までどのくらい時間がかかりますか？',
     japaneseReply: '徒歩で十五分ほどです。',
+    englishReply: 'It takes about fifteen minutes on foot.',
     incorrectOptions: [
       '最近新しい趣味を始めたんですが面白いですよ。',
       'その本を貸してもらうことはできますか？',
@@ -171,6 +180,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Do you know if there is Wi-Fi available in this café?',
     japaneseSentence: 'このカフェにWi-Fiはありますか？',
     japaneseReply: 'はい、パスワードはこちらです。',
+    englishReply: 'Yes, here is the password.',
     incorrectOptions: [
       '明日のプレゼンの準備は進んでいますか？',
       '新しいドラマをもう見ましたか？',
@@ -189,6 +199,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you please lower the volume a little bit?',
     japaneseSentence: 'すみません、音量を少し下げてもらえますか？',
     japaneseReply: 'はい、今下げますね。',
+    englishReply: 'Sure, I’ll turn it down now.',
     incorrectOptions: [
       '明日のランチはどこに行きたいですか？',
       '新しいスマホをもう買いましたか？',
@@ -207,6 +218,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would you mind opening the window for some fresh air?',
     japaneseSentence: 'すみません、空気を入れたいので窓を開けてもらえますか？',
     japaneseReply: 'いいですよ、開けましょう。',
+    englishReply: 'Sure, I’ll open it.',
     incorrectOptions: [
       '最近読んだ本はとても面白かったです。',
       'この後駅まで一緒に歩きませんか？',
@@ -225,6 +237,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you tell me which bus goes to the airport?',
     japaneseSentence: '空港に行くバスはどれか教えていただけますか？',
     japaneseReply: 'はい、あの青いバスが空港行きです。',
+    englishReply: 'That blue bus goes to the airport.',
     incorrectOptions: [
       '最近仕事が忙しくて疲れています。',
       '明日の試験は難しそうですね。',
@@ -243,6 +256,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would you like to join us for dinner tomorrow evening?',
     japaneseSentence: '明日の夜、一緒に夕食に行きませんか？',
     japaneseReply: 'いいですね、楽しみにしています。',
+    englishReply: 'Sounds great. I’m looking forward to it.',
     incorrectOptions: [
       '新しい映画をもう見に行きましたか？',
       '今日は体調があまりよくありません。',
@@ -261,6 +275,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Do you know if this shop accepts credit cards?',
     japaneseSentence: 'このお店はクレジットカードを使えますか？',
     japaneseReply: 'はい、使えます。こちらに機械があります。',
+    englishReply: 'Yes, you can. Here is the machine.',
     incorrectOptions: [
       '新しい靴を買いたいと思っているんです。',
       '昨日のドラマはとても面白かったですね。',
@@ -279,6 +294,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you please explain this problem to me once more?',
     japaneseSentence: 'すみません、この問題をもう一度説明していただけますか？',
     japaneseReply: 'もちろんです。ゆっくり説明しますね。',
+    englishReply: 'Of course. I’ll explain it slowly.',
     incorrectOptions: [
       'この映画の続編はもう公開されていますか？',
       '新しいアルバムを聴きましたか？',
@@ -297,6 +313,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you tell me how to get to the nearest pharmacy?',
     japaneseSentence: '一番近い薬局へはどう行けばいいですか？',
     japaneseReply: 'あの信号を渡ってすぐです。',
+    englishReply: 'Cross that light and it’s right there.',
     incorrectOptions: [
       '最近運動不足で体重が増えてしまいました。',
       '昨日の夜はなかなか眠れませんでした。',
@@ -315,6 +332,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would you mind if I borrowed your pen for a moment?',
     japaneseSentence: 'ちょっとペンを貸していただけますか？',
     japaneseReply: 'どうぞ、使ってください。',
+    englishReply: 'Sure, go ahead.',
     incorrectOptions: [
       '昨日の宿題はもう終わりましたか？',
       'この後で一緒に昼ご飯を食べませんか？',
@@ -333,6 +351,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you show me how to use this machine?',
     japaneseSentence: 'この機械の使い方を教えていただけますか？',
     japaneseReply: 'はい、ここを押すと動きます。',
+    englishReply: 'Yes, press here and it works.',
     incorrectOptions: [
       '明日の会議には何時に来られますか？',
       '駅の近くに美味しい店があるそうですよ。',
@@ -351,6 +370,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would it be okay if I open this package here?',
     japaneseSentence: 'ここでこの荷物を開けてもいいですか？',
     japaneseReply: 'はい、大丈夫ですよ。',
+    englishReply: 'Yes, that’s fine.',
     incorrectOptions: [
       '昨日の試合はとても盛り上がりましたね。',
       '今度新しいプロジェクトを始めませんか？',
@@ -369,6 +389,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you please call me a taxi to the station?',
     japaneseSentence: '駅まで行くタクシーを呼んでいただけますか？',
     japaneseReply: 'はい、すぐに手配いたします。',
+    englishReply: 'Yes, I’ll arrange one right away.',
     incorrectOptions: [
       '明日の試験はどの教室で行われますか？',
       '新しくできたパン屋にもう行きましたか？',
@@ -387,6 +408,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would you mind taking a photo of us with this camera?',
     japaneseSentence: 'このカメラで写真を撮っていただけますか？',
     japaneseReply: 'もちろんです。どの角度がいいですか？',
+    englishReply: 'Of course. Which angle do you prefer?',
     incorrectOptions: [
       '昨日のドラマは本当に面白かったですね。',
       '駅の近くに新しいカフェができましたよ。',
@@ -405,6 +427,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you please repeat the last part more slowly?',
     japaneseSentence: '最後の部分をもう少しゆっくり繰り返してもらえますか？',
     japaneseReply: 'はい、ゆっくり説明しますね。',
+    englishReply: 'Sure, I’ll explain it slowly.',
     incorrectOptions: [
       '昨日はあまりよく眠れなかったんです。',
       '週末にサッカーを一緒にしませんか？',
@@ -423,6 +446,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Do you know if this bus stops at the museum?',
     japaneseSentence: 'このバスは博物館に停まりますか？',
     japaneseReply: 'はい、三つ目の停留所で停まります。',
+    englishReply: 'Yes, it stops at the third stop.',
     incorrectOptions: [
       '今度の週末に花見に行きませんか？',
       '最近始めた趣味がすごく楽しいんです。',
@@ -441,6 +465,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would it be possible to extend my stay for another night?',
     japaneseSentence: '宿泊をもう一泊延長することはできますか？',
     japaneseReply: 'はい、空室がありますので可能です。',
+    englishReply: 'Yes, we have a room available.',
     incorrectOptions: [
       'その映画を一緒に見に行きませんか？',
       '新しいレストランにもう行きましたか？',
@@ -459,6 +484,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you tell me when the next train to Tokyo leaves?',
     japaneseSentence: '東京行きの次の電車は何時に出発しますか？',
     japaneseReply: '10分後に発車します。',
+    englishReply: 'It leaves in ten minutes.',
     incorrectOptions: [
       '昨日は久しぶりに映画館に行きました。',
       '週末に友達と旅行に行く予定です。',
@@ -477,6 +503,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would you mind watching my bag for a few minutes?',
     japaneseSentence: '少しの間、私の荷物を見ていてもらえますか？',
     japaneseReply: 'はい、大丈夫ですよ。',
+    englishReply: 'Sure, no problem.',
     incorrectOptions: [
       '昨日の試合はとても盛り上がりましたね。',
       'この後で駅まで一緒に行きませんか？',
@@ -495,6 +522,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you tell me the password for the Wi-Fi here?',
     japaneseSentence: 'ここのWi-Fiのパスワードを教えていただけますか？',
     japaneseReply: 'はい、レシートに書いてあります。',
+    englishReply: 'Yes, it’s written on the receipt.',
     incorrectOptions: [
       '明日の会議の資料はもう準備できましたか？',
       '最近体調を崩してしまって大変でした。',
@@ -513,6 +541,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Would it be alright if I paid separately?',
     japaneseSentence: '別々にお会計してもいいですか？',
     japaneseReply: 'はい、大丈夫です。分けて計算しますね。',
+    englishReply: 'Yes, that’s fine. I’ll split the bill.',
     incorrectOptions: [
       'その映画は本当に感動的でしたね。',
       '駅の近くに新しい店ができましたよ。',
@@ -531,6 +560,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'Could you tell me how to get to the nearest police station?',
     japaneseSentence: '一番近い交番へはどう行けばいいですか？',
     japaneseReply: 'あの信号を渡ってすぐです。',
+    englishReply: 'Cross that light and it’s right there.',
     incorrectOptions: [
       '昨日は雨が降ってとても寒かったです。',
       '明日の予定を一緒に確認しませんか？',

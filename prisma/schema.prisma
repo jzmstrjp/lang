@@ -13,8 +13,10 @@ model Problem {
   englishSentence  String
   japaneseSentence String
   japaneseReply    String
+  englishReply     String?
   incorrectOptions Json
   audioEnUrl       String?
+  audioEnReplyUrl       String?
   audioJaUrl       String?
   imageUrl         String?
   senderVoice      VoiceType
@@ -25,7 +27,7 @@ model Problem {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
-  @@unique([englishSentence, japaneseReply], name: "unique_problem_pair")
+  @@unique([englishSentence, japaneseReply])
   @@map("problems")
 }
 

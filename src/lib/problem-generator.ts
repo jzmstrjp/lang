@@ -65,6 +65,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     englishSentence: selectedProblem.englishSentence,
     japaneseSentence: selectedProblem.japaneseSentence,
     japaneseReply: selectedProblem.japaneseReply,
+    englishReply: selectedProblem.englishReply || null,
     incorrectOptions: Array.isArray(selectedProblem.incorrectOptions)
       ? selectedProblem.incorrectOptions
       : [],
