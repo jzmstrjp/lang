@@ -171,6 +171,7 @@ const problems: SeedProblemData[] = [
     englishSentence: 'What day is it today?',
     japaneseSentence: '今日は何曜日ですか？', // 10文字
     japaneseReply: '火曜日です。',
+    englishReply: 'It’s Tuesday.',
     incorrectOptions: [
       '明日の予定はどうですか？',
       '新しい映画を見ましたか？',

@@ -808,6 +808,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 <p className="whitespace-pre-wrap">
                   {problem.place}で{problem.senderRole}が{problem.receiverRole}に話しかけています。
                 </p>
+                <p className="whitespace-pre-wrap">{problem.receiverRole}がそれに答えます。</p>
               </div>
             ) : (
               <div className="w-full max-w-[500px] p-8 text-center bg-white rounded-lg border border-[#d8cbb6]">

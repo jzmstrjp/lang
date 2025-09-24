@@ -42,7 +42,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
     }
     const totalMissingCount = await prisma.problem.count({
       where: {
-        OR: [{ audioEnUrl: null }, { audioJaUrl: null }],
+        OR: [{ audioEnUrl: null }, { audioJaUrl: null }, { audioEnReplyUrl: null }],
       },
     });
 
@@ -59,21 +59,23 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
 
     console.log(`📊 ${totalMissingCount}件の音声URLがnullなレコードが見つかりました`);
 
-    // audioEnUrl または audioJaUrl が null のレコードを10件取得
+    // audioEnUrl、audioJaUrl、または audioEnReplyUrl が null のレコードを取得
     console.log('📋 音声URLがnullなレコードを検索中...');
 
     const problemsWithMissingAudio = await prisma.problem.findMany({
       where: {
-        OR: [{ audioEnUrl: null }, { audioJaUrl: null }],
+        OR: [{ audioEnUrl: null }, { audioJaUrl: null }, { audioEnReplyUrl: null }],
       },
       select: {
         id: true,
         englishSentence: true,
         japaneseReply: true,
+        englishReply: true,
         senderVoice: true,
         receiverVoice: true,
         audioEnUrl: true,
         audioJaUrl: true,
+        audioEnReplyUrl: true,
       },
       take: batchSize,
       orderBy: {
@@ -104,15 +106,18 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         );
         console.log(`   English: "${problem.englishSentence}"`);
         console.log(`   Japanese Reply: "${problem.japaneseReply}"`);
+        console.log(`   English Reply: "${problem.englishReply || 'なし'}"`);
 
-        const updateData: { audioEnUrl?: string; audioJaUrl?: string } = {};
+        const updateData: { audioEnUrl?: string; audioJaUrl?: string; audioEnReplyUrl?: string } =
+          {};
 
         // 音声が欠けているかチェック
         const needsEnglish = !problem.audioEnUrl;
         const needsJapanese = !problem.audioJaUrl;
+        const needsEnglishReply = !problem.audioEnReplyUrl && problem.englishReply;
 
         if (needsEnglish || needsJapanese) {
-          console.log('   🎤 音声を生成中...');
+          console.log('   🎤 英語・日本語音声を生成中...');
 
           // 共通ロジックを使用して音声生成・アップロード
           const audioAssets = await generateAndUploadAudioAssets(
@@ -121,7 +126,14 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
               japaneseReply: problem.japaneseReply,
               senderVoice: problem.senderVoice,
               receiverVoice: problem.receiverVoice,
-            } as any,
+              wordCount: 0, // 一時的な値（実際には使用されない）
+              japaneseSentence: '', // 一時的な値（実際には使用されない）
+              englishReply: problem.englishReply,
+              incorrectOptions: [],
+              senderRole: '',
+              receiverRole: '',
+              place: '',
+            },
             problem.id,
           );
 
@@ -136,12 +148,44 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           }
         }
 
+        // 英語返答の音声生成
+        if (needsEnglishReply) {
+          console.log('   🎤 英語返答音声を生成中...');
+
+          // 英語返答の音声を個別に生成・アップロード
+          const { generateSpeechBuffer } = await import('../src/lib/audio-utils');
+          const { uploadAudioToR2 } = await import('../src/lib/r2-client');
+
+          const englishReplyAudioBuffer = await generateSpeechBuffer(
+            problem.englishReply!,
+            problem.receiverVoice as VoiceGender,
+          );
+
+          const englishReplyAudioUrl = await uploadAudioToR2(
+            englishReplyAudioBuffer,
+            problem.id,
+            'en-reply',
+            problem.receiverVoice as VoiceGender,
+          );
+
+          updateData.audioEnReplyUrl = englishReplyAudioUrl;
+          console.log(`   ✅ 英語返答音声アップロード完了: ${englishReplyAudioUrl}`);
+        }
+
         if (!needsEnglish) {
           console.log(`   ✓ 英語音声は既に存在: ${problem.audioEnUrl}`);
         }
 
         if (!needsJapanese) {
           console.log(`   ✓ 日本語音声は既に存在: ${problem.audioJaUrl}`);
+        }
+
+        if (!needsEnglishReply) {
+          if (problem.englishReply) {
+            console.log(`   ✓ 英語返答音声は既に存在: ${problem.audioEnReplyUrl}`);
+          } else {
+            console.log(`   ✓ 英語返答なし（englishReplyがnull）`);
+          }
         }
 
         // DBを更新（何らかの音声URLが生成された場合のみ）

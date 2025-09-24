@@ -89,7 +89,7 @@ export async function uploadToR2(
 export async function uploadAudioToR2(
   audioBuffer: Buffer,
   problemId: string,
-  language: 'en' | 'ja',
+  language: 'en' | 'ja' | 'en-reply',
   speaker: VoiceGender,
 ): Promise<string> {
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD

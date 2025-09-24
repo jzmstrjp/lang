@@ -13,7 +13,14 @@ export type GenerateRequest = {
 // Prismaの型を利用
 export type GeneratedProblem = Omit<
   Problem,
-  'id' | 'audioEnUrl' | 'audioJaUrl' | 'imageUrl' | 'createdAt' | 'updatedAt' | 'incorrectOptions'
+  | 'id'
+  | 'audioEnUrl'
+  | 'audioJaUrl'
+  | 'audioEnReplyUrl'
+  | 'imageUrl'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'incorrectOptions'
 > & {
   incorrectOptions: string[];
 };
@@ -127,16 +134,33 @@ ${problem.senderRole}${senderGenderText}が${problem.receiverRole}${receiverGend
 export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
   english: string;
   japanese: string;
+  englishReply?: string;
 }> {
-  const [englishAudio, japaneseAudio] = await Promise.all([
+  const audioPromises = [
     generateSpeech(problem.englishSentence, voiceTypeToVoiceGender(problem.senderVoice)),
     generateSpeech(problem.japaneseReply, voiceTypeToVoiceGender(problem.receiverVoice)),
-  ]);
+  ];
 
-  return {
-    english: englishAudio,
-    japanese: japaneseAudio,
+  // englishReplyがある場合は英語返答の音声も生成
+  if (problem.englishReply) {
+    audioPromises.push(
+      generateSpeech(problem.englishReply, voiceTypeToVoiceGender(problem.receiverVoice)),
+    );
+  }
+
+  const audioResults = await Promise.all(audioPromises);
+
+  const result: { english: string; japanese: string; englishReply?: string } = {
+    english: audioResults[0],
+    japanese: audioResults[1],
   };
+
+  // englishReplyがある場合は結果に含める
+  if (problem.englishReply && audioResults[2]) {
+    result.englishReply = audioResults[2];
+  }
+
+  return result;
 }
 
 /**
@@ -148,31 +172,57 @@ export async function generateAndUploadAudioAssets(
 ): Promise<{
   english: string;
   japanese: string;
+  englishReply?: string;
 }> {
-  const [englishAudioBuffer, japaneseAudioBuffer] = await Promise.all([
+  const audioBufferPromises = [
     generateSpeechBuffer(problem.englishSentence, voiceTypeToVoiceGender(problem.senderVoice)),
     generateSpeechBuffer(problem.japaneseReply, voiceTypeToVoiceGender(problem.receiverVoice)),
-  ]);
+  ];
 
-  const [englishAudio, japaneseAudio] = await Promise.all([
+  // englishReplyがある場合は英語返答の音声も生成
+  if (problem.englishReply) {
+    audioBufferPromises.push(
+      generateSpeechBuffer(problem.englishReply, voiceTypeToVoiceGender(problem.receiverVoice)),
+    );
+  }
+
+  const audioBuffers = await Promise.all(audioBufferPromises);
+
+  const uploadPromises = [
+    uploadAudioToR2(audioBuffers[0], problemId, 'en', voiceTypeToVoiceGender(problem.senderVoice)),
     uploadAudioToR2(
-      englishAudioBuffer,
-      problemId,
-      'en',
-      voiceTypeToVoiceGender(problem.senderVoice),
-    ),
-    uploadAudioToR2(
-      japaneseAudioBuffer,
+      audioBuffers[1],
       problemId,
       'ja',
       voiceTypeToVoiceGender(problem.receiverVoice),
     ),
-  ]);
+  ];
 
-  return {
-    english: englishAudio,
-    japanese: japaneseAudio,
+  // englishReplyがある場合は英語返答音声もアップロード
+  if (problem.englishReply && audioBuffers[2]) {
+    uploadPromises.push(
+      uploadAudioToR2(
+        audioBuffers[2],
+        problemId,
+        'en-reply',
+        voiceTypeToVoiceGender(problem.receiverVoice),
+      ),
+    );
+  }
+
+  const uploadResults = await Promise.all(uploadPromises);
+
+  const result: { english: string; japanese: string; englishReply?: string } = {
+    english: uploadResults[0],
+    japanese: uploadResults[1],
   };
+
+  // englishReplyがある場合は結果に含める
+  if (problem.englishReply && uploadResults[2]) {
+    result.englishReply = uploadResults[2];
+  }
+
+  return result;
 }
 
 /**

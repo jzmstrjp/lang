@@ -13,10 +13,10 @@ model Problem {
   englishSentence  String
   japaneseSentence String
   japaneseReply    String
-  englishReply     String?
+  englishReply     String
   incorrectOptions Json
   audioEnUrl       String?
-  audioEnReplyUrl       String?
+  audioEnReplyUrl  String?
   audioJaUrl       String?
   imageUrl         String?
   senderVoice      VoiceType
