@@ -198,14 +198,32 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
 
     const totalDuration = ((Date.now() - totalStartTime) / 1000).toFixed(1);
 
-    console.log('\n🎊 ===============================================');
-    console.log('✅ 音声URL修復スクリプトが完了しました！');
-    console.log('🎊 ===============================================');
-    console.log(`📊 処理結果:`);
-    console.log(`   ✅ 成功: ${successCount}件`);
-    console.log(`   ❌ エラー: ${errorCount}件`);
-    console.log(`   📝 合計: ${problemsWithMissingAudio.length}件`);
-    console.log(`   ⏱️ 合計時間: ${totalDuration}秒 (直列実行)`);
+    if (errorCount > 0) {
+      const failureSummary = [
+        '\n💥 ===============================================',
+        '❌ 音声URL修復スクリプトはエラーで終了しました',
+        '💥 ===============================================',
+        `📊 処理結果:`,
+        `   ✅ 成功: ${successCount}件`,
+        `   ❌ エラー: ${errorCount}件`,
+        `   📝 合計: ${problemsWithMissingAudio.length}件`,
+        `   ⏱️ 合計時間: ${totalDuration}秒 (直列実行)`,
+      ];
+      failureSummary.forEach((line) => console.error(line));
+      throw new Error(`音声URL修復処理で${errorCount}件のエラーが発生しました`);
+    }
+
+    const successSummary = [
+      '\n🎊 ===============================================',
+      '✅ 音声URL修復スクリプトが完了しました！',
+      '🎊 ===============================================',
+      `📊 処理結果:`,
+      `   ✅ 成功: ${successCount}件`,
+      `   ❌ エラー: ${errorCount}件`,
+      `   📝 合計: ${problemsWithMissingAudio.length}件`,
+      `   ⏱️ 合計時間: ${totalDuration}秒 (直列実行)`,
+    ];
+    successSummary.forEach((line) => console.log(line));
   } catch (error) {
     console.error('❌ スクリプト実行エラー:', error);
     throw error;
