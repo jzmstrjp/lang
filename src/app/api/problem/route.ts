@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Problem } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
 export async function GET(request: Request) {
@@ -19,35 +19,23 @@ export async function GET(request: Request) {
       );
     }
 
-    const wordCountFilter: Prisma.ProblemWhereInput = {
-      wordCount: { gte: rules.min, lte: rules.max },
-      // 音声URLが両方とも存在するレコードのみを対象にする
-      audioEnUrl: { not: null },
-      audioJaUrl: { not: null },
-      audioEnReplyUrl: { not: null },
-    } as Prisma.ProblemWhereInput;
+    const [problem] = await prisma.$queryRaw<Problem[]>(Prisma.sql`
+      SELECT *
+      FROM "problems"
+      WHERE "wordCount" >= ${rules.min}
+        AND "wordCount" <= ${rules.max}
+        AND "audioEnUrl" IS NOT NULL
+        AND "audioJaUrl" IS NOT NULL
+        AND "audioEnReplyUrl" IS NOT NULL
+      ORDER BY RANDOM()
+      LIMIT 1
+    `);
 
-    const totalCount = await prisma.problem.count({
-      where: wordCountFilter,
-    });
-
-    if (totalCount === 0) {
+    if (!problem) {
       return NextResponse.json(
         { error: `No ${type} problems with audio found in database` },
         { status: 404 },
       );
-    }
-
-    // ランダムなskip値を計算
-    const randomSkip = Math.floor(Math.random() * totalCount);
-
-    const problem = await prisma.problem.findFirst({
-      where: wordCountFilter,
-      skip: randomSkip,
-    });
-
-    if (!problem) {
-      return NextResponse.json({ error: 'Problem not found' }, { status: 404 });
     }
 
     // incorrectOptionsをJSON文字列から配列に変換

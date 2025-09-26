@@ -67,6 +67,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const secondaryPlaybackTimeoutRef = useRef<number | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
+  const isPrefetchingNextRef = useRef(false);
 
   // 完全英語モードの設定をlocalStorageから読み込み
   useEffect(() => {
@@ -450,6 +451,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setNextAssets(null);
     setImageLoaded(false);
     setIsAudioPlaying(false);
+    isPrefetchingNextRef.current = false;
   }, [length]);
 
   // ページ読み込み時に問題を事前フェッチ
@@ -494,11 +496,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
           setIsReady(true);
           console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
-
-          // 最初の問題が準備できたら、次の問題も事前フェッチ
-          setTimeout(() => {
-            void prefetchNextProblem();
-          }, 100);
         } else {
           throw new Error('問題がありません');
         }
@@ -517,6 +514,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   // 次の問題を事前フェッチする関数
   const prefetchNextProblem = useCallback(async () => {
+    if (isPrefetchingNextRef.current) return;
+
+    isPrefetchingNextRef.current = true;
     try {
       const params = new URLSearchParams({ type: length });
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
@@ -540,6 +540,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
     } catch (err) {
       console.warn('[ProblemFlow] 次の問題の事前フェッチ失敗:', err);
+    } finally {
+      isPrefetchingNextRef.current = false;
     }
   }, [length]);
 
@@ -587,11 +589,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           setPhase('scene');
         }
         console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
-
-        // 新しい問題が取得できたら、次の問題も事前フェッチ
-        setTimeout(() => {
-          void prefetchNextProblem();
-        }, 100);
       } else {
         throw new Error('問題がありません');
       }
@@ -609,6 +606,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [length]);
+
+  useEffect(() => {
+    if (phase !== 'result') return;
+    if (!isCorrect) return;
+    if (nextProblem) return;
+
+    void prefetchNextProblem();
+  }, [isCorrect, nextProblem, phase, prefetchNextProblem]);
 
   const handleStart = () => {
     if (!isReady || !problem || !assets) return;
@@ -685,9 +690,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       // 現在の問題を次の問題用の変数にクリア
       setNextProblem(null);
       setNextAssets(null);
-
-      // さらに次の問題を事前フェッチ
-      void prefetchNextProblem();
     } else {
       // 事前フェッチされていない場合は従来通り
       setPhase('loading');
