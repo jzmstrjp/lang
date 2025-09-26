@@ -57,9 +57,9 @@ export default function Home() {
           <Link
             key={href}
             href={href}
-            className="flex w-full flex-col items-center rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:text-[#2f8f9d] sm:flex-1"
+            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:text-[#2f8f9d] sm:flex-1"
           >
-            <span className="text-lg font-semibold">{label}</span>
+            <span className="text-xl font-semibold">{label}</span>
             <span className="text-sm font-medium text-[#d77a61]">{description}</span>
           </Link>
         ))}
