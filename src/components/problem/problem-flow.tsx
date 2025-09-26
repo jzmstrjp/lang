@@ -509,7 +509,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     };
 
     void prefetchProblem();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [length]);
 
   // 次の問題を事前フェッチする関数
@@ -544,6 +543,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       isPrefetchingNextRef.current = false;
     }
   }, [length]);
+
+  useEffect(() => {
+    if (!problem) return;
+    if (nextProblem) return;
+    if (isPrefetchingNextRef.current) return;
+
+    void prefetchNextProblem();
+  }, [problem, nextProblem, prefetchNextProblem]);
 
   const fetchProblem = useCallback(async () => {
     setIsFetching(true);
@@ -604,7 +611,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setFetchingStatus(null);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [length]);
 
   useEffect(() => {
