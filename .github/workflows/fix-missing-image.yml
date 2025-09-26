@@ -1,9 +1,9 @@
 name: 画像URL修復スクリプト
 
 on:
-  # 10分に1回のスケジュール実行
-  # schedule:
-  #   - cron: '*/5 * * * *'
+  # スケジュール実行
+  schedule:
+    - cron: '*/5 * * * *'
   # 手動実行
   workflow_dispatch:
     inputs:
