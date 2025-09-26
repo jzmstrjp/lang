@@ -35,14 +35,14 @@ function voiceTypeToVoiceGender(voiceType: VoiceType): VoiceGender {
 /**
  * 性別の英語表記を日本語にマッピング
  */
-function getGenderInJapanese(voiceType: VoiceType): string {
+function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
   switch (voiceType) {
     case 'male':
       return '男性';
     case 'female':
       return '女性';
     default:
-      return '';
+      return '' as never;
   }
 }
 
@@ -92,12 +92,24 @@ export async function generateProblem(type: ProblemLength = 'short'): Promise<Ge
   return await getRandomProblemFromSeed(type);
 }
 
+const senderNameMap: Record<VoiceType, string> = {
+  male: 'James',
+  female: 'Mary',
+};
+const receiverNameMap: Record<VoiceType, string> = {
+  male: 'タカシ',
+  female: 'マミ',
+};
+
 /**
  * 画像プロンプトを生成
  */
 export function generateImagePrompt(problem: GeneratedProblem): string {
-  const senderGenderText = `（${getGenderInJapanese(problem.senderVoice)}）`;
-  const receiverGenderText = `（${getGenderInJapanese(problem.receiverVoice)}）`;
+  const senderGenderText = getGenderInJapanese(problem.senderVoice);
+  const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
+
+  const senderName = senderNameMap[problem.senderVoice];
+  const receiverName = receiverNameMap[problem.receiverVoice];
 
   return `実写風の2コマ漫画を生成してください。
 縦に2コマです。
@@ -109,18 +121,18 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${problem.senderRole}${senderGenderText}
-- ${problem.receiverRole}${receiverGenderText}
+- ${senderName}（整った顔の${senderGenderText}・${problem.senderRole}）
+- ${receiverName}（整った顔の${receiverGenderText}・${problem.receiverRole}）
 
 【ストーリー】
-${problem.senderRole}${senderGenderText}が${problem.receiverRole}${receiverGenderText}に対して「${problem.englishSentence}」と言う。それに対し、${problem.receiverRole}${receiverGenderText}が「${problem.japaneseReply}」と答える。
+${senderName}が${receiverName}に対して「${problem.englishSentence}」と言う。それに対し、${receiverName}が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
-- ${problem.place}で${problem.senderRole}${senderGenderText}が「${problem.englishSentence}」と言っている様子を描いてください。
-- ${problem.receiverRole}${receiverGenderText}はまだ描かないこと。
+- ${problem.place}で${senderName}が「${problem.englishSentence}」と言っている様子を描いてください。
+- ${receiverName}はまだ描かないこと。
 
 【2コマ目】
-- ${problem.senderRole}${senderGenderText}の台詞を聞いた${problem.receiverRole}${receiverGenderText}が${problem.place}で「${problem.japaneseReply}」と反応した様子を描いてください。
+- ${senderName}の台詞を聞いた${receiverName}が${problem.place}で「${problem.japaneseReply}」と反応した様子を描いてください。
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写してください。
