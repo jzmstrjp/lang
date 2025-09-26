@@ -19,6 +19,7 @@ model Problem {
   audioEnReplyUrl  String?
   audioJaUrl       String?
   imageUrl         String?
+  audioReady       Boolean     @default(false)
   senderVoice      VoiceType
   senderRole       String
   receiverVoice    VoiceType
@@ -28,7 +29,7 @@ model Problem {
   updatedAt        DateTime    @updatedAt
 
   @@unique([englishSentence, japaneseReply])
-  @@index([wordCount, audioEnUrl, audioJaUrl, audioEnReplyUrl], map: "idx_problems_wordcount_audio_notnull")
+  @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
   @@map("problems")
 }
 

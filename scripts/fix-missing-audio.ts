@@ -64,6 +64,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         audioEnUrl: true,
         audioJaUrl: true,
         audioEnReplyUrl: true,
+        audioReady: true,
       },
       take: batchSize,
       orderBy: {
@@ -94,8 +95,12 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         console.log(`   Japanese Reply: "${problem.japaneseReply}"`);
         console.log(`   English Reply: "${problem.englishReply || 'なし'}"`);
 
-        const updateData: { audioEnUrl?: string; audioJaUrl?: string; audioEnReplyUrl?: string } =
-          {};
+        const updateData: {
+          audioEnUrl?: string;
+          audioJaUrl?: string;
+          audioEnReplyUrl?: string | null;
+          audioReady?: boolean;
+        } = {};
 
         // 音声が欠けているかチェック
         const needsEnglish = !problem.audioEnUrl;
@@ -174,7 +179,19 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           }
         }
 
-        // DBを更新（何らかの音声URLが生成された場合のみ）
+        const finalEnglish = updateData.audioEnUrl ?? problem.audioEnUrl;
+        const finalJapanese = updateData.audioJaUrl ?? problem.audioJaUrl;
+        const finalEnglishReply = updateData.audioEnReplyUrl ?? problem.audioEnReplyUrl;
+        const requiresEnglishReply = Boolean(problem.englishReply && problem.englishReply.trim());
+
+        if (finalEnglish && finalJapanese && (!requiresEnglishReply || finalEnglishReply)) {
+          updateData.audioReady = true;
+        }
+
+        if (!requiresEnglishReply) {
+          updateData.audioEnReplyUrl = finalEnglishReply ?? null;
+        }
+
         if (Object.keys(updateData).length > 0) {
           console.log('   💾 データベースを更新中...');
 

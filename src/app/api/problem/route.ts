@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Prisma, Problem } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
 export async function GET(request: Request) {
@@ -20,18 +20,10 @@ export async function GET(request: Request) {
     }
 
     const where: Prisma.ProblemWhereInput = {
+      audioReady: true,
       wordCount: {
         gte: rules.min,
         lte: rules.max,
-      },
-      audioEnUrl: {
-        not: null,
-      },
-      audioJaUrl: {
-        not: null,
-      },
-      audioEnReplyUrl: {
-        not: null,
       },
     };
 

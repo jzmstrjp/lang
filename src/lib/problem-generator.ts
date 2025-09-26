@@ -21,6 +21,7 @@ export type GeneratedProblem = Omit<
   | 'createdAt'
   | 'updatedAt'
   | 'incorrectOptions'
+  | 'audioReady'
 > & {
   incorrectOptions: string[];
 };

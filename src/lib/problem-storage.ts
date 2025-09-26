@@ -102,6 +102,10 @@ export async function saveGeneratedProblem(
     receiverVoice: input.problem.receiverVoice,
     receiverRole: input.problem.receiverRole,
     place: input.problem.place,
+    audioReady:
+      Boolean(input.assets.audio.english) &&
+      Boolean(input.assets.audio.japanese) &&
+      (!input.problem.englishReply || Boolean(input.assets.audio.englishReply)),
   } as const;
 
   const record = await prisma.problem.create({
