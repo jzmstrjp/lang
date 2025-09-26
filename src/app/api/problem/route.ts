@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma, type Problem } from '@prisma/client';
+import type { Prisma, Problem } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
 export async function GET(request: Request) {
@@ -19,17 +19,41 @@ export async function GET(request: Request) {
       );
     }
 
-    const [problem] = await prisma.$queryRaw<Problem[]>(Prisma.sql`
-      SELECT *
-      FROM "problems"
-      WHERE "wordCount" >= ${rules.min}
-        AND "wordCount" <= ${rules.max}
-        AND "audioEnUrl" IS NOT NULL
-        AND "audioJaUrl" IS NOT NULL
-        AND "audioEnReplyUrl" IS NOT NULL
-      ORDER BY RANDOM()
-      LIMIT 1
-    `);
+    const where: Prisma.ProblemWhereInput = {
+      wordCount: {
+        gte: rules.min,
+        lte: rules.max,
+      },
+      audioEnUrl: {
+        not: null,
+      },
+      audioJaUrl: {
+        not: null,
+      },
+      audioEnReplyUrl: {
+        not: null,
+      },
+    };
+
+    const totalCount = await prisma.problem.count({ where });
+
+    if (totalCount === 0) {
+      return NextResponse.json(
+        { error: `No ${type} problems with audio found in database` },
+        { status: 404 },
+      );
+    }
+
+    const randomOffset = Math.floor(Math.random() * totalCount);
+
+    const [problem] = await prisma.problem.findMany({
+      where,
+      skip: randomOffset,
+      take: 1,
+      orderBy: {
+        id: 'asc',
+      },
+    });
 
     if (!problem) {
       return NextResponse.json(
