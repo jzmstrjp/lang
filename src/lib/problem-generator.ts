@@ -2,7 +2,7 @@ import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
 import { generateImageBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
-import type { ProblemLength } from '@/config/problem';
+import { WORD_COUNT_RULES, countWords, type ProblemLength } from '@/config/problem';
 import type { Problem, VoiceType } from '@prisma/client';
 
 export type GenerateRequest = {
@@ -50,25 +50,45 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
 async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
-  // 問題タイプに応じてファイルを選択
-  let problems;
-  if (type === 'long') {
-    // 長文の場合はproblem2.tsから取得
-    const { default: longProblems } = await import('../../problemData/problem2');
-    problems = longProblems;
-  } else {
-    // 短文・中文の場合はproblem1.tsから取得
-    const { default: shortMediumProblems } = await import('../../problemData/problem1');
-    problems = shortMediumProblems;
+  const [
+    { default: problems1 },
+    { default: problems2 },
+    { default: problems3 },
+    { default: problems4 },
+    { default: problems5 },
+  ] = await Promise.all([
+    import('../../problemData/problem1'),
+    import('../../problemData/problem2'),
+    import('../../problemData/problem3'),
+    import('../../problemData/problem4'),
+    import('../../problemData/problem5'),
+  ]);
+
+  const { min, max } = WORD_COUNT_RULES[type];
+  const filteredProblems = [
+    ...problems1,
+    ...problems2,
+    ...problems3,
+    ...problems4,
+    ...problems5,
+  ].filter((problem) => {
+    const wordCount = countWords(problem.englishSentence);
+    return wordCount >= min && wordCount <= max;
+  });
+
+  if (filteredProblems.length === 0) {
+    throw new Error(
+      `No seed problems found for type "${type}" within the configured word count range.`,
+    );
   }
 
-  // ランダムに1件選択
-  const randomIndex = Math.floor(Math.random() * problems.length);
-  const selectedProblem = problems[randomIndex];
+  const randomIndex = Math.floor(Math.random() * filteredProblems.length);
+  const selectedProblem = filteredProblems[randomIndex];
+  const wordCount = countWords(selectedProblem.englishSentence);
 
   // GeneratedProblem形式に変換
   return {
-    wordCount: selectedProblem.englishSentence.split(' ').length,
+    wordCount,
     englishSentence: selectedProblem.englishSentence,
     japaneseSentence: selectedProblem.japaneseSentence,
     japaneseReply: selectedProblem.japaneseReply,
