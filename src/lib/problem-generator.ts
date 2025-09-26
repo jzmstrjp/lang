@@ -53,12 +53,12 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
   // 問題タイプに応じてファイルを選択
   let problems;
   if (type === 'long') {
-    // 長文の場合はprobrem2.tsから取得
-    const { default: longProblems } = await import('../../probremData/probrem2');
+    // 長文の場合はproblem2.tsから取得
+    const { default: longProblems } = await import('../../problemData/problem2');
     problems = longProblems;
   } else {
-    // 短文・中文の場合はprobrem1.tsから取得
-    const { default: shortMediumProblems } = await import('../../probremData/probrem1');
+    // 短文・中文の場合はproblem1.tsから取得
+    const { default: shortMediumProblems } = await import('../../problemData/problem1');
     problems = shortMediumProblems;
   }
 

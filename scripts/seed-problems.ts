@@ -2,7 +2,7 @@
 
 /**
  * 問題データをデータベースにシードするスクリプト
- * 複数のprobremファイルに対応
+ * 複数のproblemファイルに対応
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -86,9 +86,9 @@ function analyzeWordCountDistribution(seedData: SeedProblemData[]): void {
 }
 
 /**
- * 動的にprobremファイルをインポートする
+ * 動的にproblemファイルをインポートする
  */
-async function importProbremFile(filePath: string): Promise<SeedProblemData[]> {
+async function importproblemFile(filePath: string): Promise<SeedProblemData[]> {
   try {
     // ESModuleとCommonJSの両方に対応
     const importedModule = await import(filePath);
@@ -100,22 +100,22 @@ async function importProbremFile(filePath: string): Promise<SeedProblemData[]> {
 }
 
 /**
- * probremDataディレクトリ内のすべての.tsファイルを取得
+ * problemDataディレクトリ内のすべての.tsファイルを取得
  */
-function getProbremFiles(): string[] {
-  const probremDir = path.join(process.cwd(), 'probremData');
+function getproblemFiles(): string[] {
+  const problemDir = path.join(process.cwd(), 'problemData');
 
-  if (!fs.existsSync(probremDir)) {
-    throw new Error(`probremDataディレクトリが見つかりません: ${probremDir}`);
+  if (!fs.existsSync(problemDir)) {
+    throw new Error(`problemDataディレクトリが見つかりません: ${problemDir}`);
   }
 
   const files = fs
-    .readdirSync(probremDir)
-    .filter((file) => file.endsWith('.ts') && file.startsWith('probrem'))
-    .map((file) => path.join(probremDir, file));
+    .readdirSync(problemDir)
+    .filter((file) => file.endsWith('.ts') && file.startsWith('problem'))
+    .map((file) => path.join(problemDir, file));
 
   if (files.length === 0) {
-    throw new Error('probremファイルが見つかりません');
+    throw new Error('problemファイルが見つかりません');
   }
 
   return files;
@@ -156,9 +156,9 @@ async function main() {
       filesToProcess = [fullPath];
       console.log(`📄 指定ファイルを処理: ${specifiedFile}`);
     } else {
-      // 全probremファイルの処理
-      filesToProcess = getProbremFiles();
-      console.log(`📁 ${filesToProcess.length}個のprobremファイルを発見`);
+      // 全problemファイルの処理
+      filesToProcess = getproblemFiles();
+      console.log(`📁 ${filesToProcess.length}個のproblemファイルを発見`);
     }
 
     let totalInserted = 0;
@@ -168,7 +168,7 @@ async function main() {
       console.log(`\n📝 処理中: ${filename}`);
 
       // データを読み込み
-      const seedData = await importProbremFile(filePath);
+      const seedData = await importproblemFile(filePath);
       console.log(`📊 ${seedData.length}個の問題を発見`);
 
       // 単語数分布を分析
