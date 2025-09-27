@@ -1,7 +1,7 @@
 export type ProblemLength = 'short' | 'medium' | 'long';
 
 export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number }> = {
-  short: { min: 1, max: 6 },
+  short: { min: 2, max: 6 },
   medium: { min: 7, max: 10 },
   long: { min: 11, max: 20 },
 };
