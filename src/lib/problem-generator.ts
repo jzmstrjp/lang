@@ -160,8 +160,8 @@ ${senderName}が、${receiverName}に対して「${problem.japaneseSentence}」�
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写してください。
-- ${senderName}と${receiverName}は対話をしているわけなので、背景は異なるはずです。
-- 1コマ目の${senderName}は左を向いています。2コマ目の${receiverName}は右を向いています。
+- ${senderName}と${receiverName}は対面しているわけなので、背景は微妙に異なるはずです。
+- 1コマ目の${senderName}は右斜め前を向いています。2コマ目の${receiverName}は左斜め前を向いています。
 - セリフに対して不自然な画像は生成しないこと。
   - 不自然な例
     - 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
