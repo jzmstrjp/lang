@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { HEADER_PORTAL_ID } from '@/components/layout/header-portal-id';
 import { SettingsMenu } from '@/components/settings/settings-menu';
 import './globals.css';
 
@@ -57,10 +58,17 @@ export default function RootLayout({
       >
         <header className="border-b border-gray-800 bg-black">
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center pl-4 pr-2 sm:px-6">
-            <Link href="/" className="text-lg font-bold tracking-wide text-white">
-              英語きわめ太郎
-            </Link>
-            <SettingsMenu className="ml-auto" />
+            <div className="flex flex-1 items-center gap-2">
+              <Link href="/" className="text-lg font-bold tracking-wide text-white">
+                英語きわめ太郎
+              </Link>
+              <div
+                id={HEADER_PORTAL_ID}
+                className="flex-1 truncate text-lg font-bold text-white/90"
+                aria-live="polite"
+              />
+            </div>
+            <SettingsMenu className="ml-4" />
           </div>
         </header>
         {children}
