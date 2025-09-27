@@ -209,6 +209,9 @@ async function main() {
     const stats = await prismaClient.problem.groupBy({
       by: ['wordCount'],
       _count: true,
+      orderBy: {
+        wordCount: 'asc',
+      },
     });
 
     console.log('\n📈 データベース統計:');

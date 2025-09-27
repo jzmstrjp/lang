@@ -746,13 +746,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 onLoad={() => setImageLoaded(true)}
               />
             ) : problem ? (
-              <div className="w-full max-w-[500px] p-6 text-base text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+              <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
                 <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
-                <p className="whitespace-pre-wrap mb-3 text-base">
-                  <span className="font-bold">{problem.place}</span> で{' '}
-                  <span className="font-bold">{getSenderDisplayName()}</span> が{' '}
-                  <span className="font-bold">{getReceiverDisplayName()}</span> に話しかけています。
-                </p>
+                <p className="font-bold text-2xl">{problem.place}</p>
               </div>
             ) : (
               <div className="w-full max-w-[500px] p-8 text-center bg-white rounded-lg border border-[#d8cbb6]">
