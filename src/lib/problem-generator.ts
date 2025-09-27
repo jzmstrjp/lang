@@ -142,18 +142,18 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${senderName}（整った顔の${senderGenderText}・${problem.senderRole}）
-- ${receiverName}（整った顔の${receiverGenderText}・${problem.receiverRole}）
+- ${senderName}・・・${problem.senderRole}。端正な顔立ちの${senderGenderText}。
+- ${receiverName}・・・${problem.receiverRole}。端正な顔立ちの${receiverGenderText}。
 
 【ストーリー】
-${senderName}が${receiverName}に対して「${problem.englishSentence}」と言う。それに対し、${receiverName}が「${problem.japaneseReply}」と答える。
+${senderName}が、${receiverName}に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
-- ${problem.place}で${senderName}が「${problem.englishSentence}」と言っている様子を描いてください。
-- ${receiverName}はまだ描かないこと。
+- ${senderName}が「${problem.japaneseSentence}」と言っている
+- ${receiverName}はまだ描かない
 
 【2コマ目】
-- ${senderName}の台詞を聞いた${receiverName}が${problem.place}で「${problem.japaneseReply}」と反応した様子を描いてください。
+- ${receiverName}が「${problem.japaneseReply}」と返答している
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写してください。

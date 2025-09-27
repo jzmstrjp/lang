@@ -59,8 +59,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
   const [imageLoaded, setImageLoaded] = useState(false); // 画像の読み込み状況
   const [isAudioPlaying, setIsAudioPlaying] = useState(false); // 音声再生中かどうか
-  const [isEnglishMode, setIsEnglishMode] = useState(false); // 完全英語モード
+  const [isEnglishMode, setIsEnglishMode] = useState(false); // 日本語音声なし
+  const [isImageHiddenMode, setIsImageHiddenMode] = useState(false); // 画像なし
 
+  const sceneImage = assets?.image ?? null;
+
+  const isEnglishModeRef = useRef(isEnglishMode);
+  const isImageHiddenModeRef = useRef(isImageHiddenMode);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
   const playbackTimeoutRef = useRef<number | null>(null);
@@ -69,25 +74,28 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
 
-  // 完全英語モードの設定をlocalStorageから読み込み
+  // 日本語音声なしの設定をlocalStorageから読み込み
   useEffect(() => {
-    const savedMode = localStorage.getItem('englishMode');
-    if (savedMode === 'true') {
-      setIsEnglishMode(true);
-    }
+    const loadModes = () => {
+      const savedEnglishMode = localStorage.getItem('englishMode');
+      const savedNoImageMode = localStorage.getItem('noImageMode');
+
+      setIsEnglishMode(savedEnglishMode === 'true');
+      setIsImageHiddenMode(savedNoImageMode === 'true');
+    };
+
+    loadModes();
 
     // localStorageの変更を監視
     const handleStorageChange = () => {
-      const savedMode = localStorage.getItem('englishMode');
-      setIsEnglishMode(savedMode === 'true');
+      loadModes();
     };
 
     window.addEventListener('storage', handleStorageChange);
 
     // ページ内でのlocalStorage変更を検知するため、定期的にチェック
     const interval = setInterval(() => {
-      const savedMode = localStorage.getItem('englishMode');
-      setIsEnglishMode(savedMode === 'true');
+      loadModes();
     }, 1000);
 
     return () => {
@@ -96,24 +104,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     };
   }, []);
 
+  useEffect(() => {
+    isEnglishModeRef.current = isEnglishMode;
+  }, [isEnglishMode]);
+
+  useEffect(() => {
+    isImageHiddenModeRef.current = isImageHiddenMode;
+  }, [isImageHiddenMode]);
+
   // ProblemLength を直接使用
   // 正解判定：selectedOption が correctIndex と一致するか
   const isCorrect = problem != null && selectedOption === correctIndex;
-
-  // 役割名を表示用に調整する関数（同じ役割の場合はA・Bを付ける）
-  const getSenderDisplayName = () => {
-    if (!problem) return '';
-    return problem.senderRole === problem.receiverRole
-      ? `${problem.senderRole}A`
-      : problem.senderRole;
-  };
-
-  const getReceiverDisplayName = () => {
-    if (!problem) return '';
-    return problem.senderRole === problem.receiverRole
-      ? `${problem.receiverRole}B`
-      : problem.receiverRole;
-  };
 
   // 音声再生ロジックを共通化
   const startSceneAudioSequence = useCallback(
@@ -122,6 +123,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       const englishSrc = assets.audio.english;
       const japaneseSrc = assets.audio.japanese;
+      const englishMode = isEnglishModeRef.current;
 
       let englishAudio: HTMLAudioElement | null = null;
       let japaneseAudio: HTMLAudioElement | null = null;
@@ -136,7 +138,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       };
 
       const startJapanesePlayback = () => {
-        const audioSrc = isEnglishMode ? assets.audio.englishReply : japaneseSrc;
+        const audioSrc = englishMode ? assets.audio.englishReply : japaneseSrc;
         if (japaneseAudio || !audioSrc) {
           queueQuizTransition();
           return;
@@ -154,7 +156,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           japaneseAudio
             ?.play()
             .catch(() => {
-              const audioType = isEnglishMode ? '英語返答音声' : '日本語音声';
+              const audioType = englishMode ? '英語返答音声' : '日本語音声';
               console.warn(`${audioType}の自動再生に失敗しました。`);
               queueQuizTransition();
             })
@@ -214,7 +216,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         if (secondaryAudioRef.current === japaneseAudio) secondaryAudioRef.current = null;
       };
     },
-    [assets, isEnglishMode],
+    [assets],
   );
 
   // 英語音声を再生する関数
@@ -375,7 +377,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       };
     }
 
-    if (phase === 'scene' && !assets?.image) {
+    const hasSceneImage = Boolean(sceneImage) && !isImageHiddenModeRef.current;
+
+    if (phase === 'scene' && !hasSceneImage) {
       // 画像がない場合のみ即座に音声開始
       return startSceneAudioSequence(1000);
     }
@@ -429,14 +433,16 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }
       };
     }
-  }, [assets, isCorrect, phase, isEnglishMode, startSceneAudioSequence]);
+  }, [assets, isCorrect, phase, sceneImage, startSceneAudioSequence]);
 
   // 画像ロード完了時に音声を開始するuseEffect
   useEffect(() => {
-    if (phase === 'scene' && imageLoaded && assets?.image) {
+    const hasSceneImage = Boolean(sceneImage) && !isImageHiddenModeRef.current;
+
+    if (phase === 'scene' && imageLoaded && hasSceneImage) {
       return startSceneAudioSequence(500); // 画像ロード後は短い待機時間
     }
-  }, [phase, imageLoaded, assets?.image, startSceneAudioSequence]);
+  }, [phase, imageLoaded, sceneImage, startSceneAudioSequence]);
 
   useEffect(() => {
     setPhase('landing');
@@ -734,15 +740,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       {phase === 'scene' && (
         <section className="grid place-items-center">
           <figure className="flex w-full justify-center">
-            {assets?.image ? (
+            {sceneImage && !isImageHiddenMode ? (
               <Image
-                src={assets.image}
+                src={sceneImage}
                 alt="英語と日本語のセリフを並べた2コマシーン"
                 width={500}
                 height={750}
                 className="h-auto w-full max-w-[500px] object-contain"
                 priority
-                unoptimized={Boolean(assets)}
+                unoptimized={Boolean(sceneImage)}
                 onLoad={() => setImageLoaded(true)}
               />
             ) : problem ? (

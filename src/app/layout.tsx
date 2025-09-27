@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { SettingsMenu } from '@/components/settings/settings-menu';
 import './globals.css';
 
 const geistSans = Geist({
@@ -55,10 +56,11 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <header className="border-b border-gray-800 bg-black">
-          <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:px-6">
+          <div className="mx-auto flex h-14 w-full max-w-5xl items-center pl-4 pr-2 sm:px-6">
             <Link href="/" className="text-lg font-bold tracking-wide text-white">
               英語きわめ太郎
             </Link>
+            <SettingsMenu className="ml-auto" />
           </div>
         </header>
         {children}
