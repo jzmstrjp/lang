@@ -814,7 +814,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             </h2>
             {isCorrect && (
               <>
-                <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">
+                <p className="mt-4 text-xl font-semibold text-[#2a2b3c]">
                   {problem.englishSentence}
                 </p>
                 <p className="mt-4 text-lg font-semibold text-[#2a2b3c]">
