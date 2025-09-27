@@ -47,6 +47,11 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
     .filter(Boolean)
     .join(' ');
 
+  const isJapaneseAudioEnabled = !isEnglishMode;
+  const isImageEnabled = !isNoImageMode;
+  const englishModeLabel = `日本語音声${isJapaneseAudioEnabled ? 'あり' : 'なし'}`;
+  const imageModeLabel = `画像${isImageEnabled ? 'あり' : 'なし'}`;
+
   const toggleEnglishMode = () => {
     const next = !isEnglishMode;
     setIsEnglishMode(next);
@@ -80,17 +85,17 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasEnglishInteraction ? 'transition-colors duration-200' : ''
-          } ${isEnglishMode ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'}`}
+          } ${isJapaneseAudioEnabled ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'}`}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white ${
               hasEnglishInteraction ? 'transition-transform duration-200' : ''
-            } ${isEnglishMode ? 'translate-x-6' : 'translate-x-1'}`}
+            } ${isJapaneseAudioEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
         </button>
 
         <div className="flex flex-col">
-          <span className="font-bold transition-opacity">日本語音声なし</span>
+          <span className="font-bold transition-opacity">{englishModeLabel}</span>
         </div>
       </div>
 
@@ -99,17 +104,17 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasNoImageInteraction ? 'transition-colors duration-200' : ''
-          } ${isNoImageMode ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'}`}
+          } ${isImageEnabled ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'}`}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white ${
               hasNoImageInteraction ? 'transition-transform duration-200' : ''
-            } ${isNoImageMode ? 'translate-x-6' : 'translate-x-1'}`}
+            } ${isImageEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
         </button>
 
         <div className="flex flex-col">
-          <span className="font-bold transition-opacity">画像なし</span>
+          <span className="font-bold transition-opacity">{imageModeLabel}</span>
         </div>
       </div>
     </div>
