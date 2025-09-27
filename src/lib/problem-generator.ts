@@ -57,12 +57,14 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     { default: problems3 },
     { default: problems4 },
     { default: problems5 },
+    { default: problems6 },
   ] = await Promise.all([
     import('../../problemData/problem1'),
     import('../../problemData/problem2'),
     import('../../problemData/problem3'),
     import('../../problemData/problem4'),
     import('../../problemData/problem5'),
+    import('../../problemData/problem6'),
   ]);
 
   const { min, max } = WORD_COUNT_RULES[type];
@@ -72,6 +74,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     ...problems3,
     ...problems4,
     ...problems5,
+    ...problems6,
   ].filter((problem) => {
     const wordCount = countWords(problem.englishSentence);
     return wordCount >= min && wordCount <= max;
@@ -157,6 +160,12 @@ ${senderName}が、${receiverName}に対して「${problem.japaneseSentence}」�
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写してください。
+- ${senderName}と${receiverName}は対話をしているわけなので、背景は異なるはずです。
+- 1コマ目の${senderName}は左を向いています。2コマ目の${receiverName}は右を向いています。
+- セリフに対して不自然な画像は生成しないこと。
+  - 不自然な例
+    - 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
+    - 「ATMはどこですか？」というセリフなのに、すでにATMの前に立っている
 - 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
 - 自然で生成AIっぽくないテイストで描写してください。`;
 }
