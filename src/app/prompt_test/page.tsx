@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
-const WITHOUT_PICTURE = false;
+const WITHOUT_PICTURE = true;
 
 type GeneratedProblem = {
   english: string;
