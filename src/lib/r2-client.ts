@@ -131,7 +131,7 @@ export async function uploadAudioToR2(
   problemId: string,
   language: 'en' | 'ja' | 'en-reply',
   speaker: VoiceGender,
-  compress?: boolean,
+  compress: boolean = false,
 ): Promise<string> {
   const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `audio/${timestamp}/${problemId}_${language}_${speaker}.mp3`;
