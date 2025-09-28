@@ -28,7 +28,7 @@ export async function generateImage(prompt: string): Promise<string> {
     model: 'gpt-image-1',
     prompt,
     size: '1024x1536',
-    quality: "medium",
+    quality: 'medium',
   });
 
   const first = image.data?.[0];
@@ -59,7 +59,7 @@ export async function generateImageBuffer(prompt: string): Promise<Buffer> {
     model: 'gpt-image-1',
     prompt,
     size: '1024x1536',
-    quality: "medium",
+    quality: 'medium',
   });
 
   const first = image.data?.[0];
