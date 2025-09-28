@@ -58,6 +58,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     { default: problems4 },
     { default: problems5 },
     { default: problems6 },
+    { default: problems7 },
   ] = await Promise.all([
     import('../../problemData/problem1'),
     import('../../problemData/problem2'),
@@ -65,6 +66,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     import('../../problemData/problem4'),
     import('../../problemData/problem5'),
     import('../../problemData/problem6'),
+    import('../../problemData/problem7'),
   ]);
 
   const { min, max } = WORD_COUNT_RULES[type];
@@ -75,6 +77,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     ...problems4,
     ...problems5,
     ...problems6,
+    ...problems7,
   ].filter((problem) => {
     const wordCount = countWords(problem.englishSentence);
     return wordCount >= min && wordCount <= max;
@@ -145,30 +148,35 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${senderName}・・・${problem.senderRole}。端正な顔立ちの${senderGenderText}。
-- ${receiverName}・・・${problem.receiverRole}。端正な顔立ちの${receiverGenderText}。
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。端正な顔立ちをしている。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。端正な顔立ちをしている。
 
 【ストーリー】
-${senderName}が、${receiverName}に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}が「${problem.japaneseReply}」と答える。
+${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
-- ${senderName}が「${problem.japaneseSentence}」と言っている
-- ${senderName}は右斜め前を向いています。
-- ${receiverName}はまだ描かない
+- ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
+- ${receiverName}（${receiverGenderText}）はまだ描かない
+- ${senderName}（${senderGenderText}）が右を向いているアングルで描画されている
 
 【2コマ目】
-- ${receiverName}が「${problem.japaneseReply}」と返答している
-- ${receiverName}は左斜め前を向いています。
+- ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
+- ${receiverName}（${receiverGenderText}）が左を向いているアングルで描画されている
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写してください。
-- ${senderName}と${receiverName}は対面しているわけなので、背景は微妙に異なるはずです。
+- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は微妙に異なるはずです。
+- 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えてください。
 - セリフに対して不自然な画像は生成しないこと。
   - 不自然な例
     - 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
     - 「ATMはどこですか？」というセリフなのに、すでにATMの前に立っている
 - 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-- 自然で生成AIっぽくないテイストで描写してください。`;
+- 自然で生成AIっぽくないテイストで描写してください。
+
+【禁止事項】
+- 同じコマに、同じ人物を2回描画しないこと。
+`;
 }
 
 /**
