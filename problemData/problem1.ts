@@ -1,9 +1,5 @@
 import { SeedProblemData } from '../src/types/problem';
 
-// - incorrectOptions の要素たちは japaneseSentence とほぼ同じ文字数で生成すること
-// - incorrectOptionsの内容は、依頼や質問や提案や意見や情報共有のような、話しかける形式のセリフであること。japaneseSentenceとは無関係なセリフであること。
-// - 日本語の文について。「500円」などの数値は「五百円」と表記すること
-
 const problems: SeedProblemData[] = [
   {
     englishSentence: 'Are you okay?',
