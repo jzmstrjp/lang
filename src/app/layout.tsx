@@ -59,14 +59,14 @@ export default function RootLayout({
         <header className="border-b border-gray-800 bg-black">
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center pl-4 pr-2 sm:px-6">
             <div className="flex flex-1 items-center gap-2">
-              <Link href="/" className="text-lg font-bold tracking-wide text-white">
+              <Link href="/" className="text-lg font-bold tracking-wide text-white flex gap-2">
                 英語きわめ太郎
+                <span
+                  id={HEADER_PORTAL_ID}
+                  className="flex-1 truncate text-lg font-bold text-white/90"
+                  aria-live="polite"
+                />
               </Link>
-              <div
-                id={HEADER_PORTAL_ID}
-                className="flex-1 truncate text-lg font-bold text-white/90"
-                aria-live="polite"
-              />
             </div>
             <SettingsMenu className="ml-4" />
           </div>
