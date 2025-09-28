@@ -59,6 +59,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     { default: problems5 },
     { default: problems6 },
     { default: problems7 },
+    { default: problems8 },
   ] = await Promise.all([
     import('../../problemData/problem1'),
     import('../../problemData/problem2'),
@@ -67,6 +68,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     import('../../problemData/problem5'),
     import('../../problemData/problem6'),
     import('../../problemData/problem7'),
+    import('../../problemData/problem8'),
   ]);
 
   const { min, max } = WORD_COUNT_RULES[type];
@@ -78,6 +80,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     ...problems5,
     ...problems6,
     ...problems7,
+    ...problems8,
   ].filter((problem) => {
     const wordCount = countWords(problem.englishSentence);
     return wordCount >= min && wordCount <= max;
