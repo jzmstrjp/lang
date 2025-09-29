@@ -7,6 +7,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = (searchParams.get('type') || 'short') as ProblemLength;
+    const rawSearch = searchParams.get('search');
+    const search = rawSearch?.trim();
 
     // WORD_COUNT_RULESに基づいて単語数の範囲を決定
     const rules = WORD_COUNT_RULES[type];
@@ -26,6 +28,23 @@ export async function GET(request: Request) {
         lte: rules.max,
       },
     };
+
+    if (search) {
+      where.OR = [
+        {
+          englishSentence: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          japaneseSentence: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
 
     const totalCount = await prisma.problem.count({ where });
 

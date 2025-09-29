@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Problem } from '@prisma/client';
 
@@ -45,6 +46,8 @@ type ApiResponse = {
 // ProblemType enum が削除されたため、直接文字列を使用
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search')?.trim() ?? '';
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [assets, setAssets] = useState<AssetsData | null>(null);
@@ -458,7 +461,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setImageLoaded(false);
     setIsAudioPlaying(false);
     isPrefetchingNextRef.current = false;
-  }, [length]);
+  }, [length, searchQuery]);
 
   // ページ読み込み時に問題を事前フェッチ
   useEffect(() => {
@@ -469,6 +472,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       try {
         const params = new URLSearchParams({ type: length });
+        if (searchQuery) {
+          params.set('search', searchQuery);
+        }
         const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
         if (response.ok) {
@@ -515,7 +521,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     };
 
     void prefetchProblem();
-  }, [length]);
+  }, [length, searchQuery]);
 
   // 次の問題を事前フェッチする関数
   const prefetchNextProblem = useCallback(async () => {
@@ -524,6 +530,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isPrefetchingNextRef.current = true;
     try {
       const params = new URLSearchParams({ type: length });
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
@@ -548,7 +557,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [length]);
+  }, [length, searchQuery]);
 
   useEffect(() => {
     if (!problem) return;
@@ -565,6 +574,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     try {
       const params = new URLSearchParams({ type: length });
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
@@ -617,7 +629,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setFetchingStatus(null);
       }
     }
-  }, [length]);
+  }, [length, searchQuery]);
 
   useEffect(() => {
     if (phase !== 'result') return;
