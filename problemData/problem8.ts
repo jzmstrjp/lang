@@ -387,6 +387,25 @@ const problems: SeedProblemData[] = [
     audioJaUrl: null,
     imageUrl: null,
   },
+  {
+    place: 'ITエンジニア面接の会場',
+    senderRole: '応募者',
+    senderVoice: 'male',
+    receiverRole: '面接官',
+    receiverVoice: 'male',
+    englishSentence: 'I have 50 years of hands-on experience with Java.',
+    japaneseSentence: '私はJavaの実務経験が50年あります。',
+    englishReply: 'That’s strange, Java hasn’t been around that long.',
+    japaneseReply: 'おかしいですね、Javaの歴史はそんなに長くないですが。',
+    incorrectOptions: [
+      '私がインターネットを発明しました。',
+      '嘘をついてでも面接に受かりたいのです。',
+      'プログラミング言語は全て理解しています。',
+    ],
+    audioEnUrl: null,
+    audioJaUrl: null,
+    imageUrl: null,
+  },
 ];
 
 export default problems;
