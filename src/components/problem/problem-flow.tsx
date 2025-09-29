@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Problem } from '@prisma/client';
 import LoadingSpinner from '../ui/loading-spinner';
@@ -49,6 +49,8 @@ type ApiResponse = {
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
+  const router = useRouter();
+  const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
   const [assets, setAssets] = useState<AssetsData | null>(null);
@@ -531,9 +533,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isPrefetchingNextRef.current = true;
     try {
       const params = new URLSearchParams({ type: length });
-      if (searchQuery) {
-        params.set('search', searchQuery);
-      }
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
@@ -558,7 +557,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [length, searchQuery]);
+  }, [length]);
 
   useEffect(() => {
     if (!problem) return;
@@ -689,6 +688,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   const handleNextProblem = () => {
     if (isFetching) return;
+
+    router.replace(pathname);
 
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
     if (nextProblem && nextAssets) {
