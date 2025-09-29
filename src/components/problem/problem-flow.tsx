@@ -1,9 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Problem } from '@prisma/client';
+import LoadingSpinner from '../ui/loading-spinner';
 
 type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
 
@@ -46,7 +47,10 @@ type ApiResponse = {
 // ProblemType enum が削除されたため、直接文字列を使用
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const hasSearchParam = searchParams.has('search');
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemData | null>(null);
@@ -56,7 +60,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [correctIndex, setCorrectIndex] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
-  const [fetchingStatus, setFetchingStatus] = useState<'generating' | 'retrieving' | null>(null);
+  const [fetchingStatus, setFetchingStatus] = useState<'retrieving' | null>(null);
   const [isReady, setIsReady] = useState(false); // 問題が準備済みかどうか
   const [nextProblem, setNextProblem] = useState<ProblemData | null>(null); // 次の問題
   const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
@@ -76,6 +80,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const transitionTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
+  const shouldAutoStartRef = useRef(false);
 
   // 日本語音声なしの設定をlocalStorageから読み込み
   useEffect(() => {
@@ -448,7 +453,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }, [phase, imageLoaded, sceneImage, startSceneAudioSequence]);
 
   useEffect(() => {
-    setPhase('landing');
     setProblem(null);
     setAssets(null);
     setSelectedOption(null);
@@ -461,6 +465,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setImageLoaded(false);
     setIsAudioPlaying(false);
     isPrefetchingNextRef.current = false;
+    setPhase(shouldAutoStartRef.current ? 'loading' : 'landing');
   }, [length, searchQuery]);
 
   // ページ読み込み時に問題を事前フェッチ
@@ -507,6 +512,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           setShuffledOptions(shuffled);
           setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
           setIsReady(true);
+          if (shouldAutoStartRef.current) {
+            shouldAutoStartRef.current = false;
+            setSelectedOption(null);
+            setImageLoaded(false);
+            setPhase('scene');
+          }
           console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
         } else {
           throw new Error('問題がありません');
@@ -514,6 +525,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       } catch (err) {
         console.error('[ProblemFlow] 事前フェッチ失敗:', err);
         setError(err instanceof Error ? err.message : '問題取得に失敗しました');
+        shouldAutoStartRef.current = false;
       } finally {
         setIsFetching(false);
         setFetchingStatus(null);
@@ -689,6 +701,22 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const handleNextProblem = () => {
     if (isFetching) return;
 
+    if (hasSearchParam) {
+      shouldAutoStartRef.current = true;
+      setNextProblem(null);
+      setNextAssets(null);
+      setSelectedOption(null);
+      setImageLoaded(false);
+      setPhase('loading');
+
+      const updatedParams = new URLSearchParams(searchParams.toString());
+      updatedParams.delete('search');
+      const queryString = updatedParams.toString();
+
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+      return;
+    }
+
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
     if (nextProblem && nextAssets) {
       // 次の問題の選択肢をシャッフル
@@ -742,11 +770,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       )}
 
       {phase === 'loading' && (
-        <section className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#c5d7d3] bg-[#edf2f1] px-6 py-20 text-center text-[#4b5a58]">
-          {fetchingStatus === 'generating' && '新しい問題を生成中...'}
-          {fetchingStatus === 'retrieving' && '問題を取得中...'}
-          {!fetchingStatus && '処理中...'}
-        </section>
+        <LoadingSpinner label={fetchingStatus === 'retrieving' ? '問題を取得中...' : '処理中...'} />
       )}
 
       {phase === 'scene' && (
