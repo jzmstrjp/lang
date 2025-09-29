@@ -929,7 +929,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={!assets?.audio?.english || isAudioBusy}
             >
-              {isAudioActivelyPlaying ? '再生中...' : 'もう一度聞く'}
+              {isAudioActivelyPlaying || audioStatus === 'queued' ? '再生中...' : 'もう一度聞く'}
             </button>
           </div>
         </section>
