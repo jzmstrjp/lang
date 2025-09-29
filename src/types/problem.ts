@@ -7,7 +7,10 @@ import { Prisma } from '@prisma/client';
 export type CreateProblemData = Omit<Prisma.ProblemCreateInput, 'id' | 'createdAt' | 'updatedAt'>;
 
 /**
- * seedデータで使用する型（wordCountを除く）
- * wordCountは外部で設定される想定
+ * seedデータで使用する型
+ * wordCount、音声・画像URLは外部で設定される想定
  */
-export type SeedProblemData = Omit<CreateProblemData, 'wordCount'>;
+export type SeedProblemData = Omit<
+  CreateProblemData,
+  'wordCount' | 'audioEnUrl' | 'audioJaUrl' | 'audioEnReplyUrl' | 'imageUrl'
+>;

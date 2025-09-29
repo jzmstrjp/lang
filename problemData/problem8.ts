@@ -16,9 +16,6 @@ const problems: SeedProblemData[] = [
       '朝食が付いているかどうか教えていただけますか？',
       'チェックアウトの時間を少し延ばせますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '空港のチェックインカウンター',
@@ -36,9 +33,6 @@ const problems: SeedProblemData[] = [
       '搭乗ゲートはどこですか？',
       '荷物に追加料金が必要ですか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'レストランのテーブル',
@@ -56,9 +50,6 @@ const problems: SeedProblemData[] = [
       'ソースを別にしてもらえますか？',
       '辛さを控えめにしていただけますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '会社の会議室',
@@ -76,9 +67,6 @@ const problems: SeedProblemData[] = [
       '新しい企画案を来週までに提出してください。',
       '経費の明細を整理した表を作成してください。',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '学校の教室',
@@ -95,9 +83,6 @@ const problems: SeedProblemData[] = [
       '次の段落の内容を予想して説明してください。',
       'この文章の要約を二行で書いてください。',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '病院の診察室',
@@ -114,9 +99,6 @@ const problems: SeedProblemData[] = [
       '頭痛がどの時間帯に出るのか話してください。',
       '今までに同じ症状があったか教えてください。',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '映画館のチケットカウンター',
@@ -133,9 +115,6 @@ const problems: SeedProblemData[] = [
       '次の上映時間が何時か教えていただけますか？',
       '字幕付きかどうか確認していただけますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '銀行の窓口',
@@ -153,9 +132,6 @@ const problems: SeedProblemData[] = [
       '残高証明書の発行方法を説明してください。',
       '定期預金の利率を教えていただけますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '図書館の受付',
@@ -173,9 +149,6 @@ const problems: SeedProblemData[] = [
       '電子書籍の貸出はありますか？',
       'この本は他館から取り寄せできますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'カフェのカウンター',
@@ -193,9 +166,6 @@ const problems: SeedProblemData[] = [
       '砂糖を控えめにしていただけますか？',
       '氷なしで作っていただけますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'ホテルのフロント',
@@ -212,9 +182,6 @@ const problems: SeedProblemData[] = [
       '部屋に冷蔵庫がありますか？',
       'ランドリーサービスはありますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '空港の搭乗ゲート',
@@ -232,9 +199,6 @@ const problems: SeedProblemData[] = [
       '預け荷物の料金はいくらですか？',
       '座席を変更できますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'レストランの入り口',
@@ -251,9 +215,6 @@ const problems: SeedProblemData[] = [
       '窓際の席は空いていますか？',
       'テラス席は使えますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '学校の教室',
@@ -270,9 +231,6 @@ const problems: SeedProblemData[] = [
       '似た問題を黒板に書いて解いてみてください。',
       '次の問題を一緒に考えてみましょう。',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '病院の待合室',
@@ -289,9 +247,6 @@ const problems: SeedProblemData[] = [
       '診察券を持ってきた方がいいですか？',
       '薬はここでもらえますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '図書館の受付',
@@ -309,9 +264,6 @@ const problems: SeedProblemData[] = [
       '延長はどのくらい可能ですか？',
       'コピーはできますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'スーパーのレジ',
@@ -328,9 +280,6 @@ const problems: SeedProblemData[] = [
       '電子マネーは使えますか？',
       '領収書を発行していただけますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '銀行のATM前',
@@ -348,9 +297,6 @@ const problems: SeedProblemData[] = [
       'キャッシュカードの有効期限を確認したいです。',
       '振込手数料を教えていただけますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'カフェのカウンター',
@@ -363,9 +309,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Soy milk would be great, thank you.',
     japaneseReply: '豆乳でお願いします、ありがとうございます。',
     incorrectOptions: ['サイズを大きくしますか？', '氷を入れますか？', '砂糖を加えますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '公園のベンチ',
@@ -383,9 +326,6 @@ const problems: SeedProblemData[] = [
       '新しい本を読んだことを覚えてる？',
       '先週の映画のことは覚えてる？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'ITエンジニア面接の会場',
@@ -402,9 +342,6 @@ const problems: SeedProblemData[] = [
       '嘘をついてでも面接に受かりたいのです。',
       'プログラミング言語は全て理解しています。',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
 ];
 

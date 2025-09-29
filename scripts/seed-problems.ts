@@ -124,6 +124,7 @@ function getproblemFiles(): string[] {
 /**
  * seedデータをCreateProblemDataに変換
  * 各問題の英文単語数を計算して追加
+ * 音声・画像URLはnullで初期化
  */
 function transformSeedData(seedData: SeedProblemData[]): CreateProblemData[] {
   return seedData.map((problem) => ({
@@ -131,6 +132,11 @@ function transformSeedData(seedData: SeedProblemData[]): CreateProblemData[] {
     wordCount: calculateWordCount(problem.englishSentence),
     // incorrectOptionsはJSON形式で保存
     incorrectOptions: problem.incorrectOptions,
+    // 音声・画像URLはnullで初期化
+    audioEnUrl: null,
+    audioJaUrl: null,
+    audioEnReplyUrl: null,
+    imageUrl: null,
   }));
 }
 

@@ -16,9 +16,6 @@ const problems: SeedProblemData[] = [
       'デザートはまだですか？',
       '席を変えてもいいですか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'コンビニのレジ',
@@ -31,9 +28,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'No, I can carry it as is.',
     japaneseReply: 'いえ、そのままで大丈夫です。',
     incorrectOptions: ['温めますか？', 'ポイントカードはありますか？', 'トイレは使えますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'ホテルのロビー',
@@ -50,9 +44,6 @@ const problems: SeedProblemData[] = [
       '朝食はどこで食べられますか？',
       'ランドリーは使えますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '空港のチェックインカウンター',
@@ -65,9 +56,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'I’ll check, please wait a moment.',
     japaneseReply: '確認しますので少々お待ちください。',
     incorrectOptions: ['荷物は追加できますか？', '次の便は何時ですか？', '搭乗口はどこですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '図書館の受付',
@@ -80,9 +68,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, they’re on the second floor.',
     japaneseReply: 'はい、二階にございます。',
     incorrectOptions: ['延長できますか？', 'Wi-Fiはありますか？', 'コピー機は使えますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'バス停のベンチ',
@@ -95,9 +80,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, just stay on until the last stop.',
     japaneseReply: 'はい、終点まで行けば着きますよ。',
     incorrectOptions: ['タクシーはありますか？', '地図を持っていますか？', 'ここはどこですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'カフェのカウンター',
@@ -114,9 +96,6 @@ const problems: SeedProblemData[] = [
       'アイスにできますか？',
       'カップは持参できますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'スーパーのレジ',
@@ -129,9 +108,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, insert it into the machine.',
     japaneseReply: 'はい、機械にお入れください。',
     incorrectOptions: ['袋は必要ですか？', '温めますか？', '値引きできますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '郵便局の窓口',
@@ -144,9 +120,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, here are the stamps.',
     japaneseReply: 'はい、こちらになります。',
     incorrectOptions: ['航空便にしますか？', '速達にしますか？', '宛名を書きますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '映画館のホール',
@@ -159,9 +132,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yeah, let’s get a large one.',
     japaneseReply: 'うん、大きいのを買おう。',
     incorrectOptions: ['今日は誰と来たの？', '次は何を見る？', '席はどこだっけ？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'ホテルのフロント',
@@ -174,9 +144,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, I’ll send one to your room.',
     japaneseReply: 'はい、お部屋にお持ちします。',
     incorrectOptions: ['チェックインできますか？', '朝食はどこですか？', 'ジムは使えますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '空港の荷物受取所',
@@ -189,9 +156,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'I’ll check the system for you.',
     japaneseReply: 'システムで確認いたしますね。',
     incorrectOptions: ['搭乗口はどこですか？', 'パスポートは必要ですか？', '免税品はどこですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '駅の改札前',
@@ -204,9 +168,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'I see, let me reissue it for you.',
     japaneseReply: 'わかりました、再発行しますね。',
     incorrectOptions: ['トイレはどこですか？', '窓口は開いていますか？', '電車は遅れていますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '会社の会議室',
@@ -223,9 +184,6 @@ const problems: SeedProblemData[] = [
       '資料を印刷しましょうか？',
       '次回はいつにしますか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '病院の受付',
@@ -238,9 +196,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, but we have walk-in slots left.',
     japaneseReply: 'はい、ただし当日受付もございます。',
     incorrectOptions: ['診察券は必要ですか？', '支払いは先ですか？', '薬はここでもらえますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'スーパーのレジ',
@@ -253,9 +208,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'No, I don’t have one.',
     japaneseReply: 'いえ、持っていません。',
     incorrectOptions: ['温めますか？', 'お釣りはありますか？', '領収書は必要ですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '郵便局の窓口',
@@ -268,9 +220,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'No, that won’t be necessary.',
     japaneseReply: 'いえ、必要ありません。',
     incorrectOptions: ['宛名は書きましたか？', '封筒は必要ですか？', '料金はご存じですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '映画館のロビー',
@@ -283,9 +232,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Nah, I’d rather sit in the middle.',
     japaneseReply: 'いや、真ん中あたりがいいな。',
     incorrectOptions: ['ポップコーン買う？', '何時に始まる？', 'トイレ行く？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'カフェのカウンター',
@@ -298,9 +244,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, we can switch it to soy milk.',
     japaneseReply: 'はい、豆乳に変更できます。',
     incorrectOptions: ['氷は入れますか？', 'サイズはどうしますか？', '甘さは普通でいいですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '公園のベンチ',
@@ -313,9 +256,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yeah, the weather’s perfect for it.',
     japaneseReply: 'うん、天気もちょうどいいね。',
     incorrectOptions: ['今日は仕事あるの？', '音楽聴く？', '宿題は終わった？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'ショッピングモールのフードコート',
@@ -328,9 +268,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, make it a small one.',
     japaneseReply: 'はい、小さいサイズでお願いします。',
     incorrectOptions: ['支払いはカードですか？', 'ソースをかけますか？', '温め直しますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'ホテルのロビー',
@@ -347,9 +284,6 @@ const problems: SeedProblemData[] = [
       '朝食はついていますか？',
       'エレベーターはどこですか？',
     ],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '図書館の学習スペース',
@@ -362,9 +296,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Sure, I’ll turn it to silent.',
     japaneseReply: 'わかりました、マナーモードにします。',
     incorrectOptions: ['本は借りられますか？', 'コピーできますか？', 'パソコンは使えますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '駅のホーム',
@@ -377,9 +308,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, it stops there after Osaka.',
     japaneseReply: 'はい、大阪の次に止まりますよ。',
     incorrectOptions: ['切符はここで買えますか？', '改札はどこですか？', 'バスはありますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'カフェのテーブル',
@@ -392,9 +320,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yeah, here you go.',
     japaneseReply: 'うん、どうぞ。',
     incorrectOptions: ['宿題は終わった？', '飲み物は頼む？', '今日は何時に帰る？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '郵便局の窓口',
@@ -407,9 +332,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, please fill out this form.',
     japaneseReply: 'はい、この用紙にご記入ください。',
     incorrectOptions: ['切手はどこで買えますか？', '封筒はありますか？', '窓口は何時までですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: 'スーパーの野菜売り場',
@@ -422,9 +344,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yes, it was delivered this morning.',
     japaneseReply: 'はい、今朝入荷しました。',
     incorrectOptions: ['値引きはありますか？', '洗ってありますか？', '保存方法はどうですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '会社の会議室',
@@ -437,9 +356,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Sure, I’ll write them down.',
     japaneseReply: 'わかりました、記録します。',
     incorrectOptions: ['会議を始めますか？', '次回はいつにしますか？', '休憩を入れますか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '病院の薬局カウンター',
@@ -452,9 +368,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Okay, after breakfast, lunch, and dinner.',
     japaneseReply: 'わかりました、朝昼晩ですね。',
     incorrectOptions: ['痛みはありますか？', '予約はしていますか？', '診察券はお持ちですか？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
   {
     place: '公園のベンチ',
@@ -467,9 +380,6 @@ const problems: SeedProblemData[] = [
     englishReply: 'Yeah, I’d love that.',
     japaneseReply: 'うん、ぜひ行こう。',
     incorrectOptions: ['宿題は終わった？', '散歩に行く？', '本を読んだ？'],
-    audioEnUrl: null,
-    audioJaUrl: null,
-    imageUrl: null,
   },
 ];
 
