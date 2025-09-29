@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { Problem } from '@prisma/client';
 import LoadingSpinner from '../ui/loading-spinner';
 
@@ -51,24 +51,242 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const router = useRouter();
   const pathname = usePathname();
-  const [phase, setPhase] = useState<Phase>('landing');
-  const [problem, setProblem] = useState<ProblemData | null>(null);
-  const [assets, setAssets] = useState<AssetsData | null>(null);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
-  const [correctIndex, setCorrectIndex] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
-  const [isFetching, setIsFetching] = useState(false);
-  const [fetchingStatus, setFetchingStatus] = useState<'retrieving' | null>(null);
-  const [isReady, setIsReady] = useState(false); // 問題が準備済みかどうか
-  const [nextProblem, setNextProblem] = useState<ProblemData | null>(null); // 次の問題
-  const [nextAssets, setNextAssets] = useState<AssetsData | null>(null); // 次の問題のアセット
-  const [imageLoaded, setImageLoaded] = useState(false); // 画像の読み込み状況
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false); // 音声再生中かどうか
-  const [isEnglishMode, setIsEnglishMode] = useState(false); // 日本語音声なし
-  const [isImageHiddenMode, setIsImageHiddenMode] = useState(false); // 画像なし
+  type AudioStatus = 'idle' | 'queued' | 'playing';
+
+  type FetchPhase = 'idle' | 'bootstrapping' | 'loading' | 'prefetch';
+
+  type FlowState = {
+    phase: Phase;
+    problem: ProblemData | null;
+    assets: AssetsData | null;
+    options: string[];
+    correctIndex: number;
+    selectedOption: number | null;
+    nextProblem: ProblemData | null;
+    nextAssets: AssetsData | null;
+    fetchPhase: FetchPhase;
+    fetchingStatus: 'retrieving' | null;
+    error: string | null;
+    isReady: boolean;
+    imageLoaded: boolean;
+    audioStatus: AudioStatus;
+    isEnglishMode: boolean;
+    isImageHiddenMode: boolean;
+  };
+
+  type FetchSuccessPayload = {
+    problem: ProblemData;
+    assets: AssetsData;
+    options: string[];
+    correctIndex: number;
+  };
+
+  type FlowAction =
+    | { type: 'RESET' }
+    | { type: 'SET_SETTINGS'; payload: { isEnglishMode: boolean; isImageHiddenMode: boolean } }
+    | { type: 'FETCH_START'; payload: { phase: FetchPhase; status: 'retrieving' | null } }
+    | { type: 'FETCH_SUCCESS'; payload: { phase: FetchPhase } & FetchSuccessPayload }
+    | { type: 'FETCH_FAILURE'; payload: { phase: FetchPhase; message: string } }
+    | { type: 'SET_PHASE'; payload: Phase }
+    | { type: 'SET_OPTIONS'; payload: { options: string[]; correctIndex: number } }
+    | { type: 'SET_SELECTED_OPTION'; payload: number | null }
+    | { type: 'SET_IMAGE_LOADED'; payload: boolean }
+    | { type: 'SET_AUDIO_STATUS'; payload: AudioStatus }
+    | { type: 'LOAD_PROBLEM'; payload: FetchSuccessPayload & { clearNext?: boolean } };
+
+  const initialState: FlowState = {
+    phase: 'landing',
+    problem: null,
+    assets: null,
+    options: [],
+    correctIndex: 0,
+    selectedOption: null,
+    nextProblem: null,
+    nextAssets: null,
+    fetchPhase: 'idle',
+    fetchingStatus: null,
+    error: null,
+    isReady: false,
+    imageLoaded: false,
+    audioStatus: 'idle',
+    isEnglishMode: false,
+    isImageHiddenMode: false,
+  };
+
+  function flowReducer(state: FlowState, action: FlowAction): FlowState {
+    switch (action.type) {
+      case 'RESET':
+        return {
+          ...initialState,
+          isEnglishMode: state.isEnglishMode,
+          isImageHiddenMode: state.isImageHiddenMode,
+        };
+      case 'SET_SETTINGS':
+        return {
+          ...state,
+          isEnglishMode: action.payload.isEnglishMode,
+          isImageHiddenMode: action.payload.isImageHiddenMode,
+        };
+      case 'FETCH_START':
+        return {
+          ...state,
+          fetchPhase: action.payload.phase,
+          fetchingStatus: action.payload.status,
+          error: action.payload.phase === 'prefetch' ? state.error : null,
+        };
+      case 'FETCH_SUCCESS':
+        if (action.payload.phase === 'prefetch') {
+          return {
+            ...state,
+            fetchPhase: 'idle',
+            fetchingStatus: null,
+            nextProblem: action.payload.problem,
+            nextAssets: action.payload.assets,
+          };
+        }
+        return {
+          ...state,
+          fetchPhase: 'idle',
+          fetchingStatus: null,
+          problem: action.payload.problem,
+          assets: action.payload.assets,
+          options: action.payload.options,
+          correctIndex: action.payload.correctIndex,
+          selectedOption: null,
+          nextProblem:
+            action.payload.phase === 'bootstrapping' ? state.nextProblem : state.nextProblem,
+          nextAssets:
+            action.payload.phase === 'bootstrapping' ? state.nextAssets : state.nextAssets,
+          isReady: true,
+          phase: action.payload.phase === 'loading' ? 'scene' : state.phase,
+          imageLoaded: false,
+        };
+      case 'FETCH_FAILURE':
+        if (action.payload.phase === 'prefetch') {
+          return {
+            ...state,
+            fetchPhase: 'idle',
+            fetchingStatus: null,
+          };
+        }
+        return {
+          ...state,
+          fetchPhase: 'idle',
+          fetchingStatus: null,
+          error: action.payload.message,
+          phase: action.payload.phase === 'loading' ? 'landing' : state.phase,
+        };
+      case 'SET_PHASE':
+        return {
+          ...state,
+          phase: action.payload,
+          imageLoaded: action.payload === 'scene' ? false : state.imageLoaded,
+        };
+      case 'SET_OPTIONS':
+        return {
+          ...state,
+          options: action.payload.options,
+          correctIndex: action.payload.correctIndex,
+        };
+      case 'SET_SELECTED_OPTION':
+        return {
+          ...state,
+          selectedOption: action.payload,
+        };
+      case 'SET_IMAGE_LOADED':
+        return {
+          ...state,
+          imageLoaded: action.payload,
+        };
+      case 'SET_AUDIO_STATUS':
+        return {
+          ...state,
+          audioStatus: action.payload,
+        };
+      case 'LOAD_PROBLEM':
+        return {
+          ...state,
+          problem: action.payload.problem,
+          assets: action.payload.assets,
+          options: action.payload.options,
+          correctIndex: action.payload.correctIndex,
+          selectedOption: null,
+          phase: 'scene',
+          imageLoaded: false,
+          isReady: true,
+          nextProblem: action.payload.clearNext ? null : state.nextProblem,
+          nextAssets: action.payload.clearNext ? null : state.nextAssets,
+        };
+      default:
+        return state;
+    }
+  }
+
+  const [state, dispatch] = useReducer(flowReducer, initialState);
+
+  const {
+    phase,
+    problem,
+    assets,
+    options: shuffledOptions,
+    correctIndex,
+    selectedOption,
+    nextProblem,
+    nextAssets,
+    fetchPhase,
+    fetchingStatus,
+    error,
+    isReady,
+    imageLoaded,
+    audioStatus,
+    isEnglishMode,
+    isImageHiddenMode,
+  } = state;
+
+  const isFetching = fetchPhase === 'bootstrapping' || fetchPhase === 'loading';
+  const isAudioBusy = audioStatus !== 'idle';
+  const isAudioActivelyPlaying = audioStatus === 'playing';
 
   const sceneImage = assets?.image ?? null;
+
+  const shuffleOptions = useCallback((target: ProblemData) => {
+    const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
+    const zipped = allOptions.map((option, index) => ({ option, index }));
+
+    for (let i = zipped.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+    }
+
+    const choices = zipped.map((item) => item.option);
+    const correct = zipped.findIndex((item) => item.index === 0);
+
+    return { options: choices, correctIndex: correct === -1 ? 0 : correct };
+  }, []);
+
+  const buildPayloadFromResponse = useCallback(
+    (data: ApiResponse): FetchSuccessPayload => {
+      const assetsData: AssetsData = {
+        image: data.assets?.imageUrl ?? null,
+        imagePrompt: data.assets?.imagePrompt,
+        audio: {
+          english: data.assets?.audio?.english,
+          japanese: data.assets?.audio?.japanese,
+          englishReply: data.assets?.audio?.englishReply,
+        },
+      };
+
+      const { options, correctIndex: newCorrectIndex } = shuffleOptions(data.problem);
+
+      return {
+        problem: data.problem,
+        assets: assetsData,
+        options,
+        correctIndex: newCorrectIndex,
+      };
+    },
+    [shuffleOptions],
+  );
 
   const isEnglishModeRef = useRef(isEnglishMode);
   const isImageHiddenModeRef = useRef(isImageHiddenMode);
@@ -86,8 +304,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       const savedEnglishMode = localStorage.getItem('englishMode');
       const savedNoImageMode = localStorage.getItem('noImageMode');
 
-      setIsEnglishMode(savedEnglishMode === 'true');
-      setIsImageHiddenMode(savedNoImageMode === 'true');
+      dispatch({
+        type: 'SET_SETTINGS',
+        payload: {
+          isEnglishMode: savedEnglishMode === 'true',
+          isImageHiddenMode: savedNoImageMode === 'true',
+        },
+      });
     };
 
     loadModes();
@@ -120,7 +343,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   // ProblemLength を直接使用
   // 正解判定：selectedOption が correctIndex と一致するか
-  const isCorrect = problem != null && selectedOption === correctIndex;
+  const isCorrect = useMemo(
+    () => problem != null && selectedOption === correctIndex,
+    [correctIndex, problem, selectedOption],
+  );
 
   // 音声再生ロジックを共通化
   const startSceneAudioSequence = useCallback(
@@ -139,7 +365,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           clearTimeout(transitionTimeoutRef.current);
         }
         if (isMountedRef.current) {
-          setPhase('quiz');
+          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
+          dispatch({ type: 'SET_PHASE', payload: 'quiz' });
         }
       };
 
@@ -158,12 +385,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         secondaryAudioRef.current = japaneseAudio;
         japaneseAudio.addEventListener('ended', handleJapaneseEnded);
 
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
         secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
+          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
           japaneseAudio
             ?.play()
             .catch(() => {
               const audioType = englishMode ? '英語返答音声' : '日本語音声';
               console.warn(`${audioType}の自動再生に失敗しました。`);
+              dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
               queueQuizTransition();
             })
             .finally(() => {
@@ -179,7 +409,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }
 
         const handleEnglishEnded = () => {
-          if (isMountedRef.current) startJapanesePlayback();
+          if (isMountedRef.current) {
+            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+            startJapanesePlayback();
+          }
         };
 
         englishAudio = new Audio(englishSrc);
@@ -187,12 +420,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         englishAudio.addEventListener('ended', handleEnglishEnded);
 
         playbackTimeoutRef.current = window.setTimeout(() => {
-          setIsAudioPlaying(true);
+          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
           englishAudio
             ?.play()
             .catch(() => {
               console.warn('英語音声の自動再生に失敗しました。');
-              setIsAudioPlaying(false);
+              dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
               handleEnglishEnded();
             })
             .finally(() => {
@@ -220,9 +453,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         japaneseAudio?.pause();
         if (audioRef.current === englishAudio) audioRef.current = null;
         if (secondaryAudioRef.current === japaneseAudio) secondaryAudioRef.current = null;
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
     },
-    [assets],
+    [assets, dispatch],
   );
 
   // 英語音声を再生する関数
@@ -242,21 +476,21 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       if (audioRef.current === audio) {
         audioRef.current = null;
       }
-      setIsAudioPlaying(false);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
     };
 
     const handleError = () => {
       console.warn('英語音声の再生に失敗しました。');
-      setIsAudioPlaying(false);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
     };
 
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
 
-    setIsAudioPlaying(true);
+    dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
     audio.play().catch(() => {
       console.warn('英語音声の再生に失敗しました。');
-      setIsAudioPlaying(false);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
     });
 
     return () => {
@@ -266,9 +500,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       if (audioRef.current === audio) {
         audioRef.current = null;
       }
-      setIsAudioPlaying(false);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
     };
-  }, [assets?.audio?.english]);
+  }, [assets?.audio?.english, dispatch]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -314,20 +548,20 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       transitionTimeoutRef.current = null;
     }
 
-    // フェーズが変わるときに画像読み込み状況をリセット
+    const hasSceneAudio = Boolean(
+      assets?.audio?.english || assets?.audio?.japanese || assets?.audio?.englishReply,
+    );
+
     if (phase === 'scene') {
-      setImageLoaded(false);
+      dispatch({ type: 'SET_IMAGE_LOADED', payload: false });
     }
 
-    // フェーズが変わるときに音声再生状態を設定
-    // scene, quizフェーズでは音声が自動再生されるため、最初からdisabledにする
-    // resultフェーズでは正解時のみ音声が再生される
     if (phase === 'scene' || phase === 'quiz') {
-      setIsAudioPlaying(true);
-    } else if (phase === 'result' && isCorrect) {
-      setIsAudioPlaying(true);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: hasSceneAudio ? 'queued' : 'idle' });
+    } else if (phase === 'result' && isCorrect && assets?.audio?.english) {
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
     } else {
-      setIsAudioPlaying(false);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
     }
 
     if (typeof window === 'undefined') {
@@ -347,23 +581,23 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         if (audioRef.current === audio) {
           audioRef.current = null;
         }
-        setIsAudioPlaying(false);
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
 
       const handleError = () => {
         console.warn('正解音声の再生に失敗しました。');
-        setIsAudioPlaying(false);
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
 
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('error', handleError);
       playbackTimeoutRef.current = window.setTimeout(() => {
-        setIsAudioPlaying(true);
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
         audio
           .play()
           .catch(() => {
             console.warn('正解音声の再生に失敗しました。');
-            setIsAudioPlaying(false);
+            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
           })
           .finally(() => {
             playbackTimeoutRef.current = null;
@@ -376,10 +610,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           playbackTimeoutRef.current = null;
         }
         audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('error', handleError);
         audio.pause();
         if (audioRef.current === audio) {
           audioRef.current = null;
         }
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
     }
 
@@ -393,6 +629,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     if (phase === 'quiz') {
       const englishSrc = assets?.audio?.english;
       if (!englishSrc) {
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
         return;
       }
 
@@ -403,24 +640,24 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         if (audioRef.current === audio) {
           audioRef.current = null;
         }
-        setIsAudioPlaying(false);
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
 
       const handleError = () => {
         console.warn('クイズ用の英語音声の自動再生に失敗しました。');
-        setIsAudioPlaying(false);
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
 
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('error', handleError);
 
       playbackTimeoutRef.current = window.setTimeout(() => {
-        setIsAudioPlaying(true);
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
         audio
           .play()
           .catch(() => {
             console.warn('クイズ用の英語音声の自動再生に失敗しました。');
-            setIsAudioPlaying(false);
+            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
           })
           .finally(() => {
             playbackTimeoutRef.current = null;
@@ -433,10 +670,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           playbackTimeoutRef.current = null;
         }
         audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('error', handleError);
         audio.pause();
         if (audioRef.current === audio) {
           audioRef.current = null;
         }
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
       };
     }
   }, [assets, isCorrect, phase, sceneImage, startSceneAudioSequence]);
@@ -451,27 +690,16 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }, [phase, imageLoaded, sceneImage, startSceneAudioSequence]);
 
   useEffect(() => {
-    setPhase('landing');
-    setProblem(null);
-    setAssets(null);
-    setSelectedOption(null);
-    setError(null);
-    setIsFetching(false);
-    setFetchingStatus(null);
-    setIsReady(false);
-    setNextProblem(null);
-    setNextAssets(null);
-    setImageLoaded(false);
-    setIsAudioPlaying(false);
+    dispatch({ type: 'RESET' });
     isPrefetchingNextRef.current = false;
-  }, [length, searchQuery]);
+  }, [dispatch, length, searchQuery]);
 
   // ページ読み込み時に問題を事前フェッチ
   useEffect(() => {
-    const prefetchProblem = async () => {
-      setIsFetching(true);
-      setFetchingStatus('retrieving');
-      setError(null);
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      dispatch({ type: 'FETCH_START', payload: { phase: 'bootstrapping', status: 'retrieving' } });
 
       try {
         const params = new URLSearchParams({ type: length });
@@ -480,51 +708,32 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         }
         const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
-        if (response.ok) {
-          const data: ApiResponse = await response.json();
-          const image = data.assets?.imageUrl ?? null;
-          const audio = {
-            english: data.assets?.audio?.english,
-            japanese: data.assets?.audio?.japanese,
-            englishReply: data.assets?.audio?.englishReply,
-          };
-
-          // 選択肢をシャッフルして設定
-          const allOptions = [data.problem.japaneseSentence, ...data.problem.incorrectOptions];
-          const zipped = allOptions.map((option, index) => ({ option, index }));
-
-          for (let i = zipped.length - 1; i > 0; i -= 1) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-          }
-
-          const shuffled = zipped.map((item) => item.option);
-          const newCorrectIndex = zipped.findIndex((item) => item.index === 0);
-
-          setProblem(data.problem);
-          setAssets({
-            image,
-            imagePrompt: data.assets?.imagePrompt,
-            audio,
-          });
-          setShuffledOptions(shuffled);
-          setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
-          setIsReady(true);
-          console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
-        } else {
+        if (!response.ok) {
           throw new Error('問題がありません');
+        }
+
+        const data: ApiResponse = await response.json();
+        const payload = buildPayloadFromResponse(data);
+
+        if (!cancelled) {
+          dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'bootstrapping', ...payload } });
+          console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
         }
       } catch (err) {
         console.error('[ProblemFlow] 事前フェッチ失敗:', err);
-        setError(err instanceof Error ? err.message : '問題取得に失敗しました');
-      } finally {
-        setIsFetching(false);
-        setFetchingStatus(null);
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : '問題取得に失敗しました';
+          dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'bootstrapping', message } });
+        }
       }
     };
 
-    void prefetchProblem();
-  }, [length, searchQuery]);
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildPayloadFromResponse, length, searchQuery]);
 
   // 次の問題を事前フェッチする関数
   const prefetchNextProblem = useCallback(async () => {
@@ -537,27 +746,18 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       if (response.ok) {
         const data: ApiResponse = await response.json();
-        const image = data.assets?.imageUrl ?? null;
-        const audio = {
-          english: data.assets?.audio?.english,
-          japanese: data.assets?.audio?.japanese,
-          englishReply: data.assets?.audio?.englishReply,
-        };
-
-        setNextProblem(data.problem);
-        setNextAssets({
-          image,
-          imagePrompt: data.assets?.imagePrompt,
-          audio,
-        });
+        const payload = buildPayloadFromResponse(data);
+        dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'prefetch', ...payload } });
         console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.englishSentence);
       }
     } catch (err) {
       console.warn('[ProblemFlow] 次の問題の事前フェッチ失敗:', err);
+      const message = err instanceof Error ? err.message : '次の問題の取得に失敗しました';
+      dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'prefetch', message } });
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [length]);
+  }, [buildPayloadFromResponse, dispatch, length]);
 
   useEffect(() => {
     if (!problem) return;
@@ -568,9 +768,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }, [problem, nextProblem, prefetchNextProblem]);
 
   const fetchProblem = useCallback(async () => {
-    setIsFetching(true);
-    setFetchingStatus('retrieving');
-    setError(null);
+    dispatch({ type: 'FETCH_START', payload: { phase: 'loading', status: 'retrieving' } });
 
     try {
       const params = new URLSearchParams({ type: length });
@@ -579,57 +777,25 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       }
       const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
 
-      if (response.ok) {
-        const data: ApiResponse = await response.json();
-        const image = data.assets?.imageUrl ?? null;
-        const audio = {
-          english: data.assets?.audio?.english,
-          japanese: data.assets?.audio?.japanese,
-          englishReply: data.assets?.audio?.englishReply,
-        };
-
-        // 選択肢をシャッフルして設定
-        const allOptions = [data.problem.japaneseSentence, ...data.problem.incorrectOptions];
-        const zipped = allOptions.map((option, index) => ({ option, index }));
-
-        for (let i = zipped.length - 1; i > 0; i -= 1) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-        }
-
-        const shuffled = zipped.map((item) => item.option);
-        const newCorrectIndex = zipped.findIndex((item) => item.index === 0);
-
-        setProblem(data.problem);
-        setAssets({
-          image,
-          imagePrompt: data.assets?.imagePrompt,
-          audio,
-        });
-        setShuffledOptions(shuffled);
-        setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
-        setSelectedOption(null);
-
-        if (isMountedRef.current) {
-          setPhase('scene');
-        }
-        console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
-      } else {
+      if (!response.ok) {
         throw new Error('問題がありません');
+      }
+
+      const data: ApiResponse = await response.json();
+      const payload = buildPayloadFromResponse(data);
+
+      if (isMountedRef.current) {
+        dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'loading', ...payload } });
+        console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
       }
     } catch (err) {
       console.error('[ProblemFlow] 問題取得失敗:', err);
       if (isMountedRef.current) {
-        setError(err instanceof Error ? err.message : '問題取得に失敗しました');
-        setPhase('landing');
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsFetching(false);
-        setFetchingStatus(null);
+        const message = err instanceof Error ? err.message : '問題取得に失敗しました';
+        dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'loading', message } });
       }
     }
-  }, [length, searchQuery]);
+  }, [buildPayloadFromResponse, dispatch, length, searchQuery]);
 
   useEffect(() => {
     if (phase !== 'result') return;
@@ -643,47 +809,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     if (!isReady || !problem || !assets) return;
 
     // 事前フェッチ済みの問題を使って即座にsceneフェーズに移行
-    setSelectedOption(null);
-    setImageLoaded(false);
-    setPhase('scene');
+    dispatch({ type: 'SET_SELECTED_OPTION', payload: null });
+    dispatch({ type: 'SET_PHASE', payload: 'scene' });
   };
 
   const handleRetryQuiz = () => {
-    setSelectedOption(null);
-    setImageLoaded(false);
-    if (assets) {
-      setAssets((prev) => {
-        if (!prev) {
-          return prev;
-        }
+    if (!problem) return;
 
-        if (!problem) {
-          return prev;
-        }
-
-        // 新しいスキーマでは japaneseSentence が正解、incorrectOptions が不正解
-        const allOptions = [problem.japaneseSentence, ...problem.incorrectOptions];
-        const zipped = allOptions.map((option, index) => ({ option, index }));
-        if (zipped.length === 0) {
-          return prev;
-        }
-
-        for (let i = zipped.length - 1; i > 0; i -= 1) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-        }
-
-        const reshuffledOptions = zipped.map((item) => item.option);
-        const newCorrectIndex = zipped.findIndex((item) => item.index === 0); // 正解は元々 index 0
-
-        setShuffledOptions(reshuffledOptions);
-        setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
-
-        return prev;
-      });
-    }
-
-    setPhase('scene');
+    const { options, correctIndex: newCorrectIndex } = shuffleOptions(problem);
+    dispatch({ type: 'SET_SELECTED_OPTION', payload: null });
+    dispatch({ type: 'SET_OPTIONS', payload: { options, correctIndex: newCorrectIndex } });
+    dispatch({ type: 'SET_PHASE', payload: 'scene' });
   };
 
   const handleNextProblem = () => {
@@ -694,31 +830,20 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
     if (nextProblem && nextAssets) {
       // 次の問題の選択肢をシャッフル
-      const allOptions = [nextProblem.japaneseSentence, ...nextProblem.incorrectOptions];
-      const zipped = allOptions.map((option, index) => ({ option, index }));
-
-      for (let i = zipped.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-      }
-
-      const shuffled = zipped.map((item) => item.option);
-      const newCorrectIndex = zipped.findIndex((item) => item.index === 0);
-
-      setProblem(nextProblem);
-      setAssets(nextAssets);
-      setShuffledOptions(shuffled);
-      setCorrectIndex(newCorrectIndex === -1 ? 0 : newCorrectIndex);
-      setSelectedOption(null);
-      setImageLoaded(false);
-      setPhase('scene');
-
-      // 現在の問題を次の問題用の変数にクリア
-      setNextProblem(null);
-      setNextAssets(null);
+      const { options, correctIndex: newCorrectIndex } = shuffleOptions(nextProblem);
+      dispatch({
+        type: 'LOAD_PROBLEM',
+        payload: {
+          problem: nextProblem,
+          assets: nextAssets,
+          options,
+          correctIndex: newCorrectIndex,
+          clearNext: true,
+        },
+      });
     } else {
       // 事前フェッチされていない場合は従来通り
-      setPhase('loading');
+      dispatch({ type: 'SET_PHASE', payload: 'loading' });
       void fetchProblem();
     }
   };
@@ -759,7 +884,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 className="h-auto w-full max-w-[500px] object-contain"
                 priority
                 unoptimized={Boolean(sceneImage)}
-                onLoad={() => setImageLoaded(true)}
+                onLoad={() => dispatch({ type: 'SET_IMAGE_LOADED', payload: true })}
               />
             ) : problem ? (
               <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
@@ -786,11 +911,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedOption(index);
-                    setPhase('result');
+                    dispatch({ type: 'SET_SELECTED_OPTION', payload: index });
+                    dispatch({ type: 'SET_PHASE', payload: 'result' });
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={isAudioPlaying}
+                  disabled={isAudioBusy}
                 >
                   {option}
                 </button>
@@ -802,9 +927,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               type="button"
               onClick={playEnglishAudio}
               className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!assets?.audio?.english || isAudioPlaying}
+              disabled={!assets?.audio?.english || isAudioBusy}
             >
-              {isAudioPlaying ? '再生中...' : 'もう一度聞く'}
+              {isAudioActivelyPlaying ? '再生中...' : 'もう一度聞く'}
             </button>
           </div>
         </section>
@@ -837,7 +962,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 type="button"
                 onClick={handleRetryQuiz}
                 className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isAudioPlaying}
+                disabled={isAudioBusy}
               >
                 再挑戦
               </button>
@@ -847,7 +972,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 type="button"
                 onClick={handleNextProblem}
                 className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition hover:bg-[#c3684f] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isFetching || isAudioPlaying}
+                disabled={isFetching || isAudioBusy}
               >
                 {isFetching ? '生成中…' : '次の問題へ'}
               </button>
