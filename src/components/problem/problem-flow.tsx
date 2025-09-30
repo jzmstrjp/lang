@@ -453,13 +453,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'scene-ready':
-        // 初回は handleStart で再生済みなのでここでは何もしない
-        if (!isFirstQuiz.current) {
-          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-          timeoutId = window.setTimeout(() => {
-            playSentenceAudio();
-          }, 500);
-        }
+        // scene-ready に入った時点で英語音声を一度だけ再生
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+        timeoutId = window.setTimeout(() => {
+          playSentenceAudio();
+        }, 500);
         break;
 
       case 'quiz':
