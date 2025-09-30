@@ -89,7 +89,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     | { type: 'FETCH_FAILURE'; payload: { phase: FetchPhase; message: string } }
     | { type: 'SET_PHASE'; payload: Phase }
     | { type: 'SET_OPTIONS'; payload: { options: string[]; correctIndex: number } }
-    | { type: 'SET_SELECTED_OPTION'; payload: number | null }
     | { type: 'SET_IMAGE_LOADED'; payload: boolean }
     | { type: 'SET_AUDIO_STATUS'; payload: AudioStatus }
     | { type: 'LOAD_PROBLEM'; payload: FetchSuccessPayload & { clearNext?: boolean } }
@@ -196,11 +195,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           ...state,
           options: action.payload.options,
           correctIndex: action.payload.correctIndex,
-        };
-      case 'SET_SELECTED_OPTION':
-        return {
-          ...state,
-          selectedOption: action.payload,
         };
       case 'SET_IMAGE_LOADED':
         return {
@@ -543,12 +537,19 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const handleStart = () => {
     if (!isReady || !problem || !assets) return;
 
-    // 初回のみユーザー操作直結で英語音声を再生
+    // 初回のみユーザー操作で「再生許可」を得る（すぐ止める）
     if (isFirstQuiz.current && assets.audio.english && sentenceAudioRef.current) {
-      sentenceAudioRef.current.currentTime = 0;
-      sentenceAudioRef.current.play().catch(() => {
-        console.warn('初回音声の再生に失敗しました');
-      });
+      sentenceAudioRef.current
+        .play()
+        .then(() => {
+          if (sentenceAudioRef.current) {
+            sentenceAudioRef.current.pause();
+            sentenceAudioRef.current.currentTime = 0;
+          }
+        })
+        .catch(() => {
+          console.warn('初回の再生許可取得に失敗しました');
+        });
     }
 
     // シーン開始に遷移
