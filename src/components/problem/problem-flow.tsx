@@ -314,7 +314,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
-      <h2>{phase}</h2>
       {phase === 'loading' && (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
           {error && <p className="text-sm text-rose-500">{error}</p>}
