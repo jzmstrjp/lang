@@ -456,15 +456,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'quiz':
-        // scene直後の1回だけは自動再生しない（1秒後の二重再生防止）
-        if (suppressQuizAutoplayRef.current) {
-          suppressQuizAutoplayRef.current = false;
-          break;
-        }
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-        timeoutId = window.setTimeout(() => {
-          playSentenceAudio();
-        }, 1000);
         break;
 
       case 'result':
