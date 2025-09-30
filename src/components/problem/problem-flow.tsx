@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Problem } from '@prisma/client';
 import LoadingSpinner from '../ui/loading-spinner';
 
@@ -55,215 +55,24 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   type FetchPhase = 'idle' | 'bootstrapping' | 'loading' | 'prefetch';
 
-  type FlowState = {
-    phase: Phase;
-    problem: ProblemData | null;
-    assets: AssetsData | null;
-    options: string[];
-    correctIndex: number;
-    selectedOption: number | null;
-    nextProblem: ProblemData | null;
-    nextAssets: AssetsData | null;
-    fetchPhase: FetchPhase;
-    fetchingStatus: 'retrieving' | null;
-    error: string | null;
-    isReady: boolean;
-    imageLoaded: boolean;
-    audioStatus: AudioStatus;
-  };
-
-  type FetchSuccessPayload = {
-    problem: ProblemData;
-    assets: AssetsData;
-    options: string[];
-    correctIndex: number;
-  };
-
-  type FlowAction =
-    | { type: 'RESET' }
-    | { type: 'START_PROBLEM' }
-    | { type: 'RETRY_PROBLEM'; payload: { options: string[]; correctIndex: number } }
-    | { type: 'SELECT_OPTION'; payload: number }
-    | { type: 'FETCH_START'; payload: { phase: FetchPhase; status: 'retrieving' | null } }
-    | { type: 'FETCH_SUCCESS'; payload: { phase: FetchPhase } & FetchSuccessPayload }
-    | { type: 'FETCH_FAILURE'; payload: { phase: FetchPhase; message: string } }
-    | { type: 'SET_PHASE'; payload: Phase }
-    | { type: 'SET_OPTIONS'; payload: { options: string[]; correctIndex: number } }
-    | { type: 'SET_IMAGE_LOADED'; payload: boolean }
-    | { type: 'SET_AUDIO_STATUS'; payload: AudioStatus }
-    | { type: 'LOAD_PROBLEM'; payload: FetchSuccessPayload & { clearNext?: boolean } }
-    | { type: 'ENTER_SCENE'; payload: { hasImage: boolean; hiddenMode: boolean } };
-
-  const initialState: FlowState = {
-    phase: 'landing',
-    problem: null,
-    assets: null,
-    options: [],
-    correctIndex: 0,
-    selectedOption: null,
-    nextProblem: null,
-    nextAssets: null,
-    fetchPhase: 'idle',
-    fetchingStatus: null,
-    error: null,
-    isReady: false,
-    imageLoaded: false,
-    audioStatus: 'idle',
-  };
-
-  function flowReducer(state: FlowState, action: FlowAction): FlowState {
-    switch (action.type) {
-      case 'RESET':
-        return initialState;
-      case 'START_PROBLEM':
-        return {
-          ...state,
-          selectedOption: null,
-          phase: 'scene-entry',
-        };
-      case 'RETRY_PROBLEM':
-        return {
-          ...state,
-          selectedOption: null,
-          options: action.payload.options,
-          correctIndex: action.payload.correctIndex,
-          phase: 'scene-entry',
-        };
-      case 'SELECT_OPTION':
-        return {
-          ...state,
-          selectedOption: action.payload,
-          phase: 'result',
-        };
-      case 'FETCH_START':
-        return {
-          ...state,
-          fetchPhase: action.payload.phase,
-          fetchingStatus: action.payload.status,
-          error: action.payload.phase === 'prefetch' ? state.error : null,
-        };
-      case 'FETCH_SUCCESS':
-        if (action.payload.phase === 'prefetch') {
-          return {
-            ...state,
-            fetchPhase: 'idle',
-            fetchingStatus: null,
-            nextProblem: action.payload.problem,
-            nextAssets: action.payload.assets,
-          };
-        }
-        return {
-          ...state,
-          fetchPhase: 'idle',
-          fetchingStatus: null,
-          problem: action.payload.problem,
-          assets: action.payload.assets,
-          options: action.payload.options,
-          correctIndex: action.payload.correctIndex,
-          selectedOption: null,
-          nextProblem:
-            action.payload.phase === 'bootstrapping' ? state.nextProblem : state.nextProblem,
-          nextAssets:
-            action.payload.phase === 'bootstrapping' ? state.nextAssets : state.nextAssets,
-          isReady: true,
-          phase: action.payload.phase === 'loading' ? 'scene-entry' : state.phase,
-          imageLoaded: false,
-        };
-      case 'FETCH_FAILURE':
-        if (action.payload.phase === 'prefetch') {
-          return {
-            ...state,
-            fetchPhase: 'idle',
-            fetchingStatus: null,
-          };
-        }
-        return {
-          ...state,
-          fetchPhase: 'idle',
-          fetchingStatus: null,
-          error: action.payload.message,
-          phase: action.payload.phase === 'loading' ? 'landing' : state.phase,
-        };
-      case 'SET_PHASE':
-        return {
-          ...state,
-          phase: action.payload,
-          imageLoaded: action.payload === 'scene-entry' ? false : state.imageLoaded,
-        };
-      case 'SET_OPTIONS':
-        return {
-          ...state,
-          options: action.payload.options,
-          correctIndex: action.payload.correctIndex,
-        };
-      case 'SET_IMAGE_LOADED':
-        return {
-          ...state,
-          imageLoaded: action.payload,
-        };
-      case 'SET_AUDIO_STATUS':
-        return {
-          ...state,
-          audioStatus: action.payload,
-        };
-      case 'ENTER_SCENE': {
-        const shouldSkipImage = !action.payload.hasImage || action.payload.hiddenMode;
-        if (shouldSkipImage) {
-          // 画像なし or 非表示モード → 即 scene-ready
-          return {
-            ...state,
-            phase: 'scene-ready',
-            imageLoaded: true,
-          };
-        }
-        // 画像あり → 必ず scene-entry で止めて onLoad 待ち
-        return {
-          ...state,
-          phase: 'scene-entry',
-          imageLoaded: false,
-        };
-      }
-      case 'LOAD_PROBLEM':
-        return {
-          ...state,
-          problem: action.payload.problem,
-          assets: action.payload.assets,
-          options: action.payload.options,
-          correctIndex: action.payload.correctIndex,
-          selectedOption: null,
-          phase: 'scene-entry',
-          imageLoaded: false,
-          isReady: true,
-          nextProblem: action.payload.clearNext ? null : state.nextProblem,
-          nextAssets: action.payload.clearNext ? null : state.nextAssets,
-        };
-      default:
-        return state;
-    }
-  }
-
-  const [state, dispatch] = useReducer(flowReducer, initialState);
-
-  const {
-    phase,
-    problem,
-    assets,
-    options: shuffledOptions,
-    correctIndex,
-    selectedOption,
-    nextProblem,
-    nextAssets,
-    fetchPhase,
-    fetchingStatus,
-    error,
-    isReady,
-    audioStatus,
-  } = state;
+  const [phase, setPhase] = useState<Phase>('landing');
+  const [problem, setProblem] = useState<ProblemData | null>(null);
+  const [assets, setAssets] = useState<AssetsData | null>(null);
+  const [options, setOptions] = useState<string[]>([]);
+  const [correctIndex, setCorrectIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [nextProblem, setNextProblem] = useState<ProblemData | null>(null);
+  const [nextAssets, setNextAssets] = useState<AssetsData | null>(null);
+  const [fetchPhase, setFetchPhase] = useState<FetchPhase>('idle');
+  const [fetchingStatus, setFetchingStatus] = useState<'retrieving' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [audioStatus, setAudioStatus] = useState<AudioStatus>('idle');
 
   const isFetching = fetchPhase === 'bootstrapping' || fetchPhase === 'loading';
   const isAudioBusy = audioStatus !== 'idle';
 
   const sceneImage = assets?.image ?? null;
+  const shuffledOptions = options;
 
   const shuffleOptions = useCallback((target: ProblemData) => {
     const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
@@ -279,6 +88,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     return { options: choices, correctIndex: correct === -1 ? 0 : correct };
   }, []);
+
+  type FetchSuccessPayload = {
+    problem: ProblemData;
+    assets: AssetsData;
+    options: string[];
+    correctIndex: number;
+  };
 
   const buildPayloadFromResponse = useCallback(
     (data: ApiResponse): FetchSuccessPayload => {
@@ -306,10 +122,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
-  const suppressQuizAutoplayRef = useRef(false);
-  const playbackTimeoutRef = useRef<number | null>(null);
-  const secondaryPlaybackTimeoutRef = useRef<number | null>(null);
-  const transitionTimeoutRef = useRef<number | null>(null);
+
+  const [viewPhase, setViewPhase] = useState<Phase>('landing');
+  const [viewReady, setViewReady] = useState(false);
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
   const isFirstQuiz = useRef(true);
@@ -340,13 +155,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const playSentenceAudio = useCallback(() => {
     if (!sentenceAudioRef.current) return;
 
-    dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-    sentenceAudioRef.current.currentTime = 0;
-    sentenceAudioRef.current.play().catch(() => {
-      console.warn('英語音声の再生に失敗しました。');
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-    });
-  }, [dispatch]);
+    setAudioStatus('queued');
+    setTimeout(() => {
+      sentenceAudioRef.current!.currentTime = 0;
+      sentenceAudioRef.current!.play().catch(() => {
+        console.warn('英語音声の再生に失敗しました。');
+        setAudioStatus('idle');
+      });
+    }, 500);
+  }, []);
 
   // 次の問題を事前フェッチする関数
   const prefetchNextProblem = useCallback(async () => {
@@ -360,20 +177,20 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       if (response.ok) {
         const data: ApiResponse = await response.json();
         const payload = buildPayloadFromResponse(data);
-        dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'prefetch', ...payload } });
+        setNextProblem(payload.problem);
+        setNextAssets(payload.assets);
         console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.englishSentence);
       }
     } catch (err) {
       console.warn('[ProblemFlow] 次の問題の事前フェッチ失敗:', err);
-      const message = err instanceof Error ? err.message : '次の問題の取得に失敗しました';
-      dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'prefetch', message } });
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [buildPayloadFromResponse, dispatch, length]);
+  }, [buildPayloadFromResponse, length]);
 
   const fetchProblem = useCallback(async () => {
-    dispatch({ type: 'FETCH_START', payload: { phase: 'loading', status: 'retrieving' } });
+    setFetchPhase('loading');
+    setFetchingStatus('retrieving');
 
     try {
       const params = new URLSearchParams({ type: length });
@@ -390,44 +207,36 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       const payload = buildPayloadFromResponse(data);
 
       if (isMountedRef.current) {
-        dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'loading', ...payload } });
+        setProblem(payload.problem);
+        setAssets(payload.assets);
+        setOptions(payload.options);
+        setCorrectIndex(payload.correctIndex);
+        setSelectedOption(null);
+        setPhase('scene-entry');
+        setFetchPhase('idle');
+        setFetchingStatus(null);
+        setViewReady(true);
         console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
       }
     } catch (err) {
       console.error('[ProblemFlow] 問題取得失敗:', err);
       if (isMountedRef.current) {
         const message = err instanceof Error ? err.message : '問題取得に失敗しました';
-        dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'loading', message } });
+        setError(message);
+        setPhase('landing');
+        setFetchPhase('idle');
+        setFetchingStatus(null);
       }
     }
-  }, [buildPayloadFromResponse, dispatch, length, searchQuery]);
+  }, [buildPayloadFromResponse, length, searchQuery]);
 
-  const clearAll = (timeoutId: number | null) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-    }
-    if (playbackTimeoutRef.current) {
-      clearTimeout(playbackTimeoutRef.current);
-      playbackTimeoutRef.current = null;
-    }
-    if (secondaryPlaybackTimeoutRef.current) {
-      clearTimeout(secondaryPlaybackTimeoutRef.current);
-      secondaryPlaybackTimeoutRef.current = null;
-    }
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
+  const clearAll = () => {
+    setAudioStatus('idle');
   };
 
   // phaseごとの処理
   useEffect(() => {
     isMountedRef.current = true;
-    const sentenceAudio = sentenceAudioRef.current;
-    const replyAudio = replyAudioRef.current;
-
-    let timeoutId: number | null = null;
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase) {
@@ -441,10 +250,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       case 'scene-entry':
         loadSettings();
-        dispatch({
-          type: 'ENTER_SCENE',
-          payload: { hasImage: !!sceneImage, hiddenMode: settingsRef.current.isImageHiddenMode },
-        });
+        const shouldSkipImage = !sceneImage || settingsRef.current.isImageHiddenMode;
+        if (shouldSkipImage) {
+          setPhase('scene-ready');
+        }
+        // else の場合は何もしない（画像の onLoad で scene-ready に遷移させる）
         break;
 
       case 'scene-ready':
@@ -456,12 +266,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'result':
-        if (isCorrect) {
-          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-          timeoutId = window.setTimeout(() => {
-            playSentenceAudio();
-          }, 1000);
-        } else if (!nextProblem && !isPrefetchingNextRef.current) {
+        if (!isCorrect && !nextProblem && !isPrefetchingNextRef.current) {
           void prefetchNextProblem();
         }
         break;
@@ -474,9 +279,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     return () => {
       isMountedRef.current = false;
-      sentenceAudio?.pause();
-      replyAudio?.pause();
-      clearAll(timeoutId);
+      clearAll(); // 状態だけ idle に戻す
     };
   }, [
     phase,
@@ -484,10 +287,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isCorrect,
     problem,
     nextProblem,
-    playSentenceAudio,
     prefetchNextProblem,
     fetchProblem,
-    dispatch,
     mounted,
   ]);
 
@@ -496,11 +297,23 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isFirstQuiz.current = false;
 
     // ← 初回だけRESETを実行
-    dispatch({ type: 'RESET' });
+    setPhase('landing');
+    setProblem(null);
+    setAssets(null);
+    setOptions([]);
+    setCorrectIndex(0);
+    setSelectedOption(null);
+    setNextProblem(null);
+    setNextAssets(null);
+    setFetchPhase('idle');
+    setFetchingStatus(null);
+    setError(null);
+    setAudioStatus('idle');
     isPrefetchingNextRef.current = false;
 
     const bootstrap = async () => {
-      dispatch({ type: 'FETCH_START', payload: { phase: 'bootstrapping', status: 'retrieving' } });
+      setFetchPhase('bootstrapping');
+      setFetchingStatus('retrieving');
 
       try {
         const params = new URLSearchParams({ type: length });
@@ -516,12 +329,22 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const data: ApiResponse = await response.json();
         const payload = buildPayloadFromResponse(data);
 
-        dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'bootstrapping', ...payload } });
+        setProblem(payload.problem);
+        setAssets(payload.assets);
+        setOptions(payload.options);
+        setCorrectIndex(payload.correctIndex);
+        setSelectedOption(null);
+        setFetchPhase('idle');
+        setFetchingStatus(null);
+        setViewReady(true);
         console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
       } catch (err) {
         console.error('[ProblemFlow] 事前フェッチ失敗:', err);
         const message = err instanceof Error ? err.message : '問題取得に失敗しました';
-        dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'bootstrapping', message } });
+        setError(message);
+        setPhase('landing');
+        setFetchPhase('idle');
+        setFetchingStatus(null);
       }
     };
 
@@ -529,32 +352,33 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }
 
   const handleStart = () => {
-    if (!isReady || !problem || !assets) return;
-
-    // 初回のみユーザー操作で「再生許可」を得る（すぐ止める）
-    if (isFirstQuiz.current && assets.audio.english && sentenceAudioRef.current) {
-      sentenceAudioRef.current
-        .play()
-        .then(() => {
-          if (sentenceAudioRef.current) {
-            sentenceAudioRef.current.pause();
-            sentenceAudioRef.current.currentTime = 0;
-          }
-        })
-        .catch(() => {
-          console.warn('初回の再生許可取得に失敗しました');
+    if (!viewReady || !problem || !assets) return;
+    setViewPhase('scene-entry');
+    setPhase('scene-entry');
+    if (assets.audio?.english && sentenceAudioRef.current) {
+      setTimeout(() => {
+        sentenceAudioRef.current!.pause();
+        sentenceAudioRef.current!.currentTime = 0;
+        sentenceAudioRef.current!.play().catch((err) => {
+          console.warn('play error', err);
         });
+      }, 500);
     }
-
-    // シーン開始に遷移
-    dispatch({ type: 'START_PROBLEM' });
   };
 
   const handleRetryQuiz = () => {
-    if (!problem) return;
-
-    const { options, correctIndex: newCorrectIndex } = shuffleOptions(problem);
-    dispatch({ type: 'RETRY_PROBLEM', payload: { options, correctIndex: newCorrectIndex } });
+    if (!problem || !assets) return;
+    setViewPhase('scene-entry');
+    setPhase('scene-entry');
+    if (assets.audio?.english && sentenceAudioRef.current) {
+      setTimeout(() => {
+        sentenceAudioRef.current!.pause();
+        sentenceAudioRef.current!.currentTime = 0;
+        sentenceAudioRef.current!.play().catch((err) => {
+          console.warn('play error', err);
+        });
+      }, 500);
+    }
   };
 
   const handleNextProblem = () => {
@@ -564,21 +388,29 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
     if (nextProblem && nextAssets) {
-      // 次の問題の選択肢をシャッフル
-      const { options, correctIndex: newCorrectIndex } = shuffleOptions(nextProblem);
-      dispatch({
-        type: 'LOAD_PROBLEM',
-        payload: {
-          problem: nextProblem,
-          assets: nextAssets,
-          options,
-          correctIndex: newCorrectIndex,
-          clearNext: true,
-        },
-      });
+      const { options: newOptions, correctIndex: newCorrectIndex } = shuffleOptions(nextProblem);
+      setProblem(nextProblem);
+      setAssets(nextAssets);
+      setOptions(newOptions);
+      setCorrectIndex(newCorrectIndex);
+      setSelectedOption(null);
+      setPhase('scene-entry');
+      setViewPhase('scene-entry');
+      setNextProblem(null);
+      setNextAssets(null);
+
+      // 切り替え直後に英語音声を再生
+      if (nextAssets.audio?.english && sentenceAudioRef.current) {
+        setTimeout(() => {
+          sentenceAudioRef.current!.pause();
+          sentenceAudioRef.current!.currentTime = 0;
+          sentenceAudioRef.current!.play().catch((err) => {
+            console.warn('play error on next problem', err);
+          });
+        }, 500);
+      }
     } else {
-      // 事前フェッチされていない場合は従来通り
-      dispatch({ type: 'SET_PHASE', payload: 'loading' });
+      setPhase('loading');
       void fetchProblem();
     }
   };
@@ -592,14 +424,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             type="button"
             onClick={handleStart}
             className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={!mounted || !isReady || !!error || isAudioBusy}
+            disabled={!mounted || !viewReady || !!error || isAudioBusy}
           >
             {isFetching && '問題を準備中…'}
-            {!isFetching && !isReady && !error && '準備中…'}
-            {!isFetching && isReady && '英語学習を始める'}
+            {!isFetching && !viewReady && !error && '準備中…'}
+            {!isFetching && viewReady && '英語学習を始める'}
             {error && 'エラーが発生しました'}
           </button>
-          {isReady && !error && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
+          {viewReady && !error && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
         </div>
       )}
 
@@ -607,35 +439,41 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         <LoadingSpinner label={fetchingStatus === 'retrieving' ? '問題を取得中...' : '処理中...'} />
       )}
 
-      {(phase === 'scene-entry' || phase === 'scene-ready') && (
+      {sceneImage && !settingsRef.current.isImageHiddenMode && (
         <section className="grid place-items-center">
           <figure className="flex w-full justify-center">
-            {sceneImage && !settingsRef.current.isImageHiddenMode ? (
-              <Image
-                src={sceneImage}
-                alt="英語と日本語のセリフを並べた2コマシーン"
-                width={500}
-                height={750}
-                className="h-auto w-full max-w-[500px] object-contain"
-                priority
-                unoptimized={Boolean(sceneImage)}
-                onLoad={() => {
-                  dispatch({ type: 'SET_PHASE', payload: 'scene-ready' });
-                }}
-              />
-            ) : problem ? (
-              <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-                <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
-                <p className="font-bold text-2xl">{problem.place}</p>
-              </div>
-            ) : (
-              <div className="w-full max-w-[500px] p-8 text-center bg-white rounded-lg border border-[#d8cbb6]">
-                <p className="text-[#666] text-lg">画像なし</p>
-              </div>
-            )}
+            <Image
+              src={sceneImage}
+              alt="英語と日本語のセリフを並べた2コマシーン"
+              width={500}
+              height={750}
+              className={`h-auto w-full max-w-[500px] object-contain ${
+                phase === 'scene-entry' || phase === 'scene-ready' ? 'block' : 'hidden'
+              }`}
+              priority
+              unoptimized
+              onLoadingComplete={() => {
+                console.log('[ProblemFlow] 画像読み込み完了');
+                if (phase === 'scene-entry') {
+                  setPhase('scene-ready');
+                }
+              }}
+            />
           </figure>
         </section>
       )}
+
+      {/* 画像がない or 画像なしモードの場合のシーン表示（scene-entry / scene-ready 限定） */}
+      {problem &&
+        (phase === 'scene-entry' || phase === 'scene-ready') &&
+        (!sceneImage || settingsRef.current.isImageHiddenMode) && (
+          <section className="grid place-items-center">
+            <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+              <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
+              <p className="font-bold text-2xl">{problem.place}</p>
+            </div>
+          </section>
+        )}
 
       {phase === 'quiz' && problem && (
         <section className="grid gap-8">
@@ -648,7 +486,24 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    dispatch({ type: 'SELECT_OPTION', payload: index });
+                    setSelectedOption(index);
+                    setViewPhase('result');
+                    setPhase('result');
+
+                    // 正解だったらクリック時に再生
+                    if (
+                      index === correctIndex &&
+                      assets?.audio?.english &&
+                      sentenceAudioRef.current
+                    ) {
+                      setTimeout(() => {
+                        sentenceAudioRef.current!.pause();
+                        sentenceAudioRef.current!.currentTime = 0;
+                        sentenceAudioRef.current!.play().catch((err) => {
+                          console.warn('play error on correct answer', err);
+                        });
+                      }, 500);
+                    }
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -723,29 +578,20 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           ref={sentenceAudioRef}
           src={assets.audio.english}
           preload="auto"
-          onPlay={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' })}
-          onPause={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' })}
           onEnded={() => {
-            // scene-readyフェーズの時のみ返答音声を再生
-            if (phase === 'scene-ready') {
-              const replySrc = settingsRef.current.isEnglishMode
-                ? assets?.audio?.englishReply
-                : assets?.audio?.japanese;
-              // ★ 返答音声の有無に関わらず suppress を必ず true にする
-              suppressQuizAutoplayRef.current = true;
-              if (replySrc && replyAudioRef.current) {
-                replyAudioRef.current.src = replySrc;
-                replyAudioRef.current.play().catch(() => {
-                  console.warn('返答音声の再生に失敗しました。');
-                  dispatch({ type: 'SET_PHASE', payload: 'quiz' });
-                });
-              } else {
-                dispatch({ type: 'SET_PHASE', payload: 'quiz' });
+            setTimeout(() => {
+              if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+                const replySrc = settingsRef.current.isEnglishMode
+                  ? assets?.audio?.englishReply
+                  : assets?.audio?.japanese;
+                if (replySrc && replyAudioRef.current) {
+                  replyAudioRef.current.src = replySrc;
+                  replyAudioRef.current.play().catch(() => setViewPhase('quiz'));
+                } else {
+                  setViewPhase('quiz');
+                }
               }
-            } else {
-              // 他のフェーズでは音声終了時にidleに戻す
-              dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-            }
+            }, 500);
           }}
         />
       )}
@@ -753,16 +599,20 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       <audio
         ref={replyAudioRef}
         preload="auto"
-        onPlay={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' })}
-        onPause={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' })}
         onEnded={() => {
-          if (phase === 'scene-ready') {
-            suppressQuizAutoplayRef.current = true; // ← 返信後にquizへ行く場合も抑止
-            dispatch({ type: 'SET_PHASE', payload: 'quiz' });
-          } else {
-            // 他のフェーズでは音声終了時にidleに戻す
-            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-          }
+          setTimeout(() => {
+            if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+              setViewPhase('quiz');
+              setPhase('quiz'); // ← これを追加
+              setTimeout(() => {
+                if (sentenceAudioRef.current) {
+                  sentenceAudioRef.current.pause();
+                  sentenceAudioRef.current.currentTime = 0;
+                  void sentenceAudioRef.current.play();
+                }
+              }, 500);
+            }
+          }, 500);
         }}
       />
     </main>
