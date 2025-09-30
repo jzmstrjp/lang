@@ -2,11 +2,11 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Problem } from '@prisma/client';
 import LoadingSpinner from '../ui/loading-spinner';
 
-type Phase = 'landing' | 'loading' | 'scene' | 'quiz' | 'result';
+type Phase = 'landing' | 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'result';
 
 export type ProblemLength = 'short' | 'medium' | 'long';
 
@@ -70,8 +70,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isReady: boolean;
     imageLoaded: boolean;
     audioStatus: AudioStatus;
-    isEnglishMode: boolean;
-    isImageHiddenMode: boolean;
   };
 
   type FetchSuccessPayload = {
@@ -83,7 +81,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   type FlowAction =
     | { type: 'RESET' }
-    | { type: 'SET_SETTINGS'; payload: { isEnglishMode: boolean; isImageHiddenMode: boolean } }
+    | { type: 'START_PROBLEM' }
+    | { type: 'RETRY_PROBLEM'; payload: { options: string[]; correctIndex: number } }
+    | { type: 'SELECT_OPTION'; payload: number }
     | { type: 'FETCH_START'; payload: { phase: FetchPhase; status: 'retrieving' | null } }
     | { type: 'FETCH_SUCCESS'; payload: { phase: FetchPhase } & FetchSuccessPayload }
     | { type: 'FETCH_FAILURE'; payload: { phase: FetchPhase; message: string } }
@@ -92,7 +92,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     | { type: 'SET_SELECTED_OPTION'; payload: number | null }
     | { type: 'SET_IMAGE_LOADED'; payload: boolean }
     | { type: 'SET_AUDIO_STATUS'; payload: AudioStatus }
-    | { type: 'LOAD_PROBLEM'; payload: FetchSuccessPayload & { clearNext?: boolean } };
+    | { type: 'LOAD_PROBLEM'; payload: FetchSuccessPayload & { clearNext?: boolean } }
+    | { type: 'ENTER_SCENE'; payload: { hasImage: boolean; hiddenMode: boolean } };
 
   const initialState: FlowState = {
     phase: 'landing',
@@ -109,23 +110,31 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isReady: false,
     imageLoaded: false,
     audioStatus: 'idle',
-    isEnglishMode: false,
-    isImageHiddenMode: false,
   };
 
   function flowReducer(state: FlowState, action: FlowAction): FlowState {
     switch (action.type) {
       case 'RESET':
-        return {
-          ...initialState,
-          isEnglishMode: state.isEnglishMode,
-          isImageHiddenMode: state.isImageHiddenMode,
-        };
-      case 'SET_SETTINGS':
+        return initialState;
+      case 'START_PROBLEM':
         return {
           ...state,
-          isEnglishMode: action.payload.isEnglishMode,
-          isImageHiddenMode: action.payload.isImageHiddenMode,
+          selectedOption: null,
+          phase: 'scene-entry',
+        };
+      case 'RETRY_PROBLEM':
+        return {
+          ...state,
+          selectedOption: null,
+          options: action.payload.options,
+          correctIndex: action.payload.correctIndex,
+          phase: 'scene-entry',
+        };
+      case 'SELECT_OPTION':
+        return {
+          ...state,
+          selectedOption: action.payload,
+          phase: 'result',
         };
       case 'FETCH_START':
         return {
@@ -158,7 +167,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           nextAssets:
             action.payload.phase === 'bootstrapping' ? state.nextAssets : state.nextAssets,
           isReady: true,
-          phase: action.payload.phase === 'loading' ? 'scene' : state.phase,
+          phase: action.payload.phase === 'loading' ? 'scene-entry' : state.phase,
           imageLoaded: false,
         };
       case 'FETCH_FAILURE':
@@ -180,7 +189,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         return {
           ...state,
           phase: action.payload,
-          imageLoaded: action.payload === 'scene' ? false : state.imageLoaded,
+          imageLoaded: action.payload === 'scene-entry' ? false : state.imageLoaded,
         };
       case 'SET_OPTIONS':
         return {
@@ -203,6 +212,23 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           ...state,
           audioStatus: action.payload,
         };
+      case 'ENTER_SCENE': {
+        const shouldSkipImage = !action.payload.hasImage || action.payload.hiddenMode;
+        if (shouldSkipImage) {
+          // 画像なし or 非表示モード → 即 scene-ready
+          return {
+            ...state,
+            phase: 'scene-ready',
+            imageLoaded: true,
+          };
+        }
+        // 画像あり → 必ず scene-entry で止めて onLoad 待ち
+        return {
+          ...state,
+          phase: 'scene-entry',
+          imageLoaded: false,
+        };
+      }
       case 'LOAD_PROBLEM':
         return {
           ...state,
@@ -211,7 +237,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           options: action.payload.options,
           correctIndex: action.payload.correctIndex,
           selectedOption: null,
-          phase: 'scene',
+          phase: 'scene-entry',
           imageLoaded: false,
           isReady: true,
           nextProblem: action.payload.clearNext ? null : state.nextProblem,
@@ -237,15 +263,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     fetchingStatus,
     error,
     isReady,
-    imageLoaded,
     audioStatus,
-    isEnglishMode,
-    isImageHiddenMode,
   } = state;
 
   const isFetching = fetchPhase === 'bootstrapping' || fetchPhase === 'loading';
   const isAudioBusy = audioStatus !== 'idle';
-  const isAudioActivelyPlaying = audioStatus === 'playing';
 
   const sceneImage = assets?.image ?? null;
 
@@ -288,58 +310,29 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     [shuffleOptions],
   );
 
-  const isEnglishModeRef = useRef(isEnglishMode);
-  const isImageHiddenModeRef = useRef(isImageHiddenMode);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const secondaryAudioRef = useRef<HTMLAudioElement | null>(null);
+  const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const replyAudioRef = useRef<HTMLAudioElement | null>(null);
   const playbackTimeoutRef = useRef<number | null>(null);
   const secondaryPlaybackTimeoutRef = useRef<number | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
+  const isFirstQuiz = useRef(true);
+  const [mounted, setMounted] = useState(false);
 
-  // 日本語音声なしの設定をlocalStorageから読み込み
-  useEffect(() => {
-    const loadModes = () => {
-      const savedEnglishMode = localStorage.getItem('englishMode');
-      const savedNoImageMode = localStorage.getItem('noImageMode');
+  const settingsRef = useRef({
+    isEnglishMode: true,
+    // 初期レンダリングで画像を表示可能にして onLoad を確実に発火させる
+    isImageHiddenMode: false,
+  });
+  const loadSettings = () => {
+    if (typeof window === 'undefined') return;
 
-      dispatch({
-        type: 'SET_SETTINGS',
-        payload: {
-          isEnglishMode: savedEnglishMode === 'true',
-          isImageHiddenMode: savedNoImageMode === 'true',
-        },
-      });
+    settingsRef.current = {
+      isEnglishMode: localStorage.getItem('englishMode') === 'true',
+      isImageHiddenMode: localStorage.getItem('noImageMode') === 'true',
     };
-
-    loadModes();
-
-    // localStorageの変更を監視
-    const handleStorageChange = () => {
-      loadModes();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // ページ内でのlocalStorage変更を検知するため、定期的にチェック
-    const interval = setInterval(() => {
-      loadModes();
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
-
-  useEffect(() => {
-    isEnglishModeRef.current = isEnglishMode;
-  }, [isEnglishMode]);
-
-  useEffect(() => {
-    isImageHiddenModeRef.current = isImageHiddenMode;
-  }, [isImageHiddenMode]);
+  };
 
   // ProblemLength を直接使用
   // 正解判定：selectedOption が correctIndex と一致するか
@@ -348,392 +341,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     [correctIndex, problem, selectedOption],
   );
 
-  // 音声再生ロジックを共通化
-  const startSceneAudioSequence = useCallback(
-    (delay: number = 1000) => {
-      if (!assets?.audio) return;
+  // 音声再生の制御関数
+  const playSentenceAudio = useCallback(() => {
+    if (!sentenceAudioRef.current) return;
 
-      const englishSrc = assets.audio.english;
-      const japaneseSrc = assets.audio.japanese;
-      const englishMode = isEnglishModeRef.current;
-
-      let englishAudio: HTMLAudioElement | null = null;
-      let japaneseAudio: HTMLAudioElement | null = null;
-
-      const queueQuizTransition = () => {
-        if (transitionTimeoutRef.current) {
-          clearTimeout(transitionTimeoutRef.current);
-        }
-        if (isMountedRef.current) {
-          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-          dispatch({ type: 'SET_PHASE', payload: 'quiz' });
-        }
-      };
-
-      const startJapanesePlayback = () => {
-        const audioSrc = englishMode ? assets.audio.englishReply : japaneseSrc;
-        if (japaneseAudio || !audioSrc) {
-          queueQuizTransition();
-          return;
-        }
-
-        const handleJapaneseEnded = () => {
-          if (isMountedRef.current) queueQuizTransition();
-        };
-
-        japaneseAudio = new Audio(audioSrc);
-        secondaryAudioRef.current = japaneseAudio;
-        japaneseAudio.addEventListener('ended', handleJapaneseEnded);
-
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-        secondaryPlaybackTimeoutRef.current = window.setTimeout(() => {
-          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
-          japaneseAudio
-            ?.play()
-            .catch(() => {
-              const audioType = englishMode ? '英語返答音声' : '日本語音声';
-              console.warn(`${audioType}の自動再生に失敗しました。`);
-              dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-              queueQuizTransition();
-            })
-            .finally(() => {
-              secondaryPlaybackTimeoutRef.current = null;
-            });
-        }, 300);
-      };
-
-      const startEnglishPlayback = () => {
-        if (!englishSrc) {
-          startJapanesePlayback();
-          return;
-        }
-
-        const handleEnglishEnded = () => {
-          if (isMountedRef.current) {
-            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-            startJapanesePlayback();
-          }
-        };
-
-        englishAudio = new Audio(englishSrc);
-        audioRef.current = englishAudio;
-        englishAudio.addEventListener('ended', handleEnglishEnded);
-
-        playbackTimeoutRef.current = window.setTimeout(() => {
-          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
-          englishAudio
-            ?.play()
-            .catch(() => {
-              console.warn('英語音声の自動再生に失敗しました。');
-              dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-              handleEnglishEnded();
-            })
-            .finally(() => {
-              playbackTimeoutRef.current = null;
-            });
-        }, delay);
-      };
-
-      startEnglishPlayback();
-
-      return () => {
-        if (playbackTimeoutRef.current) {
-          clearTimeout(playbackTimeoutRef.current);
-          playbackTimeoutRef.current = null;
-        }
-        if (secondaryPlaybackTimeoutRef.current) {
-          clearTimeout(secondaryPlaybackTimeoutRef.current);
-          secondaryPlaybackTimeoutRef.current = null;
-        }
-        if (transitionTimeoutRef.current) {
-          clearTimeout(transitionTimeoutRef.current);
-          transitionTimeoutRef.current = null;
-        }
-        englishAudio?.pause();
-        japaneseAudio?.pause();
-        if (audioRef.current === englishAudio) audioRef.current = null;
-        if (secondaryAudioRef.current === japaneseAudio) secondaryAudioRef.current = null;
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-    },
-    [assets, dispatch],
-  );
-
-  // 英語音声を再生する関数
-  const playEnglishAudio = useCallback(() => {
-    if (!assets?.audio?.english) return;
-
-    // 既存の音声を停止
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-
-    const audio = new Audio(assets.audio.english);
-    audioRef.current = audio;
-
-    const handleEnded = () => {
-      if (audioRef.current === audio) {
-        audioRef.current = null;
-      }
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-    };
-
-    const handleError = () => {
-      console.warn('英語音声の再生に失敗しました。');
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-    };
-
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('error', handleError);
-
-    dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
-    audio.play().catch(() => {
+    dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+    sentenceAudioRef.current.currentTime = 0;
+    sentenceAudioRef.current.play().catch(() => {
       console.warn('英語音声の再生に失敗しました。');
       dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
     });
-
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('error', handleError);
-      audio.pause();
-      if (audioRef.current === audio) {
-        audioRef.current = null;
-      }
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-    };
-  }, [assets?.audio?.english, dispatch]);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      audioRef.current?.pause();
-      audioRef.current = null;
-      secondaryAudioRef.current?.pause();
-      secondaryAudioRef.current = null;
-      if (playbackTimeoutRef.current) {
-        clearTimeout(playbackTimeoutRef.current);
-        playbackTimeoutRef.current = null;
-      }
-      if (secondaryPlaybackTimeoutRef.current) {
-        clearTimeout(secondaryPlaybackTimeoutRef.current);
-        secondaryPlaybackTimeoutRef.current = null;
-      }
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-        transitionTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    audioRef.current?.pause();
-    audioRef.current = null;
-    secondaryAudioRef.current?.pause();
-    secondaryAudioRef.current = null;
-
-    if (playbackTimeoutRef.current) {
-      clearTimeout(playbackTimeoutRef.current);
-      playbackTimeoutRef.current = null;
-    }
-
-    if (secondaryPlaybackTimeoutRef.current) {
-      clearTimeout(secondaryPlaybackTimeoutRef.current);
-      secondaryPlaybackTimeoutRef.current = null;
-    }
-
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
-
-    const hasSceneAudio = Boolean(
-      assets?.audio?.english || assets?.audio?.japanese || assets?.audio?.englishReply,
-    );
-
-    if (phase === 'scene') {
-      dispatch({ type: 'SET_IMAGE_LOADED', payload: false });
-    }
-
-    if (phase === 'scene' || phase === 'quiz') {
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: hasSceneAudio ? 'queued' : 'idle' });
-    } else if (phase === 'result' && isCorrect && assets?.audio?.english) {
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-    } else {
-      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-    }
-
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    if (phase === 'result') {
-      const englishSrc = assets?.audio?.english;
-      if (!isCorrect || !englishSrc) {
-        return;
-      }
-
-      const audio = new Audio(englishSrc);
-      audioRef.current = audio;
-
-      const handleEnded = () => {
-        if (audioRef.current === audio) {
-          audioRef.current = null;
-        }
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-
-      const handleError = () => {
-        console.warn('正解音声の再生に失敗しました。');
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleError);
-      playbackTimeoutRef.current = window.setTimeout(() => {
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
-        audio
-          .play()
-          .catch(() => {
-            console.warn('正解音声の再生に失敗しました。');
-            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-          })
-          .finally(() => {
-            playbackTimeoutRef.current = null;
-          });
-      }, 1000);
-
-      return () => {
-        if (playbackTimeoutRef.current) {
-          clearTimeout(playbackTimeoutRef.current);
-          playbackTimeoutRef.current = null;
-        }
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('error', handleError);
-        audio.pause();
-        if (audioRef.current === audio) {
-          audioRef.current = null;
-        }
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-    }
-
-    const hasSceneImage = Boolean(sceneImage) && !isImageHiddenModeRef.current;
-
-    if (phase === 'scene' && !hasSceneImage) {
-      // 画像がない場合のみ即座に音声開始
-      return startSceneAudioSequence(1000);
-    }
-
-    if (phase === 'quiz') {
-      const englishSrc = assets?.audio?.english;
-      if (!englishSrc) {
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-        return;
-      }
-
-      const audio = new Audio(englishSrc);
-      audioRef.current = audio;
-
-      const handleEnded = () => {
-        if (audioRef.current === audio) {
-          audioRef.current = null;
-        }
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-
-      const handleError = () => {
-        console.warn('クイズ用の英語音声の自動再生に失敗しました。');
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleError);
-
-      playbackTimeoutRef.current = window.setTimeout(() => {
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' });
-        audio
-          .play()
-          .catch(() => {
-            console.warn('クイズ用の英語音声の自動再生に失敗しました。');
-            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-          })
-          .finally(() => {
-            playbackTimeoutRef.current = null;
-          });
-      }, 1000);
-
-      return () => {
-        if (playbackTimeoutRef.current) {
-          clearTimeout(playbackTimeoutRef.current);
-          playbackTimeoutRef.current = null;
-        }
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('error', handleError);
-        audio.pause();
-        if (audioRef.current === audio) {
-          audioRef.current = null;
-        }
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
-      };
-    }
-  }, [assets, isCorrect, phase, sceneImage, startSceneAudioSequence]);
-
-  // 画像ロード完了時に音声を開始するuseEffect
-  useEffect(() => {
-    const hasSceneImage = Boolean(sceneImage) && !isImageHiddenModeRef.current;
-
-    if (phase === 'scene' && imageLoaded && hasSceneImage) {
-      return startSceneAudioSequence(500); // 画像ロード後は短い待機時間
-    }
-  }, [phase, imageLoaded, sceneImage, startSceneAudioSequence]);
-
-  useEffect(() => {
-    dispatch({ type: 'RESET' });
-    isPrefetchingNextRef.current = false;
-  }, [dispatch, length, searchQuery]);
-
-  // ページ読み込み時に問題を事前フェッチ
-  useEffect(() => {
-    let cancelled = false;
-
-    const bootstrap = async () => {
-      dispatch({ type: 'FETCH_START', payload: { phase: 'bootstrapping', status: 'retrieving' } });
-
-      try {
-        const params = new URLSearchParams({ type: length });
-        if (searchQuery) {
-          params.set('search', searchQuery);
-        }
-        const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
-
-        if (!response.ok) {
-          throw new Error('問題がありません');
-        }
-
-        const data: ApiResponse = await response.json();
-        const payload = buildPayloadFromResponse(data);
-
-        if (!cancelled) {
-          dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'bootstrapping', ...payload } });
-          console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
-        }
-      } catch (err) {
-        console.error('[ProblemFlow] 事前フェッチ失敗:', err);
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : '問題取得に失敗しました';
-          dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'bootstrapping', message } });
-        }
-      }
-    };
-
-    void bootstrap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [buildPayloadFromResponse, length, searchQuery]);
+  }, [dispatch]);
 
   // 次の問題を事前フェッチする関数
   const prefetchNextProblem = useCallback(async () => {
@@ -758,14 +376,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       isPrefetchingNextRef.current = false;
     }
   }, [buildPayloadFromResponse, dispatch, length]);
-
-  useEffect(() => {
-    if (!problem) return;
-    if (nextProblem) return;
-    if (isPrefetchingNextRef.current) return;
-
-    void prefetchNextProblem();
-  }, [problem, nextProblem, prefetchNextProblem]);
 
   const fetchProblem = useCallback(async () => {
     dispatch({ type: 'FETCH_START', payload: { phase: 'loading', status: 'retrieving' } });
@@ -797,35 +407,156 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
   }, [buildPayloadFromResponse, dispatch, length, searchQuery]);
 
-  useEffect(() => {
-    if (phase !== 'result') return;
-    if (!isCorrect) return;
-    if (nextProblem) return;
+  const clearAll = (timeoutId: number | null) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
+    }
+    if (playbackTimeoutRef.current) {
+      clearTimeout(playbackTimeoutRef.current);
+      playbackTimeoutRef.current = null;
+    }
+    if (secondaryPlaybackTimeoutRef.current) {
+      clearTimeout(secondaryPlaybackTimeoutRef.current);
+      secondaryPlaybackTimeoutRef.current = null;
+    }
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
+  };
 
-    void prefetchNextProblem();
-  }, [isCorrect, nextProblem, phase, prefetchNextProblem]);
+  // phaseごとの処理
+  useEffect(() => {
+    isMountedRef.current = true;
+    const sentenceAudio = sentenceAudioRef.current;
+    const replyAudio = replyAudioRef.current;
+
+    let timeoutId: number | null = null;
+
+    // --- phaseごとの副作用をここに統合 ---
+    switch (phase) {
+      case 'landing':
+        // マウント完了フラグを立てる
+        if (!mounted) setMounted(true);
+        break;
+      case 'loading':
+        void fetchProblem();
+        break;
+
+      case 'scene-entry':
+        loadSettings();
+        dispatch({
+          type: 'ENTER_SCENE',
+          payload: { hasImage: !!sceneImage, hiddenMode: settingsRef.current.isImageHiddenMode },
+        });
+        break;
+
+      case 'scene-ready':
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+        timeoutId = window.setTimeout(() => {
+          playSentenceAudio();
+        }, 500);
+        break;
+
+      case 'quiz':
+        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+        timeoutId = window.setTimeout(() => {
+          playSentenceAudio();
+        }, 1000);
+        break;
+
+      case 'result':
+        if (isCorrect) {
+          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+          timeoutId = window.setTimeout(() => {
+            playSentenceAudio();
+          }, 1000);
+        } else if (!nextProblem && !isPrefetchingNextRef.current) {
+          void prefetchNextProblem();
+        }
+        break;
+    }
+
+    // prefetch（quiz進行中）
+    if (problem && !nextProblem && !isPrefetchingNextRef.current) {
+      void prefetchNextProblem();
+    }
+
+    return () => {
+      isMountedRef.current = false;
+      sentenceAudio?.pause();
+      replyAudio?.pause();
+      clearAll(timeoutId);
+    };
+  }, [
+    phase,
+    sceneImage,
+    isCorrect,
+    problem,
+    nextProblem,
+    playSentenceAudio,
+    prefetchNextProblem,
+    fetchProblem,
+    dispatch,
+    mounted,
+  ]);
+
+  // 初回のみbootstrapを実行
+  if (isFirstQuiz.current) {
+    isFirstQuiz.current = false;
+
+    // ← 初回だけRESETを実行
+    dispatch({ type: 'RESET' });
+    isPrefetchingNextRef.current = false;
+
+    const bootstrap = async () => {
+      dispatch({ type: 'FETCH_START', payload: { phase: 'bootstrapping', status: 'retrieving' } });
+
+      try {
+        const params = new URLSearchParams({ type: length });
+        if (searchQuery) {
+          params.set('search', searchQuery);
+        }
+        const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+
+        if (!response.ok) {
+          throw new Error('問題がありません');
+        }
+
+        const data: ApiResponse = await response.json();
+        const payload = buildPayloadFromResponse(data);
+
+        dispatch({ type: 'FETCH_SUCCESS', payload: { phase: 'bootstrapping', ...payload } });
+        console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
+      } catch (err) {
+        console.error('[ProblemFlow] 事前フェッチ失敗:', err);
+        const message = err instanceof Error ? err.message : '問題取得に失敗しました';
+        dispatch({ type: 'FETCH_FAILURE', payload: { phase: 'bootstrapping', message } });
+      }
+    };
+
+    void bootstrap();
+  }
 
   const handleStart = () => {
     if (!isReady || !problem || !assets) return;
 
     // 事前フェッチ済みの問題を使って即座にsceneフェーズに移行
-    dispatch({ type: 'SET_SELECTED_OPTION', payload: null });
-    dispatch({ type: 'SET_PHASE', payload: 'scene' });
+    dispatch({ type: 'START_PROBLEM' });
   };
 
   const handleRetryQuiz = () => {
     if (!problem) return;
 
     const { options, correctIndex: newCorrectIndex } = shuffleOptions(problem);
-    dispatch({ type: 'SET_SELECTED_OPTION', payload: null });
-    dispatch({ type: 'SET_OPTIONS', payload: { options, correctIndex: newCorrectIndex } });
-    dispatch({ type: 'SET_PHASE', payload: 'scene' });
+    dispatch({ type: 'RETRY_PROBLEM', payload: { options, correctIndex: newCorrectIndex } });
   };
 
   const handleNextProblem = () => {
     if (isFetching) return;
 
-    router.replace(pathname);
+    router.push(pathname);
 
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
     if (nextProblem && nextAssets) {
@@ -856,8 +587,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           <button
             type="button"
             onClick={handleStart}
-            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={!isReady || !!error}
+            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={!mounted || !isReady || !!error || isAudioBusy}
           >
             {isFetching && '問題を準備中…'}
             {!isFetching && !isReady && !error && '準備中…'}
@@ -872,10 +603,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         <LoadingSpinner label={fetchingStatus === 'retrieving' ? '問題を取得中...' : '処理中...'} />
       )}
 
-      {phase === 'scene' && (
+      {(phase === 'scene-entry' || phase === 'scene-ready') && (
         <section className="grid place-items-center">
           <figure className="flex w-full justify-center">
-            {sceneImage && !isImageHiddenMode ? (
+            {sceneImage && !settingsRef.current.isImageHiddenMode ? (
               <Image
                 src={sceneImage}
                 alt="英語と日本語のセリフを並べた2コマシーン"
@@ -884,7 +615,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 className="h-auto w-full max-w-[500px] object-contain"
                 priority
                 unoptimized={Boolean(sceneImage)}
-                onLoad={() => dispatch({ type: 'SET_IMAGE_LOADED', payload: true })}
+                onLoad={() => {
+                  dispatch({ type: 'SET_PHASE', payload: 'scene-ready' });
+                }}
               />
             ) : problem ? (
               <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
@@ -911,8 +644,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    dispatch({ type: 'SET_SELECTED_OPTION', payload: index });
-                    dispatch({ type: 'SET_PHASE', payload: 'result' });
+                    dispatch({ type: 'SELECT_OPTION', payload: index });
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -925,11 +657,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={playEnglishAudio}
-              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={playSentenceAudio}
+              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={!assets?.audio?.english || isAudioBusy}
             >
-              {isAudioActivelyPlaying || audioStatus === 'queued' ? '再生中...' : 'もう一度聞く'}
+              もう一度聞く
             </button>
           </div>
         </section>
@@ -961,7 +693,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <button
                 type="button"
                 onClick={handleRetryQuiz}
-                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isAudioBusy}
               >
                 再挑戦
@@ -971,7 +703,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <button
                 type="button"
                 onClick={handleNextProblem}
-                className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition hover:bg-[#c3684f] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isFetching || isAudioBusy}
               >
                 {isFetching ? '生成中…' : '次の問題へ'}
@@ -980,6 +712,52 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           </div>
         </section>
       )}
+
+      {/* 音声タグ */}
+      {assets?.audio?.english && (
+        <audio
+          ref={sentenceAudioRef}
+          src={assets.audio.english}
+          preload="auto"
+          onPlay={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' })}
+          onPause={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' })}
+          onEnded={() => {
+            // scene-readyフェーズの時のみ返答音声を再生
+            if (phase === 'scene-ready') {
+              const replySrc = settingsRef.current.isEnglishMode
+                ? assets?.audio?.englishReply
+                : assets?.audio?.japanese;
+              if (replySrc && replyAudioRef.current) {
+                replyAudioRef.current.src = replySrc;
+                replyAudioRef.current.play().catch(() => {
+                  console.warn('返答音声の再生に失敗しました。');
+                });
+              } else {
+                // 返答音声がない場合はクイズに移行
+                dispatch({ type: 'SET_PHASE', payload: 'quiz' });
+              }
+            } else {
+              // 他のフェーズでは音声終了時にidleに戻す
+              dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
+            }
+          }}
+        />
+      )}
+
+      <audio
+        ref={replyAudioRef}
+        preload="auto"
+        onPlay={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'playing' })}
+        onPause={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' })}
+        onEnded={() => {
+          if (phase === 'scene-ready') {
+            dispatch({ type: 'SET_PHASE', payload: 'quiz' });
+          } else {
+            // 他のフェーズでは音声終了時にidleに戻す
+            dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' });
+          }
+        }}
+      />
     </main>
   );
 }

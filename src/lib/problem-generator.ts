@@ -179,6 +179,8 @@ ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderTe
 
 【禁止事項】
 - 同じコマに、同じ人物を2回描画しないこと。
+- 上下のコマの高さは完全に同じであること。
+- 上下のコマの間に高さ20ピクセルの白い境界線が必要です。
 `;
 }
 

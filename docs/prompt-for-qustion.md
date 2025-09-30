@@ -102,8 +102,8 @@ type SeedProblemData = {
    * incorrectOptions
    *
    * japaneseSentenceとは異なる日本語文3つ。
-   * ただしその場面で言う可能性があるセリフ。
-   * できる限りjapaneseSentenceと同じ文字数であること。
+   * ただしその場面でsenderが言う可能性があるセリフ。
+   * 3つとも、japaneseSentenceと同じ文字数であること。
    * 依頼や質問や提案や意見や情報共有のような、話しかける形式のセリフであること。
    */
   incorrectOptions: [string, string, string],
