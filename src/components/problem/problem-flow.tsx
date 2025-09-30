@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadingSpinner from '../ui/loading-spinner';
 import { ProblemWithAudio } from '@/app/api/problem/route';
 
-type Phase = 'landing' | 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'result';
+type Phase = 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'result';
 
 export type ProblemLength = 'short' | 'medium' | 'long';
 
@@ -29,7 +29,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   type FetchPhase = 'idle' | 'bootstrapping' | 'loading' | 'prefetch';
 
-  const [phase, setPhase] = useState<Phase>('landing');
+  const [phase, setPhase] = useState<Phase>('loading');
   const [problem, setProblem] = useState<ProblemWithAudio | null>(null);
   const [options, setOptions] = useState<string[]>([]);
   const [correctIndex, setCorrectIndex] = useState(0);
@@ -83,7 +83,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [viewPhase, setViewPhase] = useState<Phase>('landing');
+  const [viewPhase, setViewPhase] = useState<Phase>('loading');
   const [viewReady, setViewReady] = useState(false);
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
@@ -180,7 +180,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       if (isMountedRef.current) {
         const message = err instanceof Error ? err.message : '問題取得に失敗しました';
         setError(message);
-        setPhase('landing');
+        setPhase('loading');
         setFetchPhase('idle');
         setFetchingStatus(null);
       }
@@ -193,7 +193,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase) {
-      case 'landing':
+      case 'loading':
         // マウント完了フラグを立てる
         if (!mounted) setMounted(true);
         break;
@@ -249,7 +249,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     isFirstQuiz.current = false;
 
     // ← 初回だけRESETを実行
-    setPhase('landing');
+    setPhase('loading');
     setProblem(null);
     setOptions([]);
     setCorrectIndex(0);
@@ -291,7 +291,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         console.error('[ProblemFlow] 事前フェッチ失敗:', err);
         const message = err instanceof Error ? err.message : '問題取得に失敗しました';
         setError(message);
-        setPhase('landing');
+        setPhase('loading');
         setFetchPhase('idle');
         setFetchingStatus(null);
       }
@@ -338,11 +338,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
   };
 
-  if (!problem) return null;
+  if (!problem)
+    return (
+      <LoadingSpinner
+        className="mt-24"
+        label={fetchingStatus === 'retrieving' ? '問題を取得中...' : '処理中...'}
+      />
+    );
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
-      {phase === 'landing' && (
+      {phase === 'loading' && (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
           {error && <p className="text-sm text-rose-500">{error}</p>}
           <button
@@ -358,10 +364,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           </button>
           {viewReady && !error && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
         </div>
-      )}
-
-      {phase === 'loading' && (
-        <LoadingSpinner label={fetchingStatus === 'retrieving' ? '問題を取得中...' : '処理中...'} />
       )}
 
       {sceneImage && !settingsRef.current.isImageHiddenMode && (
