@@ -338,6 +338,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
   };
 
+  if (!problem) return null;
+
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'landing' && (
@@ -387,8 +389,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       )}
 
       {/* 画像がない or 画像なしモードの場合のシーン表示（scene-entry / scene-ready 限定） */}
-      {problem &&
-        (phase === 'scene-entry' || phase === 'scene-ready') &&
+      {(phase === 'scene-entry' || phase === 'scene-ready') &&
         (!sceneImage || settingsRef.current.isImageHiddenMode) && (
           <section className="grid place-items-center">
             <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
@@ -441,7 +442,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         </section>
       )}
 
-      {phase === 'result' && problem && (
+      {phase === 'result' && (
         <section className="grid gap-6 text-center">
           <div
             className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
@@ -487,44 +488,39 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         </section>
       )}
 
-      {/* 音声タグ */}
-      {problem && (
-        <>
-          <audio
-            ref={sentenceAudioRef}
-            src={problem.audioEnUrl}
-            preload="auto"
-            onEnded={() => {
-              if (viewPhase === 'quiz') {
-                // クイズ英文が終わったら idle → 回答可能
-                setAudioStatus('idle');
-                return;
-              }
-              if (viewPhase === 'result') {
-                // 正解画面の英文が終わったら idle → 次の問題へ進める
-                setAudioStatus('idle');
-                return;
-              }
-              if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-                void (replyAudioRef.current && playAudio(replyAudioRef.current));
-              }
-            }}
-          />
-          <audio
-            ref={replyAudioRef}
-            src={settingsRef.current.isEnglishMode ? problem.audioEnReplyUrl : problem.audioJaUrl}
-            preload="auto"
-            onEnded={() => {
-              // 応答終了後はクイズへ遷移し、すぐに英文を再生
-              if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-                setViewPhase('quiz');
-                setPhase('quiz');
-                void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
-              }
-            }}
-          />
-        </>
-      )}
+      <audio
+        ref={sentenceAudioRef}
+        src={problem.audioEnUrl}
+        preload="auto"
+        onEnded={() => {
+          if (viewPhase === 'quiz') {
+            // クイズ英文が終わったら idle → 回答可能
+            setAudioStatus('idle');
+            return;
+          }
+          if (viewPhase === 'result') {
+            // 正解画面の英文が終わったら idle → 次の問題へ進める
+            setAudioStatus('idle');
+            return;
+          }
+          if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+            void (replyAudioRef.current && playAudio(replyAudioRef.current));
+          }
+        }}
+      />
+      <audio
+        ref={replyAudioRef}
+        src={settingsRef.current.isEnglishMode ? problem.audioEnReplyUrl : problem.audioJaUrl}
+        preload="auto"
+        onEnded={() => {
+          // 応答終了後はクイズへ遷移し、すぐに英文を再生
+          if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+            setViewPhase('quiz');
+            setPhase('quiz');
+            void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+          }
+        }}
+      />
     </main>
   );
 }
