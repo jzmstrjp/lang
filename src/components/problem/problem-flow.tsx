@@ -84,7 +84,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [viewPhase, setViewPhase] = useState<Phase>('loading');
-  const [viewReady, setViewReady] = useState(false);
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
   const isFirstQuiz = useRef(true);
@@ -92,7 +91,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   const settingsRef = useRef({
     isEnglishMode: true,
-    // 初期レンダリングで画像を表示可能にして onLoad を確実に発火させる
     isImageHiddenMode: false,
   });
   const loadSettings = () => {
@@ -172,7 +170,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setPhase('scene-entry');
         setFetchPhase('idle');
         setFetchingStatus(null);
-        setViewReady(true);
         console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
       }
     } catch (err) {
@@ -190,6 +187,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   // phaseごとの処理
   useEffect(() => {
     isMountedRef.current = true;
+    loadSettings();
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase) {
@@ -202,26 +200,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'scene-entry':
-        loadSettings();
         const shouldSkipImage = !sceneImage || settingsRef.current.isImageHiddenMode;
         if (shouldSkipImage) {
           setPhase('scene-ready');
         }
         // else の場合は何もしない（画像の onLoad で scene-ready に遷移させる）
-        break;
-
-      case 'scene-ready':
-        // scene-ready では即時再生は行わない（iOSで二重再生になるため）
-        // 音声はユーザー操作後または <audio> の onEnded からのみ制御する
-        break;
-
-      case 'quiz':
-        break;
-
-      case 'result':
-        if (!isCorrect && !nextProblem && !isPrefetchingNextRef.current) {
-          void prefetchNextProblem();
-        }
         break;
     }
 
@@ -247,18 +230,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   // 初回のみbootstrapを実行
   if (isFirstQuiz.current) {
     isFirstQuiz.current = false;
-
-    // ← 初回だけRESETを実行
-    setPhase('loading');
-    setProblem(null);
-    setOptions([]);
-    setCorrectIndex(0);
-    setSelectedOption(null);
-    setNextProblem(null);
-    setFetchPhase('idle');
-    setFetchingStatus(null);
-    setError(null);
-    setAudioStatus('idle');
     isPrefetchingNextRef.current = false;
 
     const bootstrap = async () => {
@@ -285,7 +256,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setSelectedOption(null);
         setFetchPhase('idle');
         setFetchingStatus(null);
-        setViewReady(true);
         console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
       } catch (err) {
         console.error('[ProblemFlow] 事前フェッチ失敗:', err);
@@ -301,14 +271,12 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }
 
   const handleStart = () => {
-    if (!viewReady || !problem) return;
     setViewPhase('scene-entry');
     setPhase('scene-entry');
     void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
   };
 
   const handleRetryQuiz = () => {
-    if (!problem) return;
     setViewPhase('scene-entry');
     setPhase('scene-entry');
     void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
@@ -355,14 +323,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             type="button"
             onClick={handleStart}
             className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
-            disabled={!mounted || !viewReady || !!error || isAudioBusy}
+            disabled={!mounted || !!error || isAudioBusy}
           >
-            {isFetching && '問題を準備中…'}
-            {!isFetching && !viewReady && !error && '準備中…'}
-            {!isFetching && viewReady && '英語学習を始める'}
-            {error && 'エラーが発生しました'}
+            英語学習を始める
           </button>
-          {viewReady && !error && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
+          <p className="text-base text-[#666] mt-2">※音が出ます</p>
         </div>
       )}
 
@@ -379,7 +344,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               }`}
               priority
               unoptimized
-              onLoadingComplete={() => {
+              onLoad={() => {
                 console.log('[ProblemFlow] 画像読み込み完了');
                 if (phase === 'scene-entry') {
                   setPhase('scene-ready');
