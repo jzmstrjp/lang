@@ -453,10 +453,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'scene-ready':
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-        timeoutId = window.setTimeout(() => {
-          playSentenceAudio();
-        }, 500);
+        // 初回は handleStart で再生済みなのでここでは何もしない
+        if (!isFirstQuiz.current) {
+          dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
+          timeoutId = window.setTimeout(() => {
+            playSentenceAudio();
+          }, 500);
+        }
         break;
 
       case 'quiz':
@@ -542,7 +545,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const handleStart = () => {
     if (!isReady || !problem || !assets) return;
 
-    // 事前フェッチ済みの問題を使って即座にsceneフェーズに移行
+    // 初回のみユーザー操作直結で英語音声を再生
+    if (isFirstQuiz.current && assets.audio.english && sentenceAudioRef.current) {
+      sentenceAudioRef.current.currentTime = 0;
+      sentenceAudioRef.current.play().catch(() => {
+        console.warn('初回音声の再生に失敗しました');
+      });
+    }
+
+    // シーン開始に遷移
     dispatch({ type: 'START_PROBLEM' });
   };
 
