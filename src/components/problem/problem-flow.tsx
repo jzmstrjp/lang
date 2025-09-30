@@ -3,8 +3,8 @@
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Problem } from '@prisma/client';
 import LoadingSpinner from '../ui/loading-spinner';
+import { ProblemWithAudio } from '@/app/api/problem/route';
 
 type Phase = 'landing' | 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'result';
 
@@ -14,34 +14,8 @@ type ProblemFlowProps = {
   length: ProblemLength;
 };
 
-// Prismaで自動生成された型を拡張して、incorrectOptionsを型安全にする
-type ProblemData = Omit<Problem, 'incorrectOptions'> & {
-  incorrectOptions: string[];
-};
-
-type AssetsData = {
-  image: string | null;
-  imagePrompt?: string;
-  audio: {
-    english?: string;
-    japanese?: string;
-    englishReply?: string;
-  };
-};
-
-type ApiAssets = {
-  imageUrl?: string;
-  imagePrompt?: string;
-  audio?: {
-    english?: string;
-    japanese?: string;
-    englishReply?: string;
-  };
-};
-
 type ApiResponse = {
-  problem: ProblemData;
-  assets: ApiAssets;
+  problem: ProblemWithAudio;
 };
 
 // ProblemType enum が削除されたため、直接文字列を使用
@@ -51,18 +25,16 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const router = useRouter();
   const pathname = usePathname();
-  type AudioStatus = 'idle' | 'queued' | 'playing';
+  type AudioStatus = 'idle' | 'playing';
 
   type FetchPhase = 'idle' | 'bootstrapping' | 'loading' | 'prefetch';
 
   const [phase, setPhase] = useState<Phase>('landing');
-  const [problem, setProblem] = useState<ProblemData | null>(null);
-  const [assets, setAssets] = useState<AssetsData | null>(null);
+  const [problem, setProblem] = useState<ProblemWithAudio | null>(null);
   const [options, setOptions] = useState<string[]>([]);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [nextProblem, setNextProblem] = useState<ProblemData | null>(null);
-  const [nextAssets, setNextAssets] = useState<AssetsData | null>(null);
+  const [nextProblem, setNextProblem] = useState<ProblemWithAudio | null>(null);
   const [fetchPhase, setFetchPhase] = useState<FetchPhase>('idle');
   const [fetchingStatus, setFetchingStatus] = useState<'retrieving' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,10 +43,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const isFetching = fetchPhase === 'bootstrapping' || fetchPhase === 'loading';
   const isAudioBusy = audioStatus !== 'idle';
 
-  const sceneImage = assets?.image ?? null;
+  const sceneImage = problem?.imageUrl ?? null;
   const shuffledOptions = options;
 
-  const shuffleOptions = useCallback((target: ProblemData) => {
+  const shuffleOptions = useCallback((target: ProblemWithAudio) => {
     const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
     const zipped = allOptions.map((option, index) => ({ option, index }));
 
@@ -90,29 +62,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }, []);
 
   type FetchSuccessPayload = {
-    problem: ProblemData;
-    assets: AssetsData;
+    problem: ProblemWithAudio;
     options: string[];
     correctIndex: number;
   };
 
   const buildPayloadFromResponse = useCallback(
     (data: ApiResponse): FetchSuccessPayload => {
-      const assetsData: AssetsData = {
-        image: data.assets?.imageUrl ?? null,
-        imagePrompt: data.assets?.imagePrompt,
-        audio: {
-          english: data.assets?.audio?.english,
-          japanese: data.assets?.audio?.japanese,
-          englishReply: data.assets?.audio?.englishReply,
-        },
-      };
-
       const { options, correctIndex: newCorrectIndex } = shuffleOptions(data.problem);
 
       return {
         problem: data.problem,
-        assets: assetsData,
         options,
         correctIndex: newCorrectIndex,
       };
@@ -151,17 +111,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     [correctIndex, problem, selectedOption],
   );
 
-  // 音声再生の制御関数
-  const playSentenceAudio = useCallback(() => {
-    if (!sentenceAudioRef.current) return;
-    setAudioStatus('playing'); // 待機中も無効化
+  const playAudio = useCallback((audio: HTMLAudioElement | null, duration = 500) => {
+    if (!audio) return;
+
+    setAudioStatus('playing');
     setTimeout(() => {
-      sentenceAudioRef.current!.currentTime = 0;
-      sentenceAudioRef.current!.play().catch(() => {
+      audio.currentTime = 0;
+      audio.play().catch(() => {
         console.warn('英語音声の再生に失敗しました。');
         setAudioStatus('idle');
       });
-    }, 500);
+    }, duration);
   }, []);
 
   // 次の問題を事前フェッチする関数
@@ -177,7 +137,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const data: ApiResponse = await response.json();
         const payload = buildPayloadFromResponse(data);
         setNextProblem(payload.problem);
-        setNextAssets(payload.assets);
         console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.englishSentence);
       }
     } catch (err) {
@@ -207,7 +166,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       if (isMountedRef.current) {
         setProblem(payload.problem);
-        setAssets(payload.assets);
         setOptions(payload.options);
         setCorrectIndex(payload.correctIndex);
         setSelectedOption(null);
@@ -293,12 +251,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     // ← 初回だけRESETを実行
     setPhase('landing');
     setProblem(null);
-    setAssets(null);
     setOptions([]);
     setCorrectIndex(0);
     setSelectedOption(null);
     setNextProblem(null);
-    setNextAssets(null);
     setFetchPhase('idle');
     setFetchingStatus(null);
     setError(null);
@@ -324,7 +280,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         const payload = buildPayloadFromResponse(data);
 
         setProblem(payload.problem);
-        setAssets(payload.assets);
         setOptions(payload.options);
         setCorrectIndex(payload.correctIndex);
         setSelectedOption(null);
@@ -346,37 +301,17 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }
 
   const handleStart = () => {
-    if (!viewReady || !problem || !assets) return;
+    if (!viewReady || !problem) return;
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    if (assets.audio?.english && sentenceAudioRef.current) {
-      setAudioStatus('playing'); // 再生開始時に設定
-      setTimeout(() => {
-        sentenceAudioRef.current!.pause();
-        sentenceAudioRef.current!.currentTime = 0;
-        sentenceAudioRef.current!.play().catch((err) => {
-          console.warn('play error', err);
-          setAudioStatus('idle');
-        });
-      }, 500);
-    }
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
   };
 
   const handleRetryQuiz = () => {
-    if (!problem || !assets) return;
+    if (!problem) return;
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    if (assets.audio?.english && sentenceAudioRef.current) {
-      setAudioStatus('playing');
-      setTimeout(() => {
-        sentenceAudioRef.current!.pause();
-        sentenceAudioRef.current!.currentTime = 0;
-        sentenceAudioRef.current!.play().catch((err) => {
-          console.warn('play error', err);
-          setAudioStatus('idle');
-        });
-      }, 500);
-    }
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
   };
 
   const handleNextProblem = () => {
@@ -385,30 +320,18 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     router.push(pathname);
 
     // 次の問題が事前フェッチ済みの場合は即座に切り替え
-    if (nextProblem && nextAssets) {
+    if (nextProblem) {
       const { options: newOptions, correctIndex: newCorrectIndex } = shuffleOptions(nextProblem);
       setProblem(nextProblem);
-      setAssets(nextAssets);
       setOptions(newOptions);
       setCorrectIndex(newCorrectIndex);
       setSelectedOption(null);
       setPhase('scene-entry');
       setViewPhase('scene-entry');
       setNextProblem(null);
-      setNextAssets(null);
 
       // 切り替え直後に英語音声を再生
-      if (nextAssets.audio?.english && sentenceAudioRef.current) {
-        setAudioStatus('playing');
-        setTimeout(() => {
-          sentenceAudioRef.current!.pause();
-          sentenceAudioRef.current!.currentTime = 0;
-          sentenceAudioRef.current!.play().catch((err) => {
-            console.warn('play error on next problem', err);
-            setAudioStatus('idle');
-          });
-        }, 500);
-      }
+      void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
     } else {
       setPhase('loading');
       void fetchProblem();
@@ -491,24 +414,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                     setPhase('result');
 
                     // 正解だったらクリック時に再生
-                    if (
+                    void (
                       index === correctIndex &&
-                      assets?.audio?.english &&
-                      sentenceAudioRef.current
-                    ) {
-                      setAudioStatus('queued'); // ★ 正解画面では busy にする
-                      setTimeout(() => {
-                        sentenceAudioRef.current!.pause();
-                        sentenceAudioRef.current!.currentTime = 0;
-                        sentenceAudioRef
-                          .current!.play()
-                          .then(() => setAudioStatus('playing'))
-                          .catch((err) => {
-                            console.warn('play error on correct answer', err);
-                            setAudioStatus('idle');
-                          });
-                      }, 500);
-                    }
+                      sentenceAudioRef.current &&
+                      playAudio(sentenceAudioRef.current)
+                    );
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -521,9 +431,9 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={playSentenceAudio}
+              onClick={() => playAudio(sentenceAudioRef.current, 0)}
               className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
-              disabled={!assets?.audio?.english || isAudioBusy}
+              disabled={!problem.audioEnUrl || isAudioBusy}
             >
               もう一度聞く
             </button>
@@ -578,68 +488,43 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       )}
 
       {/* 音声タグ */}
-      {assets?.audio?.english && (
-        <audio
-          ref={sentenceAudioRef}
-          src={assets.audio.english}
-          preload="auto"
-          onEnded={() => {
-            if (viewPhase === 'quiz') {
-              // クイズ英文が終わったら idle → 回答可能
-              setAudioStatus('idle');
-              return;
-            }
-            if (viewPhase === 'result') {
-              // 正解画面の英文が終わったら idle → 次の問題へ進める
-              setAudioStatus('idle');
-              return;
-            }
-            setTimeout(() => {
-              if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-                const replySrc = settingsRef.current.isEnglishMode
-                  ? assets?.audio?.englishReply
-                  : assets?.audio?.japanese;
-                if (replySrc && replyAudioRef.current) {
-                  replyAudioRef.current.src = replySrc;
-                  setAudioStatus('playing'); // ★ 再生開始時にbusyへ
-                  replyAudioRef.current.play().catch(() => {
-                    setAudioStatus('idle');
-                    setViewPhase('quiz');
-                  });
-                } else {
-                  setViewPhase('quiz');
-                }
+      {problem && (
+        <>
+          <audio
+            ref={sentenceAudioRef}
+            src={problem.audioEnUrl}
+            preload="auto"
+            onEnded={() => {
+              if (viewPhase === 'quiz') {
+                // クイズ英文が終わったら idle → 回答可能
+                setAudioStatus('idle');
+                return;
               }
-            }, 500);
-          }}
-        />
+              if (viewPhase === 'result') {
+                // 正解画面の英文が終わったら idle → 次の問題へ進める
+                setAudioStatus('idle');
+                return;
+              }
+              if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+                void (replyAudioRef.current && playAudio(replyAudioRef.current));
+              }
+            }}
+          />
+          <audio
+            ref={replyAudioRef}
+            src={settingsRef.current.isEnglishMode ? problem.audioEnReplyUrl : problem.audioJaUrl}
+            preload="auto"
+            onEnded={() => {
+              // 応答終了後はクイズへ遷移し、すぐに英文を再生
+              if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+                setViewPhase('quiz');
+                setPhase('quiz');
+                void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+              }
+            }}
+          />
+        </>
       )}
-
-      <audio
-        ref={replyAudioRef}
-        preload="auto"
-        onEnded={() => {
-          // 応答終了後はクイズへ遷移し、すぐに英文を再生
-          if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-            setViewPhase('quiz');
-            setPhase('quiz');
-            if (sentenceAudioRef.current) {
-              // ★ この時点で busy に戻す（待ち時間中に idle にならないようにする）
-              setAudioStatus('queued');
-              setTimeout(() => {
-                sentenceAudioRef.current!.pause();
-                sentenceAudioRef.current!.currentTime = 0;
-                sentenceAudioRef
-                  .current!.play()
-                  .then(() => setAudioStatus('playing'))
-                  .catch(() => setAudioStatus('idle'));
-              }, 500);
-            } else {
-              setAudioStatus('idle');
-            }
-          }
-        }}
-      />
     </main>
   );
 }

@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, Problem } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
+
+export type ProblemWithAudio = Omit<
+  Problem,
+  'incorrectOptions' | 'audioEnUrl' | 'audioJaUrl' | 'audioEnReplyUrl'
+> & {
+  incorrectOptions: string[];
+  audioEnUrl: string;
+  audioJaUrl: string;
+  audioEnReplyUrl: string;
+};
 
 export async function GET(request: Request) {
   try {
@@ -90,15 +100,7 @@ export async function GET(request: Request) {
       problem: {
         ...problem,
         incorrectOptions,
-      },
-      assets: {
-        imageUrl: problem.imageUrl || null,
-        audio: {
-          english: problem.audioEnUrl || '',
-          japanese: problem.audioJaUrl || '',
-          englishReply: problem.audioEnReplyUrl || '',
-        },
-      },
+      } as ProblemWithAudio,
     };
 
     return NextResponse.json(response);
