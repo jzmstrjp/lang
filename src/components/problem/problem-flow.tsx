@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadingSpinner from '../ui/loading-spinner';
 import { ProblemWithAudio } from '@/app/api/problem/route';
 
-type Phase = 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'result';
+type Phase = 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
 export type ProblemLength = 'short' | 'medium' | 'long';
 
@@ -44,6 +44,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const isAudioBusy = audioStatus !== 'idle';
 
   const sceneImage = problem?.imageUrl ?? null;
+  const nextSceneImage = nextProblem?.imageUrl ?? null;
   const shuffledOptions = options;
 
   const shuffleOptions = useCallback((target: ProblemWithAudio) => {
@@ -195,9 +196,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         // マウント完了フラグを立てる
         if (!mounted) setMounted(true);
         break;
-      case 'loading':
-        void fetchProblem();
-        break;
 
       case 'scene-entry':
         const shouldSkipImage = !sceneImage || settingsRef.current.isImageHiddenMode;
@@ -316,6 +314,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+      <h2>{phase}</h2>
       {phase === 'loading' && (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
           {error && <p className="text-sm text-rose-500">{error}</p>}
@@ -335,7 +334,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         <section className="grid place-items-center">
           <figure className="flex w-full justify-center">
             <Image
-              src={sceneImage}
+              src={phase === 'correct' && nextSceneImage ? nextSceneImage : sceneImage}
               alt="英語と日本語のセリフを並べた2コマシーン"
               width={500}
               height={750}
@@ -377,16 +376,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 <button
                   type="button"
                   onClick={() => {
+                    const isCorrect = index === correctIndex;
                     setSelectedOption(index);
-                    setViewPhase('result');
-                    setPhase('result');
+                    setViewPhase(isCorrect ? 'correct' : 'incorrect');
+                    setPhase(isCorrect ? 'correct' : 'incorrect');
+                    if (!isCorrect) return;
 
                     // 正解だったらクリック時に再生
-                    void (
-                      index === correctIndex &&
-                      sentenceAudioRef.current &&
-                      playAudio(sentenceAudioRef.current)
-                    );
+                    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -409,7 +406,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         </section>
       )}
 
-      {phase === 'result' && (
+      {(phase === 'correct' || phase === 'incorrect') && (
         <section className="grid gap-6 text-center">
           <div
             className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
@@ -465,7 +462,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             setAudioStatus('idle');
             return;
           }
-          if (viewPhase === 'result') {
+          if (viewPhase === 'correct' || viewPhase === 'incorrect') {
             // 正解画面の英文が終わったら idle → 次の問題へ進める
             setAudioStatus('idle');
             return;
