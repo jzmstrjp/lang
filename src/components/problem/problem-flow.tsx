@@ -734,14 +734,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               const replySrc = settingsRef.current.isEnglishMode
                 ? assets?.audio?.englishReply
                 : assets?.audio?.japanese;
+              // ★ 返答音声の有無に関わらず suppress を必ず true にする
+              suppressQuizAutoplayRef.current = true;
               if (replySrc && replyAudioRef.current) {
                 replyAudioRef.current.src = replySrc;
                 replyAudioRef.current.play().catch(() => {
                   console.warn('返答音声の再生に失敗しました。');
+                  dispatch({ type: 'SET_PHASE', payload: 'quiz' });
                 });
               } else {
-                // 返答音声がない場合はクイズに移行
-                suppressQuizAutoplayRef.current = true; // ← scene直後のquizでの自動再生を1回だけ抑止
                 dispatch({ type: 'SET_PHASE', payload: 'quiz' });
               }
             } else {
