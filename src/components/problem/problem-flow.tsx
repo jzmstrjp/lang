@@ -154,8 +154,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   // 音声再生の制御関数
   const playSentenceAudio = useCallback(() => {
     if (!sentenceAudioRef.current) return;
-
-    setAudioStatus('queued');
+    setAudioStatus('playing'); // 待機中も無効化
     setTimeout(() => {
       sentenceAudioRef.current!.currentTime = 0;
       sentenceAudioRef.current!.play().catch(() => {
@@ -230,10 +229,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }
   }, [buildPayloadFromResponse, length, searchQuery]);
 
-  const clearAll = () => {
-    setAudioStatus('idle');
-  };
-
   // phaseごとの処理
   useEffect(() => {
     isMountedRef.current = true;
@@ -279,7 +274,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     return () => {
       isMountedRef.current = false;
-      clearAll(); // 状態だけ idle に戻す
     };
   }, [
     phase,
@@ -356,11 +350,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
     if (assets.audio?.english && sentenceAudioRef.current) {
+      setAudioStatus('playing'); // 再生開始時に設定
       setTimeout(() => {
         sentenceAudioRef.current!.pause();
         sentenceAudioRef.current!.currentTime = 0;
         sentenceAudioRef.current!.play().catch((err) => {
           console.warn('play error', err);
+          setAudioStatus('idle');
         });
       }, 500);
     }
@@ -371,11 +367,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
     if (assets.audio?.english && sentenceAudioRef.current) {
+      setAudioStatus('playing');
       setTimeout(() => {
         sentenceAudioRef.current!.pause();
         sentenceAudioRef.current!.currentTime = 0;
         sentenceAudioRef.current!.play().catch((err) => {
           console.warn('play error', err);
+          setAudioStatus('idle');
         });
       }, 500);
     }
@@ -401,11 +399,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       // 切り替え直後に英語音声を再生
       if (nextAssets.audio?.english && sentenceAudioRef.current) {
+        setAudioStatus('playing');
         setTimeout(() => {
           sentenceAudioRef.current!.pause();
           sentenceAudioRef.current!.currentTime = 0;
           sentenceAudioRef.current!.play().catch((err) => {
             console.warn('play error on next problem', err);
+            setAudioStatus('idle');
           });
         }, 500);
       }
@@ -417,13 +417,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+      <h2>{isAudioBusy ? 'audioBusy' : 'audioIdle'}</h2>
       {phase === 'landing' && (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
           {error && <p className="text-sm text-rose-500">{error}</p>}
           <button
             type="button"
             onClick={handleStart}
-            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
             disabled={!mounted || !viewReady || !!error || isAudioBusy}
           >
             {isFetching && '問題を準備中…'}
@@ -496,16 +497,21 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                       assets?.audio?.english &&
                       sentenceAudioRef.current
                     ) {
+                      setAudioStatus('queued'); // ★ 正解画面では busy にする
                       setTimeout(() => {
                         sentenceAudioRef.current!.pause();
                         sentenceAudioRef.current!.currentTime = 0;
-                        sentenceAudioRef.current!.play().catch((err) => {
-                          console.warn('play error on correct answer', err);
-                        });
+                        sentenceAudioRef
+                          .current!.play()
+                          .then(() => setAudioStatus('playing'))
+                          .catch((err) => {
+                            console.warn('play error on correct answer', err);
+                            setAudioStatus('idle');
+                          });
                       }, 500);
                     }
                   }}
-                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
                   disabled={isAudioBusy}
                 >
                   {option}
@@ -517,7 +523,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             <button
               type="button"
               onClick={playSentenceAudio}
-              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
               disabled={!assets?.audio?.english || isAudioBusy}
             >
               もう一度聞く
@@ -552,7 +558,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <button
                 type="button"
                 onClick={handleRetryQuiz}
-                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
                 disabled={isAudioBusy}
               >
                 再挑戦
@@ -562,7 +568,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
               <button
                 type="button"
                 onClick={handleNextProblem}
-                className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
                 disabled={isFetching || isAudioBusy}
               >
                 {isFetching ? '生成中…' : '次の問題へ'}
@@ -579,6 +585,16 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           src={assets.audio.english}
           preload="auto"
           onEnded={() => {
+            if (viewPhase === 'quiz') {
+              // クイズ英文が終わったら idle → 回答可能
+              setAudioStatus('idle');
+              return;
+            }
+            if (viewPhase === 'result') {
+              // 正解画面の英文が終わったら idle → 次の問題へ進める
+              setAudioStatus('idle');
+              return;
+            }
             setTimeout(() => {
               if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
                 const replySrc = settingsRef.current.isEnglishMode
@@ -586,7 +602,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                   : assets?.audio?.japanese;
                 if (replySrc && replyAudioRef.current) {
                   replyAudioRef.current.src = replySrc;
-                  replyAudioRef.current.play().catch(() => setViewPhase('quiz'));
+                  setAudioStatus('playing'); // ★ 再生開始時にbusyへ
+                  replyAudioRef.current.play().catch(() => {
+                    setAudioStatus('idle');
+                    setViewPhase('quiz');
+                  });
                 } else {
                   setViewPhase('quiz');
                 }
@@ -600,19 +620,25 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         ref={replyAudioRef}
         preload="auto"
         onEnded={() => {
-          setTimeout(() => {
-            if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-              setViewPhase('quiz');
-              setPhase('quiz'); // ← これを追加
+          // 応答終了後はクイズへ遷移し、すぐに英文を再生
+          if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+            setViewPhase('quiz');
+            setPhase('quiz');
+            if (sentenceAudioRef.current) {
+              // ★ この時点で busy に戻す（待ち時間中に idle にならないようにする）
+              setAudioStatus('queued');
               setTimeout(() => {
-                if (sentenceAudioRef.current) {
-                  sentenceAudioRef.current.pause();
-                  sentenceAudioRef.current.currentTime = 0;
-                  void sentenceAudioRef.current.play();
-                }
+                sentenceAudioRef.current!.pause();
+                sentenceAudioRef.current!.currentTime = 0;
+                sentenceAudioRef
+                  .current!.play()
+                  .then(() => setAudioStatus('playing'))
+                  .catch(() => setAudioStatus('idle'));
               }, 500);
+            } else {
+              setAudioStatus('idle');
             }
-          }, 500);
+          }
         }}
       />
     </main>
