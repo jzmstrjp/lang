@@ -306,6 +306,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
+  const suppressQuizAutoplayRef = useRef(false);
   const playbackTimeoutRef = useRef<number | null>(null);
   const secondaryPlaybackTimeoutRef = useRef<number | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
@@ -455,6 +456,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'quiz':
+        // scene直後の1回だけは自動再生しない（1秒後の二重再生防止）
+        if (suppressQuizAutoplayRef.current) {
+          suppressQuizAutoplayRef.current = false;
+          break;
+        }
         dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
         timeoutId = window.setTimeout(() => {
           playSentenceAudio();
@@ -744,6 +750,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                 });
               } else {
                 // 返答音声がない場合はクイズに移行
+                suppressQuizAutoplayRef.current = true; // ← scene直後のquizでの自動再生を1回だけ抑止
                 dispatch({ type: 'SET_PHASE', payload: 'quiz' });
               }
             } else {
@@ -761,6 +768,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         onPause={() => dispatch({ type: 'SET_AUDIO_STATUS', payload: 'idle' })}
         onEnded={() => {
           if (phase === 'scene-ready') {
+            suppressQuizAutoplayRef.current = true; // ← 返信後にquizへ行く場合も抑止
             dispatch({ type: 'SET_PHASE', payload: 'quiz' });
           } else {
             // 他のフェーズでは音声終了時にidleに戻す
