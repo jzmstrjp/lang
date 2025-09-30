@@ -448,11 +448,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
 
       case 'scene-ready':
-        // scene-ready に入った時点で英語音声を一度だけ再生
-        dispatch({ type: 'SET_AUDIO_STATUS', payload: 'queued' });
-        timeoutId = window.setTimeout(() => {
-          playSentenceAudio();
-        }, 500);
+        // scene-ready では即時再生は行わない（iOSで二重再生になるため）
+        // 音声はユーザー操作後または <audio> の onEnded からのみ制御する
         break;
 
       case 'quiz':
