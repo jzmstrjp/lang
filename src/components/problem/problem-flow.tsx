@@ -110,7 +110,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     [correctIndex, problem, selectedOption],
   );
 
-  const playAudio = useCallback((audio: HTMLAudioElement | null, duration = 500) => {
+  const playAudio = useCallback((audio: HTMLAudioElement | null, duration = 200) => {
     if (!audio) return;
 
     setAudioStatus('playing');
@@ -329,8 +329,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         </div>
       )}
 
-      {sceneImage && !settingsRef.current.isImageHiddenMode && (
-        <section className="grid place-items-center">
+      {sceneImage && (
+        <section
+          className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
+        >
           <figure className="flex w-full justify-center">
             <Image
               src={sceneImage}
@@ -478,9 +480,11 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         onEnded={() => {
           // 応答終了後はクイズへ遷移し、すぐに英文を再生
           if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-            setViewPhase('quiz');
-            setPhase('quiz');
-            void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+            setTimeout(() => {
+              setViewPhase('quiz');
+              setPhase('quiz');
+              void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+            }, 500);
           }
         }}
       />
