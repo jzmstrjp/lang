@@ -6,6 +6,7 @@ import {
   type GenerateRequest,
 } from '@/lib/problem-generator';
 import OpenAI from 'openai';
+import { MODEL_SETTING } from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,10 +14,8 @@ const openai = new OpenAI({
 
 async function generateImage(prompt: string) {
   const image = await openai.images.generate({
-    model: 'gpt-image-1',
+    ...MODEL_SETTING,
     prompt,
-    size: '1024x1536',
-    quality: 'medium',
   });
 
   const first = image.data?.[0];
