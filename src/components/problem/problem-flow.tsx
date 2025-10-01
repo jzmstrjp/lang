@@ -333,7 +333,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         <section className="grid place-items-center">
           <figure className="flex w-full justify-center">
             <Image
-              src={phase === 'correct' && nextSceneImage ? nextSceneImage : sceneImage}
+              src={sceneImage}
               alt="英語と日本語のセリフを並べた2コマシーン"
               width={500}
               height={750}
@@ -484,6 +484,25 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           }
         }}
       />
+      {/* キャッシュを用意するために次の問題の音声と画像を読み込む */}
+      {nextProblem && (
+        <>
+          <audio src={nextProblem.audioEnUrl} preload="auto" />
+          <audio src={nextProblem.audioJaUrl} preload="auto" />
+          <audio src={nextProblem.audioEnReplyUrl} preload="auto" />
+        </>
+      )}
+      {nextSceneImage && (
+        <Image
+          unoptimized
+          priority
+          src={nextSceneImage}
+          className="hidden"
+          width={500}
+          height={750}
+          alt="英語と日本語のセリフを並べた2コマシーン"
+        />
+      )}
     </main>
   );
 }
