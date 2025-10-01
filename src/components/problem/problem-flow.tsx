@@ -110,7 +110,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     [correctIndex, problem, selectedOption],
   );
 
-  const playAudio = useCallback((audio: HTMLAudioElement | null, duration = 200) => {
+  const playAudio = useCallback((audio: HTMLAudioElement | null, duration: number) => {
     if (!audio) return;
 
     setAudioStatus('playing');
@@ -271,13 +271,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const handleStart = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
   };
 
   const handleRetryQuiz = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
   };
 
   const handleNextProblem = () => {
@@ -297,7 +297,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       setNextProblem(null);
 
       // 切り替え直後に英語音声を再生
-      void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+      void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
     } else {
       setPhase('loading');
       void fetchProblem();
@@ -384,7 +384,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                     if (!isCorrect) return;
 
                     // 正解だったらクリック時に再生
-                    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
+                    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -469,7 +469,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             return;
           }
           if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-            void (replyAudioRef.current && playAudio(replyAudioRef.current));
+            void (replyAudioRef.current && playAudio(replyAudioRef.current, 200));
           }
         }}
       />
@@ -483,8 +483,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             setTimeout(() => {
               setViewPhase('quiz');
               setPhase('quiz');
-              void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current));
-            }, 500);
+              void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
+            }, 600);
           }
         }}
       />
