@@ -7,4 +7,4 @@ export const MODEL_SETTING = {
 } as const satisfies Omit<ImageGenerateParams, 'prompt'>;
 
 // 1回で取得する問題数
-export const PROBLEM_FETCH_LIMIT = 200;
+export const PROBLEM_FETCH_LIMIT = 10;
