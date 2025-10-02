@@ -475,15 +475,11 @@ const problems: SeedProblemData[] = [
     senderVoice: 'male',
     receiverRole: '母親',
     receiverVoice: 'female',
-    englishSentence: '',
+    englishSentence: 'Hey, I bought the oligosaccharide for you!',
     japaneseSentence: 'はい、オリゴ糖買ってきたよ！',
-    englishReply: '',
-    japaneseReply: 'わぁ、ありがとう！オリゴ糖！',
-    incorrectOptions: [
-      '延長はどこで手続きしますか？',
-      '雑誌は借りられますか？',
-      '閉館時間は何時ですか？',
-    ],
+    englishReply: 'Wow! Thanks for getting the oligosaccharide!',
+    japaneseReply: 'わぁ！ありがとう、オリゴ糖！',
+    incorrectOptions: ['今は何時ですか？', 'そのペンを貸してください！', 'あのギャグやってみて！'],
   },
 ];
 
