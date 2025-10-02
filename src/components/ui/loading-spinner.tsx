@@ -17,4 +17,17 @@ export function LoadingSpinner({ label = 'Loading...', className = '' }: Loading
   );
 }
 
+type InlineLoadingSpinnerProps = {
+  className?: string;
+};
+
+export function InlineLoadingSpinner({ className = '' }: InlineLoadingSpinnerProps) {
+  return (
+    <span
+      className={`inline-block h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-white ${className}`}
+      aria-hidden="true"
+    />
+  );
+}
+
 export default LoadingSpinner;

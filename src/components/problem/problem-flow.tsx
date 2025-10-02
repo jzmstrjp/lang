@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { PROBLEM_FETCH_LIMIT } from '@/const';
+import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
 
 type Phase = 'landing' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
@@ -356,7 +357,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     return (
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
         <StartButton error={error} disabled>
-          問題を取得中...
+          <InlineLoadingSpinner />
+          <span className="ml-2">問題を取得中...</span>
         </StartButton>
       </main>
     );
