@@ -109,6 +109,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [viewPhase, setViewPhase] = useState<Phase>('landing');
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
+  const isFirstQuiz = useRef(true);
   const [mounted, setMounted] = useState(false);
   const lastQueueLengthRef = useRef(0);
 
@@ -212,96 +213,99 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   }, [phase, sceneImage, isCorrect, problem, refillQueueIfNeeded, mounted]);
 
   useEffect(() => {
-    isPrefetchingNextRef.current = false;
+    if (isFirstQuiz.current) {
+      isFirstQuiz.current = false;
+      isPrefetchingNextRef.current = false;
 
-    const bootstrap = async () => {
-      setFetchPhase('bootstrapping');
+      const bootstrap = async () => {
+        setFetchPhase('bootstrapping');
 
-      try {
-        let allProblems: ProblemWithAudio[] = [];
+        try {
+          let allProblems: ProblemWithAudio[] = [];
 
-        if (searchQuery) {
-          // 検索クエリがある場合：最初の1件だけ検索付きで取得
-          const searchParams = new URLSearchParams({
-            type: length,
-            limit: '1',
-            search: searchQuery,
-          });
-          const searchResponse = await fetch(`/api/problems?${searchParams.toString()}`, {
-            cache: 'no-store',
-          });
+          if (searchQuery) {
+            // 検索クエリがある場合：最初の1件だけ検索付きで取得
+            const searchParams = new URLSearchParams({
+              type: length,
+              limit: '1',
+              search: searchQuery,
+            });
+            const searchResponse = await fetch(`/api/problems?${searchParams.toString()}`, {
+              cache: 'no-store',
+            });
 
-          if (searchResponse.ok) {
-            const searchData: ApiProblemsResponse = await searchResponse.json();
-            allProblems = searchData.problems;
-            console.log('[ProblemFlow] 検索問題取得:', searchData.count, '件');
+            if (searchResponse.ok) {
+              const searchData: ApiProblemsResponse = await searchResponse.json();
+              allProblems = searchData.problems;
+              console.log('[ProblemFlow] 検索問題取得:', searchData.count, '件');
+            }
+
+            // 通常問題を取得（合計201件になることもある）
+            const today = new Date().toISOString().split('T')[0];
+            const normalParams = new URLSearchParams({ type: length, date: today });
+            const normalResponse = await fetch(`/api/problems?${normalParams.toString()}`, {
+              cache: 'force-cache',
+            });
+
+            if (normalResponse.ok) {
+              const normalData: ApiProblemsResponse = await normalResponse.json();
+              allProblems = [...allProblems, ...normalData.problems];
+              console.log('[ProblemFlow] 通常問題取得:', normalData.count, '件');
+            }
+          } else {
+            // 検索クエリがない場合：通常通り取得
+            const today = new Date().toISOString().split('T')[0];
+            const params = new URLSearchParams({ type: length, date: today });
+            const response = await fetch(`/api/problems?${params.toString()}`, {
+              cache: 'force-cache',
+            });
+
+            if (!response.ok) {
+              throw new Error('問題がありません');
+            }
+
+            const data: ApiProblemsResponse = await response.json();
+            allProblems = data.problems;
+            console.log('[ProblemFlow] 問題キュー取得完了:', data.count, '件');
           }
 
-          // 通常問題を取得（合計201件になることもある）
-          const today = new Date().toISOString().split('T')[0];
-          const normalParams = new URLSearchParams({ type: length, date: today });
-          const normalResponse = await fetch(`/api/problems?${normalParams.toString()}`, {
-            cache: 'force-cache',
-          });
-
-          if (normalResponse.ok) {
-            const normalData: ApiProblemsResponse = await normalResponse.json();
-            allProblems = [...allProblems, ...normalData.problems];
-            console.log('[ProblemFlow] 通常問題取得:', normalData.count, '件');
-          }
-        } else {
-          // 検索クエリがない場合：通常通り取得
-          const today = new Date().toISOString().split('T')[0];
-          const params = new URLSearchParams({ type: length, date: today });
-          const response = await fetch(`/api/problems?${params.toString()}`, {
-            cache: 'force-cache',
-          });
-
-          if (!response.ok) {
+          if (allProblems.length === 0) {
             throw new Error('問題がありません');
           }
 
-          const data: ApiProblemsResponse = await response.json();
-          allProblems = data.problems;
-          console.log('[ProblemFlow] 問題キュー取得完了:', data.count, '件');
+          // 検索問題がある場合は最初に固定し、残りをシャッフル
+          let shuffledProblems: ProblemWithAudio[];
+          if (searchQuery && allProblems.length > 0) {
+            const [searchProblem, ...normalProblems] = allProblems;
+            shuffledProblems = [searchProblem, ...shuffleProblems(normalProblems)];
+          } else {
+            shuffledProblems = shuffleProblems(allProblems);
+          }
+
+          // 最初の問題をセット
+          const firstProblem = shuffledProblems[0];
+          const { options, correctIndex: newCorrectIndex } = shuffleOptions(firstProblem);
+
+          setProblemQueue(shuffledProblems);
+          setCurrentIndex(0);
+          setProblem(firstProblem);
+          setOptions(options);
+          setCorrectIndex(newCorrectIndex);
+          setSelectedOption(null);
+          setFetchPhase('idle');
+          lastQueueLengthRef.current = allProblems.length;
+          console.log('[ProblemFlow] 問題キュー準備完了:', allProblems.length, '件');
+        } catch (err) {
+          console.error('[ProblemFlow] 問題取得失敗:', err);
+          const message = err instanceof Error ? err.message : '問題取得に失敗しました';
+          setError(message);
+          setPhase('landing');
+          setFetchPhase('idle');
         }
+      };
 
-        if (allProblems.length === 0) {
-          throw new Error('問題がありません');
-        }
-
-        // 検索問題がある場合は最初に固定し、残りをシャッフル
-        let shuffledProblems: ProblemWithAudio[];
-        if (searchQuery && allProblems.length > 0) {
-          const [searchProblem, ...normalProblems] = allProblems;
-          shuffledProblems = [searchProblem, ...shuffleProblems(normalProblems)];
-        } else {
-          shuffledProblems = shuffleProblems(allProblems);
-        }
-
-        // 最初の問題をセット
-        const firstProblem = shuffledProblems[0];
-        const { options, correctIndex: newCorrectIndex } = shuffleOptions(firstProblem);
-
-        setProblemQueue(shuffledProblems);
-        setCurrentIndex(0);
-        setProblem(firstProblem);
-        setOptions(options);
-        setCorrectIndex(newCorrectIndex);
-        setSelectedOption(null);
-        setFetchPhase('idle');
-        lastQueueLengthRef.current = allProblems.length;
-        console.log('[ProblemFlow] 問題キュー準備完了:', allProblems.length, '件');
-      } catch (err) {
-        console.error('[ProblemFlow] 問題取得失敗:', err);
-        const message = err instanceof Error ? err.message : '問題取得に失敗しました';
-        setError(message);
-        setPhase('landing');
-        setFetchPhase('idle');
-      }
-    };
-
-    void bootstrap();
+      void bootstrap();
+    }
   }, [length, searchQuery]);
 
   const handleStart = () => {
