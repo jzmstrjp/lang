@@ -4,8 +4,8 @@ import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
-export default function ProblemPage({ params }: { params: { type: string } }) {
-  const type = params.type;
+export default async function ProblemPage({ params }: { params: { type: string } }) {
+  const { type } = await params;
 
   // 無効なtypeの場合は404
   if (!validTypes.includes(type as ProblemLength)) {
