@@ -2,8 +2,7 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import LoadingSpinner from '../ui/loading-spinner';
+import { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { PROBLEM_FETCH_LIMIT } from '@/const';
 
@@ -48,6 +47,36 @@ function shuffleOptions(target: ProblemWithAudio): { options: string[]; correctI
   return { options: choices, correctIndex: correct === -1 ? 0 : correct };
 }
 
+type StartButtonProps = {
+  error: string | null;
+  mounted: boolean;
+  isAudioBusy: boolean;
+  handleStart: () => void;
+};
+
+const StartButton = ({
+  error,
+  mounted,
+  isAudioBusy,
+  handleStart,
+  children,
+}: PropsWithChildren<StartButtonProps>) => {
+  return (
+    <div className="mt-16 flex flex-col items-center gap-4 text-center">
+      {error && <p className="text-sm text-rose-500">{error}</p>}
+      <button
+        type="button"
+        onClick={handleStart}
+        className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
+        disabled={!mounted || !!error || isAudioBusy}
+      >
+        {children}
+      </button>
+      <p className="text-base text-[#666] mt-2">※音が出ます</p>
+    </div>
+  );
+};
+
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
@@ -65,7 +94,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fetchPhase, setFetchPhase] = useState<FetchPhase>('idle');
-  const [fetchingStatus, setFetchingStatus] = useState<'retrieving' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [audioStatus, setAudioStatus] = useState<AudioStatus>('idle');
 
@@ -193,7 +221,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     const bootstrap = async () => {
       setFetchPhase('bootstrapping');
-      setFetchingStatus('retrieving');
 
       try {
         let allProblems: ProblemWithAudio[] = [];
@@ -262,7 +289,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setCorrectIndex(newCorrectIndex);
         setSelectedOption(null);
         setFetchPhase('idle');
-        setFetchingStatus(null);
         lastQueueLengthRef.current = allProblems.length;
         console.log('[ProblemFlow] 問題キュー準備完了:', allProblems.length, '件');
       } catch (err) {
@@ -271,7 +297,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setError(message);
         setPhase('loading');
         setFetchPhase('idle');
-        setFetchingStatus(null);
       }
     };
 
@@ -324,27 +349,29 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   if (!problem)
     return (
-      <LoadingSpinner
-        className="mt-24"
-        label={fetchingStatus === 'retrieving' ? '問題を取得中...' : '処理中...'}
-      />
+      <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+        <StartButton
+          error={error}
+          mounted={mounted}
+          isAudioBusy={isAudioBusy}
+          handleStart={handleStart}
+        >
+          問題を取得中...
+        </StartButton>
+      </main>
     );
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'loading' && (
-        <div className="mt-16 flex flex-col items-center gap-4 text-center">
-          {error && <p className="text-sm text-rose-500">{error}</p>}
-          <button
-            type="button"
-            onClick={handleStart}
-            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
-            disabled={!mounted || !!error || isAudioBusy}
-          >
-            英語学習を始める
-          </button>
-          <p className="text-base text-[#666] mt-2">※音が出ます</p>
-        </div>
+        <StartButton
+          error={error}
+          mounted={mounted}
+          isAudioBusy={isAudioBusy}
+          handleStart={handleStart}
+        >
+          英語学習を始める
+        </StartButton>
       )}
 
       {sceneImage && (
