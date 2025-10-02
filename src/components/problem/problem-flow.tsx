@@ -6,7 +6,7 @@ import { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } 
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { PROBLEM_FETCH_LIMIT } from '@/const';
 
-type Phase = 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
+type Phase = 'landing' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
 export type ProblemLength = 'short' | 'medium' | 'long';
 
@@ -86,7 +86,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   type FetchPhase = 'idle' | 'bootstrapping' | 'loading' | 'prefetch';
 
-  const [phase, setPhase] = useState<Phase>('loading');
+  const [phase, setPhase] = useState<Phase>('landing');
   const [problem, setProblem] = useState<ProblemWithAudio | null>(null);
   const [options, setOptions] = useState<string[]>([]);
   const [correctIndex, setCorrectIndex] = useState(0);
@@ -108,7 +108,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const [viewPhase, setViewPhase] = useState<Phase>('loading');
+  const [viewPhase, setViewPhase] = useState<Phase>('landing');
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
   const isFirstQuiz = useRef(true);
@@ -190,7 +190,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase) {
-      case 'loading':
+      case 'landing':
         // マウント完了フラグを立てる
         if (!mounted) setMounted(true);
         break;
@@ -295,7 +295,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         console.error('[ProblemFlow] 問題取得失敗:', err);
         const message = err instanceof Error ? err.message : '問題取得に失敗しました';
         setError(message);
-        setPhase('loading');
+        setPhase('landing');
         setFetchPhase('idle');
       }
     };
@@ -329,7 +329,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     if (!nextProblemData) {
       // キューが空の場合はローディング状態にする
       console.error('[ProblemFlow] 問題キューが空です');
-      setPhase('loading');
+      setPhase('landing');
       setError('次の問題がありません');
       return;
     }
@@ -363,7 +363,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
-      {phase === 'loading' && (
+      {phase === 'landing' && (
         <StartButton
           error={error}
           mounted={mounted}
