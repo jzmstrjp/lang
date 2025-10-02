@@ -26,12 +26,13 @@ export default function Home() {
   // 全タイプの問題を事前取得してキャッシュ
   useEffect(() => {
     const types = ['short', 'medium', 'long'];
+    const today = new Date().toISOString().split('T')[0]; // "2025-10-02"
 
     // 並列で全タイプを取得
     Promise.all(
       types.map(async (type) => {
         try {
-          await fetch(`/api/problems?type=${type}`, { cache: 'force-cache' });
+          await fetch(`/api/problems?type=${type}&date=${today}`, { cache: 'force-cache' });
           console.log(`[Home] ${type}問題をプリフェッチ完了`);
         } catch (err) {
           console.warn(`[Home] ${type}問題のプリフェッチ失敗:`, err);

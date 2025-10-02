@@ -216,7 +216,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           }
 
           // 通常問題を取得（合計201件になることもある）
-          const normalParams = new URLSearchParams({ type: length });
+          const today = new Date().toISOString().split('T')[0];
+          const normalParams = new URLSearchParams({ type: length, date: today });
           const normalResponse = await fetch(`/api/problems?${normalParams.toString()}`, {
             cache: 'force-cache',
           });
@@ -228,7 +229,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           }
         } else {
           // 検索クエリがない場合：通常通り取得
-          const params = new URLSearchParams({ type: length });
+          const today = new Date().toISOString().split('T')[0];
+          const params = new URLSearchParams({ type: length, date: today });
           const response = await fetch(`/api/problems?${params.toString()}`, {
             cache: 'force-cache',
           });
