@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadingSpinner from '../ui/loading-spinner';
-import { ProblemWithAudio } from '@/app/api/problem/route';
+import { ProblemWithAudio } from '@/app/api/problems/route';
 
 type Phase = 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
@@ -14,11 +14,15 @@ type ProblemFlowProps = {
   length: ProblemLength;
 };
 
-type ApiResponse = {
-  problem: ProblemWithAudio;
+type ApiProblemsResponse = {
+  problems: ProblemWithAudio[];
+  count: number;
 };
 
 // ProblemType enum が削除されたため、直接文字列を使用
+
+// 1回で取得する問題数
+const PROBLEM_FETCH_LIMIT = 200;
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const searchParams = useSearchParams();
@@ -34,7 +38,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [options, setOptions] = useState<string[]>([]);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [nextProblem, setNextProblem] = useState<ProblemWithAudio | null>(null);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [fetchPhase, setFetchPhase] = useState<FetchPhase>('idle');
   const [fetchingStatus, setFetchingStatus] = useState<'retrieving' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +49,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const isAudioBusy = audioStatus !== 'idle';
 
   const sceneImage = problem?.imageUrl ?? null;
+  const nextProblem = problemQueue[currentIndex + 1] ?? null;
   const nextSceneImage = nextProblem?.imageUrl ?? null;
   const shuffledOptions = options;
 
@@ -62,25 +68,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     return { options: choices, correctIndex: correct === -1 ? 0 : correct };
   }, []);
 
-  type FetchSuccessPayload = {
-    problem: ProblemWithAudio;
-    options: string[];
-    correctIndex: number;
-  };
-
-  const buildPayloadFromResponse = useCallback(
-    (data: ApiResponse): FetchSuccessPayload => {
-      const { options, correctIndex: newCorrectIndex } = shuffleOptions(data.problem);
-
-      return {
-        problem: data.problem,
-        options,
-        correctIndex: newCorrectIndex,
-      };
-    },
-    [shuffleOptions],
-  );
-
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -89,6 +76,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const isPrefetchingNextRef = useRef(false);
   const isFirstQuiz = useRef(true);
   const [mounted, setMounted] = useState(false);
+  const lastQueueLengthRef = useRef(0);
 
   const settingsRef = useRef({
     isEnglishMode: true,
@@ -123,67 +111,40 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     }, duration);
   }, []);
 
-  // 次の問題を事前フェッチする関数
-  const prefetchNextProblem = useCallback(async () => {
-    if (isPrefetchingNextRef.current) return;
+  // キューが残り1件になったら追加で問題を取得（常に検索なし）
+  const refillQueueIfNeeded = useCallback(async () => {
+    // 残り1件になったら補充（最後の問題を解いている間に取得できる）
+    const remainingProblems = problemQueue.length - currentIndex;
+    if (remainingProblems > 1 || isPrefetchingNextRef.current) return;
 
     isPrefetchingNextRef.current = true;
+    const previousLength = problemQueue.length;
+
     try {
-      const params = new URLSearchParams({ type: length });
-      const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+      // 補充時は常に検索なしで取得
+      const params = new URLSearchParams({ type: length, limit: String(PROBLEM_FETCH_LIMIT) });
+      const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
-        const data: ApiResponse = await response.json();
-        const payload = buildPayloadFromResponse(data);
-        setNextProblem(payload.problem);
-        console.log('[ProblemFlow] 次の問題の事前フェッチ完了:', data.problem.englishSentence);
+        const data: ApiProblemsResponse = await response.json();
+
+        // 新しい問題が取得できなかった場合は、これ以上補充しない
+        if (data.problems.length === 0) {
+          lastQueueLengthRef.current = previousLength;
+          console.log('[ProblemFlow] 問題キュー補充: 新しい問題がありません');
+          return;
+        }
+
+        setProblemQueue((prev) => [...prev, ...data.problems]);
+        lastQueueLengthRef.current = previousLength + data.problems.length;
+        console.log('[ProblemFlow] 問題キュー補充完了:', data.count, '件追加');
       }
     } catch (err) {
-      console.warn('[ProblemFlow] 次の問題の事前フェッチ失敗:', err);
+      console.warn('[ProblemFlow] 問題キュー補充失敗:', err);
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [buildPayloadFromResponse, length]);
-
-  const fetchProblem = useCallback(async () => {
-    setFetchPhase('loading');
-    setFetchingStatus('retrieving');
-
-    try {
-      const params = new URLSearchParams({ type: length });
-      if (searchQuery) {
-        params.set('search', searchQuery);
-      }
-      const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
-
-      if (!response.ok) {
-        throw new Error('問題がありません');
-      }
-
-      const data: ApiResponse = await response.json();
-      const payload = buildPayloadFromResponse(data);
-
-      if (isMountedRef.current) {
-        setProblem(payload.problem);
-        setOptions(payload.options);
-        setCorrectIndex(payload.correctIndex);
-        setSelectedOption(null);
-        setPhase('scene-entry');
-        setFetchPhase('idle');
-        setFetchingStatus(null);
-        console.log('[ProblemFlow] 新しい問題取得完了:', data.problem.englishSentence);
-      }
-    } catch (err) {
-      console.error('[ProblemFlow] 問題取得失敗:', err);
-      if (isMountedRef.current) {
-        const message = err instanceof Error ? err.message : '問題取得に失敗しました';
-        setError(message);
-        setPhase('loading');
-        setFetchPhase('idle');
-        setFetchingStatus(null);
-      }
-    }
-  }, [buildPayloadFromResponse, length, searchQuery]);
+  }, [currentIndex, length, problemQueue.length]);
 
   // phaseごとの処理
   useEffect(() => {
@@ -206,24 +167,15 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         break;
     }
 
-    // prefetch（quiz進行中）
-    if (problem && !nextProblem && !isPrefetchingNextRef.current) {
-      void prefetchNextProblem();
+    // キュー補充チェック
+    if (problem && !isPrefetchingNextRef.current) {
+      void refillQueueIfNeeded();
     }
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [
-    phase,
-    sceneImage,
-    isCorrect,
-    problem,
-    nextProblem,
-    prefetchNextProblem,
-    fetchProblem,
-    mounted,
-  ]);
+  }, [phase, sceneImage, isCorrect, problem, refillQueueIfNeeded, mounted]);
 
   // 初回のみbootstrapを実行
   if (isFirstQuiz.current) {
@@ -235,28 +187,71 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
       setFetchingStatus('retrieving');
 
       try {
-        const params = new URLSearchParams({ type: length });
-        if (searchQuery) {
-          params.set('search', searchQuery);
-        }
-        const response = await fetch(`/api/problem?${params.toString()}`, { cache: 'no-store' });
+        let allProblems: ProblemWithAudio[] = [];
 
-        if (!response.ok) {
+        if (searchQuery) {
+          // 検索クエリがある場合：最初の1件だけ検索付きで取得
+          const searchParams = new URLSearchParams({
+            type: length,
+            limit: '1',
+            search: searchQuery,
+          });
+          const searchResponse = await fetch(`/api/problems?${searchParams.toString()}`, {
+            cache: 'no-store',
+          });
+
+          if (searchResponse.ok) {
+            const searchData: ApiProblemsResponse = await searchResponse.json();
+            allProblems = searchData.problems;
+            console.log('[ProblemFlow] 検索問題取得:', searchData.count, '件');
+          }
+
+          // 残りの件数は検索なしで取得
+          const remainingLimit = PROBLEM_FETCH_LIMIT - allProblems.length;
+          const normalParams = new URLSearchParams({ type: length, limit: String(remainingLimit) });
+          const normalResponse = await fetch(`/api/problems?${normalParams.toString()}`, {
+            cache: 'no-store',
+          });
+
+          if (normalResponse.ok) {
+            const normalData: ApiProblemsResponse = await normalResponse.json();
+            allProblems = [...allProblems, ...normalData.problems];
+            console.log('[ProblemFlow] 通常問題取得:', normalData.count, '件');
+          }
+        } else {
+          // 検索クエリがない場合：通常通り取得
+          const params = new URLSearchParams({ type: length, limit: String(PROBLEM_FETCH_LIMIT) });
+          const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
+
+          if (!response.ok) {
+            throw new Error('問題がありません');
+          }
+
+          const data: ApiProblemsResponse = await response.json();
+          allProblems = data.problems;
+          console.log('[ProblemFlow] 問題キュー取得完了:', data.count, '件');
+        }
+
+        if (allProblems.length === 0) {
           throw new Error('問題がありません');
         }
 
-        const data: ApiResponse = await response.json();
-        const payload = buildPayloadFromResponse(data);
+        // 最初の問題をセット
+        const firstProblem = allProblems[0];
+        const { options, correctIndex: newCorrectIndex } = shuffleOptions(firstProblem);
 
-        setProblem(payload.problem);
-        setOptions(payload.options);
-        setCorrectIndex(payload.correctIndex);
+        setProblemQueue(allProblems);
+        setCurrentIndex(0);
+        setProblem(firstProblem);
+        setOptions(options);
+        setCorrectIndex(newCorrectIndex);
         setSelectedOption(null);
         setFetchPhase('idle');
         setFetchingStatus(null);
-        console.log('[ProblemFlow] 事前フェッチ完了:', data.problem.englishSentence);
+        lastQueueLengthRef.current = allProblems.length;
+        console.log('[ProblemFlow] 問題キュー準備完了:', allProblems.length, '件');
       } catch (err) {
-        console.error('[ProblemFlow] 事前フェッチ失敗:', err);
+        console.error('[ProblemFlow] 問題取得失敗:', err);
         const message = err instanceof Error ? err.message : '問題取得に失敗しました';
         setError(message);
         setPhase('loading');
@@ -283,25 +278,33 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const handleNextProblem = () => {
     if (isFetching) return;
 
-    router.push(pathname);
-
-    // 次の問題が事前フェッチ済みの場合は即座に切り替え
-    if (nextProblem) {
-      const { options: newOptions, correctIndex: newCorrectIndex } = shuffleOptions(nextProblem);
-      setProblem(nextProblem);
-      setOptions(newOptions);
-      setCorrectIndex(newCorrectIndex);
-      setSelectedOption(null);
-      setPhase('scene-entry');
-      setViewPhase('scene-entry');
-      setNextProblem(null);
-
-      // 切り替え直後に英語音声を再生
-      void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
-    } else {
-      setPhase('loading');
-      void fetchProblem();
+    // searchパラメータがある場合のみURLをクリア
+    if (searchQuery) {
+      router.push(pathname);
     }
+
+    const nextIndex = currentIndex + 1;
+    const nextProblemData = problemQueue[nextIndex];
+
+    if (!nextProblemData) {
+      // キューが空の場合はローディング状態にする
+      console.error('[ProblemFlow] 問題キューが空です');
+      setPhase('loading');
+      setError('次の問題がありません');
+      return;
+    }
+
+    const { options: newOptions, correctIndex: newCorrectIndex } = shuffleOptions(nextProblemData);
+    setCurrentIndex(nextIndex);
+    setProblem(nextProblemData);
+    setOptions(newOptions);
+    setCorrectIndex(newCorrectIndex);
+    setSelectedOption(null);
+    setPhase('scene-entry');
+    setViewPhase('scene-entry');
+
+    // 切り替え直後に英語音声を再生
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 400));
   };
 
   if (!problem)
