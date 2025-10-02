@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
 import { WORD_COUNT_RULES } from '@/config/problem';
 
 const links = [
@@ -23,23 +22,6 @@ const links = [
 ];
 
 export default function Home() {
-  // 全タイプの問題を事前取得してキャッシュ
-  useEffect(() => {
-    const types = ['short', 'medium', 'long'];
-    const today = new Date().toISOString().split('T')[0]; // "2025-10-02"
-
-    // 並列で全タイプを取得
-    Promise.all(
-      types.map(async (type) => {
-        try {
-          await fetch(`/api/problems?type=${type}&date=${today}`, { cache: 'force-cache' });
-          console.log(`[Home] ${type}問題をプリフェッチ完了`);
-        } catch (err) {
-          console.warn(`[Home] ${type}問題のプリフェッチ失敗:`, err);
-        }
-      }),
-    );
-  }, []);
   return (
     <main className="mx-auto flex min-h-[calc(80vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-[#2a2b3c] sm:px-6">
       <p className="text-center font-bold mb-4 text-2xl sm:text-3xl leading-normal sm:leading-loose">

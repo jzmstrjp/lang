@@ -2,10 +2,9 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProblemWithAudio } from '@/app/api/problems/route';
-import { PROBLEM_FETCH_LIMIT } from '@/const';
-import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
+import { StartButton } from '@/components/ui/start-button';
 
 type Phase = 'landing' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
@@ -13,6 +12,7 @@ export type ProblemLength = 'short' | 'medium' | 'long';
 
 type ProblemFlowProps = {
   length: ProblemLength;
+  initialProblem: ProblemWithAudio;
 };
 
 type ApiProblemsResponse = {
@@ -48,35 +48,7 @@ function shuffleOptions(target: ProblemWithAudio): { options: string[]; correctI
   return { options: choices, correctIndex: correct === -1 ? 0 : correct };
 }
 
-type StartButtonProps = {
-  error: string | null;
-  disabled?: boolean;
-  handleStart?: () => void;
-};
-
-const StartButton = ({
-  error,
-  disabled = false,
-  handleStart,
-  children,
-}: PropsWithChildren<StartButtonProps>) => {
-  return (
-    <div className="mt-16 flex flex-col items-center gap-4 text-center">
-      {error && <p className="text-sm text-rose-500">{error}</p>}
-      <button
-        type="button"
-        onClick={handleStart}
-        className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
-        disabled={disabled}
-      >
-        {children}
-      </button>
-      <p className="text-base text-[#666] mt-2">※音が出ます</p>
-    </div>
-  );
-};
-
-export default function ProblemFlow({ length }: ProblemFlowProps) {
+export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const router = useRouter();
@@ -86,7 +58,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   type FetchPhase = 'idle' | 'bootstrapping' | 'loading' | 'prefetch';
 
   const [phase, setPhase] = useState<Phase>('landing');
-  const [problem, setProblem] = useState<ProblemWithAudio | null>(null);
+  const [problem, setProblem] = useState<ProblemWithAudio>(initialProblem);
   const [options, setOptions] = useState<string[]>([]);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -158,7 +130,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
     try {
       // 補充時は常に検索なしで取得
-      const params = new URLSearchParams({ type: length, limit: String(PROBLEM_FETCH_LIMIT) });
+      const params = new URLSearchParams({ type: length });
       const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
@@ -222,69 +194,27 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
         setFetchPhase('bootstrapping');
 
         try {
-          let allProblems: ProblemWithAudio[] = [];
+          // 初期問題をサーバーから受け取っているので、それを最初に使う
+          let allProblems: ProblemWithAudio[] = [initialProblem];
+          console.log('[ProblemFlow] 初期問題をサーバーから取得済み');
 
-          if (searchQuery) {
-            // 検索クエリがある場合：最初の1件だけ検索付きで取得
-            const searchParams = new URLSearchParams({
-              type: length,
-              limit: '1',
-              search: searchQuery,
-            });
-            const searchResponse = await fetch(`/api/problems?${searchParams.toString()}`, {
-              cache: 'no-store',
-            });
+          // 追加の問題を取得
+          const params = new URLSearchParams({ type: length });
+          const response = await fetch(`/api/problems?${params.toString()}`, {
+            cache: 'no-store',
+          });
 
-            if (searchResponse.ok) {
-              const searchData: ApiProblemsResponse = await searchResponse.json();
-              allProblems = searchData.problems;
-              console.log('[ProblemFlow] 検索問題取得:', searchData.count, '件');
-            }
-
-            // 通常問題を取得（合計201件になることもある）
-            const today = new Date().toISOString().split('T')[0];
-            const normalParams = new URLSearchParams({ type: length, date: today });
-            const normalResponse = await fetch(`/api/problems?${normalParams.toString()}`, {
-              cache: 'force-cache',
-            });
-
-            if (normalResponse.ok) {
-              const normalData: ApiProblemsResponse = await normalResponse.json();
-              allProblems = [...allProblems, ...normalData.problems];
-              console.log('[ProblemFlow] 通常問題取得:', normalData.count, '件');
-            }
-          } else {
-            // 検索クエリがない場合：通常通り取得
-            const today = new Date().toISOString().split('T')[0];
-            const params = new URLSearchParams({ type: length, date: today });
-            const response = await fetch(`/api/problems?${params.toString()}`, {
-              cache: 'force-cache',
-            });
-
-            if (!response.ok) {
-              throw new Error('問題の取得に失敗しました');
-            }
-
+          if (response.ok) {
             const data: ApiProblemsResponse = await response.json();
-            allProblems = data.problems;
-            console.log('[ProblemFlow] 問題キュー取得完了:', data.count, '件');
+            allProblems = [...allProblems, ...data.problems];
+            console.log('[ProblemFlow] 追加問題取得:', data.count, '件');
           }
 
-          if (allProblems.length === 0) {
-            throw new Error('問題がありません');
-          }
-
-          // 検索問題がある場合は最初に固定し、残りをシャッフル
-          let shuffledProblems: ProblemWithAudio[];
-          if (searchQuery && allProblems.length > 0) {
-            const [searchProblem, ...normalProblems] = allProblems;
-            shuffledProblems = [searchProblem, ...shuffleProblems(normalProblems)];
-          } else {
-            shuffledProblems = shuffleProblems(allProblems);
-          }
+          // 初期問題を最初に固定し、残りをシャッフル
+          const [firstProblem, ...normalProblems] = allProblems;
+          const shuffledProblems = [firstProblem, ...shuffleProblems(normalProblems)];
 
           // 最初の問題をセット
-          const firstProblem = shuffledProblems[0];
           const { options, correctIndex: newCorrectIndex } = shuffleOptions(firstProblem);
 
           setProblemQueue(shuffledProblems);
@@ -307,7 +237,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
 
       void bootstrap();
     }
-  }, [length, searchQuery]);
+  }, [length, searchQuery, initialProblem]);
 
   const handleStart = () => {
     setViewPhase('scene-entry');
@@ -353,24 +283,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
   };
 
-  if (!problem)
-    return (
-      <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
-        <StartButton error={error} disabled>
-          <InlineLoadingSpinner />
-          <span className="ml-2">問題を取得中...</span>
-        </StartButton>
-      </main>
-    );
-
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+    <>
       {phase === 'landing' && (
         <StartButton error={error} handleStart={handleStart}>
           英語学習を始める
         </StartButton>
       )}
-
       {sceneImage && (
         <section
           className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
@@ -549,6 +468,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           alt="英語と日本語のセリフを並べた2コマシーン"
         />
       )}
-    </main>
+    </>
   );
 }
