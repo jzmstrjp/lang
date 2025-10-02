@@ -262,7 +262,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             });
 
             if (!response.ok) {
-              throw new Error('問題がありません');
+              throw new Error('問題の取得に失敗しました');
             }
 
             const data: ApiProblemsResponse = await response.json();
