@@ -7,6 +7,7 @@
 import { prisma } from '../src/lib/prisma';
 import { generateAndUploadAudioAssets } from '../src/lib/problem-generator';
 import type { VoiceGender } from '../src/config/voice';
+import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
@@ -201,6 +202,17 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           });
 
           console.log('   ✅ データベース更新完了');
+
+          // CDNウォームアップを実行（更新されたURLのみ）
+          const urlsToWarmup = [
+            updateData.audioEnUrl,
+            updateData.audioJaUrl,
+            updateData.audioEnReplyUrl,
+          ].filter((url): url is string => Boolean(url) && url !== null);
+
+          if (urlsToWarmup.length > 0) {
+            await warmupMultipleCDNUrls(urlsToWarmup);
+          }
         }
 
         successCount++;

@@ -7,6 +7,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
 import { generateAndUploadImageAsset, type GeneratedProblem } from '../src/lib/problem-generator';
+import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
 
 function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   if (Array.isArray(value)) {
@@ -146,6 +147,9 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         });
 
         console.log('   ✅ データベース更新完了');
+
+        // CDNウォームアップを実行
+        await warmupMultipleCDNUrls([imageUrl]);
 
         successCount++;
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
