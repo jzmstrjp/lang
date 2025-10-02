@@ -49,15 +49,13 @@ function shuffleOptions(target: ProblemWithAudio): { options: string[]; correctI
 
 type StartButtonProps = {
   error: string | null;
-  mounted: boolean;
-  isAudioBusy: boolean;
-  handleStart: () => void;
+  disabled?: boolean;
+  handleStart?: () => void;
 };
 
 const StartButton = ({
   error,
-  mounted,
-  isAudioBusy,
+  disabled = false,
   handleStart,
   children,
 }: PropsWithChildren<StartButtonProps>) => {
@@ -68,7 +66,7 @@ const StartButton = ({
         type="button"
         onClick={handleStart}
         className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-lg font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
-        disabled={!mounted || !!error || isAudioBusy}
+        disabled={disabled}
       >
         {children}
       </button>
@@ -350,12 +348,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   if (!problem)
     return (
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
-        <StartButton
-          error={error}
-          mounted={mounted}
-          isAudioBusy={isAudioBusy}
-          handleStart={handleStart}
-        >
+        <StartButton error={error} disabled>
           問題を取得中...
         </StartButton>
       </main>
@@ -364,12 +357,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
       {phase === 'landing' && (
-        <StartButton
-          error={error}
-          mounted={mounted}
-          isAudioBusy={isAudioBusy}
-          handleStart={handleStart}
-        >
+        <StartButton error={error} handleStart={handleStart}>
           英語学習を始める
         </StartButton>
       )}
