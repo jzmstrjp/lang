@@ -21,7 +21,7 @@ if (typeof window === 'undefined') {
 // R2接続設定
 const CLOUDFLARE_ACCOUNT_ID = 'd6440650d9139a91a55c362227fb9310';
 const R2_ENDPOINT = `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'prod-lang-media';
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'prod-lang-media-apac';
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 

@@ -1,13 +1,25 @@
 # R2バケット作成結果の出力
 
-output "r2_bucket_name" {
-  value       = module.cloudflare_r2.bucket_name
-  description = "Name of the created R2 bucket."
+# WNAMバケット（既存）
+output "r2_bucket_name_wnam" {
+  value       = module.cloudflare_r2_wnam.bucket_name
+  description = "Name of the WNAM R2 bucket."
 }
 
-output "r2_bucket_url" {
-  value       = module.cloudflare_r2.bucket_public_url
-  description = "Default R2 bucket public URL."
+output "r2_bucket_url_wnam" {
+  value       = module.cloudflare_r2_wnam.bucket_public_url
+  description = "Default WNAM R2 bucket public URL."
+}
+
+# APACバケット（新規）
+output "r2_bucket_name_apac" {
+  value       = module.cloudflare_r2_apac.bucket_name
+  description = "Name of the APAC R2 bucket."
+}
+
+output "r2_bucket_url_apac" {
+  value       = module.cloudflare_r2_apac.bucket_public_url
+  description = "Default APAC R2 bucket public URL."
 }
 
 # 次の手動設定:
