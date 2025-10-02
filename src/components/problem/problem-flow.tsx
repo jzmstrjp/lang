@@ -20,8 +20,6 @@ type ApiProblemsResponse = {
   count: number;
 };
 
-// ProblemType enum が削除されたため、直接文字列を使用
-
 // 問題配列をランダムシャッフル（Fisher-Yates）
 function shuffleProblems<T>(problems: T[]): T[] {
   const shuffled = [...problems];
@@ -62,8 +60,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const [options, setOptions] = useState<string[]>([]);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([initialProblem]);
   const [fetchPhase, setFetchPhase] = useState<FetchPhase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [audioStatus, setAudioStatus] = useState<AudioStatus>('idle');
@@ -72,7 +69,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const isAudioBusy = audioStatus !== 'idle';
 
   const sceneImage = problem?.imageUrl ?? null;
-  const nextProblem = problemQueue[currentIndex + 1] ?? null;
+  const nextProblem = problemQueue[1] ?? null;
   const nextSceneImage = nextProblem?.imageUrl ?? null;
   const shuffledOptions = options;
 
@@ -119,14 +116,15 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     }, duration);
   }, []);
 
-  // キューが残り1件になったら追加で問題を取得（常に検索なし）
-  const refillQueueIfNeeded = useCallback(async () => {
-    // 残り1件になったら補充（最後の問題を解いている間に取得できる）
-    const remainingProblems = problemQueue.length - currentIndex;
-    if (remainingProblems > 1 || isPrefetchingNextRef.current) return;
+  console.log(`[ProblemFlow] キュー${problemQueue.length}件`);
 
+  // キューに次の問題がなければ追加で問題を取得（常に検索なし）
+  const refillQueueIfNeeded = useCallback(async () => {
+    // 次の問題（problemQueue[1]）がある、または既に補充中なら何もしない
+    if (problemQueue.length > 1 || isPrefetchingNextRef.current) return;
+
+    console.log('[ProblemFlow] キュー補充チェック: 補充開始');
     isPrefetchingNextRef.current = true;
-    const previousLength = problemQueue.length;
 
     try {
       // 補充時は常に検索なしで取得
@@ -138,13 +136,15 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
 
         // 新しい問題が取得できなかった場合は、これ以上補充しない
         if (data.problems.length === 0) {
-          lastQueueLengthRef.current = previousLength;
           console.log('[ProblemFlow] 問題キュー補充: 新しい問題がありません');
           return;
         }
 
-        setProblemQueue((prev) => [...prev, ...data.problems]);
-        lastQueueLengthRef.current = previousLength + data.problems.length;
+        setProblemQueue((prev) => {
+          const newQueue = [...prev, ...data.problems];
+          lastQueueLengthRef.current = newQueue.length;
+          return newQueue;
+        });
         console.log('[ProblemFlow] 問題キュー補充完了:', data.count, '件追加');
       }
     } catch (err) {
@@ -152,7 +152,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [currentIndex, length, problemQueue.length]);
+  }, [length, problemQueue.length]);
 
   // phaseごとの処理
   useEffect(() => {
@@ -171,20 +171,19 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         if (shouldSkipImage) {
           setPhase('scene-ready');
         }
-        // else の場合は何もしない（画像の onLoad で scene-ready に遷移させる）
-        break;
-    }
 
-    // キュー補充チェック
-    if (problem && !isPrefetchingNextRef.current) {
-      void refillQueueIfNeeded();
+        if (!isPrefetchingNextRef.current) {
+          void refillQueueIfNeeded();
+        }
+        break;
     }
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [phase, sceneImage, isCorrect, problem, refillQueueIfNeeded, mounted]);
+  }, [mounted, phase, sceneImage, refillQueueIfNeeded]);
 
+  // 初回のbootstrap処理
   useEffect(() => {
     if (isFirstQuiz.current) {
       isFirstQuiz.current = false;
@@ -194,8 +193,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         setFetchPhase('bootstrapping');
 
         try {
-          // 初期問題をサーバーから受け取っているので、それを最初に使う
-          let allProblems: ProblemWithAudio[] = [initialProblem];
+          // 初期問題はすでにキューに入っているので、追加の問題を取得
           console.log('[ProblemFlow] 初期問題をサーバーから取得済み');
 
           // 追加の問題を取得
@@ -206,26 +204,24 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
 
           if (response.ok) {
             const data: ApiProblemsResponse = await response.json();
-            allProblems = [...allProblems, ...data.problems];
+            // 追加の問題をシャッフルしてキューに追加
+            const shuffledAdditionalProblems = shuffleProblems(data.problems);
+            setProblemQueue((prev) => {
+              const newQueue = [...prev, ...shuffledAdditionalProblems];
+              lastQueueLengthRef.current = newQueue.length;
+              return newQueue;
+            });
             console.log('[ProblemFlow] 追加問題取得:', data.count, '件');
           }
 
-          // 初期問題を最初に固定し、残りをシャッフル
-          const [firstProblem, ...normalProblems] = allProblems;
-          const shuffledProblems = [firstProblem, ...shuffleProblems(normalProblems)];
+          // 最初の問題（initialProblem）の選択肢をセット
+          const { options, correctIndex: newCorrectIndex } = shuffleOptions(initialProblem);
 
-          // 最初の問題をセット
-          const { options, correctIndex: newCorrectIndex } = shuffleOptions(firstProblem);
-
-          setProblemQueue(shuffledProblems);
-          setCurrentIndex(0);
-          setProblem(firstProblem);
           setOptions(options);
           setCorrectIndex(newCorrectIndex);
           setSelectedOption(null);
           setFetchPhase('idle');
-          lastQueueLengthRef.current = allProblems.length;
-          console.log('[ProblemFlow] 問題キュー準備完了:', allProblems.length, '件');
+          console.log('[ProblemFlow] 問題キュー準備完了');
         } catch (err) {
           console.error('[ProblemFlow] 問題取得失敗:', err);
           const message = err instanceof Error ? err.message : '問題取得に失敗しました';
@@ -237,7 +233,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
 
       void bootstrap();
     }
-  }, [length, searchQuery, initialProblem]);
+  }, [initialProblem, length]);
 
   const handleStart = () => {
     setViewPhase('scene-entry');
@@ -259,8 +255,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       router.push(pathname);
     }
 
-    const nextIndex = currentIndex + 1;
-    const nextProblemData = problemQueue[nextIndex];
+    // キューから先頭を削除して、次の問題を取得
+    const nextProblemData = problemQueue[1];
 
     if (!nextProblemData) {
       // キューが空の場合はローディング状態にする
@@ -271,7 +267,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     }
 
     const { options: newOptions, correctIndex: newCorrectIndex } = shuffleOptions(nextProblemData);
-    setCurrentIndex(nextIndex);
+
+    // キューから現在の問題を削除
+    setProblemQueue((prev) => prev.slice(1));
     setProblem(nextProblemData);
     setOptions(newOptions);
     setCorrectIndex(newCorrectIndex);
@@ -405,9 +403,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                 type="button"
                 onClick={handleNextProblem}
                 className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
-                disabled={isFetching || isAudioBusy}
+                disabled={isAudioBusy}
               >
-                {isFetching ? '生成中…' : '次の問題へ'}
+                次の問題へ
               </button>
             )}
           </div>
