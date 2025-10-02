@@ -14,11 +14,6 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
-variable "cloudflare_r2_bucket_name" {
-  description = "Name of the R2 bucket to store generated media (WNAM region)."
-  type        = string
-}
-
 variable "cloudflare_r2_bucket_name_apac" {
   description = "Name of the R2 bucket to store generated media (APAC region)."
   type        = string
