@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadingSpinner from '../ui/loading-spinner';
 import { ProblemWithAudio } from '@/app/api/problems/route';
+import { PROBLEM_FETCH_LIMIT } from '@/const';
 
 type Phase = 'loading' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
@@ -21,8 +22,31 @@ type ApiProblemsResponse = {
 
 // ProblemType enum が削除されたため、直接文字列を使用
 
-// 1回で取得する問題数
-const PROBLEM_FETCH_LIMIT = 200;
+// 問題配列をランダムシャッフル（Fisher-Yates）
+function shuffleProblems<T>(problems: T[]): T[] {
+  const shuffled = [...problems];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// 選択肢をシャッフルして正解のインデックスを返す
+function shuffleOptions(target: ProblemWithAudio): { options: string[]; correctIndex: number } {
+  const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
+  const zipped = allOptions.map((option, index) => ({ option, index }));
+
+  for (let i = zipped.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+  }
+
+  const choices = zipped.map((item) => item.option);
+  const correct = zipped.findIndex((item) => item.index === 0);
+
+  return { options: choices, correctIndex: correct === -1 ? 0 : correct };
+}
 
 export default function ProblemFlow({ length }: ProblemFlowProps) {
   const searchParams = useSearchParams();
@@ -52,21 +76,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const nextProblem = problemQueue[currentIndex + 1] ?? null;
   const nextSceneImage = nextProblem?.imageUrl ?? null;
   const shuffledOptions = options;
-
-  const shuffleOptions = useCallback((target: ProblemWithAudio) => {
-    const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
-    const zipped = allOptions.map((option, index) => ({ option, index }));
-
-    for (let i = zipped.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-    }
-
-    const choices = zipped.map((item) => item.option);
-    const correct = zipped.findIndex((item) => item.index === 0);
-
-    return { options: choices, correctIndex: correct === -1 ? 0 : correct };
-  }, []);
 
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const replyAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -206,11 +215,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             console.log('[ProblemFlow] 検索問題取得:', searchData.count, '件');
           }
 
-          // 残りの件数は検索なしで取得
-          const remainingLimit = PROBLEM_FETCH_LIMIT - allProblems.length;
-          const normalParams = new URLSearchParams({ type: length, limit: String(remainingLimit) });
+          // 通常問題を取得（合計201件になることもある）
+          const normalParams = new URLSearchParams({ type: length });
           const normalResponse = await fetch(`/api/problems?${normalParams.toString()}`, {
-            cache: 'no-store',
+            cache: 'force-cache',
           });
 
           if (normalResponse.ok) {
@@ -220,8 +228,10 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           }
         } else {
           // 検索クエリがない場合：通常通り取得
-          const params = new URLSearchParams({ type: length, limit: String(PROBLEM_FETCH_LIMIT) });
-          const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
+          const params = new URLSearchParams({ type: length });
+          const response = await fetch(`/api/problems?${params.toString()}`, {
+            cache: 'force-cache',
+          });
 
           if (!response.ok) {
             throw new Error('問題がありません');
@@ -236,11 +246,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           throw new Error('問題がありません');
         }
 
+        // 問題をランダムシャッフル
+        const shuffledProblems = shuffleProblems(allProblems);
+
         // 最初の問題をセット
-        const firstProblem = allProblems[0];
+        const firstProblem = shuffledProblems[0];
         const { options, correctIndex: newCorrectIndex } = shuffleOptions(firstProblem);
 
-        setProblemQueue(allProblems);
+        setProblemQueue(shuffledProblems);
         setCurrentIndex(0);
         setProblem(firstProblem);
         setOptions(options);

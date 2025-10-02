@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import type { Problem } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { replaceUrlHost } from '@/lib/cdn-utils';
+import { PROBLEM_FETCH_LIMIT } from '@/const';
 
 export type ProblemWithAudio = Omit<
   Problem,
@@ -21,7 +22,9 @@ export async function GET(request: Request) {
     const rawSearch = searchParams.get('search');
     const search = rawSearch?.trim();
     const limitParam = searchParams.get('limit');
-    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10), 1), 200) : 200;
+    const limit = limitParam
+      ? Math.min(Math.max(parseInt(limitParam, 10), 1), PROBLEM_FETCH_LIMIT)
+      : PROBLEM_FETCH_LIMIT;
 
     // WORD_COUNT_RULESに基づいて単語数の範囲を決定
     const rules = WORD_COUNT_RULES[type];
