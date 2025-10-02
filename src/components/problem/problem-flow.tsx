@@ -281,13 +281,13 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const handleStart = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 200));
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
   };
 
   const handleRetryQuiz = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 200));
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
   };
 
   const handleNextProblem = () => {
@@ -319,7 +319,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     setViewPhase('scene-entry');
 
     // 切り替え直後に英語音声を再生
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 200));
+    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
   };
 
   if (!problem)
@@ -402,7 +402,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
                     if (!isCorrect) return;
 
                     // 正解だったらクリック時に再生
-                    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 200));
+                    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -501,8 +501,8 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
             setTimeout(() => {
               setViewPhase('quiz');
               setPhase('quiz');
-              void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 200));
-            }, 400);
+              void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
+            }, 300);
           }
         }}
       />
