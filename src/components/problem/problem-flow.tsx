@@ -273,8 +273,14 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
           throw new Error('問題がありません');
         }
 
-        // 問題をランダムシャッフル
-        const shuffledProblems = shuffleProblems(allProblems);
+        // 検索問題がある場合は最初に固定し、残りをシャッフル
+        let shuffledProblems: ProblemWithAudio[];
+        if (searchQuery && allProblems.length > 0) {
+          const [searchProblem, ...normalProblems] = allProblems;
+          shuffledProblems = [searchProblem, ...shuffleProblems(normalProblems)];
+        } else {
+          shuffledProblems = shuffleProblems(allProblems);
+        }
 
         // 最初の問題をセット
         const firstProblem = shuffledProblems[0];

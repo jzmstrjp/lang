@@ -469,6 +469,22 @@ const problems: SeedProblemData[] = [
       '閉館時間は何時ですか？',
     ],
   },
+  {
+    place: 'キッチン',
+    senderRole: '大学生の息子',
+    senderVoice: 'male',
+    receiverRole: '母親',
+    receiverVoice: 'female',
+    englishSentence: '',
+    japaneseSentence: 'はい、オリゴ糖買ってきたよ！',
+    englishReply: '',
+    japaneseReply: 'わぁ、ありがとう！オリゴ糖！',
+    incorrectOptions: [
+      '延長はどこで手続きしますか？',
+      '雑誌は借りられますか？',
+      '閉館時間は何時ですか？',
+    ],
+  },
 ];
 
 export default problems;
