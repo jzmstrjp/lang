@@ -1,8 +1,6 @@
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
-import LoadingSpinner from '@/components/ui/loading-spinner';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -14,14 +12,12 @@ export default function ProblemPage({ params }: { params: { type: string } }) {
     notFound();
   }
 
-  const displayName = type.charAt(0).toUpperCase() + type.slice(1);
+  const displayName = type;
 
   return (
     <>
       <HeaderPortal>{displayName}</HeaderPortal>
-      <Suspense fallback={<LoadingSpinner label="問題を読み込み中..." />}>
-        <ProblemFlow length={type as ProblemLength} />
-      </Suspense>
+      <ProblemFlow length={type as ProblemLength} />
     </>
   );
 }

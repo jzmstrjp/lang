@@ -63,7 +63,7 @@ export default function RootLayout({
                 英語きわめ太郎
                 <span
                   id={HEADER_PORTAL_ID}
-                  className="flex-1 truncate text-lg font-bold text-white/90"
+                  className="flex-1 truncate text-lg font-bold text-white/90 capitalize"
                   aria-live="polite"
                 />
               </Link>
