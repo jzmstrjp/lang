@@ -6,7 +6,7 @@ import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 /**
  * URLのホスト名をNEXT_PUBLIC_R2_PUBLIC_DOMAINに置換
  */
-function replaceUrlHost(url: string | null): string {
+export function replaceUrlHost(url: string | null): string {
   if (!url) return '';
 
   const NEXT_PUBLIC_R2_PUBLIC_DOMAIN = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
