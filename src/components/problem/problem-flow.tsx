@@ -109,7 +109,6 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
   const [viewPhase, setViewPhase] = useState<Phase>('landing');
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
-  const isFirstQuiz = useRef(true);
   const [mounted, setMounted] = useState(false);
   const lastQueueLengthRef = useRef(0);
 
@@ -212,9 +211,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     };
   }, [phase, sceneImage, isCorrect, problem, refillQueueIfNeeded, mounted]);
 
-  // 初回のみbootstrapを実行
-  if (isFirstQuiz.current) {
-    isFirstQuiz.current = false;
+  useEffect(() => {
     isPrefetchingNextRef.current = false;
 
     const bootstrap = async () => {
@@ -305,7 +302,7 @@ export default function ProblemFlow({ length }: ProblemFlowProps) {
     };
 
     void bootstrap();
-  }
+  }, [length, searchQuery]);
 
   const handleStart = () => {
     setViewPhase('scene-entry');
