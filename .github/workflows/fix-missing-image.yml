@@ -52,7 +52,7 @@ jobs:
             "R2_BUCKET_NAME"
             "R2_ACCESS_KEY_ID"
             "R2_SECRET_ACCESS_KEY"
-            "R2_PUBLIC_DOMAIN"
+            "NEXT_PUBLIC_R2_PUBLIC_DOMAIN"
           )
 
           MISSING_SECRETS=()
@@ -75,7 +75,7 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_PUBLIC_DOMAIN: ${{ secrets.R2_PUBLIC_DOMAIN }}
+          NEXT_PUBLIC_R2_PUBLIC_DOMAIN: ${{ secrets.NEXT_PUBLIC_R2_PUBLIC_DOMAIN }}
 
       - name: Check for missing image files
         id: check_missing
@@ -123,7 +123,7 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_PUBLIC_DOMAIN: ${{ secrets.R2_PUBLIC_DOMAIN }}
+          NEXT_PUBLIC_R2_PUBLIC_DOMAIN: ${{ secrets.NEXT_PUBLIC_R2_PUBLIC_DOMAIN }}
 
       - name: Wait for cleanup
         if: steps.check_missing.outputs.should_run == 'true'

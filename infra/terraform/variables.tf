@@ -24,4 +24,14 @@ variable "cloudflare_r2_bucket_name_apac" {
   type        = string
 }
 
+variable "cloudflare_r2_custom_domain_apac" {
+  description = "Custom domain for APAC R2 bucket."
+  type        = string
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone ID for the domain."
+  type        = string
+}
+
 # シンプルなR2バケット作成のみ必要な変数を定義

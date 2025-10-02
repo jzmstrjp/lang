@@ -26,7 +26,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           'R2_BUCKET_NAME',
           'R2_ACCESS_KEY_ID',
           'R2_SECRET_ACCESS_KEY',
-          'R2_PUBLIC_DOMAIN',
+          'NEXT_PUBLIC_R2_PUBLIC_DOMAIN',
         ];
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);
 

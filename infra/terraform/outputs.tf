@@ -22,6 +22,11 @@ output "r2_bucket_url_apac" {
   description = "Default APAC R2 bucket public URL."
 }
 
+output "r2_custom_domain_apac" {
+  value       = cloudflare_r2_custom_domain.apac_cdn.domain
+  description = "Custom domain for APAC R2 bucket."
+}
+
 # 次の手動設定:
 # 1. CloudflareダッシュボードでR2 Access Key/Secret Keyを作成
 # 2. VercelにR2_BUCKET_NAMEとR2_PUBLIC_URLを設定

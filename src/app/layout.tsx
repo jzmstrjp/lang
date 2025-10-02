@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     siteName: '英語きわめ太郎',
     images: [
       {
-        url: 'https://pub-a29458ed566d4ce6bf2cdc29f21706c0.r2.dev/ogp.png',
+        url: `${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/ogp.png`,
         width: 1200,
         height: 630,
         alt: '英語きわめ太郎 - 英語学習アプリ',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '英語きわめ太郎',
     description: 'いつの間にか、なぜだか英語が聞き取れるようになるサイト',
-    images: ['https://pub-a29458ed566d4ce6bf2cdc29f21706c0.r2.dev/ogp.png'],
+    images: [`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/ogp.png`],
   },
 };
 

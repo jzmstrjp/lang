@@ -3,6 +3,35 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma, Problem } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
+/**
+ * URLのホスト名をNEXT_PUBLIC_R2_PUBLIC_DOMAINに置換
+ */
+function replaceUrlHost(url: string | null): string {
+  if (!url) return '';
+
+  const NEXT_PUBLIC_R2_PUBLIC_DOMAIN = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
+  if (!NEXT_PUBLIC_R2_PUBLIC_DOMAIN) {
+    console.warn('[API] NEXT_PUBLIC_R2_PUBLIC_DOMAIN not set, returning original URL');
+    return url;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    // パス部分のみを取得（先頭の "/" を削除）
+    const path = urlObj.pathname.startsWith('/') ? urlObj.pathname.slice(1) : urlObj.pathname;
+
+    // NEXT_PUBLIC_R2_PUBLIC_DOMAINがスラッシュで終わっていたら削除
+    const domain = NEXT_PUBLIC_R2_PUBLIC_DOMAIN.endsWith('/')
+      ? NEXT_PUBLIC_R2_PUBLIC_DOMAIN.slice(0, -1)
+      : NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
+
+    return `${domain}/${path}`;
+  } catch (error) {
+    console.error('[API] Invalid URL format:', url, error);
+    return url;
+  }
+}
+
 export type ProblemWithAudio = Omit<
   Problem,
   'incorrectOptions' | 'audioEnUrl' | 'audioJaUrl' | 'audioEnReplyUrl'
@@ -96,10 +125,15 @@ export async function GET(request: Request) {
       incorrectOptions = [];
     }
 
+    // URLのホスト名をNEXT_PUBLIC_R2_PUBLIC_DOMAINに置換
     const response = {
       problem: {
         ...problem,
         incorrectOptions,
+        audioEnUrl: replaceUrlHost(problem.audioEnUrl),
+        audioJaUrl: replaceUrlHost(problem.audioJaUrl),
+        audioEnReplyUrl: replaceUrlHost(problem.audioEnReplyUrl),
+        imageUrl: problem.imageUrl ? replaceUrlHost(problem.imageUrl) : problem.imageUrl,
       } as ProblemWithAudio,
     };
 
