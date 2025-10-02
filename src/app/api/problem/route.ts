@@ -57,31 +57,29 @@ export async function GET(request: Request) {
       ];
     }
 
-    const totalCount = await prisma.problem.count({ where });
+    // より効率的なランダム取得：まず全IDを取得してからランダムに選択
+    const problems = await prisma.problem.findMany({
+      where,
+      select: { id: true },
+    });
 
-    if (totalCount === 0) {
+    if (problems.length === 0) {
       return NextResponse.json(
         { error: `No ${type} problems with audio found in database` },
         { status: 404 },
       );
     }
 
-    const randomOffset = Math.floor(Math.random() * totalCount);
+    // ランダムにIDを選択
+    const randomId = problems[Math.floor(Math.random() * problems.length)].id;
 
-    const [problem] = await prisma.problem.findMany({
-      where,
-      skip: randomOffset,
-      take: 1,
-      orderBy: {
-        id: 'asc',
-      },
+    // 選択したIDでデータを取得
+    const problem = await prisma.problem.findUnique({
+      where: { id: randomId },
     });
 
     if (!problem) {
-      return NextResponse.json(
-        { error: `No ${type} problems with audio found in database` },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: `Problem not found` }, { status: 404 });
     }
 
     // incorrectOptionsをJSON文字列から配列に変換
