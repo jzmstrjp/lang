@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
+import { SceneImage } from '@/components/ui/scene-image';
 
 const WITHOUT_PICTURE = true;
 
@@ -173,13 +173,11 @@ export default function PromptTestPage() {
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-purple-800 mb-2">生成された画像</h3>
                   <div className="flex justify-center">
-                    <Image
+                    <SceneImage
                       src={assets.composite}
                       alt="Generated scene illustration"
-                      width={400}
-                      height={600}
-                      className="max-w-full h-auto rounded-lg shadow-md"
-                      unoptimized={true}
+                      opacity="full"
+                      className="rounded-lg shadow-md"
                     />
                   </div>
                 </div>
