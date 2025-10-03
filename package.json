@@ -15,6 +15,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx scripts/seed-problems.ts",
+    "db:seed:patterns": "tsx scripts/seed-patterns.ts",
     "db:verify": "tsx scripts/verify-db.ts",
     "fix-missing-audio": "tsx scripts/fix-missing-audio.ts",
     "fix-missing-image": "tsx scripts/fix-missing-image.ts",

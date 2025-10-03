@@ -24,8 +24,8 @@ const examples: SeedProblemData[] = [
     receiverVoice: 'female',
     englishSentence: 'He is supposed to come.',
     japaneseSentence: '彼、来るはずなんだけど。',
-    englishReply: 'Yeah, I hope he shows up.',
-    japaneseReply: 'そうね、来てくれるといいけど。',
+    englishReply: "Really? He's not here yet?",
+    japaneseReply: 'え、まだ来てないの？',
     incorrectOptions: [
       '彼、来たいって言ってたよ。',
       '彼、来てもいいって。',
@@ -40,8 +40,8 @@ const examples: SeedProblemData[] = [
     receiverVoice: 'male',
     englishSentence: 'He is supposed to call me.',
     japaneseSentence: '彼から電話が来るはずなんだけど。',
-    englishReply: 'Maybe he forgot about it.',
-    japaneseReply: 'あぁ、忘れちゃったのかもね。',
+    englishReply: "Oh, he hasn't called yet?",
+    japaneseReply: 'え、まだ電話来てないんだ。',
     incorrectOptions: [
       '彼に電話してみようかな。',
       '彼の電話番号知ってる？',
@@ -56,8 +56,8 @@ const examples: SeedProblemData[] = [
     receiverVoice: 'female',
     englishSentence: 'He is supposed to be back.',
     japaneseSentence: '彼、もう戻ってるはずなんだけど。',
-    englishReply: "Hmm, maybe he's still at the meeting.",
-    japaneseReply: 'うーん、まだ会議中かもね。',
+    englishReply: "Hmm, he hasn't come back yet?",
+    japaneseReply: 'え、まだ戻ってないの？',
     incorrectOptions: [
       '彼、今日休みなのかな。',
       '彼、この後戻ってくるって。',

@@ -1,5 +1,6 @@
 import type { VoiceType, PatternSet } from '@prisma/client';
 import { shuffleArray } from '@/lib/shuffle-utils';
+import { prisma } from '@/lib/prisma';
 
 /**
  * パターン例文（Problemの一部フィールドのみ使用）
@@ -27,11 +28,63 @@ export type PatternSetWithDetails = PatternSet & {
 };
 
 /**
- * モックデータ: ランダムなパターンセットを1つ返す
- * 実際のDB実装時はここを prisma.patternSet.findMany() に置き換える
+ * ランダムなパターンセットを1つ返す（DB接続版）
  */
 export async function fetchRandomPatternSet(): Promise<PatternSetWithDetails | null> {
-  // モックデータ
+  // DBから全パターンセットを取得
+  const patternSets = await prisma.patternSet.findMany({
+    include: {
+      examples: {
+        select: {
+          id: true,
+          englishSentence: true,
+          japaneseSentence: true,
+          japaneseReply: true,
+          place: true,
+          senderRole: true,
+          receiverRole: true,
+          senderVoice: true,
+          receiverVoice: true,
+          audioEnUrl: true,
+          audioJaUrl: true,
+          imageUrl: true,
+        },
+      },
+    },
+  });
+
+  if (patternSets.length === 0) {
+    console.warn('[Pattern Service] パターンセットが見つかりません');
+    return null;
+  }
+
+  // ランダムに1つ選択
+  const randomIndex = Math.floor(Math.random() * patternSets.length);
+  const selectedPattern = patternSets[randomIndex];
+
+  if (!selectedPattern) return null;
+
+  // audioEnUrl, audioJaUrl, imageUrlがnullの例文を除外
+  const validExamples = selectedPattern.examples.filter(
+    (ex) => ex.audioEnUrl && ex.audioJaUrl && ex.imageUrl,
+  ) as PatternExample[];
+
+  if (validExamples.length === 0) {
+    console.warn('[Pattern Service] 音声・画像が揃った例文がありません');
+    return null;
+  }
+
+  // 例文をシャッフルして返す
+  return {
+    ...selectedPattern,
+    examples: shuffleArray(validExamples),
+  };
+}
+
+/**
+ * 以下、モックデータ（開発・テスト用に残す）
+ */
+export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails | null> {
   const mockPatternSets: PatternSetWithDetails[] = [
     {
       id: 'pattern-1',

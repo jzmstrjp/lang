@@ -26,7 +26,7 @@ model Problem {
   receiverRole     String
   place            String
   
-  // パターン学習用フィールド（型定義のみ、マイグレーションはまだ）
+  // パターン学習用フィールド
   patternId        String?
   patternSet       PatternSet? @relation(fields: [patternId], references: [id], onDelete: SetNull)
   
@@ -35,6 +35,7 @@ model Problem {
 
   @@unique([englishSentence])
   @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
+  @@index([patternId])
   @@map("problems")
 }
 
@@ -43,8 +44,8 @@ enum VoiceType {
   female
 }
 
-// パターン学習用モデル（型定義のみ、マイグレーションはまだ）
-// パターンセット: 1つの文法パターン（例: "He is supposed to be 〇〇〇."）の情報を保持
+// パターン学習用モデル
+// パターンセット: 1つの文法パターン（例: "He is supposed to 〇〇〇."）の情報を保持
 // 3つの例文（Problem）とクイズをセットで管理
 model PatternSet {
   id                   String    @id @default(cuid())
