@@ -337,7 +337,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         )}
 
       {phase === 'quiz' && problem && (
-        <section className="grid gap-6">
+        <section className="grid gap-6 sm:gap-8">
           <div>
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
           </div>
