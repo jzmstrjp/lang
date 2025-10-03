@@ -73,8 +73,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const nextSceneImage = nextProblem?.imageUrl ?? null;
   const shuffledOptions = options;
 
-  const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
-  const replyAudioRef = useRef<HTMLAudioElement | null>(null);
+  const englishSentenceAudioRef = useRef<HTMLAudioElement | null>(null);
+  const japaneseReplyAudioRef = useRef<HTMLAudioElement | null>(null);
+  const englishReplyAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [viewPhase, setViewPhase] = useState<Phase>('landing');
   const isMountedRef = useRef(false);
@@ -238,13 +239,22 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const handleStart = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 100));
   };
 
   const handleRetryQuiz = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 0));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
+  };
+
+  const handleReplyAudioEnded = () => {
+    setAudioStatus('idle');
+    setTimeout(() => {
+      setViewPhase('quiz');
+      setPhase('quiz');
+      void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
+    }, 200);
   };
 
   const handleNextProblem = () => {
@@ -278,7 +288,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     setViewPhase('scene-entry');
 
     // 切り替え直後に英語音声を再生
-    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 100));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 100));
   };
 
   return (
@@ -343,7 +353,10 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                     if (!isCorrect) return;
 
                     // 正解だったらクリック時に再生
-                    void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 0));
+                    void (
+                      englishSentenceAudioRef.current &&
+                      playAudio(englishSentenceAudioRef.current, 0)
+                    );
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
                   disabled={isAudioBusy}
@@ -356,7 +369,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={() => playAudio(sentenceAudioRef.current, 0)}
+              onClick={() => playAudio(englishSentenceAudioRef.current, 0)}
               className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
               disabled={!problem.audioEnUrl || isAudioBusy}
             >
@@ -413,48 +426,44 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       )}
 
       <audio
-        ref={sentenceAudioRef}
+        key="currentEnglishSentence"
+        ref={englishSentenceAudioRef}
         src={problem.audioEnUrl}
         preload="auto"
         onEnded={() => {
-          if (viewPhase === 'quiz') {
-            // クイズ英文が終わったら idle → 回答可能
-            setAudioStatus('idle');
-            return;
-          }
-          if (viewPhase === 'correct' || viewPhase === 'incorrect') {
-            // 正解画面の英文が終わったら idle → 次の問題へ進める
-            setAudioStatus('idle');
-            return;
-          }
+          setAudioStatus('idle');
+
+          // scene-entry/scene-ready時のみ、返答音声を続けて再生
           if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
+            const replyAudioRef = settingsRef.current.isEnglishMode
+              ? englishReplyAudioRef
+              : japaneseReplyAudioRef;
             void (replyAudioRef.current && playAudio(replyAudioRef.current, 100));
           }
         }}
       />
       <audio
-        ref={replyAudioRef}
-        src={settingsRef.current.isEnglishMode ? problem.audioEnReplyUrl : problem.audioJaUrl}
+        key="currentJapaneseReply"
+        ref={japaneseReplyAudioRef}
+        src={problem.audioJaUrl}
         preload="auto"
-        onEnded={() => {
-          // 応答終了後はクイズへ遷移し、すぐに英文を再生
-          if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-            setTimeout(() => {
-              setViewPhase('quiz');
-              setPhase('quiz');
-              void (sentenceAudioRef.current && playAudio(sentenceAudioRef.current, 0));
-            }, 200);
-          }
-        }}
+        onEnded={handleReplyAudioEnded}
       />
-      {/* キャッシュを用意するために次の問題の音声と画像を読み込む */}
+      <audio
+        key="currentEnglishReply"
+        ref={englishReplyAudioRef}
+        src={problem.audioEnReplyUrl}
+        preload="auto"
+        onEnded={handleReplyAudioEnded}
+      />
       {nextProblem && (
         <>
-          <audio src={nextProblem.audioEnUrl} preload="auto" />
-          <audio src={nextProblem.audioJaUrl} preload="auto" />
-          <audio src={nextProblem.audioEnReplyUrl} preload="auto" />
+          <audio key="nextEnglishSentence" src={nextProblem.audioEnUrl} preload="auto" />
+          <audio key="nextJapaneseReply" src={nextProblem.audioJaUrl} preload="auto" />
+          <audio key="nextEnglishReply" src={nextProblem.audioEnReplyUrl} preload="auto" />
         </>
       )}
+      {/* キャッシュを用意するために次の問題の画像を読み込む */}
       {nextSceneImage && (
         <Image
           unoptimized
@@ -463,7 +472,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           className="hidden"
           width={500}
           height={750}
-          alt="英語と日本語のセリフを並べた2コマシーン"
+          alt="次の問題の画像"
         />
       )}
     </>
