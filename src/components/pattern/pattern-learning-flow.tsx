@@ -428,7 +428,7 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       {/* 最終クイズフェーズ */}
       {phase === 'final-quiz' && (
         <section className="grid gap-8">
-          <div className="flex items-baseline">
+          <div className="flex items-baseline flex-wrap gap-y-2">
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
               「 {patternSet.patternName} 」
             </p>
