@@ -124,12 +124,12 @@ export async function generateProblem(type: ProblemLength = 'short'): Promise<Ge
 }
 
 const senderNameMap: Record<VoiceType, string> = {
-  male: 'James',
-  female: 'Mary',
+  male: 'Alexander',
+  female: 'Olivia',
 };
 const receiverNameMap: Record<VoiceType, string> = {
   male: 'タカシ',
-  female: 'マミ',
+  female: 'アカリ',
 };
 
 /**
@@ -148,7 +148,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
 【コマの高さ】
 上下のコマの高さは正確に同じであること。
-上下のコマの間に白い空白が必要です。全体の高さの3%分の高さの空白であること。
+上下のコマの間に白い空白が必要です。全体の高さの4%分の高さの空白であること。
+つまり[1コマ目: 48%][空白: 4%][2コマ目: 48%]の比率です。
 
 【場所】
 ${problem.place}
@@ -156,7 +157,7 @@ ${problem.place}
 【登場人物】
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
-- 全ての登場人物は映画俳優やアイドルのように目鼻立ちがクッキリとした端正な顔立ちをしている。
+- 全ての登場人物は映画俳優やアイドルのように目が大きくて端正な顔立ちをしている。
 
 【ストーリー】
 ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
