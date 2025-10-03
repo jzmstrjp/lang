@@ -132,6 +132,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           receiverVoice: problem.receiverVoice,
           receiverRole: problem.receiverRole,
           place: problem.place,
+          patternId: null,
         };
 
         const imageUrl = await generateAndUploadImageAsset(generatedProblem, problem.id);

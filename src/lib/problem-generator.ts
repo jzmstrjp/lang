@@ -111,6 +111,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     receiverVoice: selectedProblem.receiverVoice,
     receiverRole: selectedProblem.receiverRole,
     place: selectedProblem.place,
+    patternId: null, // 通常問題はパターン学習に属さない
   };
 }
 

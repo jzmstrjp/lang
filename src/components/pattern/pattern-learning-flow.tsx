@@ -3,62 +3,26 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StartButton } from '@/components/ui/start-button';
+import { shuffleOptionsWithCorrectIndex } from '@/lib/shuffle-utils';
 
-// バックエンドのProblemテーブルと互換性のある型定義
-type PatternExample = {
-  id: string;
-  order: number;
-  englishSentence: string;
-  japaneseSentence: string;
-  japaneseReply: string;
-  place: string;
-  senderRole: string;
-  receiverRole: string;
-  senderVoice: 'male' | 'female';
-  receiverVoice: 'male' | 'female';
-  audioEnUrl: string;
-  audioJaUrl: string;
-  imageUrl: string;
-  // バックエンドのProblemテーブルには存在するが、パターン学習では未使用
-  englishReply?: string; // オプショナル（将来的に使う可能性を残す）
-  audioEnReplyUrl?: string; // オプショナル（将来的に使う可能性を残す）
-  incorrectOptions?: string[]; // オプショナル（Problemテーブルでは空配列）
-};
-
-type PatternSet = {
-  id: string;
-  patternName: string;
-  patternMeaning: string;
-  patternDescription: string;
-  difficulty?: 'beginner' | 'intermediate' | 'advanced'; // バックエンドに合わせて追加
-  examples: PatternExample[];
-  testProblem: {
-    questionPattern: string;
-    correctAnswer: string;
-    incorrectOptions: string[];
-  };
-  additionalExamples?: Array<{
-    english: string;
-    japanese: string;
-  }>; // オプショナル（現在未使用）
-};
+// バックエンドのpattern-service.tsの型をインポート
+import type { PatternSetWithDetails } from '@/lib/pattern-service';
 
 type PatternLearningFlowProps = {
-  patternSet: PatternSet;
-  onNextPattern: () => void;
+  initialPatternSet: PatternSetWithDetails;
 };
 
 type Phase = 'landing' | 'examples' | 'test' | 'result';
 
-export default function PatternLearningFlow({
-  patternSet,
-  onNextPattern,
-}: PatternLearningFlowProps) {
+export default function PatternLearningFlow({ initialPatternSet }: PatternLearningFlowProps) {
+  const [patternSet, setPatternSet] = useState(initialPatternSet);
+  const [nextPatternSet, setNextPatternSet] = useState<PatternSetWithDetails | null>(null);
   const [phase, setPhase] = useState<Phase>('landing');
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [audioStatus, setAudioStatus] = useState<'idle' | 'playing'>('idle');
   const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+  const [correctIndex, setCorrectIndex] = useState(0);
 
   const currentExample = patternSet.examples[currentExampleIndex];
   const isLastExample = currentExampleIndex === patternSet.examples.length - 1;
@@ -149,6 +113,17 @@ export default function PatternLearningFlow({
     }
   }, [phase, isCorrect, playResultAudio]);
 
+  // 次のパターンを事前fetch（1問目が始まったタイミング）
+  useEffect(() => {
+    if (phase === 'examples' && !nextPatternSet) {
+      // 例文フェーズに入ったら次のパターンを事前fetch
+      fetch('/api/pattern-learning')
+        .then((res) => res.json())
+        .then((data) => setNextPatternSet(data))
+        .catch((error) => console.error('次のパターンセットの事前取得に失敗:', error));
+    }
+  }, [phase, nextPatternSet]);
+
   // 次の例文へ進む
   const handleNextExample = () => {
     if (isLastExample) {
@@ -158,26 +133,23 @@ export default function PatternLearningFlow({
     }
   };
 
-  // テスト問題の選択肢をシャッフル（初回マウント時のみ）
+  // テスト問題の選択肢をシャッフル（パターンセット変更時）
   useEffect(() => {
-    const allOptions = [
-      patternSet.testProblem.correctAnswer,
-      ...patternSet.testProblem.incorrectOptions,
-    ];
-    const shuffled = [...allOptions];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    setShuffledOptions(shuffled);
+    const incorrectOptions = Array.isArray(patternSet.incorrectOptions)
+      ? (patternSet.incorrectOptions as string[])
+      : [];
+
+    const { options, correctIndex: newCorrectIndex } = shuffleOptionsWithCorrectIndex(
+      patternSet.correctAnswer,
+      incorrectOptions,
+    );
+
+    setShuffledOptions(options);
+    setCorrectIndex(newCorrectIndex);
   }, [patternSet]);
 
-  const correctAnswerIndex = shuffledOptions.findIndex(
-    (option) => option === patternSet.testProblem.correctAnswer,
-  );
-
   const handleTestAnswer = (selectedIndex: number) => {
-    const correct = selectedIndex === correctAnswerIndex;
+    const correct = selectedIndex === correctIndex;
     setIsCorrect(correct);
     setPhase('result');
   };
@@ -186,13 +158,33 @@ export default function PatternLearningFlow({
     setPhase('examples');
   };
 
-  const handleNextPattern = () => {
-    // 状態をリセット
-    setPhase('examples');
-    setCurrentExampleIndex(0);
-    setIsCorrect(null);
-    setAudioStatus('idle');
-    onNextPattern();
+  const handleNextPattern = async () => {
+    // 事前fetchしたパターンセットがあればそれを使用、なければAPIから取得
+    if (nextPatternSet) {
+      setPatternSet(nextPatternSet);
+      setNextPatternSet(null); // 使い終わったのでクリア
+      // 状態をリセット（landingではなく直接examplesへ）
+      setPhase('examples');
+      setCurrentExampleIndex(0);
+      setIsCorrect(null);
+      setAudioStatus('idle');
+    } else {
+      // フォールバック: 事前fetchが失敗していた場合
+      try {
+        const response = await fetch('/api/pattern-learning');
+        if (response.ok) {
+          const newPatternSet = await response.json();
+          setPatternSet(newPatternSet);
+          // 状態をリセット（landingではなく直接examplesへ）
+          setPhase('examples');
+          setCurrentExampleIndex(0);
+          setIsCorrect(null);
+          setAudioStatus('idle');
+        }
+      } catch (error) {
+        console.error('パターンセットの取得に失敗しました:', error);
+      }
+    }
   };
 
   // 例文に戻る
@@ -203,148 +195,167 @@ export default function PatternLearningFlow({
   };
 
   return (
-    <>
+    <div className="max-w-4xl mx-auto">
+      {/* ランディングフェーズ */}
       {phase === 'landing' && (
-        <StartButton error={null} handleStart={handleStart}>
-          パターン学習を始める
-        </StartButton>
-      )}
-      <div className="max-w-4xl mx-auto">
-        {/* 例文表示フェーズ */}
-        {phase === 'examples' && currentExample && (
-          <div className="relative max-w-[500px] mx-auto">
-            {/* 画像表示 */}
-            <Image
-              src={currentExample.imageUrl}
-              alt={`${currentExample.place}での会話シーン`}
-              width={500}
-              height={750}
-              className={`w-full h-auto object-contain ${
-                !isAudioBusy ? 'opacity-50' : 'opacity-100'
-              }`}
-              priority
-              unoptimized
-            />
+        <div className="relative max-w-[500px] mx-auto">
+          {/* 1枚目の画像表示 */}
+          <Image
+            src={patternSet.examples[0].imageUrl}
+            alt={`${patternSet.examples[0].place}での会話シーン`}
+            width={500}
+            height={750}
+            className="w-full h-auto object-contain opacity-50"
+            priority
+            unoptimized
+          />
 
-            {/* 次の例文へボタン（画像の中心に配置） */}
-            {!isAudioBusy && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                {isLastExample ? (
-                  <button
-                    onClick={handleNextExample}
-                    className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-[#c3684f]"
-                  >
-                    クイズへ
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleNextExample}
-                    className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
-                  >
-                    次へ
-                  </button>
-                )}
-              </div>
-            )}
+          {/* パターン学習を始めるボタン（画像の中心に配置） */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StartButton error={null} handleStart={handleStart}>
+              パターン学習を始める
+            </StartButton>
           </div>
-        )}
+        </div>
+      )}
+      {phase !== 'landing' && (
+        <div>
+          {/* 例文表示フェーズ */}
+          {phase === 'examples' && currentExample && (
+            <div className="relative max-w-[500px] mx-auto">
+              {/* 画像表示 */}
+              <Image
+                src={currentExample.imageUrl}
+                alt={`${currentExample.place}での会話シーン`}
+                width={500}
+                height={750}
+                className={`w-full h-auto object-contain ${
+                  !isAudioBusy ? 'opacity-50' : 'opacity-100'
+                }`}
+                priority
+                unoptimized
+              />
 
-        {/* テストフェーズ */}
-        {phase === 'test' && (
-          <section className="grid gap-8">
-            <div className="flex items-baseline gap-2">
-              <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
-                {patternSet.patternName}
-              </p>
-              <p className="text-[#2a2b3c]/70">の意味は？</p>
-            </div>
-            <ul className="grid gap-3">
-              {shuffledOptions.map((option, index) => (
-                <li key={index}>
-                  <button
-                    onClick={() => handleTestAnswer(index)}
-                    disabled={isAudioBusy}
-                    className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
-                  >
-                    {option}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div className="flex justify-center">
-              <button
-                onClick={handleBackToExamples}
-                disabled={isAudioBusy}
-                className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
-              >
-                例文に戻る
-              </button>
-            </div>
-          </section>
-        )}
-
-        {/* 結果フェーズ */}
-        {phase === 'result' && (
-          <section className="grid gap-6 text-center">
-            <div
-              className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
-                isCorrect
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : 'border-rose-200 bg-rose-50 text-rose-700'
-              }`}
-            >
-              <h2 className="text-2xl font-bold">
-                {isCorrect ? 'やった！ 正解です 🎉' : '残念…もう一度挑戦してみましょう'}
-              </h2>
-              {isCorrect && (
-                <>
-                  <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
-                    {patternSet.patternName}
-                  </p>
-                  <p className="mt-4 text-lg text-[#2a2b3c]">{patternSet.patternMeaning}</p>
-                </>
+              {/* 次の例文へボタン（画像の中心に配置） */}
+              {!isAudioBusy && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {isLastExample ? (
+                    <button
+                      onClick={handleNextExample}
+                      className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-[#c3684f]"
+                    >
+                      クイズへ
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleNextExample}
+                      className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
+                    >
+                      次へ
+                    </button>
+                  )}
+                </div>
               )}
             </div>
-            <div className="flex flex-row gap-3 items-center justify-center">
-              {isCorrect ? (
-                <button
-                  onClick={handleNextPattern}
-                  disabled={isAudioBusy}
-                  className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
-                >
-                  次のパターンに挑戦
-                </button>
-              ) : (
+          )}
+
+          {/* テストフェーズ */}
+          {phase === 'test' && (
+            <section className="grid gap-8">
+              <div className="flex items-baseline">
+                <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
+                  「 {patternSet.patternName} 」
+                </p>
+                <p className="font-semibold text-[#2a2b3c]/70">の意味は？</p>
+              </div>
+              <ul className="grid gap-3">
+                {shuffledOptions.map((option, index) => (
+                  <li key={index}>
+                    <button
+                      onClick={() => handleTestAnswer(index)}
+                      disabled={isAudioBusy}
+                      className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
+                    >
+                      {option}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex justify-center">
                 <button
                   onClick={handleBackToExamples}
                   disabled={isAudioBusy}
-                  className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
                 >
-                  再挑戦
+                  例文に戻る
                 </button>
-              )}
-            </div>
-          </section>
-        )}
+              </div>
+            </section>
+          )}
 
-        {/* 音声要素 */}
-        {currentExample && (
-          <>
-            <audio
-              ref={englishAudioRef}
-              src={currentExample.audioEnUrl}
-              preload="auto"
-              onEnded={handleEnglishAudioEnded}
-            />
-            <audio
-              ref={japaneseAudioRef}
-              src={currentExample.audioJaUrl}
-              preload="auto"
-              onEnded={handleJapaneseAudioEnded}
-            />
-          </>
-        )}
-      </div>
-    </>
+          {/* 結果フェーズ */}
+          {phase === 'result' && (
+            <section className="grid gap-6 text-center">
+              <div
+                className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
+                  isCorrect
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-rose-200 bg-rose-50 text-rose-700'
+                }`}
+              >
+                <h2 className="text-2xl font-bold">
+                  {isCorrect ? 'やった！ 正解です 🎉' : '残念…もう一度挑戦してみましょう'}
+                </h2>
+                {isCorrect && (
+                  <>
+                    <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
+                      {patternSet.patternName}
+                    </p>
+                    <p className="mt-4 text-lg text-[#2a2b3c]">{patternSet.correctAnswer}</p>
+                  </>
+                )}
+              </div>
+              <div className="flex flex-row gap-3 items-center justify-center">
+                {isCorrect ? (
+                  <button
+                    onClick={handleNextPattern}
+                    disabled={isAudioBusy}
+                    className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
+                  >
+                    次のパターンに挑戦
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleBackToExamples}
+                    disabled={isAudioBusy}
+                    className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+                  >
+                    再挑戦
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* 音声要素 */}
+          {currentExample && (
+            <>
+              <audio
+                ref={englishAudioRef}
+                src={currentExample.audioEnUrl}
+                preload="auto"
+                onEnded={handleEnglishAudioEnded}
+              />
+              <audio
+                ref={japaneseAudioRef}
+                src={currentExample.audioJaUrl}
+                preload="auto"
+                onEnded={handleJapaneseAudioEnded}
+              />
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

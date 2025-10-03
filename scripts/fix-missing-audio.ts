@@ -125,6 +125,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
               senderRole: '',
               receiverRole: '',
               place: '',
+              patternId: null,
             },
             problem.id,
           );

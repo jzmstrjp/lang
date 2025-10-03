@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { StartButton } from '@/components/ui/start-button';
+import { shuffleOptionsWithCorrectIndex } from '@/lib/shuffle-utils';
 
 type Phase = 'landing' | 'scene-entry' | 'scene-ready' | 'quiz' | 'correct' | 'incorrect';
 
@@ -22,18 +23,7 @@ type ApiProblemsResponse = {
 
 // 選択肢をシャッフルして正解のインデックスを返す
 function shuffleOptions(target: ProblemWithAudio): { options: string[]; correctIndex: number } {
-  const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
-  const zipped = allOptions.map((option, index) => ({ option, index }));
-
-  for (let i = zipped.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-  }
-
-  const choices = zipped.map((item) => item.option);
-  const correct = zipped.findIndex((item) => item.index === 0);
-
-  return { options: choices, correctIndex: correct === -1 ? 0 : correct };
+  return shuffleOptionsWithCorrectIndex(target.japaneseSentence, target.incorrectOptions);
 }
 
 export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps) {

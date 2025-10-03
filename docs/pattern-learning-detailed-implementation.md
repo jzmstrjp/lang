@@ -210,137 +210,133 @@ Can you pass me the 〇〇〇?
 
 ### Prismaスキーマの変更
 
+**現在の状態（2025年10月）:**
+
+- ✅ 型定義は完了（`schema.prisma`に記述済み）
+- ⚠️ マイグレーションは未実行（実際のDB変更なし）
+- 🎯 実装方針: モックデータで動作確認後、マイグレーション予定
+
+**実装済みのスキーマ（`prisma/schema.prisma`）:**
+
 ```prisma
-// prisma/schema.prisma の既存Problemモデルを拡張
-
-model Problem {
-  id                String     @id @default(cuid())
-
-  // 既存フィールド
-  wordCount         Int
-  englishSentence   String
-  japaneseSentence  String
-  japaneseReply     String
-  englishReply      String
-  incorrectOptions  Json
-  senderVoice       VoiceType
-  senderRole        String
-  receiverVoice     VoiceType
-  receiverRole      String
-  place             String
-
-  audioEnUrl        String?
-  audioJaUrl        String?
-  audioEnReplyUrl   String?
-  imageUrl          String?
-  audioReady        Boolean    @default(false)
-
-  // ✨ 新規追加: パターン学習用フィールド
-  patternId         String?                    // パターン学習の一部なら設定
-  patternOrder      Int?                       // パターン内での順序（1, 2, 3...）
-  pattern           PatternSet? @relation(fields: [patternId], references: [id], onDelete: Cascade)
-
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-
-  @@unique([englishSentence])
-  @@index([wordCount, audioReady])
-  @@index([patternId, patternOrder])  // ✨ 新規インデックス
-  @@map("problems")
-}
-
-// 新規追加: パターンセット
+// パターン学習用モデル（型定義のみ、マイグレーションはまだ）
+// パターンセット: 1つの文法パターン（例: "Can you pass me the 〇〇〇?"）の情報を保持
+// 3つの例文（Problem）とクイズをセットで管理
 model PatternSet {
-  id                   String              @id @default(cuid())
-  patternName          String              // "Can you pass me the 〇〇〇?"（〇〇〇形式で保存）
-  patternMeaning       String              // "〇〇〇を取ってくれませんか？"（〇〇〇形式で保存）
-  patternDescription   String              // "物を取ってもらう依頼表現"
-  difficulty           DifficultyLevel     @default(beginner)
+  id                   String   @id @default(cuid())
 
-  examples             Problem[]           // ✨ PatternExampleではなくProblem！
-  testProblem          PatternTestProblem?
-  additionalExamples   Json?               // 正解後に表示する応用例（配列）
-  relatedPatternIds    String[]            // 関連パターンのIDリスト
+  // パターン情報
+  patternName          String   // パターンの表示名（例: "Can you pass me the 〇〇〇?"）
+  patternMeaning       String   // パターンの日本語の意味（例: "〇〇〇を取ってくれませんか？"）
+  patternDescription   String   // パターンの説明文（例: "物を取ってもらう依頼表現"）
 
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  // クイズ問題（PatternTestProblemテーブルを廃止し、ここに統合）
+  questionPattern      String   // 問題文のパターン（例: "Can you pass me the 〇〇〇?"）
+  correctAnswer        String   // 正解（例: "〇〇〇を取ってくれませんか？"）
+  incorrectOptions     Json     // 不正解の選択肢（配列）
 
-  @@index([difficulty])
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
   @@map("pattern_sets")
 }
 
-// PatternExampleテーブルは削除！代わりにProblemを使う
+model Problem {
+  // ... 既存フィールド ...
 
-model PatternTestProblem {
-  id                String     @id @default(cuid())
-  patternSetId      String     @unique
-  patternSet        PatternSet @relation(fields: [patternSetId], references: [id], onDelete: Cascade)
-
-  // テスト問題（〇〇〇形式で問う）
-  questionPattern   String     // "Can you pass me the 〇〇〇?"
-  correctAnswer     String     // "〇〇〇を取ってくれませんか？"
-  incorrectOptions  Json       // 不正解の選択肢（配列）
-
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-
-  @@map("pattern_test_problems")
-}
-
-enum DifficultyLevel {
-  beginner
-  intermediate
-  advanced
+  // パターン学習用フィールド（型定義のみ、マイグレーションはまだ）
+  patternId        String?
+  // 将来的に追加予定: patternOrder Int?
 }
 ```
 
-### クエリ例
+**設計の変更点:**
 
-```typescript
-// パターンの例文を取得
-const examples = await prisma.problem.findMany({
-  where: {
-    patternId: 'pattern_123',
-  },
-  orderBy: {
-    patternOrder: 'asc',
-  },
-});
+1. ✅ **`PatternTestProblem`テーブルを廃止**: クイズ情報を`PatternSet`に統合してシンプル化
+2. ✅ **`Problem.patternId`追加**: 既存の問題テーブルを再利用
+3. ⏳ **`difficulty`フィールド削除**: 初期バージョンでは不要と判断（将来追加可能）
+4. ⏳ **`additionalExamples`削除**: モックで使用していないため保留
+5. ⏳ **`relatedPatternIds`削除**: 初期バージョンでは不要と判断
 
-// 通常問題を取得（パターン学習の問題も含む）
-const allProblems = await prisma.problem.findMany({
-  where: {
-    wordCount: { gte: 3, lte: 7 },
-    audioReady: true,
-    // patternIdがあってもなくても全部取得される
-  },
-});
-
-// パターン学習専用の問題だけ除外したい場合
-const onlyStandalone = await prisma.problem.findMany({
-  where: {
-    wordCount: { gte: 3, lte: 7 },
-    patternId: null, // パターン学習に属さない問題のみ
-  },
-});
-```
-
-### マイグレーションコマンド
+**マイグレーション実行コマンド（将来実装時）:**
 
 ```bash
 # スキーマ変更後、マイグレーションを生成
-npx prisma migrate dev --name add_pattern_learning_to_problems
+npx prisma migrate dev --name add_pattern_learning
 
 # 本番環境へのデプロイ
 npx prisma migrate deploy
 ```
 
-**主な変更点:**
+### モックバックエンド実装
 
-- `Problem`テーブルに`patternId`、`patternOrder`フィールドを追加
-- 新規テーブル: `PatternSet`、`PatternTestProblem`
-- 新しいenum: `DifficultyLevel`
-- 新しいインデックス: `problems`の`[patternId, patternOrder]`
+**現在の実装（`src/lib/pattern-service.ts`）:**
+
+```typescript
+import type { VoiceType, PatternSet } from '@prisma/client';
+
+/**
+ * パターン例文（Problemの一部フィールドのみ使用）
+ */
+export type PatternExample = {
+  id: string;
+  englishSentence: string;
+  japaneseSentence: string;
+  japaneseReply: string;
+  place: string;
+  senderRole: string;
+  receiverRole: string;
+  senderVoice: VoiceType;
+  receiverVoice: VoiceType;
+  audioEnUrl: string; // null不可
+  audioJaUrl: string; // null不可
+  imageUrl: string; // null不可
+};
+
+/**
+ * パターンセット（例文込み）
+ */
+export type PatternSetWithDetails = PatternSet & {
+  examples: PatternExample[];
+};
+
+/**
+ * モックデータ: ランダムなパターンセットを1つ返す
+ * 実際のDB実装時はここを prisma.patternSet.findMany() に置き換える
+ */
+export async function fetchRandomPatternSet(): Promise<PatternSetWithDetails | null> {
+  // モックデータ（2パターン定義済み）
+  const mockPatternSets: PatternSetWithDetails[] = [
+    /* ... */
+  ];
+
+  // ランダムに1つ選択
+  const randomIndex = Math.floor(Math.random() * mockPatternSets.length);
+  return mockPatternSets[randomIndex] || null;
+}
+```
+
+**実DB実装時の変更例:**
+
+```typescript
+// 将来的にこの関数を置き換える
+export async function fetchRandomPatternSet(): Promise<PatternSetWithDetails | null> {
+  const patternSets = await prisma.patternSet.findMany({
+    include: {
+      examples: {
+        orderBy: { patternOrder: 'asc' },
+        take: 3, // 必ず3個
+      },
+    },
+  });
+
+  if (patternSets.length === 0) return null;
+
+  // ランダムに1つ選択
+  const randomIndex = Math.floor(Math.random() * patternSets.length);
+  return patternSets[randomIndex];
+}
+```
 
 ---
 
@@ -595,235 +591,118 @@ OpenAI DALL-E 3 Pricing (2025年10月時点):
 
 ### APIエンドポイント
 
-#### `/src/app/api/pattern-learning/route.ts` (新規作成)
+**現在の状況:**
+
+- ⚠️ API未実装（モックバックエンドで代替）
+- ✅ Server Componentsで直接`fetchRandomPatternSet()`を呼び出し
+- 🎯 将来的にAPIエンドポイントを追加可能（必要に応じて）
+
+**現在の実装（`src/app/pattern-learning/page.tsx`）:**
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { Suspense } from 'react';
+import { HeaderPortal } from '@/components/layout/header-portal';
+import PatternLearningFlow from '@/components/pattern/pattern-learning-flow';
+import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
+import { StartButton } from '@/components/ui/start-button';
+import { fetchRandomPatternSet } from '@/lib/pattern-service';
 
-/**
- * GET /api/pattern-learning?difficulty=beginner
- * 指定難易度のパターンセット一覧を取得
- */
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const difficulty = searchParams.get('difficulty') || 'beginner';
+// データ取得部分を別コンポーネントに分離
+async function PatternLearningContent() {
+  const patternSet = await fetchRandomPatternSet();
 
-    if (!['beginner', 'intermediate', 'advanced'].includes(difficulty)) {
-      return NextResponse.json({ error: 'Invalid difficulty level' }, { status: 400 });
-    }
-
-    const patternSets = await prisma.patternSet.findMany({
-      where: {
-        difficulty: difficulty as 'beginner' | 'intermediate' | 'advanced',
-      },
-      select: {
-        id: true,
-        patternName: true,
-        patternDescription: true,
-        difficulty: true,
-        createdAt: true,
-        // ✨ examplesはProblemの配列
-        examples: {
-          select: {
-            id: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const patternSetsWithCount = patternSets.map((set) => ({
-      id: set.id,
-      patternName: set.patternName,
-      patternDescription: set.patternDescription,
-      difficulty: set.difficulty,
-      exampleCount: set.examples.length,
-      createdAt: set.createdAt,
-    }));
-
-    return NextResponse.json({
-      patternSets: patternSetsWithCount,
-      count: patternSetsWithCount.length,
-    });
-  } catch (error) {
-    console.error('[API] Pattern learning list error:', error);
-    return NextResponse.json({ error: 'Failed to fetch pattern sets' }, { status: 500 });
+  if (!patternSet) {
+    return (
+      <p className="mt-10 text-sm text-rose-500 text-center">
+        パターンセットが見つかりませんでした。
+      </p>
+    );
   }
+
+  return <PatternLearningFlow initialPatternSet={patternSet} />;
 }
-```
 
-#### `/src/app/api/pattern-learning/[patternId]/route.ts` (新規作成)
-
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
-/**
- * GET /api/pattern-learning/:patternId
- * 特定のパターンセットの詳細を取得（例文・テスト問題込み）
- */
-export async function GET(request: NextRequest, { params }: { params: { patternId: string } }) {
-  try {
-    const { patternId } = params;
-
-    const patternSet = await prisma.patternSet.findUnique({
-      where: {
-        id: patternId,
-      },
-      include: {
-        // ✨ examplesはProblemテーブルから取得
-        examples: {
-          orderBy: {
-            patternOrder: 'asc', // orderではなくpatternOrder
-          },
-        },
-        testProblem: true,
-      },
-    });
-
-    if (!patternSet) {
-      return NextResponse.json({ error: 'Pattern set not found' }, { status: 404 });
-    }
-
-    // incorrectOptionsとadditionalExamplesをパース
-    const testProblem = patternSet.testProblem
-      ? {
-          ...patternSet.testProblem,
-          incorrectOptions: Array.isArray(patternSet.testProblem.incorrectOptions)
-            ? patternSet.testProblem.incorrectOptions
-            : JSON.parse(patternSet.testProblem.incorrectOptions as string),
-        }
-      : null;
-
-    const additionalExamples = patternSet.additionalExamples
-      ? Array.isArray(patternSet.additionalExamples)
-        ? patternSet.additionalExamples
-        : JSON.parse(patternSet.additionalExamples as string)
-      : [];
-
-    return NextResponse.json({
-      patternSet: {
-        ...patternSet,
-        testProblem,
-        additionalExamples,
-      },
-    });
-  } catch (error) {
-    console.error('[API] Pattern learning detail error:', error);
-    return NextResponse.json({ error: 'Failed to fetch pattern set' }, { status: 500 });
-  }
+// Loading コンポーネント
+function LoadingFallback() {
+  return (
+    <StartButton error={null} disabled>
+      <InlineLoadingSpinner />
+      <span className="ml-2">パターン学習を準備中...</span>
+    </StartButton>
+  );
 }
-```
-
-### ページコンポーネント
-
-#### `/src/app/pattern-learning/page.tsx` (新規作成)
-
-```typescript
-import Link from 'next/link';
 
 export default function PatternLearningPage() {
-  const difficulties = [
-    {
-      level: 'beginner',
-      title: '初級',
-      description: '基本的な日常会話パターン',
-      color: 'from-green-400 to-emerald-500',
-    },
-    {
-      level: 'intermediate',
-      title: '中級',
-      description: 'より複雑な表現パターン',
-      color: 'from-blue-400 to-cyan-500',
-    },
-    {
-      level: 'advanced',
-      title: '上級',
-      description: 'ビジネスや専門的なパターン',
-      color: 'from-purple-400 to-pink-500',
-    },
-  ];
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#f4f1ea] to-white p-8">
-      <div className="max-w-5xl mx-auto">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#2a2b3c] mb-4">
-            パターン学習モード
-          </h1>
-          <p className="text-lg text-[#2a2b3c]/70">
-            複数の例から英語のパターンを見つけて、自然に理解しよう
-          </p>
-        </header>
-
-        <section className="grid md:grid-cols-3 gap-6">
-          {difficulties.map((diff) => (
-            <Link
-              key={diff.level}
-              href={`/pattern-learning/${diff.level}`}
-              className="group"
-            >
-              <div className="bg-white rounded-3xl border border-[#d8cbb6] p-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-                <div
-                  className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${diff.color} mb-4 flex items-center justify-center text-white font-bold text-2xl`}
-                >
-                  {diff.level[0].toUpperCase()}
-                </div>
-                <h2 className="text-2xl font-bold text-[#2a2b3c] mb-2">
-                  {diff.title}
-                </h2>
-                <p className="text-[#2a2b3c]/70">{diff.description}</p>
-              </div>
-            </Link>
-          ))}
-        </section>
-
-        <section className="mt-16 bg-gradient-to-r from-blue-50 to-teal-50 rounded-3xl p-8 border border-blue-200">
-          <h2 className="text-2xl font-bold text-[#2f8f9d] mb-4">
-            パターン学習とは？
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6 text-[#2a2b3c]">
-            <div>
-              <h3 className="font-semibold mb-2">🧩 パターンを発見</h3>
-              <p className="text-sm text-[#2a2b3c]/70">
-                3〜5個の類似した例文を見て、共通するパターンを見つけます
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">🎯 自然な理解</h3>
-              <p className="text-sm text-[#2a2b3c]/70">
-                暗記ではなく、差分から構造を理解する自然な学習法
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">✅ 理解度テスト</h3>
-              <p className="text-sm text-[#2a2b3c]/70">
-                新しい単語でパターンを応用できるかテストします
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">🔗 関連パターン</h3>
-              <p className="text-sm text-[#2a2b3c]/70">
-                似たパターンや関連表現も一緒に学習できます
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
+    <>
+      <HeaderPortal>パターン学習</HeaderPortal>
+      <Suspense fallback={<LoadingFallback />}>
+        <PatternLearningContent />
+      </Suspense>
+    </>
   );
 }
 ```
+
+**利点:**
+
+- ✅ **シンプル**: APIエンドポイント不要、Server Componentsで完結
+- ✅ **型安全**: TypeScriptでエンドツーエンドの型チェック
+- ✅ **高速**: サーバーサイドで直接データ取得、往復なし
+- ✅ **Suspense対応**: ローディング状態の管理が容易
+
+**将来的にAPIが必要になる場合（例）:**
+
+- クライアントサイドでの動的取得
+- 外部アプリケーションからのアクセス
+- キャッシュ戦略の細かい制御
+
+### フロントエンドコンポーネント
+
+**メインコンポーネント構成:**
+
+1. **`src/app/pattern-learning/page.tsx`**: エントリーポイント、データ取得とSuspense
+2. **`src/components/pattern/pattern-learning-flow.tsx`**: メインフロー（landing → examples → test → result）
+3. **`src/components/ui/start-button.tsx`**: 再利用可能なボタンコンポーネント
+4. **`src/lib/pattern-service.ts`**: モックバックエンド（型定義とデータ提供）
+
+**実装済みの機能:**
+
+✅ **4つのフェーズ管理:**
+
+- `landing`: 「パターン学習を始める」ボタン
+- `examples`: 例文3個の表示と音声自動再生
+- `test`: クイズ画面（選択肢シャッフル）
+- `result`: 正解/不正解表示
+
+✅ **音声制御:**
+
+- 自動再生（英語→日本語の連続再生）
+- 再生中のボタン無効化（`audioStatus`管理）
+- クイズ・結果画面での自動再生
+
+✅ **UI/UX:**
+
+- 画像の透明度制御（音声中: opacity-100、ボタン表示時: opacity-50）
+- 中央ボタン配置（1-2枚目: 白、3枚目: オレンジ）
+- 「例文に戻る」ボタン（青緑）
+- 「次のパターンに挑戦」ボタン（オレンジ）
+
+✅ **パフォーマンス最適化:**
+
+- 次のパターンの事前取得（ユーザー待機なし）
+- 選択肢のシャッフル（初回マウント時のみ）
 
 ---
 
 ## シード生成スクリプト
 
-### `/scripts/seed-pattern-learning.ts` (新規作成)
+**現在の状況:**
+
+- ⏳ 未実装（将来のDB実装時に作成予定）
+- 📋 設計は完了（以下の内容で実装可能）
+
+**実装時の参考（`/scripts/seed-pattern-learning.ts`）:**
 
 ```typescript
 import { PrismaClient } from '@prisma/client';
@@ -1247,20 +1126,45 @@ npm run seed:pattern
 
 ✅ **完了した機能:**
 
-- モックデータでのフロントエンド実装
-- 音声自動再生フロー
-- 画像中央ボタンUI
-- 選択肢シャッフル（固定）
-- 正解/不正解フロー
-- 再挑戦機能
+**フロントエンド（完全動作）:**
+
+- ✅ ランディング画面（`landing` phase）
+- ✅ 例文表示（`examples` phase、必ず3個固定）
+- ✅ 音声自動再生フロー（英語→日本語の連続再生）
+- ✅ 画像中央ボタンUI（透明度制御、音声終了後のみ表示）
+- ✅ テスト問題（`test` phase、選択肢シャッフル固定）
+- ✅ 結果表示（`result` phase、正解/不正解フロー）
+- ✅ 再挑戦機能（1枚目から再開）
+- ✅ 次のパターン事前取得（ユーザー待機なし）
+
+**バックエンド（モック実装）:**
+
+- ✅ モックデータサービス（`pattern-service.ts`）
+- ✅ ランダムパターン取得関数（`fetchRandomPatternSet`）
+- ✅ TypeScript型定義（`PatternExample`, `PatternSetWithDetails`）
+- ✅ 型安全性の確保（フロント・バック間の整合性）
+
+**Prismaスキーマ（型定義のみ）:**
+
+- ✅ `PatternSet`モデル定義（クイズ情報を統合）
+- ✅ `Problem`テーブルに`patternId`フィールド追加（コメントのみ）
+- ⚠️ マイグレーション未実行（実際のDB変更なし）
 
 ⏳ **未実装（将来実装予定）:**
 
-- バックエンドAPI（`/api/pattern-learning`）
-- Prismaスキーマの実装
-- 音声・画像の自動生成
-- データベースへの保存
-- 応用例の表示
+**データベース・インフラ:**
+
+- ⏳ Prismaマイグレーション実行
+- ⏳ 音声・画像の自動生成（OpenAI TTS + DALL-E）
+- ⏳ R2ストレージへのアセット保存
+- ⏳ シード生成スクリプト
+
+**機能拡張:**
+
+- ⏳ 難易度別パターン一覧
+- ⏳ 応用例の表示（正解後）
+- ⏳ 関連パターンの提案
+- ⏳ 学習進捗の保存
 
 ---
 
@@ -1353,11 +1257,20 @@ const frenchExample = {
 6. **エラーリカバリー**: 不正解時は1枚目から再挑戦、記憶の定着を促進
 7. **固定された例文数**: **必ず3個の例文**で統一、1-2枚目が学習、3枚目が確認
 
-**現在の実装方針（モックベース）:**
+**現在の実装方針（ユーザーストーリー記法駆動開発）:**
 
-1. ✅ **フロントエンドのみ完成**: モックデータで完全に動作
-2. ⏳ **バックエンドは未実装**: Prismaスキーマ、API、自動生成は将来対応
-3. ✅ **UX検証完了**: ユーザーストーリー通りの体験を実現
+1. ✅ **ユーザーストーリーから開始**: `user-story2.md`で価値を定義
+2. ✅ **モックフロントエンド完成**: UIとUXを先に固める
+3. ✅ **モックバックエンド実装**: `pattern-service.ts`で型安全なデータ提供
+4. ✅ **型の整合性確保**: TypeScriptでフロント・バック間の契約を保証
+5. ⏳ **実DBは将来対応**: Prismaマイグレーション、OpenAI API連携は次フェーズ
+
+**この開発アプローチの利点:**
+
+- **Outside-In開発**: ユーザー体験から逆算して設計
+- **早期UX検証**: 実装前にユーザーストーリーを体験できる
+- **型安全性**: モックでも本番と同じ型定義を使用
+- **段階的移行**: モックから実DBへの移行が容易
 
 **UX設計の成功要因:**
 
