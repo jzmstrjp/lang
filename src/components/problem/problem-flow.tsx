@@ -433,13 +433,12 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         onEnded={() => {
           setAudioStatus('idle');
 
+          if (viewPhase === 'quiz' || viewPhase === 'correct') return;
           // scene-entry/scene-ready時のみ、返答音声を続けて再生
-          if (viewPhase === 'scene-entry' || viewPhase === 'scene-ready') {
-            const replyAudioRef = settingsRef.current.isEnglishMode
-              ? englishReplyAudioRef
-              : japaneseReplyAudioRef;
-            void (replyAudioRef.current && playAudio(replyAudioRef.current, 100));
-          }
+          const replyAudioRef = settingsRef.current.isEnglishMode
+            ? englishReplyAudioRef
+            : japaneseReplyAudioRef;
+          void (replyAudioRef.current && playAudio(replyAudioRef.current, 100));
         }}
       />
       <audio
