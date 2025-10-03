@@ -20,16 +20,6 @@ type ApiProblemsResponse = {
   count: number;
 };
 
-// 問題配列をランダムシャッフル（Fisher-Yates）
-function shuffleProblems<T>(problems: T[]): T[] {
-  const shuffled = [...problems];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
 // 選択肢をシャッフルして正解のインデックスを返す
 function shuffleOptions(target: ProblemWithAudio): { options: string[]; correctIndex: number } {
   const allOptions = [target.japaneseSentence, ...target.incorrectOptions];
@@ -206,9 +196,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           if (response.ok) {
             const data: ApiProblemsResponse = await response.json();
             // 追加の問題をシャッフルしてキューに追加
-            const shuffledAdditionalProblems = shuffleProblems(data.problems);
             setProblemQueue((prev) => {
-              const newQueue = [...prev, ...shuffledAdditionalProblems];
+              const newQueue = [...prev, ...data.problems];
               lastQueueLengthRef.current = newQueue.length;
               return newQueue;
             });

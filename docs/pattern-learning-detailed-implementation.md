@@ -1,94 +1,227 @@
 # パターン学習モード 詳細実装ガイド
 
+## コンセプト
+
+**なぜ日本人は中高6年も英語を勉強したのに英語を話せないの？**
+
+子供は学習データの差分から言語を理解します：
+
+```
+「Can you pass me the salt?」→「はい、お塩どうぞ」
+「Can you pass me the remote?」→「はい、リモコンどうぞ」
+「Can you pass me the pen?」→「はい、ペンどうぞ」
+```
+
+これを見て人間の脳は自動的に「Pass me the 〇〇〇.」が「〇〇〇をとってもらえる？」という意味だと理解します。
+
+このWebアプリでは、この自然な学習プロセスを再現します。
+
 ## 目次
 
-1. [データベース設計とパターン表現](#データベース設計とパターン表現)
-2. [音声生成の実装](#音声生成の実装)
-3. [画像生成の実装](#画像生成の実装)
-4. [パターン変数のハイライト表示](#パターン変数のハイライト表示)
-5. [実装コード例](#実装コード例)
-6. [シード生成スクリプト](#シード生成スクリプト)
+1. [ユーザーストーリー](#ユーザーストーリー)
+2. [学習フロー設計](#学習フロー設計)
+3. [データベース設計](#データベース設計)
+4. [音声生成の実装](#音声生成の実装)
+5. [画像生成の実装](#画像生成の実装)
+6. [実装コード例](#実装コード例)
+7. [シード生成スクリプト](#シード生成スクリプト)
 
 ---
 
-## データベース設計とパターン表現
+## ユーザーストーリー
 
-### パターンの表現方法
+### 体験の流れ
 
-パターン学習では「Can you pass me **the salt**?」のように、変化する部分を明示する必要があります。
+ユーザー「お、パターン学習モードってのがあるな」
 
-#### アプローチ1: highlightWord方式（採用）
+#### 例文1
 
-**メリット:**
+食卓にいる女性の画像  
+音声：「Can you pass me the salt?」
 
-- シンプルで理解しやすい
-- 変化する単語を直接指定
-- フロントエンドでの処理が簡単
+食卓にいる男性の画像  
+音声：「はい、お塩どうぞ」
 
-**実装方法:**
+ユーザー「ふーん、『Can you pass me the salt?』で『お塩どうぞ』って返ってるのか」
 
-```typescript
-type PatternExample = {
-  id: string;
-  patternSetId: string;
-  order: number;
-  englishSentence: string; // "Can you pass me the salt?"
-  japaneseSentence: string; // "お塩を取ってくれませんか？"
-  highlightWord: string; // "salt" または "the salt"
-  highlightWordJa?: string; // "お塩" (オプション)
-  imageUrl?: string;
-  audioEnUrl: string;
-  audioJaUrl: string;
-};
+画面：「次の例へ」ボタン  
+ユーザー「ポチッ」
+
+#### 例文2
+
+リビングにいる男性の画像  
+音声：「Can you pass me the remote?」
+
+リビングにいる女性の画像  
+音声：「はい、リモコンどうぞ」
+
+ユーザー「あれ？今度は『remote』だ。でも返答は同じように『どうぞ』って渡してるな」
+
+画面：「次の例へ」ボタン  
+ユーザー「ポチッ」
+
+#### 例文3
+
+オフィスにいる女性の画像  
+音声：「Can you pass me the pen?」
+
+オフィスにいる男性の画像  
+音声：「いいよ、どれ？」
+
+ユーザー「おっ、今度は『pen』だ」  
+ユーザー「salt、remote、pen...あ、ここが変わってるんだ！」  
+ユーザー「『Can you pass me the 〇〇〇?』で『〇〇〇を取ってもらう』って意味なのかな？」
+
+#### テスト問題
+
+画面：大きく表示される
+
+```
+「Can you pass me the 〇〇〇?」
+の意味はどれでしょう？
 ```
 
-**表示ロジック:**
+画面：4択表示
 
-```typescript
-// フロントエンドでの使用例
-function highlightPattern(sentence: string, highlightWord: string) {
-  const regex = new RegExp(`(${highlightWord})`, 'gi');
-  return sentence.replace(regex, '<span class="text-blue-600 font-bold">$1</span>');
-}
+- 〇〇〇を取ってくれませんか？ ←
+- 〇〇〇を買いに行きましょう
+- 〇〇〇が好きです
+- 〇〇〇はどこですか？
 
-// 使用例
-const sentence = 'Can you pass me the salt?';
-const highlighted = highlightPattern(sentence, 'salt');
-// → "Can you pass me the <span class="text-blue-600 font-bold">salt</span>?"
+ユーザー「おっ、〇〇〇って書いてある！」  
+ユーザー「特定の単語じゃなくて、構文全体の意味を聞かれてるんだな」  
+ユーザー「さっき学んだパターンだと...『〇〇〇を取ってくれませんか？』だな。ポチッ」
+
+#### 結果
+
+画面：「正解です！🎉」  
+画面：「パターンを理解できていますね！」
+
+```
+✓ Can you pass me the [object]? のパターンを習得
+✓ 構文の意味を正しく理解できました
 ```
 
-#### アプローチ2: テンプレート方式（将来的な拡張案）
+ユーザー「やった！」  
+ユーザー「これ、bookとかcoffeeとか、どんな単語を入れても使えるってことか」  
+ユーザー「『book』って単語を訳せたんじゃなくて、『このパターン全体』の意味が分かったぞ！」
 
-変数を `{variable}` で表現する方法
+画面：
 
-```typescript
-type PatternTemplate = {
-  template: string; // "Can you pass me the {object}?"
-  variables: {
-    object: string[]; // ["salt", "remote", "pen"]
-  };
-};
+```
+このパターンを使った例：
+- Can you pass me the book? → 本を取ってくれませんか？
+- Can you pass me the water? → 水を取ってくれませんか？
+- Can you pass me the phone? → 電話を取ってくれませんか？
 ```
 
-**現時点では採用しない理由:**
+ユーザー「おお、どんな物にも使えるんだ！」  
+ユーザー「単語を一つ一つ覚えるんじゃなくて、構文を理解すれば応用が効くのか」
 
-- 複雑度が高い
-- 日本語のテンプレート化が難しい（助詞の変化など）
-- 初期段階ではオーバーエンジニアリング
+### このモードの優位性
 
-### Prismaスキーマの追加
+- **構文理解の達成感**：単語の暗記ではなく「構造を理解できた」という本質的な学びの喜びがある
+- **応用力の実感**：〇〇〇という変数で提示することで、無限の応用が可能だと理解できる
+- **差分学習**：複数の例の「違い」に注目することで、言語の本質的な構造を理解できる
+- **脳の自然なプロセス**：明示的に「どこが違う？」と聞かずとも、人間の脳が自動的に差分を見つける
+- **抽象化された知識**：「book = 本」という個別知識ではなく、構文という抽象的な知識を獲得できる
+
+---
+
+## 学習フロー設計
+
+### シンプルな3ステップ
+
+```
+1. 例文を見る（3〜5個）
+   ↓
+2. テスト問題「〇〇〇」形式で構文理解を確認
+   ↓
+3. 正解後、応用例を表示
+```
+
+**重要：「パターン発見チャレンジ」は不要**
+
+- ❌ 「どこが変わっていますか？」と明示的に聞く
+- ❌ ハイライト表示で答えを教える
+- ✅ 人間の脳が自動的に差分を見つけるプロセスに任せる
+
+---
+
+## データベース設計
+
+### 設計思想
+
+**既存テーブルの再利用**：パターン学習の例文は、通常の`Problem`と同じ構造を持っています。新しいテーブルを作らず、既存の`Problem`テーブルに`patternId`フィールドを追加することで、データの重複を避けます。
+
+### メリット
+
+1. **データの再利用**: パターン学習で使った問題が、shortモードなど通常の学習でも出現する
+2. **復習効果**: 「あ、これパターン学習で見たやつだ！」という定着効果
+3. **テーブル削減**: `pattern_examples`テーブルが不要になり、設計がシンプルに
+4. **クエリの統一**: 通常問題とパターン問題を同じAPIで扱える
+
+### 必要なデータ
+
+1. **パターンセット**: パターンのメタ情報
+2. **例文**: `Problem`テーブルに`patternId`を付けて保存
+3. **テスト問題**: 「〇〇〇」形式での構文理解確認
+4. **応用例**: 正解後に表示する追加の具体例
+
+### Prismaスキーマの変更
 
 ```prisma
-// prisma/schema.prisma に追加
+// prisma/schema.prisma の既存Problemモデルを拡張
 
+model Problem {
+  id                String     @id @default(cuid())
+
+  // 既存フィールド
+  wordCount         Int
+  englishSentence   String
+  japaneseSentence  String
+  japaneseReply     String
+  englishReply      String
+  incorrectOptions  Json
+  senderVoice       VoiceType
+  senderRole        String
+  receiverVoice     VoiceType
+  receiverRole      String
+  place             String
+
+  audioEnUrl        String?
+  audioJaUrl        String?
+  audioEnReplyUrl   String?
+  imageUrl          String?
+  audioReady        Boolean    @default(false)
+
+  // ✨ 新規追加: パターン学習用フィールド
+  patternId         String?                    // パターン学習の一部なら設定
+  patternOrder      Int?                       // パターン内での順序（1, 2, 3...）
+  pattern           PatternSet? @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@unique([englishSentence])
+  @@index([wordCount, audioReady])
+  @@index([patternId, patternOrder])  // ✨ 新規インデックス
+  @@map("problems")
+}
+
+// 新規追加: パターンセット
 model PatternSet {
   id                   String              @id @default(cuid())
-  patternName          String              // "Can you pass me X?"
-  patternDescription   String              // "物を取ってもらう依頼"
+  patternName          String              // "Can you pass me the 〇〇〇?"（〇〇〇形式で保存）
+  patternMeaning       String              // "〇〇〇を取ってくれませんか？"（〇〇〇形式で保存）
+  patternDescription   String              // "物を取ってもらう依頼表現"
   difficulty           DifficultyLevel     @default(beginner)
-  examples             PatternExample[]
+
+  examples             Problem[]           // ✨ PatternExampleではなくProblem！
   testProblem          PatternTestProblem?
+  additionalExamples   Json?               // 正解後に表示する応用例（配列）
   relatedPatternIds    String[]            // 関連パターンのIDリスト
+
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 
@@ -96,63 +229,17 @@ model PatternSet {
   @@map("pattern_sets")
 }
 
-model PatternExample {
-  id                String     @id @default(cuid())
-  patternSetId      String
-  patternSet        PatternSet @relation(fields: [patternSetId], references: [id], onDelete: Cascade)
-  order             Int        // 表示順序（1, 2, 3...）
-
-  // 英語文と日本語文
-  englishSentence   String
-  japaneseSentence  String
-
-  // 変化する部分（ハイライト対象）
-  highlightWord     String     // 英語での変化部分 例: "salt"
-  highlightWordJa   String?    // 日本語での変化部分 例: "お塩" (オプション)
-
-  // 会話のコンテキスト
-  place             String     // 場所 例: "食卓"
-  senderRole        String     // 話し手の役割 例: "妻"
-  receiverRole      String     // 聞き手の役割 例: "夫"
-  senderVoice       VoiceType  // 話し手の声
-  receiverVoice     VoiceType  // 聞き手の声
-
-  // 返答（英語と日本語両方）
-  englishReply      String     // "Sure, here's the salt."
-  japaneseReply     String     // "はい、お塩どうぞ"
-
-  // メディアファイル
-  audioEnUrl        String?
-  audioJaUrl        String?
-  audioEnReplyUrl   String?    // 返答の英語音声
-  audioJaReplyUrl   String?    // 返答の日本語音声（既存と重複）
-  imageUrl          String?
-
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-
-  @@unique([patternSetId, order])
-  @@index([patternSetId, order])
-  @@map("pattern_examples")
-}
+// PatternExampleテーブルは削除！代わりにProblemを使う
 
 model PatternTestProblem {
   id                String     @id @default(cuid())
   patternSetId      String     @unique
   patternSet        PatternSet @relation(fields: [patternSetId], references: [id], onDelete: Cascade)
 
-  // テスト問題
-  englishSentence   String
-  correctAnswer     String     // 正しい日本語訳
+  // テスト問題（〇〇〇形式で問う）
+  questionPattern   String     // "Can you pass me the 〇〇〇?"
+  correctAnswer     String     // "〇〇〇を取ってくれませんか？"
   incorrectOptions  Json       // 不正解の選択肢（配列）
-
-  // テスト問題のコンテキスト
-  place             String?
-  senderVoice       VoiceType  @default(female)
-
-  // メディアファイル
-  audioEnUrl        String?
-  imageUrl          String?
 
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -167,15 +254,53 @@ enum DifficultyLevel {
 }
 ```
 
+### クエリ例
+
+```typescript
+// パターンの例文を取得
+const examples = await prisma.problem.findMany({
+  where: {
+    patternId: 'pattern_123',
+  },
+  orderBy: {
+    patternOrder: 'asc',
+  },
+});
+
+// 通常問題を取得（パターン学習の問題も含む）
+const allProblems = await prisma.problem.findMany({
+  where: {
+    wordCount: { gte: 3, lte: 7 },
+    audioReady: true,
+    // patternIdがあってもなくても全部取得される
+  },
+});
+
+// パターン学習専用の問題だけ除外したい場合
+const onlyStandalone = await prisma.problem.findMany({
+  where: {
+    wordCount: { gte: 3, lte: 7 },
+    patternId: null, // パターン学習に属さない問題のみ
+  },
+});
+```
+
 ### マイグレーションコマンド
 
 ```bash
 # スキーマ変更後、マイグレーションを生成
-npx prisma migrate dev --name add_pattern_learning_tables
+npx prisma migrate dev --name add_pattern_learning_to_problems
 
 # 本番環境へのデプロイ
 npx prisma migrate deploy
 ```
+
+**主な変更点:**
+
+- `Problem`テーブルに`patternId`、`patternOrder`フィールドを追加
+- 新規テーブル: `PatternSet`、`PatternTestProblem`
+- 新しいenum: `DifficultyLevel`
+- 新しいインデックス: `problems`の`[patternId, patternOrder]`
 
 ---
 
@@ -313,138 +438,71 @@ OpenAI TTS Pricing (2025年10月時点):
 
 ## 画像生成の実装
 
-### 既存の画像生成システムの活用
+### 既存システムを流用
 
-現在のシステムはOpenAI DALL-E 3を使用しています。
+**朗報**: `/src/lib/problem-generator.ts`の`generateImagePrompt()`関数がそのまま使えます！
+
+既存の実装は十分に洗練されており、パターン学習でも同じプロンプト生成ロジックを流用できます。
+
+```typescript
+// 既存の実装をそのまま使用
+import { generateImagePrompt, generateAndUploadImageAsset } from '@/lib/problem-generator';
+```
 
 ### 画像生成の流れ
 
 ```
-1. プロンプト生成 → 2. OpenAI DALL-E 3 → 3. Buffer取得 → 4. WebP変換 → 5. R2アップロード → 6. URLをDBに保存
+1. プロンプト生成（既存関数） → 2. OpenAI DALL-E 3 → 3. Buffer取得 → 4. WebP変換 → 5. R2アップロード
 ```
 
-### パターン学習用の画像プロンプト生成
-
-#### `/src/lib/pattern-image-generator.ts` (新規作成)
+### パターン例文用の画像生成
 
 ```typescript
-import { generateImageBuffer } from '@/lib/image-utils';
-import { uploadImageToR2 } from '@/lib/r2-client';
-import type { VoiceType } from '@prisma/client';
+// /src/lib/pattern-image-generator.ts（新規作成）
 
-/**
- * 性別を日本語に変換
- */
-function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
-  return voiceType === 'male' ? '男性' : '女性';
-}
-
-/**
- * 話し手の名前マッピング
- */
-const senderNameMap: Record<VoiceType, string> = {
-  male: 'James',
-  female: 'Mary',
-};
-
-/**
- * 聞き手の名前マッピング
- */
-const receiverNameMap: Record<VoiceType, string> = {
-  male: 'タカシ',
-  female: 'マミ',
-};
-
-/**
- * パターン例文用の画像プロンプトを生成
- */
-export function generatePatternImagePrompt(
-  englishSentence: string,
-  japaneseSentence: string,
-  englishReply: string,
-  japaneseReply: string,
-  place: string,
-  senderRole: string,
-  receiverRole: string,
-  senderVoice: VoiceType,
-  receiverVoice: VoiceType,
-): string {
-  const senderGender = getGenderInJapanese(senderVoice);
-  const receiverGender = getGenderInJapanese(receiverVoice);
-  const senderName = senderNameMap[senderVoice];
-  const receiverName = receiverNameMap[receiverVoice];
-
-  return `実写風の2コマ漫画を生成してください。
-縦に2コマです。
-漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-上下のコマの高さは完全に同じであること。
-上下のコマの間に高さ20ピクセルの白い境界線が必要です。
-
-【場所】
-${place}
-
-【登場人物】
-- ${senderName}（${senderGender}）・・・${senderRole}。端正な顔立ちをしている。
-- ${receiverName}（${receiverGender}）・・・${receiverRole}。端正な顔立ちをしている。
-
-【ストーリー】
-${senderName}（${senderGender}）が、${receiverName}（${receiverGender}）に対して「${japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGender}）が「${japaneseReply}」と答える。
-
-【1コマ目】
-- ${senderName}（${senderGender}）が「${japaneseSentence}」と言っている
-- ${receiverName}（${receiverGender}）はまだ描かない
-- ${senderName}（${senderGender}）が右を向いているアングルで描画されている
-
-【2コマ目】
-- ${receiverName}（${receiverGender}）が「${japaneseReply}」と返答している
-- ${receiverName}（${receiverGender}）が左を向いているアングルで描画されている
-
-【備考】
-- 場所や場面に合わせた表情やジェスチャーを描写してください。
-- ${senderName}（${senderGender}）と${receiverName}（${receiverGender}）は対面しているわけなので、1コマ目と2コマ目の背景は微妙に異なるはずです。
-- 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えてください。
-- セリフに対して不自然な画像は生成しないこと。
-- 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-- 自然で生成AIっぽくないテイストで描写してください。
-
-【禁止事項】
-- 同じコマに、同じ人物を2回描画しないこと。
-- 上下のコマの高さは完全に同じであること。
-- 上下のコマの間に高さ20ピクセルの白い境界線が必要です。
-`;
-}
+import { generateAndUploadImageAsset } from '@/lib/problem-generator';
+import type { Problem } from '@prisma/client';
 
 /**
  * パターン例文用の画像を生成してR2にアップロード
+ * 既存のproblem-generatorの関数を流用
+ *
+ * 注: ProblemとPatternExampleは同じ構造なので、そのまま使える！
  */
-export async function generateAndUploadPatternImage(
+export async function generatePatternExampleImage(
   exampleId: string,
-  englishSentence: string,
-  japaneseSentence: string,
-  englishReply: string,
-  japaneseReply: string,
-  place: string,
-  senderRole: string,
-  receiverRole: string,
-  senderVoice: VoiceType,
-  receiverVoice: VoiceType,
+  example: Pick<
+    Problem,
+    | 'englishSentence'
+    | 'japaneseSentence'
+    | 'englishReply'
+    | 'japaneseReply'
+    | 'place'
+    | 'senderRole'
+    | 'receiverRole'
+    | 'senderVoice'
+    | 'receiverVoice'
+  >,
 ): Promise<string> {
   console.log(`[Pattern Image] 画像生成開始: ${exampleId}`);
 
-  const prompt = generatePatternImagePrompt(
-    englishSentence,
-    japaneseSentence,
-    englishReply,
-    japaneseReply,
-    place,
-    senderRole,
-    receiverRole,
-    senderVoice,
-    receiverVoice,
+  // 既存の関数をそのまま使用
+  const imageUrl = await generateAndUploadImageAsset(
+    {
+      englishSentence: example.englishSentence,
+      japaneseSentence: example.japaneseSentence,
+      englishReply: example.englishReply,
+      japaneseReply: example.japaneseReply,
+      place: example.place,
+      senderRole: example.senderRole,
+      receiverRole: example.receiverRole,
+      senderVoice: example.senderVoice,
+      receiverVoice: example.receiverVoice,
+      wordCount: 0, // ダミー値
+      incorrectOptions: [], // ダミー値
+    },
+    exampleId,
   );
-
-  const imageBuffer = await generateImageBuffer(prompt);
-  const imageUrl = await uploadImageToR2(imageBuffer, exampleId, 'composite');
 
   console.log(`[Pattern Image] 画像生成完了: ${imageUrl}`);
 
@@ -493,200 +551,6 @@ OpenAI DALL-E 3 Pricing (2025年10月時点):
 
 ---
 
-## パターン変数のハイライト表示
-
-### フロントエンド実装
-
-#### `/src/lib/pattern-highlight.ts` (新規作成)
-
-```typescript
-/**
- * 文章内の特定の単語をハイライト表示用にマークアップ
- */
-export function highlightWord(
-  sentence: string,
-  highlightWord: string,
-): { parts: Array<{ text: string; isHighlight: boolean }> } {
-  if (!highlightWord) {
-    return { parts: [{ text: sentence, isHighlight: false }] };
-  }
-
-  // highlightWordをエスケープして正規表現で検索
-  const escapedWord = highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedWord})`, 'gi');
-
-  const parts = sentence.split(regex).map((part, index) => ({
-    text: part,
-    isHighlight: regex.test(part),
-  }));
-
-  return { parts };
-}
-
-/**
- * 複数の例文から変化する部分を自動検出（将来的な拡張用）
- */
-export function detectPatternVariables(sentences: string[]): {
-  commonPattern: string;
-  variables: string[];
-} {
-  // TODO: 実装
-  // 最長共通部分文字列アルゴリズムを使用
-  // 現時点では手動でhighlightWordを指定する方式
-
-  return {
-    commonPattern: '',
-    variables: [],
-  };
-}
-```
-
-#### Reactコンポーネントでの使用例
-
-```tsx
-// /src/components/pattern-learning/highlighted-sentence.tsx (新規作成)
-
-import { highlightWord } from '@/lib/pattern-highlight';
-
-type HighlightedSentenceProps = {
-  sentence: string;
-  highlightWord?: string;
-  className?: string;
-};
-
-export function HighlightedSentence({
-  sentence,
-  highlightWord,
-  className = '',
-}: HighlightedSentenceProps) {
-  const { parts } = highlightWord
-    ? highlightWord(sentence, highlightWord)
-    : { parts: [{ text: sentence, isHighlight: false }] };
-
-  return (
-    <p className={className}>
-      {parts.map((part, index) => (
-        <span
-          key={index}
-          className={part.isHighlight ? 'text-blue-600 font-bold bg-blue-50 px-1 rounded' : ''}
-        >
-          {part.text}
-        </span>
-      ))}
-    </p>
-  );
-}
-```
-
-#### パターン確認画面での使用例
-
-```tsx
-// /src/components/pattern-learning/pattern-review.tsx
-
-import { HighlightedSentence } from './highlighted-sentence';
-
-type PatternReviewProps = {
-  examples: Array<{
-    englishSentence: string;
-    japaneseSentence: string;
-    highlightWord: string;
-    highlightWordJa?: string;
-  }>;
-  patternName: string;
-  onContinue: () => void;
-  onRewatch: () => void;
-};
-
-export function PatternReview({
-  examples,
-  patternName,
-  onContinue,
-  onRewatch,
-}: PatternReviewProps) {
-  return (
-    <section className="grid gap-8 max-w-3xl mx-auto">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-[#2a2b3c] mb-2">パターンを発見しましたか？</h2>
-        <p className="text-lg text-[#2a2b3c]/70">変化する部分に注目してみましょう</p>
-      </div>
-
-      <div className="grid gap-4">
-        {examples.map((example, index) => (
-          <div key={index} className="bg-white rounded-2xl border border-[#d8cbb6] p-6 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#2f8f9d] text-white flex items-center justify-center font-bold">
-                {index + 1}
-              </div>
-              <div className="flex-1 space-y-2">
-                <HighlightedSentence
-                  sentence={example.englishSentence}
-                  highlightWord={example.highlightWord}
-                  className="text-xl font-semibold text-[#2a2b3c]"
-                />
-                <HighlightedSentence
-                  sentence={example.japaneseSentence}
-                  highlightWord={example.highlightWordJa}
-                  className="text-base text-[#2a2b3c]/70"
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-6 border border-blue-200">
-        <h3 className="text-xl font-bold text-[#2f8f9d] mb-3">パターンの構造</h3>
-        <p className="text-lg text-[#2a2b3c] font-mono bg-white px-4 py-3 rounded-lg">
-          {patternName}
-        </p>
-        <p className="text-sm text-[#2a2b3c]/70 mt-3">
-          青くハイライトされた部分が変化していることに気づきましたか？
-        </p>
-      </div>
-
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={onRewatch}
-          className="px-8 py-4 rounded-full border-2 border-[#d8cbb6] bg-white text-[#2a2b3c] font-semibold hover:border-[#2f8f9d] transition"
-        >
-          もう一度見る
-        </button>
-        <button
-          onClick={onContinue}
-          className="px-8 py-4 rounded-full bg-[#2f8f9d] text-white font-semibold hover:bg-[#257682] transition shadow-lg shadow-[#2f8f9d]/30"
-        >
-          理解できた！テストへ
-        </button>
-      </div>
-    </section>
-  );
-}
-```
-
-### ハイライト表示のアニメーション
-
-```css
-/* globals.css に追加 */
-
-@keyframes pulse-highlight {
-  0%,
-  100% {
-    background-color: rgb(239 246 255); /* blue-50 */
-    transform: scale(1);
-  }
-  50% {
-    background-color: rgb(191 219 254); /* blue-200 */
-    transform: scale(1.05);
-  }
-}
-
-.animate-pulse-highlight {
-  animation: pulse-highlight 2s ease-in-out infinite;
-}
-```
-
----
-
 ## 実装コード例
 
 ### APIエンドポイント
@@ -720,7 +584,7 @@ export async function GET(request: NextRequest) {
         patternDescription: true,
         difficulty: true,
         createdAt: true,
-        // 例文の数を取得
+        // ✨ examplesはProblemの配列
         examples: {
           select: {
             id: true,
@@ -771,9 +635,10 @@ export async function GET(request: NextRequest, { params }: { params: { patternI
         id: patternId,
       },
       include: {
+        // ✨ examplesはProblemテーブルから取得
         examples: {
           orderBy: {
-            order: 'asc',
+            patternOrder: 'asc', // orderではなくpatternOrder
           },
         },
         testProblem: true,
@@ -784,7 +649,7 @@ export async function GET(request: NextRequest, { params }: { params: { patternI
       return NextResponse.json({ error: 'Pattern set not found' }, { status: 404 });
     }
 
-    // incorrectOptionsをJSON文字列から配列に変換
+    // incorrectOptionsとadditionalExamplesをパース
     const testProblem = patternSet.testProblem
       ? {
           ...patternSet.testProblem,
@@ -794,10 +659,17 @@ export async function GET(request: NextRequest, { params }: { params: { patternI
         }
       : null;
 
+    const additionalExamples = patternSet.additionalExamples
+      ? Array.isArray(patternSet.additionalExamples)
+        ? patternSet.additionalExamples
+        : JSON.parse(patternSet.additionalExamples as string)
+      : [];
+
     return NextResponse.json({
       patternSet: {
         ...patternSet,
         testProblem,
+        additionalExamples,
       },
     });
   } catch (error) {
@@ -919,7 +791,8 @@ import {
   generatePatternExampleAudio,
   generatePatternTestAudio,
 } from '../src/lib/pattern-audio-generator';
-import { generateAndUploadPatternImage } from '../src/lib/pattern-image-generator';
+import { generatePatternExampleImage } from '../src/lib/pattern-image-generator';
+import { countWords } from '../src/config/problem';
 
 const prisma = new PrismaClient();
 
@@ -927,15 +800,14 @@ const prisma = new PrismaClient();
  * パターンセットの定義（TypeScript型）
  */
 type PatternSetDefinition = {
-  patternName: string;
+  patternName: string; // "Can you pass me the 〇〇〇?"
+  patternMeaning: string; // "〇〇〇を取ってくれませんか？"
   patternDescription: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   examples: Array<{
     order: number;
     englishSentence: string;
     japaneseSentence: string;
-    highlightWord: string;
-    highlightWordJa?: string;
     place: string;
     senderRole: string;
     receiverRole: string;
@@ -945,12 +817,14 @@ type PatternSetDefinition = {
     japaneseReply: string;
   }>;
   testProblem: {
-    englishSentence: string;
-    correctAnswer: string;
+    questionPattern: string; // "Can you pass me the 〇〇〇?"
+    correctAnswer: string; // "〇〇〇を取ってくれませんか？"
     incorrectOptions: string[];
-    place?: string;
-    senderVoice: 'male' | 'female';
   };
+  additionalExamples?: Array<{
+    english: string;
+    japanese: string;
+  }>;
   relatedPatternIds?: string[];
 };
 
@@ -959,16 +833,15 @@ type PatternSetDefinition = {
  */
 const beginnerPatterns: PatternSetDefinition[] = [
   {
-    patternName: 'Can you pass me X?',
-    patternDescription: '物を取ってもらう依頼（カジュアル）',
+    patternName: 'Can you pass me the 〇〇〇?',
+    patternMeaning: '〇〇〇を取ってくれませんか？',
+    patternDescription: '物を取ってもらう依頼表現',
     difficulty: 'beginner',
     examples: [
       {
         order: 1,
         englishSentence: 'Can you pass me the salt?',
         japaneseSentence: 'お塩を取ってくれない？',
-        highlightWord: 'salt',
-        highlightWordJa: 'お塩',
         place: '食卓',
         senderRole: '妻',
         receiverRole: '夫',
@@ -981,8 +854,6 @@ const beginnerPatterns: PatternSetDefinition[] = [
         order: 2,
         englishSentence: 'Can you pass me the remote?',
         japaneseSentence: 'リモコンを取ってくれない？',
-        highlightWord: 'remote',
-        highlightWordJa: 'リモコン',
         place: 'リビング',
         senderRole: '夫',
         receiverRole: '妻',
@@ -995,8 +866,6 @@ const beginnerPatterns: PatternSetDefinition[] = [
         order: 3,
         englishSentence: 'Can you pass me the pen?',
         japaneseSentence: 'ペンを取ってくれない？',
-        highlightWord: 'pen',
-        highlightWordJa: 'ペン',
         place: 'オフィス',
         senderRole: '同僚',
         receiverRole: '同僚',
@@ -1007,24 +876,26 @@ const beginnerPatterns: PatternSetDefinition[] = [
       },
     ],
     testProblem: {
-      englishSentence: 'Can you pass me the book?',
-      correctAnswer: '本を取ってくれませんか？',
-      incorrectOptions: ['本を読みましょう', '本を買いに行こう', '本はどこですか？'],
-      place: '図書館',
-      senderVoice: 'female',
+      questionPattern: 'Can you pass me the 〇〇〇?',
+      correctAnswer: '〇〇〇を取ってくれませんか？',
+      incorrectOptions: ['〇〇〇を買いに行きましょう', '〇〇〇が好きです', '〇〇〇はどこですか？'],
     },
+    additionalExamples: [
+      { english: 'Can you pass me the book?', japanese: '本を取ってくれませんか？' },
+      { english: 'Can you pass me the water?', japanese: '水を取ってくれませんか？' },
+      { english: 'Can you pass me the phone?', japanese: '電話を取ってくれませんか？' },
+    ],
   },
   {
-    patternName: 'I want to X',
-    patternDescription: '〜したいという希望を伝える',
+    patternName: 'I want to 〇〇〇',
+    patternMeaning: '〇〇〇したい',
+    patternDescription: '希望を伝える表現',
     difficulty: 'beginner',
     examples: [
       {
         order: 1,
         englishSentence: 'I want to eat pizza.',
         japaneseSentence: 'ピザが食べたいな',
-        highlightWord: 'eat pizza',
-        highlightWordJa: 'ピザが食べたい',
         place: 'リビング',
         senderRole: '子供',
         receiverRole: '母親',
@@ -1037,8 +908,6 @@ const beginnerPatterns: PatternSetDefinition[] = [
         order: 2,
         englishSentence: 'I want to watch a movie.',
         japaneseSentence: '映画が見たいな',
-        highlightWord: 'watch a movie',
-        highlightWordJa: '映画が見たい',
         place: 'リビング',
         senderRole: '夫',
         receiverRole: '妻',
@@ -1051,8 +920,6 @@ const beginnerPatterns: PatternSetDefinition[] = [
         order: 3,
         englishSentence: 'I want to go shopping.',
         japaneseSentence: '買い物に行きたいな',
-        highlightWord: 'go shopping',
-        highlightWordJa: '買い物に行きたい',
         place: 'リビング',
         senderRole: '妻',
         receiverRole: '夫',
@@ -1063,23 +930,26 @@ const beginnerPatterns: PatternSetDefinition[] = [
       },
     ],
     testProblem: {
-      englishSentence: 'I want to play games.',
-      correctAnswer: 'ゲームがしたい',
-      incorrectOptions: ['ゲームを買いたい', 'ゲームを見たい', 'ゲームはどこ？'],
-      senderVoice: 'male',
+      questionPattern: 'I want to 〇〇〇',
+      correctAnswer: '〇〇〇したい',
+      incorrectOptions: ['〇〇〇を買いたい', '〇〇〇を見たい', '〇〇〇はどこ？'],
     },
+    additionalExamples: [
+      { english: 'I want to play games.', japanese: 'ゲームがしたい' },
+      { english: 'I want to study English.', japanese: '英語を勉強したい' },
+      { english: 'I want to sleep.', japanese: '寝たい' },
+    ],
   },
   {
-    patternName: 'Where is X?',
-    patternDescription: '場所や物の位置を尋ねる',
+    patternName: 'Where is 〇〇〇?',
+    patternMeaning: '〇〇〇はどこですか？',
+    patternDescription: '場所や物の位置を尋ねる表現',
     difficulty: 'beginner',
     examples: [
       {
         order: 1,
         englishSentence: 'Where is the bathroom?',
         japaneseSentence: 'トイレはどこですか？',
-        highlightWord: 'bathroom',
-        highlightWordJa: 'トイレ',
         place: 'レストラン',
         senderRole: '客',
         receiverRole: '店員',
@@ -1092,8 +962,6 @@ const beginnerPatterns: PatternSetDefinition[] = [
         order: 2,
         englishSentence: 'Where is the station?',
         japaneseSentence: '駅はどこですか？',
-        highlightWord: 'station',
-        highlightWordJa: '駅',
         place: '道',
         senderRole: '観光客',
         receiverRole: '地元の人',
@@ -1106,8 +974,6 @@ const beginnerPatterns: PatternSetDefinition[] = [
         order: 3,
         englishSentence: 'Where is my phone?',
         japaneseSentence: '私の携帯はどこ？',
-        highlightWord: 'my phone',
-        highlightWordJa: '私の携帯',
         place: 'リビング',
         senderRole: '妻',
         receiverRole: '夫',
@@ -1118,11 +984,15 @@ const beginnerPatterns: PatternSetDefinition[] = [
       },
     ],
     testProblem: {
-      englishSentence: 'Where is the library?',
-      correctAnswer: '図書館はどこですか？',
-      incorrectOptions: ['図書館に行きたい', '図書館で勉強しよう', '図書館は開いていますか？'],
-      senderVoice: 'male',
+      questionPattern: 'Where is 〇〇〇?',
+      correctAnswer: '〇〇〇はどこですか？',
+      incorrectOptions: ['〇〇〇に行きたい', '〇〇〇で勉強しよう', '〇〇〇は開いていますか？'],
     },
+    additionalExamples: [
+      { english: 'Where is the library?', japanese: '図書館はどこですか？' },
+      { english: 'Where is the exit?', japanese: '出口はどこですか？' },
+      { english: 'Where is my bag?', japanese: '私のバッグはどこ？' },
+    ],
   },
 ];
 
@@ -1136,8 +1006,12 @@ async function seedPatternSet(definition: PatternSetDefinition) {
   const patternSet = await prisma.patternSet.create({
     data: {
       patternName: definition.patternName,
+      patternMeaning: definition.patternMeaning,
       patternDescription: definition.patternDescription,
       difficulty: definition.difficulty,
+      additionalExamples: definition.additionalExamples
+        ? JSON.stringify(definition.additionalExamples)
+        : null,
       relatedPatternIds: definition.relatedPatternIds || [],
     },
   });
@@ -1158,29 +1032,20 @@ async function seedPatternSet(definition: PatternSetDefinition) {
         exampleDef.senderVoice,
         exampleDef.receiverVoice,
       ),
-      generateAndUploadPatternImage(
-        `${patternSet.id}_example_${exampleDef.order}`,
-        exampleDef.englishSentence,
-        exampleDef.japaneseSentence,
-        exampleDef.englishReply,
-        exampleDef.japaneseReply,
-        exampleDef.place,
-        exampleDef.senderRole,
-        exampleDef.receiverRole,
-        exampleDef.senderVoice,
-        exampleDef.receiverVoice,
-      ),
+      generatePatternExampleImage(`${patternSet.id}_example_${exampleDef.order}`, exampleDef),
     ]);
 
-    // DBに保存
-    await prisma.patternExample.create({
+    // ✨ DBに保存（Problemテーブルを使う！）
+    await prisma.problem.create({
       data: {
-        patternSetId: patternSet.id,
-        order: exampleDef.order,
+        // パターン学習用フィールド
+        patternId: patternSet.id,
+        patternOrder: exampleDef.order,
+
+        // 通常のフィールド
+        wordCount: countWords(exampleDef.englishSentence),
         englishSentence: exampleDef.englishSentence,
         japaneseSentence: exampleDef.japaneseSentence,
-        highlightWord: exampleDef.highlightWord,
-        highlightWordJa: exampleDef.highlightWordJa,
         place: exampleDef.place,
         senderRole: exampleDef.senderRole,
         receiverRole: exampleDef.receiverRole,
@@ -1188,10 +1053,16 @@ async function seedPatternSet(definition: PatternSetDefinition) {
         receiverVoice: exampleDef.receiverVoice,
         englishReply: exampleDef.englishReply,
         japaneseReply: exampleDef.japaneseReply,
+
+        // incorrectOptionsは空配列（パターン学習では個別問題として出さない）
+        incorrectOptions: JSON.stringify([]),
+
+        // メディア
         audioEnUrl: audioUrls.audioEnUrl,
         audioJaUrl: audioUrls.audioJaUrl,
         audioEnReplyUrl: audioUrls.audioEnReplyUrl,
         imageUrl: imageUrl,
+        audioReady: true,
       },
     });
 
@@ -1201,27 +1072,12 @@ async function seedPatternSet(definition: PatternSetDefinition) {
   // 3. テスト問題を生成
   console.log(`[Seed] テスト問題生成中...`);
 
-  const testAudioUrl = await generatePatternTestAudio(
-    `${patternSet.id}_test`,
-    definition.testProblem.englishSentence,
-    definition.testProblem.senderVoice,
-  );
-
-  // テスト問題に画像を生成する場合（オプション）
-  // const testImageUrl = definition.testProblem.place
-  //   ? await generateAndUploadPatternImage(...)
-  //   : null;
-
   await prisma.patternTestProblem.create({
     data: {
       patternSetId: patternSet.id,
-      englishSentence: definition.testProblem.englishSentence,
+      questionPattern: definition.testProblem.questionPattern,
       correctAnswer: definition.testProblem.correctAnswer,
       incorrectOptions: JSON.stringify(definition.testProblem.incorrectOptions),
-      place: definition.testProblem.place,
-      senderVoice: definition.testProblem.senderVoice,
-      audioEnUrl: testAudioUrl,
-      // imageUrl: testImageUrl,
     },
   });
 
@@ -1241,7 +1097,12 @@ async function main() {
   if (process.env.NODE_ENV === 'development') {
     console.log('[Seed] 既存データを削除中...');
     await prisma.patternTestProblem.deleteMany({});
-    await prisma.patternExample.deleteMany({});
+    // ✨ PatternExampleではなく、patternId付きのProblemを削除
+    await prisma.problem.deleteMany({
+      where: {
+        patternId: { not: null },
+      },
+    });
     await prisma.patternSet.deleteMany({});
     console.log('[Seed] 削除完了');
   }
@@ -1354,13 +1215,14 @@ const frenchExample = {
 };
 ```
 
-### Q3: パターンの自動検出は可能ですか？
+### Q3: なぜ「パターン発見チャレンジ」を削除したのですか？
 
-**A:** 将来的には可能ですが、現時点では手動で`highlightWord`を指定する方式を推奨します。理由：
+**A:** 人間の脳は自動的に差分を見つける能力があるためです。
 
-- 日本語の助詞変化（「を」「は」「が」など）の扱いが難しい
-- 文脈依存の変化を検出するのが複雑
-- 初期段階では手動指定で十分
+- ❌ 明示的に「どこが違う？」と聞く → 不自然で教育的すぎる
+- ✅ 例を見せて、いきなりテスト → 自然な学習プロセスに任せる
+
+子供が言語を習得する過程と同じように、脳が勝手にパターンを見つけるのを信頼します。
 
 ### Q4: コスト削減の方法は？
 
@@ -1409,10 +1271,31 @@ const frenchExample = {
 
 **キーポイント:**
 
-1. **DB設計**: highlightWord方式でシンプルに実装
-2. **音声生成**: OpenAI TTS + R2で低コスト実現
-3. **画像生成**: DALL-E 3でリアルな2コマ漫画
-4. **ハイライト表示**: 正規表現で変化部分を強調
-5. **段階的実装**: 2-3週間で実装可能
+1. **シンプルな学習フロー**: 例文を見る → テスト（〇〇〇形式） → 応用例を表示
+2. **脳の自然なプロセスを信頼**: パターン発見チャレンジは不要、人間の脳が自動的に差分を見つける
+3. **構文理解を問うテスト**: 特定の単語ではなく「〇〇〇」で抽象的な構文理解を確認
+4. **既存システムの活用**: 画像・音声生成は既存のproblem-generatorを流用
+5. **Problemテーブルの再利用**: PatternExampleテーブルを作らず、既存Problemに`patternId`を追加
+6. **データの循環**: パターン学習で見た問題が、通常モードでも復習として出現
 
-実装の優先順位は **Phase 1 → Phase 2 → Phase 3** の順で進め、まずは1つのパターンセットで動作確認することを推奨します。
+**実装の優先順位:**
+
+1. **Phase 1**: Prismaスキーマ追加・マイグレーション
+2. **Phase 2**: シードスクリプトで1パターンセット生成
+3. **Phase 3**: API実装（一覧・詳細）
+4. **Phase 4**: フロントエンド実装（例文表示 → テスト → 結果）
+5. **Phase 5**: 複数パターンセット追加・UI改善
+
+**合計: 約2週間で最小限の動作版を実装可能**
+
+重要なのは、「教える」のではなく「気づかせる」体験を作ること。人間の脳の自然な学習プロセスを信頼し、余計な機能を削ぎ落としたシンプルな設計が成功の鍵です。
+
+**データ設計の工夫:**
+
+`Problem`テーブルに`patternId`を追加することで、パターン学習で使った問題が通常モードでも自然に出現します。これにより：
+
+- ユーザーは「あ、これ前にパターン学習で見たやつだ！」という気づきを得られる
+- 同じ構文を異なるコンテキストで復習でき、記憶が定着しやすい
+- 新しいテーブルを作らないため、システムがシンプルに保たれる
+
+この「偶然の復習」効果が、長期記憶への定着を促します。
