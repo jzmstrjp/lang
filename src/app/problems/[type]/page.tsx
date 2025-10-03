@@ -1,7 +1,10 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
 import { fetchProblems } from '@/lib/problem-service';
+import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
+import { StartButton } from '@/components/ui/start-button';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -10,45 +13,62 @@ type ProblemPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-export default async function ProblemPage({ params, searchParams }: ProblemPageProps) {
-  const { type } = await params;
-
-  // 無効なtypeの場合は404
-  if (!validTypes.includes(type as ProblemLength)) {
-    notFound();
-  }
-
-  // サーバー側で初期問題を1問取得
-  const awaitedSearchParams = await searchParams;
-  const searchQuery = awaitedSearchParams.search?.trim();
+// データ取得部分を別コンポーネントに分離
+async function ProblemContent({
+  type,
+  searchQuery,
+}: {
+  type: ProblemLength;
+  searchQuery?: string;
+}) {
   const { problems } = await fetchProblems({
-    type: type as ProblemLength,
+    type,
     search: searchQuery,
     limit: 1,
   });
 
   const initialProblem = problems[0];
 
-  const displayName = type;
-
-  // 初期問題が取得できない場合はエラー表示
   if (!initialProblem) {
     return (
-      <>
-        <HeaderPortal>{displayName}</HeaderPortal>
-        <p className="mt-10 text-sm text-rose-500 text-center">
-          {searchQuery
-            ? '検索条件に一致する問題が見つかりませんでした。'
-            : '問題が見つかりませんでした。'}
-        </p>
-      </>
+      <p className="mt-10 text-sm text-rose-500 text-center">
+        {searchQuery
+          ? '検索条件に一致する問題が見つかりませんでした。'
+          : '問題が見つかりませんでした。'}
+      </p>
     );
   }
+
+  return <ProblemFlow length={type} initialProblem={initialProblem} />;
+}
+
+// Loading コンポーネント
+function LoadingFallback() {
+  return (
+    <StartButton error={null} disabled>
+      <InlineLoadingSpinner />
+      <span className="ml-2">問題を取得中...</span>
+    </StartButton>
+  );
+}
+
+export default async function ProblemPage({ params, searchParams }: ProblemPageProps) {
+  const { type } = await params;
+
+  if (!validTypes.includes(type as ProblemLength)) {
+    notFound();
+  }
+
+  const awaitedSearchParams = await searchParams;
+  const searchQuery = awaitedSearchParams.search?.trim();
+  const displayName = type;
 
   return (
     <>
       <HeaderPortal>{displayName}</HeaderPortal>
-      <ProblemFlow length={type as ProblemLength} initialProblem={initialProblem} />
+      <Suspense fallback={<LoadingFallback />}>
+        <ProblemContent type={type as ProblemLength} searchQuery={searchQuery} />
+      </Suspense>
     </>
   );
 }
