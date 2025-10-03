@@ -250,7 +250,7 @@ export default function PatternLearningFlow({
               <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl mb-2">
                 {patternSet.patternName}
               </p>
-              <p className="text-base text-[#2a2b3c]/70">の意味はどれでしょう？</p>
+              <p className="text-base text-[#2a2b3c]/70">の意味はどれ？</p>
             </div>
             <ul className="grid gap-3">
               {shuffledOptions.map((option, index) => (
