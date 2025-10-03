@@ -210,10 +210,9 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
             unoptimized
           />
 
-          {/* パターン学習を始めるボタン（画像の中心に配置） */}
           <div className="absolute inset-0 flex items-center justify-center">
             <StartButton error={null} handleStart={handleStart}>
-              パターン学習を始める
+              始める
             </StartButton>
           </div>
         </div>

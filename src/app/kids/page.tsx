@@ -25,7 +25,7 @@ function LoadingFallback() {
   return (
     <StartButton error={null} disabled>
       <InlineLoadingSpinner />
-      <span className="ml-2">パターン学習を準備中...</span>
+      <span className="ml-2">データを準備中...</span>
     </StartButton>
   );
 }
@@ -33,7 +33,7 @@ function LoadingFallback() {
 export default function PatternLearningPage() {
   return (
     <>
-      <HeaderPortal>パターン学習</HeaderPortal>
+      <HeaderPortal>Kids</HeaderPortal>
       <Suspense fallback={<LoadingFallback />}>
         <PatternLearningContent />
       </Suspense>
