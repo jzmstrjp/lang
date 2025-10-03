@@ -191,10 +191,12 @@ Can you pass me the 〇〇〇?
 ### 必要なデータ（実装版）
 
 1. **パターンセット**: パターンのメタ情報
+   - `difficulty?`: バックエンドの`DifficultyLevel`と互換性を保つ
 2. **例文**: **必ず3個固定**（`PatternExample`型の配列、`examples[0]`, `examples[1]`, `examples[2]`）
-   - `englishSentence`, `japaneseSentence`, `japaneseReply`
-   - `audioEnUrl`, `audioJaUrl`（**englishReplyは削除**）
-   - `imageUrl`, `place`, `senderRole`, `receiverRole`, `senderVoice`, `receiverVoice`
+   - 必須: `englishSentence`, `japaneseSentence`, `japaneseReply`
+   - 必須: `audioEnUrl`, `audioJaUrl`, `imageUrl`
+   - 必須: `place`, `senderRole`, `receiverRole`, `senderVoice`, `receiverVoice`
+   - オプショナル: `englishReply?`, `audioEnReplyUrl?`, `incorrectOptions?`（バックエンド`Problem`テーブル互換性のため）
 3. **テスト問題**: 「〇〇〇」形式での構文理解確認
    - `questionPattern`, `correctAnswer`, `incorrectOptions`（3個）
 4. **応用例**: （現在は未使用、将来的な拡張用に残存）
@@ -202,8 +204,8 @@ Can you pass me the 〇〇〇?
 **重要な仕様：**
 
 - ✅ **例文は必ず3個**: 1個目と2個目が学習用、3個目が確認用
-- ✅ `englishReply`と`audioEnReplyUrl`を削除（音声フローを en → ja のみに簡素化）
-- ✅ データは`Problem`テーブルではなく、クライアント側の型定義で管理（モックデータ使用）
+- ✅ **音声フローは en → ja のみ**: `englishReply`と`audioEnReplyUrl`は使用しないが、バックエンド互換性のため型定義には残す（オプショナル）
+- ✅ **バックエンド互換性**: `Problem`テーブルのフィールド（`englishReply`, `audioEnReplyUrl`, `incorrectOptions`）はオプショナルとしてフロントエンド型定義に含める
 - ✅ クイズ/結果画面で`examples[0]`（1枚目）と`examples[1]`（2枚目）の音声を再利用
 
 ### Prismaスキーマの変更
@@ -886,7 +888,7 @@ const beginnerPatterns: PatternSetDefinition[] = [
         senderVoice: 'female',
         receiverVoice: 'male',
         englishReply: 'Sure, here you go.',
-        japaneseReply: 'はい、どうぞ',
+        japaneseReply: 'はい、どうぞ。',
       },
       {
         order: 2,
@@ -898,7 +900,7 @@ const beginnerPatterns: PatternSetDefinition[] = [
         senderVoice: 'male',
         receiverVoice: 'female',
         englishReply: 'Here it is.',
-        japaneseReply: 'はい、どうぞ',
+        japaneseReply: 'はい、どうぞ。',
       },
       {
         order: 3,
@@ -916,7 +918,11 @@ const beginnerPatterns: PatternSetDefinition[] = [
     testProblem: {
       questionPattern: 'Can you pass me the 〇〇〇?',
       correctAnswer: '〇〇〇を取ってくれませんか？',
-      incorrectOptions: ['〇〇〇を買いに行きましょう', '〇〇〇が好きです', '〇〇〇はどこですか？'],
+      incorrectOptions: [
+        '〇〇〇を買いに行きましょう。',
+        '〇〇〇が好きです。',
+        '〇〇〇はどこですか？',
+      ],
     },
     additionalExamples: [
       { english: 'Can you pass me the book?', japanese: '本を取ってくれませんか？' },
@@ -925,15 +931,15 @@ const beginnerPatterns: PatternSetDefinition[] = [
     ],
   },
   {
-    patternName: 'I want to 〇〇〇',
-    patternMeaning: '〇〇〇したい',
+    patternName: 'I want to 〇〇〇.',
+    patternMeaning: '〇〇〇したい。',
     patternDescription: '希望を伝える表現',
     difficulty: 'beginner',
     examples: [
       {
         order: 1,
         englishSentence: 'I want to eat pizza.',
-        japaneseSentence: 'ピザが食べたいな',
+        japaneseSentence: 'ピザが食べたいな。',
         place: 'リビング',
         senderRole: '子供',
         receiverRole: '母親',
@@ -945,7 +951,7 @@ const beginnerPatterns: PatternSetDefinition[] = [
       {
         order: 2,
         englishSentence: 'I want to watch a movie.',
-        japaneseSentence: '映画が見たいな',
+        japaneseSentence: '映画が見たいな。',
         place: 'リビング',
         senderRole: '夫',
         receiverRole: '妻',
@@ -957,7 +963,7 @@ const beginnerPatterns: PatternSetDefinition[] = [
       {
         order: 3,
         englishSentence: 'I want to go shopping.',
-        japaneseSentence: '買い物に行きたいな',
+        japaneseSentence: '買い物に行きたいな。',
         place: 'リビング',
         senderRole: '妻',
         receiverRole: '夫',
@@ -968,14 +974,14 @@ const beginnerPatterns: PatternSetDefinition[] = [
       },
     ],
     testProblem: {
-      questionPattern: 'I want to 〇〇〇',
-      correctAnswer: '〇〇〇したい',
-      incorrectOptions: ['〇〇〇を買いたい', '〇〇〇を見たい', '〇〇〇はどこ？'],
+      questionPattern: 'I want to 〇〇〇.',
+      correctAnswer: '〇〇〇したい。',
+      incorrectOptions: ['〇〇〇を買いたい。', '〇〇〇を見たい。', '〇〇〇はどこ？'],
     },
     additionalExamples: [
-      { english: 'I want to play games.', japanese: 'ゲームがしたい' },
-      { english: 'I want to study English.', japanese: '英語を勉強したい' },
-      { english: 'I want to sleep.', japanese: '寝たい' },
+      { english: 'I want to play games.', japanese: 'ゲームがしたい。' },
+      { english: 'I want to study English.', japanese: '英語を勉強したい。' },
+      { english: 'I want to sleep.', japanese: '寝たい。' },
     ],
   },
   {
@@ -994,7 +1000,7 @@ const beginnerPatterns: PatternSetDefinition[] = [
         senderVoice: 'male',
         receiverVoice: 'female',
         englishReply: "It's on the second floor.",
-        japaneseReply: '2階です',
+        japaneseReply: '2階です。',
       },
       {
         order: 2,
@@ -1006,7 +1012,7 @@ const beginnerPatterns: PatternSetDefinition[] = [
         senderVoice: 'female',
         receiverVoice: 'male',
         englishReply: "It's that way.",
-        japaneseReply: 'あっちです',
+        japaneseReply: 'あっちです。',
       },
       {
         order: 3,
@@ -1018,13 +1024,13 @@ const beginnerPatterns: PatternSetDefinition[] = [
         senderVoice: 'female',
         receiverVoice: 'male',
         englishReply: "It's on the table.",
-        japaneseReply: 'テーブルの上だよ',
+        japaneseReply: 'テーブルの上だよ。',
       },
     ],
     testProblem: {
       questionPattern: 'Where is 〇〇〇?',
       correctAnswer: '〇〇〇はどこですか？',
-      incorrectOptions: ['〇〇〇に行きたい', '〇〇〇で勉強しよう', '〇〇〇は開いていますか？'],
+      incorrectOptions: ['〇〇〇に行きたい。', '〇〇〇で勉強しよう。', '〇〇〇は開いていますか？'],
     },
     additionalExamples: [
       { english: 'Where is the library?', japanese: '図書館はどこですか？' },

@@ -75,7 +75,7 @@ const MOCK_PATTERN_SETS = [
   },
   {
     id: 'pattern-2',
-    patternName: 'I want to 〇〇〇',
+    patternName: 'I want to 〇〇〇.',
     patternMeaning: '〇〇〇したい',
     patternDescription: '希望を伝える表現',
     examples: [
@@ -126,7 +126,7 @@ const MOCK_PATTERN_SETS = [
       },
     ],
     testProblem: {
-      questionPattern: 'I want to 〇〇〇',
+      questionPattern: 'I want to 〇〇〇.',
       correctAnswer: '〇〇〇したい。',
       incorrectOptions: ['〇〇〇を買いたい。', '〇〇〇を見たい。', '〇〇〇はどこ？'],
     },

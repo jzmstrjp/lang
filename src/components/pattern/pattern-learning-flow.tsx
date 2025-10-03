@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StartButton } from '@/components/ui/start-button';
 
+// バックエンドのProblemテーブルと互換性のある型定義
 type PatternExample = {
   id: string;
   order: number;
@@ -18,6 +19,10 @@ type PatternExample = {
   audioEnUrl: string;
   audioJaUrl: string;
   imageUrl: string;
+  // バックエンドのProblemテーブルには存在するが、パターン学習では未使用
+  englishReply?: string; // オプショナル（将来的に使う可能性を残す）
+  audioEnReplyUrl?: string; // オプショナル（将来的に使う可能性を残す）
+  incorrectOptions?: string[]; // オプショナル（Problemテーブルでは空配列）
 };
 
 type PatternSet = {
@@ -25,16 +30,17 @@ type PatternSet = {
   patternName: string;
   patternMeaning: string;
   patternDescription: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced'; // バックエンドに合わせて追加
   examples: PatternExample[];
   testProblem: {
     questionPattern: string;
     correctAnswer: string;
     incorrectOptions: string[];
   };
-  additionalExamples: Array<{
+  additionalExamples?: Array<{
     english: string;
     japanese: string;
-  }>;
+  }>; // オプショナル（現在未使用）
 };
 
 type PatternLearningFlowProps = {
