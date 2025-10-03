@@ -381,23 +381,24 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       )}
 
       {(phase === 'correct' || phase === 'incorrect') && (
-        <section className="grid gap-6 text-center">
-          <div
-            className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
-              isCorrect
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-rose-200 bg-rose-50 text-rose-700'
-            }`}
-          >
-            <h2 className="text-2xl font-bold">
-              {isCorrect ? 'やった！ 正解です 🎉' : '残念…もう一度挑戦してみましょう'}
-            </h2>
+        <section className="grid gap-4 text-center">
+          <div className={`px-6 py-2 ${isCorrect ? 'text-cyan-600' : 'text-rose-600'}`}>
+            <h2 className="text-4xl font-bold">{isCorrect ? '正解 🎉' : '残念…'}</h2>
+            <div className="mt-6 flex justify-center max-w-[50%] sm:max-w-[200px] mx-auto">
+              <Image
+                src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/${isCorrect ? 'correct1' : 'incorrect1'}.webp`}
+                alt={isCorrect ? 'ガッツポーズ' : 'ショックな様子'}
+                width={500}
+                height={750}
+                unoptimized
+              />
+            </div>
             {isCorrect && (
               <>
                 <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
                   {problem.englishSentence}
                 </p>
-                <p className="mt-4 text-lg  text-[#2a2b3c]">{problem.japaneseSentence}</p>
+                <p className="mt-4 text-lg text-[#2a2b3c]">{problem.japaneseSentence}</p>
               </>
             )}
           </div>
