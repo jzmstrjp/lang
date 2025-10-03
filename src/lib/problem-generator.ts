@@ -143,17 +143,20 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
   const receiverName = receiverNameMap[problem.receiverVoice];
 
   return `実写風の2コマ漫画を生成してください。
-縦に2コマです。
+上下に2コマです。
 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-上下のコマの高さは完全に同じであること。
-上下のコマの間に高さ20ピクセルの白い境界線が必要です。
+
+【コマの高さ】
+上下のコマの高さは正確に同じであること。
+上下のコマの間に白い空白が必要です。全体の高さの3%分の高さの空白であること。
 
 【場所】
 ${problem.place}
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。端正な顔立ちをしている。
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。端正な顔立ちをしている。
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
+- 全ての登場人物は映画俳優やアイドルのように目鼻立ちがクッキリとした端正な顔立ちをしている。
 
 【ストーリー】
 ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
@@ -168,7 +171,7 @@ ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderTe
 - ${receiverName}（${receiverGenderText}）が左を向いているアングルで描画されている
 
 【備考】
-- 場所や場面に合わせた表情やジェスチャーを描写してください。
+- 場所や場面に合わせた表情やジェスチャーを描写してください。少し大げさに。
 - ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は微妙に異なるはずです。
 - 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えてください。
 - セリフに対して不自然な画像は生成しないこと。
@@ -180,8 +183,6 @@ ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderTe
 
 【禁止事項】
 - 同じコマに、同じ人物を2回描画しないこと。
-- 上下のコマの高さは完全に同じであること。
-- 上下のコマの間に高さ20ピクセルの白い境界線が必要です。
 `;
 }
 
