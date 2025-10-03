@@ -66,31 +66,20 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
     setAudioStatus('idle');
   }, []);
 
+  // クイズ画面用の音声ref
+  const quizAudioRef = useRef<HTMLAudioElement | null>(null);
+  // 結果画面用の音声ref
+  const resultAudioRef = useRef<HTMLAudioElement | null>(null);
+
   // クイズ画面で1つ目の音声を再生
   const playQuizAudio = useCallback(() => {
-    if (patternSet.examples[0]) {
-      setAudioStatus('playing');
-      const audio = new Audio(patternSet.examples[0].audioEnUrl);
-      audio.onended = () => setAudioStatus('idle');
-      audio.play().catch(() => {
-        console.warn('音声の再生に失敗しました。');
-        setAudioStatus('idle');
-      });
-    }
-  }, [patternSet.examples]);
+    playAudio(quizAudioRef.current, 0);
+  }, [playAudio]);
 
   // 正解画面で2つ目の音声を再生
   const playResultAudio = useCallback(() => {
-    if (patternSet.examples[1]) {
-      setAudioStatus('playing');
-      const audio = new Audio(patternSet.examples[1].audioEnUrl);
-      audio.onended = () => setAudioStatus('idle');
-      audio.play().catch(() => {
-        console.warn('音声の再生に失敗しました。');
-        setAudioStatus('idle');
-      });
-    }
-  }, [patternSet.examples]);
+    playAudio(resultAudioRef.current, 0);
+  }, [playAudio]);
 
   // 例文表示開始時に音声を再生
   useEffect(() => {
@@ -336,20 +325,73 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
             </section>
           )}
 
-          {/* 音声要素 */}
+          {/* 音声要素（例文フェーズ用） */}
           {currentExample && (
             <>
               <audio
+                key={`current-english-${currentExample.id}`}
                 ref={englishAudioRef}
                 src={currentExample.audioEnUrl}
                 preload="auto"
                 onEnded={handleEnglishAudioEnded}
               />
               <audio
+                key={`current-japanese-${currentExample.id}`}
                 ref={japaneseAudioRef}
                 src={currentExample.audioJaUrl}
                 preload="auto"
                 onEnded={handleJapaneseAudioEnded}
+              />
+            </>
+          )}
+
+          {/* クイズ画面用の音声（1枚目の英語文） */}
+          {patternSet.examples[0] && (
+            <audio
+              key={`quiz-english-${patternSet.examples[0].id}`}
+              ref={quizAudioRef}
+              src={patternSet.examples[0].audioEnUrl}
+              preload="auto"
+              onEnded={() => setAudioStatus('idle')}
+            />
+          )}
+
+          {/* 結果画面用の音声（2枚目の英語文） */}
+          {patternSet.examples[1] && (
+            <audio
+              key={`result-english-${patternSet.examples[1].id}`}
+              ref={resultAudioRef}
+              src={patternSet.examples[1].audioEnUrl}
+              preload="auto"
+              onEnded={() => setAudioStatus('idle')}
+            />
+          )}
+
+          {/* 次のパターンの画像プリフェッチ */}
+          {nextPatternSet?.examples[0]?.imageUrl && (
+            <Image
+              src={nextPatternSet.examples[0].imageUrl}
+              alt="次のパターンの画像"
+              width={500}
+              height={750}
+              className="hidden"
+              priority
+              unoptimized
+            />
+          )}
+
+          {/* 次のパターンの音声プリフェッチ */}
+          {nextPatternSet?.examples[0] && (
+            <>
+              <audio
+                key={`next-english-${nextPatternSet.examples[0].id}`}
+                src={nextPatternSet.examples[0].audioEnUrl}
+                preload="auto"
+              />
+              <audio
+                key={`next-japanese-${nextPatternSet.examples[0].id}`}
+                src={nextPatternSet.examples[0].audioJaUrl}
+                preload="auto"
               />
             </>
           )}
