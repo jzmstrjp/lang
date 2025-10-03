@@ -23,7 +23,9 @@ export const StartButton = ({
       >
         {children}
       </button>
-      {!disabled && <p className="text-base text-[#666] mt-2">※音が出ます</p>}
+      <p className={`text-base text-[#666] mt-2 ${disabled ? 'invisible' : 'visible'}`}>
+        ※音が出ます
+      </p>
     </div>
   );
 };

@@ -279,9 +279,25 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   return (
     <>
       {phase === 'landing' && (
-        <StartButton error={error} handleStart={handleStart}>
-          英語学習を始める
-        </StartButton>
+        <div className="relative max-w-[500px] mx-auto">
+          {sceneImage && (
+            <Image
+              src={sceneImage}
+              alt="英語と日本語のセリフを並べた2コマシーン"
+              width={500}
+              height={750}
+              className="w-full h-auto object-contain opacity-50"
+              priority
+              unoptimized
+            />
+          )}
+
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StartButton error={error} handleStart={handleStart} disabled={isAudioBusy}>
+              英語学習を始める
+            </StartButton>
+          </div>
+        </div>
       )}
       {sceneImage && (
         <section
