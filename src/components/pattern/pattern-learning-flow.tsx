@@ -89,9 +89,18 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
     }
   }, [phase, playAudio]);
 
-  // 日本語返答の再生が終わったら、例文クイズに遷移
+  // 日本語返答の再生が終わったら、英語文を再生してから例文クイズに遷移
   const handleJapaneseAudioEnded = useCallback(() => {
-    setAudioStatus('idle');
+    // クイズ画面で英語文を再生（ユーザーイベントの連鎖として扱われる）
+    if (englishAudioRef.current) {
+      setAudioStatus('playing');
+      englishAudioRef.current.currentTime = 0;
+      englishAudioRef.current.play().catch(() => {
+        console.warn('クイズ画面での音声再生に失敗しました。');
+        setAudioStatus('idle');
+      });
+    }
+
     setTimeout(() => {
       setPhase('example-quiz');
     }, 200);
@@ -284,7 +293,7 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
           />
 
           <div className="absolute inset-0 flex items-center justify-center">
-            <StartButton error={null} handleStart={handleStart}>
+            <StartButton error={null} handleStart={handleStart} disabled={isAudioBusy}>
               始める
             </StartButton>
           </div>
@@ -381,7 +390,8 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
                 <div className="mt-6 flex justify-center">
                   <button
                     onClick={handleGoToNextExample}
-                    className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-[#c3684f]"
+                    disabled={isAudioBusy}
+                    className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-white shadow-lg transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
                   >
                     次へ
                   </button>
@@ -415,7 +425,8 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
               <div className="mt-6 flex justify-center">
                 <button
                   onClick={handleRetryCurrentExample}
-                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-lg border border-[#d8cbb6] transition hover:border-[#d77a61] hover:text-[#d77a61]"
+                  disabled={isAudioBusy}
+                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-lg border border-[#d8cbb6] transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
                 >
                   再挑戦
                 </button>
@@ -488,7 +499,7 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
                 disabled={isAudioBusy}
                 className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
               >
-                次のパターンに挑戦
+                次の問題に挑戦
               </button>
             ) : (
               <button
