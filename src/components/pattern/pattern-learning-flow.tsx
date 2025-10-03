@@ -246,11 +246,11 @@ export default function PatternLearningFlow({
         {/* テストフェーズ */}
         {phase === 'test' && (
           <section className="grid gap-8">
-            <div>
-              <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl mb-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
                 {patternSet.patternName}
               </p>
-              <p className="text-base text-[#2a2b3c]/70">の意味はどれ？</p>
+              <p className="text-[#2a2b3c]/70">の意味は？</p>
             </div>
             <ul className="grid gap-3">
               {shuffledOptions.map((option, index) => (
