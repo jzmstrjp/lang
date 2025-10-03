@@ -57,7 +57,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <header className="border-b border-gray-800 bg-black">
-          <div className="mx-auto flex h-14 w-full max-w-5xl items-center pl-4 pr-2 sm:px-6">
+          <div className="mx-auto flex h-12 sm:h-14 w-full max-w-5xl items-center pl-4 pr-2 sm:px-6">
             <div className="flex flex-1 items-center gap-2">
               <Link href="/" className="text-lg font-bold tracking-wide text-white flex gap-2">
                 英語きわめ太郎
@@ -71,7 +71,7 @@ export default function RootLayout({
             <SettingsMenu className="ml-4" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+        <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
           {children}
         </main>
       </body>

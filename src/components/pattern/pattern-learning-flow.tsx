@@ -187,26 +187,30 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
     const correct = selectedIndex === exampleQuizCorrectIndex;
 
     if (correct) {
-      // 正解の場合、englishSentenceを再生しながら正解画面を表示
-      setPhase('example-correct');
-      playAudio(englishAudioRef.current, 0);
+      setTimeout(() => {
+        // 正解の場合、englishSentenceを再生しながら正解画面を表示
+        setPhase('example-correct');
+        playAudio(englishAudioRef.current, 0);
 
-      // 最後の例文なら、少し待ってから最終クイズへ自動遷移
-      if (isLastExample) {
-        setTimeout(() => {
-          setPhase('final-quiz');
-        }, 2000);
-      }
+        // 最後の例文なら、少し待ってから最終クイズへ自動遷移
+        if (isLastExample) {
+          setTimeout(() => {
+            setPhase('final-quiz');
+          }, 2000);
+        }
+      }, 0);
     } else {
-      // 不正解の場合
-      setPhase('example-incorrect');
+      setTimeout(() => {
+        // 不正解の場合
+        setPhase('example-incorrect');
+      }, 0);
     }
   };
 
   // ハンドラー: 例文クイズ正解後、次の例文へ
   const handleGoToNextExample = () => {
-    setCurrentExampleIndex((prev) => prev + 1);
     setTimeout(() => {
+      setCurrentExampleIndex((prev) => prev + 1);
       setPhase('example-audio');
     }, 0);
   };
@@ -220,18 +224,18 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
 
   // ハンドラー: 最終クイズの回答
   const handleFinalQuizAnswer = (selectedIndex: number) => {
-    const correct = selectedIndex === finalQuizCorrectIndex;
-    setIsFinalQuizCorrect(correct);
     setTimeout(() => {
+      const correct = selectedIndex === finalQuizCorrectIndex;
+      setIsFinalQuizCorrect(correct);
       setPhase('final-result');
     }, 0);
   };
 
   // ハンドラー: 最終クイズ不正解、1問目からやり直し
   const handleRetryFromStart = () => {
-    setCurrentExampleIndex(0);
-    setIsFinalQuizCorrect(null);
     setTimeout(() => {
+      setCurrentExampleIndex(0);
+      setIsFinalQuizCorrect(null);
       setPhase('example-audio');
     }, 0);
   };
@@ -239,12 +243,12 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
   // ハンドラー: 次のパターンに挑戦
   const handleNextPattern = async () => {
     if (nextPatternSet) {
-      setPatternSet(nextPatternSet);
-      setNextPatternSet(null);
-      setCurrentExampleIndex(0);
-      setIsFinalQuizCorrect(null);
-      setAudioStatus('idle');
       setTimeout(() => {
+        setPatternSet(nextPatternSet);
+        setNextPatternSet(null);
+        setCurrentExampleIndex(0);
+        setIsFinalQuizCorrect(null);
+        setAudioStatus('idle');
         setPhase('example-audio');
       }, 0);
     } else {
@@ -253,11 +257,11 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
         const response = await fetch('/api/pattern-learning');
         if (response.ok) {
           const newPatternSet = await response.json();
-          setPatternSet(newPatternSet);
-          setCurrentExampleIndex(0);
-          setIsFinalQuizCorrect(null);
-          setAudioStatus('idle');
           setTimeout(() => {
+            setPatternSet(newPatternSet);
+            setCurrentExampleIndex(0);
+            setIsFinalQuizCorrect(null);
+            setAudioStatus('idle');
             setPhase('example-audio');
           }, 0);
         }
@@ -269,12 +273,16 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
 
   // ハンドラー: もう一度聞く（例文クイズ画面で）
   const handleListenAgainInExampleQuiz = () => {
-    playAudio(englishAudioRef.current, 0);
+    setTimeout(() => {
+      playAudio(englishAudioRef.current, 0);
+    }, 0);
   };
 
   // ハンドラー: もう一度聞く（最終クイズ画面で）
   const handleListenAgainInFinalQuiz = () => {
-    playAudio(finalQuizAudioRef.current, 0);
+    setTimeout(() => {
+      playAudio(finalQuizAudioRef.current, 0);
+    }, 0);
   };
 
   return (
@@ -541,7 +549,11 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
           ref={finalQuizAudioRef}
           src={patternSet.examples[0].audioEnUrl}
           preload="auto"
-          onEnded={() => setAudioStatus('idle')}
+          onEnded={() => {
+            setTimeout(() => {
+              setAudioStatus('idle');
+            }, 0);
+          }}
         />
       )}
 
@@ -552,7 +564,11 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
           ref={finalResultAudioRef}
           src={patternSet.examples[1].audioEnUrl}
           preload="auto"
-          onEnded={() => setAudioStatus('idle')}
+          onEnded={() => {
+            setTimeout(() => {
+              setAudioStatus('idle');
+            }, 0);
+          }}
         />
       )}
 
