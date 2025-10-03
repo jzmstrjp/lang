@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProblemWithAudio } from '@/app/api/problems/route';
+import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex } from '@/lib/shuffle-utils';
 
@@ -281,14 +282,10 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       {phase === 'landing' && (
         <div className="relative max-w-[500px] mx-auto">
           {sceneImage && (
-            <Image
+            <SceneImage
               src={sceneImage}
               alt="英語と日本語のセリフを並べた2コマシーン"
-              width={500}
-              height={750}
-              className="w-full h-auto object-contain opacity-50"
-              priority
-              unoptimized
+              opacity="medium"
             />
           )}
 
@@ -304,16 +301,11 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
         >
           <figure className="flex w-full justify-center">
-            <Image
+            <SceneImage
               src={sceneImage}
               alt="英語と日本語のセリフを並べた2コマシーン"
-              width={500}
-              height={750}
-              className={`h-auto w-full max-w-[500px] object-contain ${
-                phase === 'scene-entry' || phase === 'scene-ready' ? 'block' : 'hidden'
-              }`}
-              priority
-              unoptimized
+              opacity="full"
+              className={phase === 'scene-entry' || phase === 'scene-ready' ? 'block' : 'hidden'}
               onLoad={() => {
                 console.log('[ProblemFlow] 画像読み込み完了');
                 if (phase === 'scene-entry') {
