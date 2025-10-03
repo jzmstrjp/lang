@@ -142,9 +142,9 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
   const senderName = senderNameMap[problem.senderVoice];
   const receiverName = receiverNameMap[problem.receiverVoice];
 
-  return `実写風の2コマ漫画を生成してください。
+  return `実写風の2コマ漫画を生成すること。
 上下に2コマです。
-漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
+漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現すること。
 
 【コマの高さ】
 上下のコマの高さは正確に同じであること。
@@ -154,9 +154,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
-- 全ての登場人物は映画俳優やアイドルのように目が大きくて端正な顔立ちをしている。
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。映画俳優やアイドルのように端正な顔立ち
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。映画俳優やアイドルのように端正な顔立ち
 
 【ストーリー】
 ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
@@ -164,28 +163,29 @@ ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderTe
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
 - ${receiverName}（${receiverGenderText}）はまだ描かない
-- ${senderName}（${senderGenderText}）が右を向いているアングルで描画されている
+- ${senderName}（${senderGenderText}）が右を向いているアングル
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
-- ${receiverName}（${receiverGenderText}）が左を向いているアングルで描画されている
+- ${receiverName}（${receiverGenderText}）が左を向いているアングル
 
 【備考】
-- 場所や場面に合わせた表情やジェスチャーを描写してください。少し大げさに。
-- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は微妙に異なるはずです。
+- 場所や場面に合わせた表情やジェスチャーを描写すること。
+- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は微妙に異なる
 - 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えてください。
-- セリフに対して不自然な画像は生成しないこと。
+- セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
     - Good: 「コーヒーをお願いします」というセリフなので、まだ手元にコーヒーがない
   - 例2
     - Bad: 「ATMはどこですか？」というセリフなのに、すでにATMの前に立っている
     - Good: 「ATMはどこですか？」というセリフなので、まだATMの前に立っていない
-- 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現してください。
-- 自然で生成AIっぽくないテイストで描写してください。
+- 画像を見ただけで【ストーリー】を完全に想起できるように正確に描写すること。
+- 漫画だが、吹き出し・台詞は描かないこと。写真のみで表現すること。
+- 生成AIっぽくない自然なテイストで描写すること。
 
 【禁止事項】
-- 同じコマに、同じ人物を2回描画しないこと。
+- 同じコマに、同じ人物を2回描画してはならない。
 `;
 }
 
