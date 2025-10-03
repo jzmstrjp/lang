@@ -148,7 +148,7 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
 【コマの高さ】
 上下のコマの高さは正確に同じであること。
-上下のコマの間に空白が必要です。{ padding: 3% } の空白を空けてください。
+上下のコマの間に空白は不要です。
 
 【場所】
 ${problem.place}
