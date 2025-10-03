@@ -18,6 +18,7 @@ export type PatternExample = {
   audioEnUrl: string; // null不可
   audioJaUrl: string; // null不可
   imageUrl: string; // null不可
+  incorrectOptions: string[]; // 例文クイズ用の不正解選択肢
 };
 
 /**
@@ -48,6 +49,7 @@ export async function fetchRandomPatternSet(): Promise<PatternSetWithDetails | n
           audioEnUrl: true,
           audioJaUrl: true,
           imageUrl: true,
+          incorrectOptions: true,
         },
       },
     },
@@ -65,9 +67,15 @@ export async function fetchRandomPatternSet(): Promise<PatternSetWithDetails | n
   if (!selectedPattern) return null;
 
   // audioEnUrl, audioJaUrl, imageUrlがnullの例文を除外
-  const validExamples = selectedPattern.examples.filter(
-    (ex) => ex.audioEnUrl && ex.audioJaUrl && ex.imageUrl,
-  ) as PatternExample[];
+  const validExamples = selectedPattern.examples
+    .filter((ex) => ex.audioEnUrl && ex.audioJaUrl && ex.imageUrl)
+    .map((ex) => ({
+      ...ex,
+      audioEnUrl: ex.audioEnUrl!,
+      audioJaUrl: ex.audioJaUrl!,
+      imageUrl: ex.imageUrl!,
+      incorrectOptions: Array.isArray(ex.incorrectOptions) ? (ex.incorrectOptions as string[]) : [],
+    })) as PatternExample[];
 
   if (validExamples.length === 0) {
     console.warn('[Pattern Service] 音声・画像が揃った例文がありません');
@@ -111,6 +119,7 @@ export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails
           audioEnUrl: '/dummyData/audio/dummy-en-sentence.mp3',
           audioJaUrl: '/dummyData/audio/dummy-ja-reply.mp3',
           imageUrl: '/dummyData/image/dummy-scene1.webp',
+          incorrectOptions: ['お塩を買ってきて。', 'お塩はどこ？', 'お塩が好きだよ。'],
         },
         {
           id: 'example-2',
@@ -125,6 +134,7 @@ export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails
           audioEnUrl: '/dummyData/audio/dummy-en-sentence.mp3',
           audioJaUrl: '/dummyData/audio/dummy-ja-reply.mp3',
           imageUrl: '/dummyData/image/dummy-scene2.webp',
+          incorrectOptions: ['リモコンを買ってきて。', 'リモコンはどこ？', 'リモコンが欲しい。'],
         },
         {
           id: 'example-3',
@@ -139,6 +149,7 @@ export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails
           audioEnUrl: '/dummyData/audio/dummy-en-sentence.mp3',
           audioJaUrl: '/dummyData/audio/dummy-ja-reply.mp3',
           imageUrl: '/dummyData/image/dummy-scene3.webp',
+          incorrectOptions: ['ペンを買ってきて。', 'ペンはどこ？', 'ペンが欲しい。'],
         },
       ],
     },
@@ -163,6 +174,7 @@ export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails
           audioEnUrl: '/dummyData/audio/dummy-en-sentence.mp3',
           audioJaUrl: '/dummyData/audio/dummy-ja-reply.mp3',
           imageUrl: '/dummyData/image/dummy-scene1.webp',
+          incorrectOptions: ['ピザを注文して。', 'ピザはどこ？', 'ピザが好きだな。'],
         },
         {
           id: 'example-5',
@@ -177,6 +189,7 @@ export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails
           audioEnUrl: '/dummyData/audio/dummy-en-sentence.mp3',
           audioJaUrl: '/dummyData/audio/dummy-ja-reply.mp3',
           imageUrl: '/dummyData/image/dummy-scene2.webp',
+          incorrectOptions: ['映画を予約して。', '映画はどこ？', '映画が好きだな。'],
         },
         {
           id: 'example-6',
@@ -191,6 +204,7 @@ export async function fetchRandomPatternSetMock(): Promise<PatternSetWithDetails
           audioEnUrl: '/dummyData/audio/dummy-en-sentence.mp3',
           audioJaUrl: '/dummyData/audio/dummy-ja-reply.mp3',
           imageUrl: '/dummyData/image/dummy-scene3.webp',
+          incorrectOptions: ['買い物を頼まれた。', '買い物はどこ？', '買い物が好きだな。'],
         },
       ],
     },

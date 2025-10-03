@@ -12,25 +12,50 @@ type PatternLearningFlowProps = {
   initialPatternSet: PatternSetWithDetails;
 };
 
-type Phase = 'landing' | 'examples' | 'test' | 'result';
+// フェーズの定義
+// landing: スタート画面
+// example-audio: 例文の音声を聞いている
+// example-quiz: 例文の意味を4択で答える
+// example-correct: 例文クイズ正解
+// example-incorrect: 例文クイズ不正解
+// final-quiz: 最終クイズ（パターン全体の意味を問う）
+// final-result: 最終結果
+type Phase =
+  | 'landing'
+  | 'example-audio'
+  | 'example-quiz'
+  | 'example-correct'
+  | 'example-incorrect'
+  | 'final-quiz'
+  | 'final-result';
 
 export default function PatternLearningFlow({ initialPatternSet }: PatternLearningFlowProps) {
   const [patternSet, setPatternSet] = useState(initialPatternSet);
   const [nextPatternSet, setNextPatternSet] = useState<PatternSetWithDetails | null>(null);
   const [phase, setPhase] = useState<Phase>('landing');
-  const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [currentExampleIndex, setCurrentExampleIndex] = useState(0); // 0, 1, 2 (3問)
   const [audioStatus, setAudioStatus] = useState<'idle' | 'playing'>('idle');
-  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
-  const [correctIndex, setCorrectIndex] = useState(0);
+
+  // 各例文クイズの選択肢（シャッフル済み）
+  const [exampleQuizOptions, setExampleQuizOptions] = useState<string[]>([]);
+  const [exampleQuizCorrectIndex, setExampleQuizCorrectIndex] = useState(0);
+
+  // 最終クイズの選択肢（シャッフル済み）
+  const [finalQuizOptions, setFinalQuizOptions] = useState<string[]>([]);
+  const [finalQuizCorrectIndex, setFinalQuizCorrectIndex] = useState(0);
+
+  // 最終クイズの正解・不正解
+  const [isFinalQuizCorrect, setIsFinalQuizCorrect] = useState<boolean | null>(null);
 
   const currentExample = patternSet.examples[currentExampleIndex];
-  const isLastExample = currentExampleIndex === patternSet.examples.length - 1;
+  const isLastExample = currentExampleIndex === patternSet.examples.length - 1; // 2番目（3問目）
   const isAudioBusy = audioStatus !== 'idle';
 
   // 音声再生用のref
   const englishAudioRef = useRef<HTMLAudioElement | null>(null);
   const japaneseAudioRef = useRef<HTMLAudioElement | null>(null);
+  const finalQuizAudioRef = useRef<HTMLAudioElement | null>(null);
+  const finalResultAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const playAudio = useCallback((audio: HTMLAudioElement | null, delay: number = 0) => {
     if (!audio) return;
@@ -45,84 +70,88 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
     }, delay);
   }, []);
 
-  // 例文の音声を順次再生
-  const playExampleSequence = useCallback(() => {
+  // 例文の音声を順次再生（英語 → 日本語）
+  const playExampleAudioSequence = useCallback(() => {
     if (!currentExample) return;
-
-    // 英語文を再生
     playAudio(englishAudioRef.current, 100);
   }, [currentExample, playAudio]);
 
-  // 英語文の再生が終わったら日本語返答を再生
+  // 英語文の再生が終わったときの処理
   const handleEnglishAudioEnded = useCallback(() => {
-    // 英語文が終わってもidleにしない（日本語返答が続くため）
-    setTimeout(() => {
-      playAudio(japaneseAudioRef.current, 100);
-    }, 200);
-  }, [playAudio]);
+    // example-audioフェーズの場合のみ、日本語返答を続けて再生
+    if (phase === 'example-audio') {
+      setTimeout(() => {
+        playAudio(japaneseAudioRef.current, 100);
+      }, 200);
+    } else {
+      // example-correctなど他のフェーズでは、英語文だけで終了
+      setAudioStatus('idle');
+    }
+  }, [phase, playAudio]);
 
-  // 日本語返答の再生が終わったらidleにする
+  // 日本語返答の再生が終わったら、例文クイズに遷移
   const handleJapaneseAudioEnded = useCallback(() => {
     setAudioStatus('idle');
+    setTimeout(() => {
+      setPhase('example-quiz');
+    }, 200);
   }, []);
 
-  // クイズ画面用の音声ref
-  const quizAudioRef = useRef<HTMLAudioElement | null>(null);
-  // 結果画面用の音声ref
-  const resultAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // クイズ画面で1つ目の音声を再生
-  const playQuizAudio = useCallback(() => {
-    playAudio(quizAudioRef.current, 0);
-  }, [playAudio]);
-
-  // 正解画面で2つ目の音声を再生
-  const playResultAudio = useCallback(() => {
-    playAudio(resultAudioRef.current, 0);
-  }, [playAudio]);
-
-  // 例文表示開始時に音声を再生
+  // 例文音声フェーズ開始時に音声を再生
   useEffect(() => {
-    if (phase === 'examples') {
-      playExampleSequence();
+    if (phase === 'example-audio') {
+      setTimeout(() => {
+        playExampleAudioSequence();
+      }, 100);
     }
-  }, [phase, currentExampleIndex, playExampleSequence]);
+  }, [phase, currentExampleIndex, playExampleAudioSequence]);
 
-  // クイズ画面に遷移したら1枚目の音声を再生
+  // 最終クイズ画面に遷移したら1枚目の音声を再生
   useEffect(() => {
-    if (phase === 'test') {
-      playQuizAudio();
+    if (phase === 'final-quiz') {
+      setTimeout(() => {
+        playAudio(finalQuizAudioRef.current, 0);
+      }, 0);
     }
-  }, [phase, playQuizAudio]);
+  }, [phase, playAudio]);
 
-  // 正解画面に遷移したら2枚目の音声を再生
+  // 最終結果画面（正解時）に遷移したら2枚目の音声を再生
   useEffect(() => {
-    if (phase === 'result' && isCorrect) {
-      playResultAudio();
+    if (phase === 'final-result' && isFinalQuizCorrect) {
+      setTimeout(() => {
+        playAudio(finalResultAudioRef.current, 0);
+      }, 0);
     }
-  }, [phase, isCorrect, playResultAudio]);
+  }, [phase, isFinalQuizCorrect, playAudio]);
 
   // 次のパターンを事前fetch（1問目が始まったタイミング）
   useEffect(() => {
-    if (phase === 'examples' && !nextPatternSet) {
-      // 例文フェーズに入ったら次のパターンを事前fetch
+    if (phase === 'example-audio' && currentExampleIndex === 0 && !nextPatternSet) {
       fetch('/api/pattern-learning')
         .then((res) => res.json())
         .then((data) => setNextPatternSet(data))
         .catch((error) => console.error('次のパターンセットの事前取得に失敗:', error));
     }
-  }, [phase, nextPatternSet]);
+  }, [phase, currentExampleIndex, nextPatternSet]);
 
-  // 次の例文へ進む
-  const handleNextExample = () => {
-    if (isLastExample) {
-      setPhase('test');
-    } else {
-      setCurrentExampleIndex((prev) => prev + 1);
-    }
-  };
+  // 現在の例文クイズの選択肢をシャッフル（例文が変わったとき）
+  useEffect(() => {
+    if (!currentExample) return;
 
-  // テスト問題の選択肢をシャッフル（パターンセット変更時）
+    const incorrectOptions = Array.isArray(currentExample.incorrectOptions)
+      ? currentExample.incorrectOptions
+      : [];
+
+    const { options, correctIndex: newCorrectIndex } = shuffleOptionsWithCorrectIndex(
+      currentExample.japaneseSentence,
+      incorrectOptions,
+    );
+
+    setExampleQuizOptions(options);
+    setExampleQuizCorrectIndex(newCorrectIndex);
+  }, [currentExample]);
+
+  // 最終クイズの選択肢をシャッフル（パターンセット変更時）
   useEffect(() => {
     const incorrectOptions = Array.isArray(patternSet.incorrectOptions)
       ? (patternSet.incorrectOptions as string[])
@@ -133,42 +162,95 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       incorrectOptions,
     );
 
-    setShuffledOptions(options);
-    setCorrectIndex(newCorrectIndex);
+    setFinalQuizOptions(options);
+    setFinalQuizCorrectIndex(newCorrectIndex);
   }, [patternSet]);
 
-  const handleTestAnswer = (selectedIndex: number) => {
-    const correct = selectedIndex === correctIndex;
-    setIsCorrect(correct);
-    setPhase('result');
-  };
-
+  // ハンドラー: スタートボタン
   const handleStart = () => {
-    setPhase('examples');
+    setTimeout(() => {
+      setPhase('example-audio');
+    }, 0);
   };
 
+  // ハンドラー: 例文クイズの回答
+  const handleExampleQuizAnswer = (selectedIndex: number) => {
+    const correct = selectedIndex === exampleQuizCorrectIndex;
+
+    if (correct) {
+      // 正解の場合、englishSentenceを再生しながら正解画面を表示
+      setPhase('example-correct');
+      playAudio(englishAudioRef.current, 0);
+
+      // 最後の例文なら、少し待ってから最終クイズへ自動遷移
+      if (isLastExample) {
+        setTimeout(() => {
+          setPhase('final-quiz');
+        }, 2000);
+      }
+    } else {
+      // 不正解の場合
+      setPhase('example-incorrect');
+    }
+  };
+
+  // ハンドラー: 例文クイズ正解後、次の例文へ
+  const handleGoToNextExample = () => {
+    setCurrentExampleIndex((prev) => prev + 1);
+    setTimeout(() => {
+      setPhase('example-audio');
+    }, 0);
+  };
+
+  // ハンドラー: 例文クイズ不正解、同じ例文をもう一度
+  const handleRetryCurrentExample = () => {
+    setTimeout(() => {
+      setPhase('example-audio');
+    }, 0);
+  };
+
+  // ハンドラー: 最終クイズの回答
+  const handleFinalQuizAnswer = (selectedIndex: number) => {
+    const correct = selectedIndex === finalQuizCorrectIndex;
+    setIsFinalQuizCorrect(correct);
+    setTimeout(() => {
+      setPhase('final-result');
+    }, 0);
+  };
+
+  // ハンドラー: 最終クイズ不正解、1問目からやり直し
+  const handleRetryFromStart = () => {
+    setCurrentExampleIndex(0);
+    setIsFinalQuizCorrect(null);
+    setTimeout(() => {
+      setPhase('example-audio');
+    }, 0);
+  };
+
+  // ハンドラー: 次のパターンに挑戦
   const handleNextPattern = async () => {
-    // 事前fetchしたパターンセットがあればそれを使用、なければAPIから取得
     if (nextPatternSet) {
       setPatternSet(nextPatternSet);
-      setNextPatternSet(null); // 使い終わったのでクリア
-      // 状態をリセット（landingではなく直接examplesへ）
-      setPhase('examples');
+      setNextPatternSet(null);
       setCurrentExampleIndex(0);
-      setIsCorrect(null);
+      setIsFinalQuizCorrect(null);
       setAudioStatus('idle');
+      setTimeout(() => {
+        setPhase('example-audio');
+      }, 0);
     } else {
-      // フォールバック: 事前fetchが失敗していた場合
+      // フォールバック
       try {
         const response = await fetch('/api/pattern-learning');
         if (response.ok) {
           const newPatternSet = await response.json();
           setPatternSet(newPatternSet);
-          // 状態をリセット（landingではなく直接examplesへ）
-          setPhase('examples');
           setCurrentExampleIndex(0);
-          setIsCorrect(null);
+          setIsFinalQuizCorrect(null);
           setAudioStatus('idle');
+          setTimeout(() => {
+            setPhase('example-audio');
+          }, 0);
         }
       } catch (error) {
         console.error('パターンセットの取得に失敗しました:', error);
@@ -176,11 +258,14 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
     }
   };
 
-  // 例文に戻る
-  const handleBackToExamples = () => {
-    setPhase('examples');
-    setCurrentExampleIndex(0);
-    setAudioStatus('idle');
+  // ハンドラー: もう一度聞く（例文クイズ画面で）
+  const handleListenAgainInExampleQuiz = () => {
+    playAudio(englishAudioRef.current, 0);
+  };
+
+  // ハンドラー: もう一度聞く（最終クイズ画面で）
+  const handleListenAgainInFinalQuiz = () => {
+    playAudio(finalQuizAudioRef.current, 0);
   };
 
   return (
@@ -188,7 +273,6 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       {/* ランディングフェーズ */}
       {phase === 'landing' && (
         <div className="relative max-w-[500px] mx-auto">
-          {/* 1枚目の画像表示 */}
           <Image
             src={patternSet.examples[0].imageUrl}
             alt={`${patternSet.examples[0].place}での会話シーン`}
@@ -206,63 +290,49 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
           </div>
         </div>
       )}
-      {phase !== 'landing' && (
-        <div>
-          {/* 例文表示フェーズ */}
-          {phase === 'examples' && currentExample && (
-            <div className="relative max-w-[500px] mx-auto">
-              {/* 画像表示 */}
-              <Image
-                src={currentExample.imageUrl}
-                alt={`${currentExample.place}での会話シーン`}
-                width={500}
-                height={750}
-                className={`w-full h-auto object-contain ${
-                  !isAudioBusy ? 'opacity-50' : 'opacity-100'
-                }`}
-                priority
-                unoptimized
-              />
 
-              {/* 次の例文へボタン（画像の中心に配置） */}
-              {!isAudioBusy && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {isLastExample ? (
-                    <button
-                      onClick={handleNextExample}
-                      className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-[#c3684f]"
-                    >
-                      クイズへ
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleNextExample}
-                      className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#d77a61] hover:text-[#d77a61]"
-                    >
-                      次へ
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+      {/* 例文音声フェーズ */}
+      {phase === 'example-audio' && currentExample && (
+        <div className="relative max-w-[500px] mx-auto">
+          <Image
+            src={currentExample.imageUrl}
+            alt={`${currentExample.place}での会話シーン`}
+            width={500}
+            height={750}
+            className="w-full h-auto object-contain opacity-100"
+            priority
+            unoptimized
+          />
+        </div>
+      )}
 
-          {/* テストフェーズ */}
-          {phase === 'test' && (
-            <section className="grid gap-8">
-              <div className="flex items-baseline">
-                <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
-                  「 {patternSet.patternName} 」
-                </p>
-                <p className="font-semibold text-[#2a2b3c]/70">の意味は？</p>
-              </div>
-              <ul className="grid gap-3">
-                {shuffledOptions.map((option, index) => (
+      {/* 例文クイズフェーズ */}
+      {phase === 'example-quiz' && currentExample && (
+        <div className="relative max-w-[500px] mx-auto">
+          {/* 背景画像 */}
+          <Image
+            src={currentExample.imageUrl}
+            alt={`${currentExample.place}での会話シーン`}
+            width={500}
+            height={750}
+            className="w-full h-auto object-contain opacity-30"
+            priority
+            unoptimized
+          />
+
+          {/* クイズUI（画像の上に被せる） */}
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-2xl">
+              <p className="text-xl font-semibold text-[#2a2b3c] mb-4 text-center">
+                この英文の意味は？
+              </p>
+              <ul className="grid gap-3 mb-4">
+                {exampleQuizOptions.map((option, index) => (
                   <li key={index}>
                     <button
-                      onClick={() => handleTestAnswer(index)}
+                      onClick={() => handleExampleQuizAnswer(index)}
                       disabled={isAudioBusy}
-                      className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
+                      className="w-full rounded-2xl border border-[#d8cbb6] bg-white px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
                     >
                       {option}
                     </button>
@@ -271,131 +341,237 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
               </ul>
               <div className="flex justify-center">
                 <button
-                  onClick={handleBackToExamples}
+                  onClick={handleListenAgainInExampleQuiz}
                   disabled={isAudioBusy}
-                  className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-white shadow-lg transition enabled:hover:bg-[#257682] disabled:opacity-60"
                 >
-                  例文に戻る
+                  もう一度聞く
                 </button>
               </div>
-            </section>
-          )}
-
-          {/* 結果フェーズ */}
-          {phase === 'result' && (
-            <section className="grid gap-6 text-center">
-              <div
-                className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
-                  isCorrect
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : 'border-rose-200 bg-rose-50 text-rose-700'
-                }`}
-              >
-                <h2 className="text-2xl font-bold">
-                  {isCorrect ? 'やった！ 正解です 🎉' : '残念…もう一度挑戦してみましょう'}
-                </h2>
-                {isCorrect && (
-                  <>
-                    <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
-                      {patternSet.patternName}
-                    </p>
-                    <p className="mt-4 text-lg text-[#2a2b3c]">{patternSet.correctAnswer}</p>
-                  </>
-                )}
-              </div>
-              <div className="flex flex-row gap-3 items-center justify-center">
-                {isCorrect ? (
-                  <button
-                    onClick={handleNextPattern}
-                    disabled={isAudioBusy}
-                    className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
-                  >
-                    次のパターンに挑戦
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleBackToExamples}
-                    disabled={isAudioBusy}
-                    className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
-                  >
-                    再挑戦
-                  </button>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* 音声要素（例文フェーズ用） */}
-          {currentExample && (
-            <>
-              <audio
-                key={`current-english-${currentExample.id}`}
-                ref={englishAudioRef}
-                src={currentExample.audioEnUrl}
-                preload="auto"
-                onEnded={handleEnglishAudioEnded}
-              />
-              <audio
-                key={`current-japanese-${currentExample.id}`}
-                ref={japaneseAudioRef}
-                src={currentExample.audioJaUrl}
-                preload="auto"
-                onEnded={handleJapaneseAudioEnded}
-              />
-            </>
-          )}
-
-          {/* クイズ画面用の音声（1枚目の英語文） */}
-          {patternSet.examples[0] && (
-            <audio
-              key={`quiz-english-${patternSet.examples[0].id}`}
-              ref={quizAudioRef}
-              src={patternSet.examples[0].audioEnUrl}
-              preload="auto"
-              onEnded={() => setAudioStatus('idle')}
-            />
-          )}
-
-          {/* 結果画面用の音声（2枚目の英語文） */}
-          {patternSet.examples[1] && (
-            <audio
-              key={`result-english-${patternSet.examples[1].id}`}
-              ref={resultAudioRef}
-              src={patternSet.examples[1].audioEnUrl}
-              preload="auto"
-              onEnded={() => setAudioStatus('idle')}
-            />
-          )}
-
-          {/* 次のパターンの画像プリフェッチ */}
-          {nextPatternSet?.examples[0]?.imageUrl && (
-            <Image
-              src={nextPatternSet.examples[0].imageUrl}
-              alt="次のパターンの画像"
-              width={500}
-              height={750}
-              className="hidden"
-              priority
-              unoptimized
-            />
-          )}
-
-          {/* 次のパターンの音声プリフェッチ */}
-          {nextPatternSet?.examples[0] && (
-            <>
-              <audio
-                key={`next-english-${nextPatternSet.examples[0].id}`}
-                src={nextPatternSet.examples[0].audioEnUrl}
-                preload="auto"
-              />
-              <audio
-                key={`next-japanese-${nextPatternSet.examples[0].id}`}
-                src={nextPatternSet.examples[0].audioJaUrl}
-                preload="auto"
-              />
-            </>
-          )}
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* 例文クイズ正解フェーズ */}
+      {phase === 'example-correct' && currentExample && (
+        <div className="relative max-w-[500px] mx-auto">
+          {/* 背景画像 */}
+          <Image
+            src={currentExample.imageUrl}
+            alt={`${currentExample.place}での会話シーン`}
+            width={500}
+            height={750}
+            className="w-full h-auto object-contain opacity-30"
+            priority
+            unoptimized
+          />
+
+          {/* 正解UI（画像の上に被せる） */}
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-emerald-50/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-emerald-200">
+              <h2 className="text-2xl font-bold text-emerald-700 text-center">正解！ 🎉</h2>
+              <p className="mt-4 text-xl font-semibold text-[#2a2b3c] text-center">
+                {currentExample.englishSentence}
+              </p>
+              <p className="mt-3 text-base text-[#2a2b3c] text-center">
+                {currentExample.japaneseSentence}
+              </p>
+              {!isLastExample && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={handleGoToNextExample}
+                    className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-[#c3684f]"
+                  >
+                    次へ
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 例文クイズ不正解フェーズ */}
+      {phase === 'example-incorrect' && currentExample && (
+        <div className="relative max-w-[500px] mx-auto">
+          {/* 背景画像 */}
+          <Image
+            src={currentExample.imageUrl}
+            alt={`${currentExample.place}での会話シーン`}
+            width={500}
+            height={750}
+            className="w-full h-auto object-contain opacity-30"
+            priority
+            unoptimized
+          />
+
+          {/* 不正解UI（画像の上に被せる） */}
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-rose-50/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-rose-200">
+              <h2 className="text-2xl font-bold text-rose-700 text-center">
+                残念…もう一度挑戦してみましょう
+              </h2>
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={handleRetryCurrentExample}
+                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-lg border border-[#d8cbb6] transition hover:border-[#d77a61] hover:text-[#d77a61]"
+                >
+                  再挑戦
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 最終クイズフェーズ */}
+      {phase === 'final-quiz' && (
+        <section className="grid gap-8">
+          <div className="flex items-baseline">
+            <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
+              「 {patternSet.patternName} 」
+            </p>
+            <p className="font-semibold text-[#2a2b3c]/70">の意味は？</p>
+          </div>
+          <ul className="grid gap-3">
+            {finalQuizOptions.map((option, index) => (
+              <li key={index}>
+                <button
+                  onClick={() => handleFinalQuizAnswer(index)}
+                  disabled={isAudioBusy}
+                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
+                >
+                  {option}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-center">
+            <button
+              onClick={handleListenAgainInFinalQuiz}
+              disabled={isAudioBusy}
+              className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
+            >
+              もう一度聞く
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* 最終結果フェーズ */}
+      {phase === 'final-result' && (
+        <section className="grid gap-6 text-center">
+          <div
+            className={`rounded-3xl border px-6 py-10 shadow-lg shadow-slate-900/10 ${
+              isFinalQuizCorrect
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-rose-200 bg-rose-50 text-rose-700'
+            }`}
+          >
+            <h2 className="text-2xl font-bold">
+              {isFinalQuizCorrect ? 'やった！ 正解です 🎉' : '残念…もう一度挑戦してみましょう'}
+            </h2>
+            {isFinalQuizCorrect && (
+              <>
+                <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
+                  {patternSet.patternName}
+                </p>
+                <p className="mt-4 text-lg text-[#2a2b3c]">{patternSet.correctAnswer}</p>
+              </>
+            )}
+          </div>
+          <div className="flex justify-center">
+            {isFinalQuizCorrect ? (
+              <button
+                onClick={handleNextPattern}
+                disabled={isAudioBusy}
+                className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 transition enabled:hover:bg-[#c3684f] disabled:opacity-60"
+              >
+                次のパターンに挑戦
+              </button>
+            ) : (
+              <button
+                onClick={handleRetryFromStart}
+                disabled={isAudioBusy}
+                className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+              >
+                最初から再挑戦
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 音声要素（例文フェーズ用） */}
+      {currentExample && (
+        <>
+          <audio
+            key={`current-english-${currentExample.id}`}
+            ref={englishAudioRef}
+            src={currentExample.audioEnUrl}
+            preload="auto"
+            onEnded={handleEnglishAudioEnded}
+          />
+          <audio
+            key={`current-japanese-${currentExample.id}`}
+            ref={japaneseAudioRef}
+            src={currentExample.audioJaUrl}
+            preload="auto"
+            onEnded={handleJapaneseAudioEnded}
+          />
+        </>
+      )}
+
+      {/* 最終クイズ用の音声（1枚目の英語文） */}
+      {patternSet.examples[0] && (
+        <audio
+          key={`final-quiz-english-${patternSet.examples[0].id}`}
+          ref={finalQuizAudioRef}
+          src={patternSet.examples[0].audioEnUrl}
+          preload="auto"
+          onEnded={() => setAudioStatus('idle')}
+        />
+      )}
+
+      {/* 最終結果用の音声（2枚目の英語文） */}
+      {patternSet.examples[1] && (
+        <audio
+          key={`final-result-english-${patternSet.examples[1].id}`}
+          ref={finalResultAudioRef}
+          src={patternSet.examples[1].audioEnUrl}
+          preload="auto"
+          onEnded={() => setAudioStatus('idle')}
+        />
+      )}
+
+      {/* 次のパターンの画像プリフェッチ */}
+      {nextPatternSet?.examples[0]?.imageUrl && (
+        <Image
+          src={nextPatternSet.examples[0].imageUrl}
+          alt="次のパターンの画像"
+          width={500}
+          height={750}
+          className="hidden"
+          priority
+          unoptimized
+        />
+      )}
+
+      {/* 次のパターンの音声プリフェッチ */}
+      {nextPatternSet?.examples[0] && (
+        <>
+          <audio
+            key={`next-english-${nextPatternSet.examples[0].id}`}
+            src={nextPatternSet.examples[0].audioEnUrl}
+            preload="auto"
+          />
+          <audio
+            key={`next-japanese-${nextPatternSet.examples[0].id}`}
+            src={nextPatternSet.examples[0].audioJaUrl}
+            preload="auto"
+          />
+        </>
       )}
     </div>
   );
