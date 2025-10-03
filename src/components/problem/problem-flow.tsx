@@ -84,17 +84,14 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     [correctIndex, problem, selectedOption],
   );
 
-  const playAudio = useCallback((audio: HTMLAudioElement | null, duration: number) => {
+  const playAudio = useCallback((audio: HTMLAudioElement | null) => {
     if (!audio) return;
 
-    setAudioStatus('playing');
-    setTimeout(() => {
-      audio.currentTime = 0;
-      audio.play().catch(() => {
-        console.warn('英語音声の再生に失敗しました。');
-        setAudioStatus('idle');
-      });
-    }, duration);
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+      console.warn('英語音声の再生に失敗しました。');
+      setAudioStatus('idle');
+    });
   }, []);
 
   console.log(`[ProblemFlow] キュー${problemQueue.length}件`);
@@ -218,22 +215,20 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const handleStart = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 100));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current));
   };
 
   const handleRetryQuiz = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current));
   };
 
   const handleReplyAudioEnded = () => {
     setAudioStatus('idle');
-    setTimeout(() => {
-      setViewPhase('quiz');
-      setPhase('quiz');
-      void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
-    }, 200);
+    setViewPhase('quiz');
+    setPhase('quiz');
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current));
   };
 
   const handleNextProblem = () => {
@@ -267,7 +262,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     setViewPhase('scene-entry');
 
     // 切り替え直後に英語音声を再生
-    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 100));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current));
   };
 
   return (
@@ -333,8 +328,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
 
                     // 正解だったらクリック時に再生
                     void (
-                      englishSentenceAudioRef.current &&
-                      playAudio(englishSentenceAudioRef.current, 0)
+                      englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current)
                     );
                   }}
                   className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
@@ -348,7 +342,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={() => playAudio(englishSentenceAudioRef.current, 0)}
+              onClick={() => playAudio(englishSentenceAudioRef.current)}
               className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 transition enabled:hover:bg-[#257682] disabled:opacity-60"
               disabled={!problem.audioEnUrl || isAudioBusy}
             >
@@ -417,7 +411,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           const replyAudioRef = settingsRef.current.isEnglishMode
             ? englishReplyAudioRef
             : japaneseReplyAudioRef;
-          void (replyAudioRef.current && playAudio(replyAudioRef.current, 100));
+          void (replyAudioRef.current && playAudio(replyAudioRef.current));
         }}
       />
       <audio
