@@ -88,11 +88,14 @@ jobs:
           EXIT_CODE=$?
           set -e  # エラー検出を再度有効化
 
-          # スクリプトがエラーで終了した場合
+          # スクリプトがエラーで終了した場合でもフォールバック動作
           if [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ チェックスクリプトがエラーで終了しました（終了コード: $EXIT_CODE）"
+            echo "⚠️ チェックスクリプトがエラー終了（終了コード: $EXIT_CODE）"
             echo "📋 出力: $OUTPUT"
-            exit 1
+            echo "⚠️ フォールバック: スクリプトを実行します"
+            echo "missing_count=unknown" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0  # ワークフローは継続
           fi
 
           # 出力から数値行のみを抽出（最後の数値行を取得）
@@ -110,9 +113,10 @@ jobs:
               echo "should_run=true" >> $GITHUB_OUTPUT
             fi
           else
-            echo "❌ 予期しない出力形式です。全出力:"
-            echo "$OUTPUT"
-            exit 1
+            echo "⚠️ 出力が数値でありません。フォールバック動作に切り替えます。"
+            echo "📋 全出力: $OUTPUT"
+            echo "missing_count=unknown" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> $GITHUB_OUTPUT
           fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -120,7 +124,7 @@ jobs:
       - name: Run fix-missing-image script
         if: steps.check_missing.outputs.should_run == 'true'
         run: |
-          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '1' }}"
+          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '5' }}"
 
           echo "🚀 画像URL修復スクリプトを開始します"
           echo "📊 処理件数上限: $INPUT_BATCH_SIZE件"
@@ -177,9 +181,12 @@ jobs:
               echo "📊 修復後の画像URLがnullなレコード数: $REMAINING_COUNT件"
               
               # 修復前の件数が数値の場合のみ差分を計算
-              if [[ "${{ steps.check_missing.outputs.missing_count }}" =~ ^[0-9]+$ ]]; then
-                FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
+              BEFORE_COUNT="${{ steps.check_missing.outputs.missing_count }}"
+              if [[ "$BEFORE_COUNT" =~ ^[0-9]+$ ]]; then
+                FIXED_COUNT=$(($BEFORE_COUNT - REMAINING_COUNT))
                 echo "✅ $FIXED_COUNT件のレコードの画像URLを修復しました"
+              elif [ "$BEFORE_COUNT" = "unknown" ]; then
+                echo "✅ 画像URL修復処理が完了しました（修復前の件数: 不明）"
               else
                 echo "✅ 画像URL修復処理が完了しました"
               fi
@@ -203,7 +210,12 @@ jobs:
           echo "✅ 事後確認: 完了"
           echo ""
           if [ "${{ steps.check_missing.outputs.should_run }}" = "true" ]; then
-            echo "📊 処理対象件数: ${{ steps.check_missing.outputs.missing_count }}件"
+            MISSING_COUNT="${{ steps.check_missing.outputs.missing_count }}"
+            if [ "$MISSING_COUNT" = "unknown" ]; then
+              echo "📊 処理対象件数: チェックできませんでした（フォールバック動作）"
+            else
+              echo "📊 処理対象件数: ${MISSING_COUNT}件"
+            fi
             echo "🎨 画像生成: OpenAI DALL-E API"
             echo "☁️ ファイルアップロード: Cloudflare R2"
             echo "💾 データベース更新: 完了"
