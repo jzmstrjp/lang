@@ -6,8 +6,8 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
-import { generateAndUploadImageAsset, type GeneratedProblem } from '../src/lib/problem-generator';
-import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
+// 動的インポート用の型定義のみ
+import type { GeneratedProblem } from '../src/lib/problem-generator';
 
 function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   if (Array.isArray(value)) {
@@ -99,6 +99,10 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
 
     console.log(`📊 ${problemsWithMissingImage.length}件のレコードが見つかりました。`);
     console.log('🔄 直列実行で処理を開始します（APIの負荷制御のため）');
+
+    // 画像生成・アップロード用のモジュールを動的インポート
+    const { generateAndUploadImageAsset } = await import('../src/lib/problem-generator');
+    const { warmupMultipleCDNUrls } = await import('../src/lib/cdn-utils');
 
     const totalStartTime = Date.now();
     let successCount = 0;
