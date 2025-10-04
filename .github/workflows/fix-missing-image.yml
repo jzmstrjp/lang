@@ -82,24 +82,8 @@ jobs:
         run: |
           echo "🔍 画像URLがnullなレコードを事前チェック中..."
 
-          # 統合されたスクリプトのチェックのみモードを使用
-          set +e  # エラーでスクリプトを停止させない
-          OUTPUT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1)
-          EXIT_CODE=$?
-          set -e  # エラー検出を再度有効化
-
-          # スクリプトがエラーで終了した場合でもフォールバック動作
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "⚠️ チェックスクリプトがエラー終了（終了コード: $EXIT_CODE）"
-            echo "📋 出力: $OUTPUT"
-            echo "⚠️ フォールバック: スクリプトを実行します"
-            echo "missing_count=unknown" >> $GITHUB_OUTPUT
-            echo "should_run=true" >> $GITHUB_OUTPUT
-            exit 0  # ワークフローは継続
-          fi
-
-          # 出力から数値行のみを抽出（最後の数値行を取得）
-          MISSING_COUNT=$(echo "$OUTPUT" | grep -E '^[0-9]+$' | tail -1)
+          # 統合されたスクリプトのチェックのみモードを使用（ログ出力を抑制）
+          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>/dev/null | tail -1)
 
           # 数値であることを確認
           if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
@@ -113,8 +97,7 @@ jobs:
               echo "should_run=true" >> $GITHUB_OUTPUT
             fi
           else
-            echo "⚠️ 出力が数値でありません。フォールバック動作に切り替えます。"
-            echo "📋 全出力: $OUTPUT"
+            echo "⚠️ レコード数の取得に失敗しました。スクリプトを実行します。"
             echo "missing_count=unknown" >> $GITHUB_OUTPUT
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
@@ -133,16 +116,7 @@ jobs:
           echo ""
 
           echo "🎨 画像を生成・アップロードします"
-          set -e  # エラーが発生したら即座に終了
           npx tsx scripts/fix-missing-image.ts "$INPUT_BATCH_SIZE"
-
-          # スクリプトの終了コードを確認
-          if [ $? -ne 0 ]; then
-            echo "❌ 画像URL修復スクリプトがエラーで終了しました"
-            exit 1
-          fi
-
-          echo "✅ 画像URL修復スクリプトが正常に完了しました"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # R2アップロード用環境変数
@@ -162,38 +136,25 @@ jobs:
         run: |
           echo "🔍 修復後のデータベース状態を確認中..."
 
-          # 修復後の件数をチェック
-          set +e  # タイムアウトやエラーでスクリプトを停止させない
-          OUTPUT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1)
-          EXIT_CODE=$?
-          set -e
+          # 修復後の件数をチェック（ログ出力を抑制）
+          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>/dev/null | tail -1 || echo "TIMEOUT")
 
-          if [ $EXIT_CODE -eq 124 ]; then
+          if [ "$REMAINING_COUNT" = "TIMEOUT" ]; then
             echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"
-          elif [ $EXIT_CODE -ne 0 ]; then
+          elif [ "$REMAINING_COUNT" = "UNKNOWN" ]; then
             echo "⚠️ DB確認でエラーが発生しましたが、スクリプトは正常に実行されました"
-            echo "📋 出力: $OUTPUT"
-          else
-            # 出力から数値行のみを抽出
-            REMAINING_COUNT=$(echo "$OUTPUT" | grep -E '^[0-9]+$' | tail -1)
+          elif [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
+            echo "📊 修復後の画像URLがnullなレコード数: $REMAINING_COUNT件"
             
-            if [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
-              echo "📊 修復後の画像URLがnullなレコード数: $REMAINING_COUNT件"
-              
-              # 修復前の件数が数値の場合のみ差分を計算
-              BEFORE_COUNT="${{ steps.check_missing.outputs.missing_count }}"
-              if [[ "$BEFORE_COUNT" =~ ^[0-9]+$ ]]; then
-                FIXED_COUNT=$(($BEFORE_COUNT - REMAINING_COUNT))
-                echo "✅ $FIXED_COUNT件のレコードの画像URLを修復しました"
-              elif [ "$BEFORE_COUNT" = "unknown" ]; then
-                echo "✅ 画像URL修復処理が完了しました（修復前の件数: 不明）"
-              else
-                echo "✅ 画像URL修復処理が完了しました"
-              fi
+            # 修復前の件数が数値の場合のみ差分を計算
+            if [[ "${{ steps.check_missing.outputs.missing_count }}" =~ ^[0-9]+$ ]]; then
+              FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
+              echo "✅ $FIXED_COUNT件のレコードの画像URLを修復しました"
             else
-              echo "⚠️ 修復後の状態確認で予期しない結果"
-              echo "📋 全出力: $OUTPUT"
+              echo "✅ 画像URL修復処理が完了しました"
             fi
+          else
+            echo "⚠️ 修復後の状態確認で予期しない結果: $REMAINING_COUNT"
           fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -210,12 +171,7 @@ jobs:
           echo "✅ 事後確認: 完了"
           echo ""
           if [ "${{ steps.check_missing.outputs.should_run }}" = "true" ]; then
-            MISSING_COUNT="${{ steps.check_missing.outputs.missing_count }}"
-            if [ "$MISSING_COUNT" = "unknown" ]; then
-              echo "📊 処理対象件数: チェックできませんでした（フォールバック動作）"
-            else
-              echo "📊 処理対象件数: ${MISSING_COUNT}件"
-            fi
+            echo "📊 処理対象件数: ${{ steps.check_missing.outputs.missing_count }}件"
             echo "🎨 画像生成: OpenAI DALL-E API"
             echo "☁️ ファイルアップロード: Cloudflare R2"
             echo "💾 データベース更新: 完了"

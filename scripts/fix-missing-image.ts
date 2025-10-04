@@ -4,14 +4,10 @@
  * 画像URLがnullなProblemsレコードを取得して画像を生成・R2アップロード・DB更新するスクリプト
  */
 
-import { PrismaClient, type Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { prisma } from '../src/lib/prisma';
 // 動的インポート用の型定義のみ
 import type { GeneratedProblem } from '../src/lib/problem-generator';
-
-// スクリプト専用のPrismaClientインスタンスを作成（グローバルシングルトンを使わない）
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
 
 function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   if (Array.isArray(value)) {
@@ -59,14 +55,12 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
 
     if (checkOnly) {
       // チェックのみモードの場合は件数を出力して終了
-      // ログは一切出力せず、数値のみを標準出力に書き込む
       const totalMissingCount = await prisma.problem.count({
         where: {
           imageUrl: null,
         },
       });
-      console.log(totalMissingCount.toString());
-      await prisma.$disconnect();
+      process.stdout.write(totalMissingCount.toString());
       return;
     }
 
