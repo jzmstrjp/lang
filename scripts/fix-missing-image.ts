@@ -28,9 +28,8 @@ function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
-    if (checkOnly) {
-      console.log('🔍 画像URLチェックモードで実行中...');
-    } else {
+    // チェックのみモードでは、ログを一切出力しない（最後に数値のみ出力）
+    if (!checkOnly) {
       console.log('🚀 画像URL修復スクリプトを開始します...');
       console.log(`📊 処理件数上限: ${batchSize}件`);
     }
@@ -56,12 +55,13 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
 
     if (checkOnly) {
       // チェックのみモードの場合は件数を出力して終了
+      // ログは一切出力せず、数値のみを標準出力に書き込む
       const totalMissingCount = await prisma.problem.count({
         where: {
           imageUrl: null,
         },
       });
-      process.stdout.write(totalMissingCount.toString());
+      console.log(totalMissingCount.toString());
       return;
     }
 

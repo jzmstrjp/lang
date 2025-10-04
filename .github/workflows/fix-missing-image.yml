@@ -84,16 +84,19 @@ jobs:
 
           # 統合されたスクリプトのチェックのみモードを使用
           set +e  # エラーでスクリプトを停止させない
-          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1 | tail -1)
+          OUTPUT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1)
           EXIT_CODE=$?
           set -e  # エラー検出を再度有効化
 
           # スクリプトがエラーで終了した場合
           if [ $EXIT_CODE -ne 0 ]; then
             echo "❌ チェックスクリプトがエラーで終了しました（終了コード: $EXIT_CODE）"
-            echo "📋 出力: $MISSING_COUNT"
+            echo "📋 出力: $OUTPUT"
             exit 1
           fi
+
+          # 出力から数値行のみを抽出（最後の数値行を取得）
+          MISSING_COUNT=$(echo "$OUTPUT" | grep -E '^[0-9]+$' | tail -1)
 
           # 数値であることを確認
           if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
@@ -107,7 +110,8 @@ jobs:
               echo "should_run=true" >> $GITHUB_OUTPUT
             fi
           else
-            echo "❌ 予期しない出力形式です: $MISSING_COUNT"
+            echo "❌ 予期しない出力形式です。全出力:"
+            echo "$OUTPUT"
             exit 1
           fi
         env:
@@ -156,7 +160,7 @@ jobs:
 
           # 修復後の件数をチェック
           set +e  # タイムアウトやエラーでスクリプトを停止させない
-          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1 | tail -1)
+          OUTPUT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1)
           EXIT_CODE=$?
           set -e
 
@@ -164,19 +168,25 @@ jobs:
             echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"
           elif [ $EXIT_CODE -ne 0 ]; then
             echo "⚠️ DB確認でエラーが発生しましたが、スクリプトは正常に実行されました"
-            echo "📋 出力: $REMAINING_COUNT"
-          elif [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
-            echo "📊 修復後の画像URLがnullなレコード数: $REMAINING_COUNT件"
-            
-            # 修復前の件数が数値の場合のみ差分を計算
-            if [[ "${{ steps.check_missing.outputs.missing_count }}" =~ ^[0-9]+$ ]]; then
-              FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
-              echo "✅ $FIXED_COUNT件のレコードの画像URLを修復しました"
-            else
-              echo "✅ 画像URL修復処理が完了しました"
-            fi
+            echo "📋 出力: $OUTPUT"
           else
-            echo "⚠️ 修復後の状態確認で予期しない結果: $REMAINING_COUNT"
+            # 出力から数値行のみを抽出
+            REMAINING_COUNT=$(echo "$OUTPUT" | grep -E '^[0-9]+$' | tail -1)
+            
+            if [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
+              echo "📊 修復後の画像URLがnullなレコード数: $REMAINING_COUNT件"
+              
+              # 修復前の件数が数値の場合のみ差分を計算
+              if [[ "${{ steps.check_missing.outputs.missing_count }}" =~ ^[0-9]+$ ]]; then
+                FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
+                echo "✅ $FIXED_COUNT件のレコードの画像URLを修復しました"
+              else
+                echo "✅ 画像URL修復処理が完了しました"
+              fi
+            else
+              echo "⚠️ 修復後の状態確認で予期しない結果"
+              echo "📋 全出力: $OUTPUT"
+            fi
           fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
