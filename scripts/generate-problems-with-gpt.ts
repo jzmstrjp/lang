@@ -348,7 +348,14 @@ async function main() {
 
 // スクリプトが直接実行された場合のみmainを実行
 if (require.main === module) {
-  main();
+  main()
+    .then(() => {
+      process.exit(0); // 正常終了
+    })
+    .catch((error) => {
+      console.error('Fatal error:', error);
+      process.exit(1); // エラー終了
+    });
 }
 
 export { main };

@@ -86,7 +86,14 @@ async function main() {
 }
 
 if (require.main === module) {
-  void main();
+  main()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('Fatal error:', error);
+      process.exit(1);
+    });
 }
 
 export { main };

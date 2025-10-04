@@ -291,11 +291,14 @@ if (require.main === module) {
   }
 
   (async () => {
-    await main(batchSize, checkOnly);
-  })().catch((error) => {
-    console.error('スクリプト実行エラー:', error);
-    process.exit(1);
-  });
+    try {
+      await main(batchSize, checkOnly);
+      process.exit(0); // 正常終了
+    } catch (error) {
+      console.error('スクリプト実行エラー:', error);
+      process.exit(1); // エラー終了
+    }
+  })();
 }
 
 export { main };
