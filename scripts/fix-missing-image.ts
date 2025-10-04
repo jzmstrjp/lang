@@ -6,8 +6,8 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
-// 動的インポート用の型定義のみ
-import type { GeneratedProblem } from '../src/lib/problem-generator';
+import { generateAndUploadImageAsset, type GeneratedProblem } from '../src/lib/problem-generator';
+import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
 
 function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   if (Array.isArray(value)) {
@@ -28,8 +28,9 @@ function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
-    // チェックのみモードでは、ログを一切出力しない（最後に数値のみ出力）
-    if (!checkOnly) {
+    if (checkOnly) {
+      console.log('🔍 画像URLチェックモードで実行中...');
+    } else {
       console.log('🚀 画像URL修復スクリプトを開始します...');
       console.log(`📊 処理件数上限: ${batchSize}件`);
     }
@@ -99,10 +100,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
     console.log(`📊 ${problemsWithMissingImage.length}件のレコードが見つかりました。`);
     console.log('🔄 直列実行で処理を開始します（APIの負荷制御のため）');
 
-    // 画像生成・アップロード用のモジュールを動的インポート
-    const { generateAndUploadImageAsset } = await import('../src/lib/problem-generator');
-    const { warmupMultipleCDNUrls } = await import('../src/lib/cdn-utils');
-
     const totalStartTime = Date.now();
     let successCount = 0;
     let errorCount = 0;
@@ -168,29 +165,13 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
     const totalDuration = ((Date.now() - totalStartTime) / 1000).toFixed(1);
 
     console.log('\n🎊 ===============================================');
-    if (errorCount === 0) {
       console.log('✅ 画像URL修復スクリプトが完了しました！');
-    } else if (successCount === 0) {
-      console.log('❌ 画像URL修復スクリプトが全て失敗しました！');
-    } else {
-      console.log('⚠️ 画像URL修復スクリプトが部分的に完了しました');
-    }
     console.log('🎊 ===============================================');
     console.log(`📊 処理結果:`);
     console.log(`   ✅ 成功: ${successCount}件`);
     console.log(`   ❌ エラー: ${errorCount}件`);
     console.log(`   📝 合計: ${problemsWithMissingImage.length}件`);
     console.log(`   ⏱️ 合計時間: ${totalDuration}秒 (直列実行)`);
-
-    // 全てエラーだった場合は異常終了
-    if (successCount === 0 && errorCount > 0) {
-      throw new Error(`全ての処理が失敗しました (${errorCount}件のエラー)`);
-    }
-
-    // 一部でもエラーがあった場合は警告
-    if (errorCount > 0) {
-      console.log(`\n⚠️ 警告: ${errorCount}件のレコードの処理に失敗しました`);
-    }
   } catch (error) {
     console.error('❌ スクリプト実行エラー:', error);
     throw error;
@@ -228,14 +209,11 @@ if (require.main === module) {
   }
 
   (async () => {
-    try {
       await main(batchSize, checkOnly);
-      process.exit(0); // 正常終了
-    } catch (error) {
+  })().catch((error) => {
       console.error('スクリプト実行エラー:', error);
-      process.exit(1); // エラー終了
-    }
-  })();
+    process.exit(1);
+  });
 }
 
 export { main };
