@@ -264,7 +264,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   return (
     <>
       {phase === 'landing' && (
-        <div className="relative max-w-[500px] mx-auto">
+        <div className="relative min-h-[50vh] max-w-[500px] mx-auto">
           {sceneImage && (
             <SceneImage
               src={sceneImage}
