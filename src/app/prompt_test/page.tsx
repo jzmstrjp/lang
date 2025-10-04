@@ -159,7 +159,50 @@ export default function PromptTestPage() {
               {/* 画像生成プロンプトを常に表示 */}
               {assets?.imagePrompt && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-amber-800 mb-2">画像生成プロンプト</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-amber-800">画像生成プロンプト</h3>
+                    <button
+                      onClick={() => copyToClipboard(assets.imagePrompt || '')}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md transition-colors"
+                      title="クリップボードにコピー"
+                    >
+                      {copied ? (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span>コピーしました!</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span>コピー</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <div className="text-sm text-amber-700 leading-relaxed whitespace-pre-line bg-white border border-amber-200 rounded p-3">
                     {assets.imagePrompt}
                   </div>
