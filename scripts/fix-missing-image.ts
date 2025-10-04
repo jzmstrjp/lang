@@ -165,13 +165,29 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
     const totalDuration = ((Date.now() - totalStartTime) / 1000).toFixed(1);
 
     console.log('\n🎊 ===============================================');
-    console.log('✅ 画像URL修復スクリプトが完了しました！');
+    if (errorCount === 0) {
+      console.log('✅ 画像URL修復スクリプトが完了しました！');
+    } else if (successCount === 0) {
+      console.log('❌ 画像URL修復スクリプトが全て失敗しました！');
+    } else {
+      console.log('⚠️ 画像URL修復スクリプトが部分的に完了しました');
+    }
     console.log('🎊 ===============================================');
     console.log(`📊 処理結果:`);
     console.log(`   ✅ 成功: ${successCount}件`);
     console.log(`   ❌ エラー: ${errorCount}件`);
     console.log(`   📝 合計: ${problemsWithMissingImage.length}件`);
     console.log(`   ⏱️ 合計時間: ${totalDuration}秒 (直列実行)`);
+
+    // 全てエラーだった場合は異常終了
+    if (successCount === 0 && errorCount > 0) {
+      throw new Error(`全ての処理が失敗しました (${errorCount}件のエラー)`);
+    }
+
+    // 一部でもエラーがあった場合は警告
+    if (errorCount > 0) {
+      console.log(`\n⚠️ 警告: ${errorCount}件のレコードの処理に失敗しました`);
+    }
   } catch (error) {
     console.error('❌ スクリプト実行エラー:', error);
     throw error;

@@ -82,8 +82,18 @@ jobs:
         run: |
           echo "🔍 画像URLがnullなレコードを事前チェック中..."
 
-          # 統合されたスクリプトのチェックのみモードを使用（ログ出力を抑制）
-          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>/dev/null | tail -1)
+          # 統合されたスクリプトのチェックのみモードを使用
+          set +e  # エラーでスクリプトを停止させない
+          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1 | tail -1)
+          EXIT_CODE=$?
+          set -e  # エラー検出を再度有効化
+
+          # スクリプトがエラーで終了した場合
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "❌ チェックスクリプトがエラーで終了しました（終了コード: $EXIT_CODE）"
+            echo "📋 出力: $MISSING_COUNT"
+            exit 1
+          fi
 
           # 数値であることを確認
           if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
@@ -97,9 +107,8 @@ jobs:
               echo "should_run=true" >> $GITHUB_OUTPUT
             fi
           else
-            echo "⚠️ レコード数の取得に失敗しました。スクリプトを実行します。"
-            echo "missing_count=unknown" >> $GITHUB_OUTPUT
-            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "❌ 予期しない出力形式です: $MISSING_COUNT"
+            exit 1
           fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -116,7 +125,16 @@ jobs:
           echo ""
 
           echo "🎨 画像を生成・アップロードします"
+          set -e  # エラーが発生したら即座に終了
           npx tsx scripts/fix-missing-image.ts "$INPUT_BATCH_SIZE"
+
+          # スクリプトの終了コードを確認
+          if [ $? -ne 0 ]; then
+            echo "❌ 画像URL修復スクリプトがエラーで終了しました"
+            exit 1
+          fi
+
+          echo "✅ 画像URL修復スクリプトが正常に完了しました"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # R2アップロード用環境変数
@@ -136,13 +154,17 @@ jobs:
         run: |
           echo "🔍 修復後のデータベース状態を確認中..."
 
-          # 修復後の件数をチェック（ログ出力を抑制）
-          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>/dev/null | tail -1 || echo "TIMEOUT")
+          # 修復後の件数をチェック
+          set +e  # タイムアウトやエラーでスクリプトを停止させない
+          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>&1 | tail -1)
+          EXIT_CODE=$?
+          set -e
 
-          if [ "$REMAINING_COUNT" = "TIMEOUT" ]; then
+          if [ $EXIT_CODE -eq 124 ]; then
             echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"
-          elif [ "$REMAINING_COUNT" = "UNKNOWN" ]; then
+          elif [ $EXIT_CODE -ne 0 ]; then
             echo "⚠️ DB確認でエラーが発生しましたが、スクリプトは正常に実行されました"
+            echo "📋 出力: $REMAINING_COUNT"
           elif [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
             echo "📊 修復後の画像URLがnullなレコード数: $REMAINING_COUNT件"
             
