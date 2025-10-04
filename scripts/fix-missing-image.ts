@@ -62,6 +62,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         },
       });
       console.log(totalMissingCount.toString());
+      await prisma.$disconnect();
       return;
     }
 
