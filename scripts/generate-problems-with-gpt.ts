@@ -98,7 +98,7 @@ async function generateProblemsWithHistory(
  */
 async function generateMultipleProblems(
   initialPrompt: string,
-  rounds: number = 20,
+  rounds: number = 6,
 ): Promise<string[]> {
   const allCodes: string[] = [];
   let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
@@ -193,6 +193,59 @@ function validateGeneratedCode(code: string): void {
 }
 
 /**
+ * 英文の単語数を計算する
+ */
+function calculateWordCount(englishSentence: string): number {
+  // 基本的な単語分割（空白、句読点を考慮）
+  const words = englishSentence
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+
+  return words.length;
+}
+
+/**
+ * 保存したファイルから問題データを読み込んで単語数分布を分析
+ */
+async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise<void> {
+  try {
+    // 動的にファイルをインポート
+    const importedModule = await import(filePath);
+    const problemData = importedModule.default || importedModule;
+
+    if (!Array.isArray(problemData) || problemData.length === 0) {
+      console.log('⚠️  問題データを読み込めませんでした');
+      return;
+    }
+
+    // 単語数ごとにカウント
+    const wordCountMap = new Map<number, number>();
+
+    problemData.forEach((problem: { englishSentence: string }) => {
+      const wordCount = calculateWordCount(problem.englishSentence);
+      wordCountMap.set(wordCount, (wordCountMap.get(wordCount) || 0) + 1);
+    });
+
+    // ソートして表示
+    const sortedCounts = Array.from(wordCountMap.entries()).sort((a, b) => a[0] - b[0]);
+
+    console.log('\n📊 単語数分布:');
+    sortedCounts.forEach(([wordCount, count]) => {
+      console.log(`  ${wordCount}単語: ${count}問`);
+    });
+
+    // 総計を表示
+    console.log(`  合計: ${problemData.length}問`);
+  } catch (error) {
+    console.log(
+      '⚠️  単語数分布の分析に失敗しました:',
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+/**
  * 複数のコードブロックを結合
  */
 function mergeProblemCodes(codes: string[]): string {
@@ -234,8 +287,19 @@ export default problemData;
  */
 async function main() {
   try {
+    // コマンドライン引数から生成回数を取得（デフォルト: 6）
+    const roundsArg = process.argv[2];
+    const rounds = roundsArg ? parseInt(roundsArg, 10) : 6;
+
+    // バリデーション
+    if (isNaN(rounds) || rounds < 1) {
+      throw new Error('生成回数は1以上の整数を指定してください');
+    }
+
+    const totalProblems = rounds * 5;
+
     console.log('🚀 問題生成スクリプト開始\n');
-    console.log('📌 30問（5問×6回）を生成します\n');
+    console.log(`📌 ${totalProblems}問（5問×${rounds}回）を生成します\n`);
 
     // OpenAI API Keyの確認
     if (!process.env.OPENAI_API_KEY) {
@@ -254,21 +318,28 @@ async function main() {
     const fileNumber = getNextProblemNumber();
     console.log(`📝 生成ファイル: problem${fileNumber}.ts\n`);
 
-    // 複数回APIを呼び出して30問を生成
+    // 複数回APIを呼び出して問題を生成
     console.log('🔄 生成処理開始...\n');
-    const allCodes = await generateMultipleProblems(prompt, 6);
+    const allCodes = await generateMultipleProblems(prompt, rounds);
 
     console.log('✅ すべてのコード生成完了\n');
 
     // ファイルを保存
     console.log('💾 ファイルを保存中...');
-    const savedPath = saveProblemFile(allCodes, fileNumber, 30);
+    const savedPath = saveProblemFile(allCodes, fileNumber, totalProblems);
     console.log(`✅ 保存完了: ${savedPath}\n`);
 
-    console.log('🎉 問題生成完了！30問を生成しました');
+    console.log(`🎉 問題生成完了！${totalProblems}問を生成しました`);
+
+    // 単語数分布を表示
+    await analyzeAndDisplayWordCountDistribution(savedPath);
+
     console.log('\n次のステップ:');
     console.log('  1. 生成されたファイルを確認してください');
     console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
+    console.log('\n💡 ヒント:');
+    console.log('  - 生成回数を変更: npm run generate:problems <回数>');
+    console.log('  - 例: npm run generate:problems 10 (50問生成)');
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);
     process.exit(1);

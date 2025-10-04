@@ -212,7 +212,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const handleStart = () => {
     setViewPhase('scene-entry');
     setPhase('scene-entry');
-    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 100));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
   const handleRetryQuiz = () => {
@@ -258,7 +258,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     // 切り替え直後に英語音声を再生
     setPhase('scene-entry');
     setViewPhase('scene-entry');
-    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 100));
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
   return (
@@ -431,7 +431,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             : japaneseReplyAudioRef;
           setViewPhase(viewPhase);
           setPhase(phase);
-          void (replyAudioRef.current && playAudio(replyAudioRef.current, 100));
+          void (replyAudioRef.current && playAudio(replyAudioRef.current, 0));
         }}
       />
       <audio

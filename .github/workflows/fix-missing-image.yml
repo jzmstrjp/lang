@@ -3,14 +3,14 @@ name: 画像URL修復スクリプト
 on:
   # スケジュール実行
   # schedule:
-  #   - cron: '*/5 * * * *'
+  #   - cron: '*/10 * * * *'
   # 手動実行
   workflow_dispatch:
     inputs:
       batch_size:
-        description: '処理件数の上限（デフォルト：1件）'
+        description: '処理件数の上限（デフォルト：5件）'
         required: false
-        default: '1'
+        default: '5'
         type: string
 
 jobs:
