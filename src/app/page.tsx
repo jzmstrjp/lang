@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { WORD_COUNT_RULES } from '@/config/problem';
 
@@ -24,16 +25,15 @@ const links = [
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-[calc(80vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-12 text-[#2a2b3c] sm:px-6">
-      <p className="text-center font-bold mb-4 text-2xl sm:text-3xl leading-normal sm:leading-loose">
-        なぜだか
-        <br className="block sm:hidden" />
-        <span className="hidden sm:inline">　</span>
-        いつのまにか
-        <br />
-        英語が聞き取れる
-        <br className="block sm:hidden" />
-        ようになるサイト
-      </p>
+      <div className="rounded-2xl overflow-hidden">
+        <Image
+          src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/top.webp`}
+          alt="なぜだかいつのまにか英語が聞き取れるようになるサイト"
+          unoptimized
+          width={1200}
+          height={630}
+        />
+      </div>
       <nav className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:gap-6">
         {links.map(({ href, label, description }) => (
           <Link
