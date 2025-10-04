@@ -10,7 +10,7 @@ on:
       batch_size:
         description: '処理件数の上限'
         required: false
-        default: '5'
+        default: '1'
         type: string
 
 jobs:
@@ -107,7 +107,7 @@ jobs:
       - name: Run fix-missing-image script
         if: steps.check_missing.outputs.should_run == 'true'
         run: |
-          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '5' }}"
+          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '1' }}"
 
           echo "🚀 画像URL修復スクリプトを開始します"
           echo "📊 処理件数上限: $INPUT_BATCH_SIZE件"
