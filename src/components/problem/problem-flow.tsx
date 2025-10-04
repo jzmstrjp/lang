@@ -394,12 +394,11 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             <h2 className="text-4xl font-bold pl-4">残念…</h2>
             <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
               <Image
-                src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1.webp`}
+                src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1.webp?1`}
                 alt="ショックな様子"
                 width={500}
                 height={750}
                 unoptimized
-                className="ml-6 sm:ml-8"
               />
             </div>
           </div>
