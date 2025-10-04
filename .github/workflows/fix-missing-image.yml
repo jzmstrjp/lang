@@ -10,7 +10,7 @@ on:
       batch_size:
         description: '処理件数の上限'
         required: false
-        default: '2'
+        default: '5'
         type: string
 
 jobs:
