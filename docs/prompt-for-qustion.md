@@ -12,11 +12,16 @@ TypeScriptのコードブロックでください。
 ## 条件
 
 - englishSentence
-  - 正確に、3語以上、10語以下の英文であること
-    - 語数は5問ばらけさせること
+  - 正確に、10語以内の文章のみを生成すること。
   - 以下のバランスで生成して欲しい
-    - 10%: 英単語の意味が分かれば直訳で理解できる「直訳系」
-    - 90%: 日本人が苦手そうな「熟語・慣用句系」
+    - 50%: 英単語の意味が分かれば直訳で理解できる「直訳系」
+    - 50%: 日本人が苦手そうな「熟語・慣用句系」
+- reply系
+  - 必要に応じて自然な相槌や感動詞も使用すること
+- 全てのセリフは、それぞれの人物の役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること
+- 日本語文は、直訳ではなく自然に翻訳したものであること。
+  - 英文のニュアンス（カジュアル・フォーマル・丁寧・砕けた）を保つこと。
+- 各プロパティ同士の内容が矛盾しないこと。
 
 ```TypeScript
 type SeedProblemData = {
@@ -32,8 +37,8 @@ type SeedProblemData = {
    * scenePrompt
    *
    * どのような場面なのか具体的に説明した文章。
-   * englishSentenceやjapaneseSentenceに書かれていない背景や、登場人物の動機が書かれている。
-   * AIによる画像生成の際に使用する。
+   * englishSentenceやjapaneseSentenceに書かれていない文脈・背景・場所の様子・登場人物の動機を言語化すること。
+   * AIによる画像生成に使用する。
    */
   scenePrompt: string
   /**
@@ -72,22 +77,21 @@ type SeedProblemData = {
   /**
    * japaneseSentence
    *
-   * receiverのセリフ
+   * englishSentenceの日本語訳。
    * この文が、UI上で正解として表示される。
-   * englishSentenceの自然な日本語訳。
    */
   japaneseSentence: string,
   /**
    * englishReply
    *
-   * englishSentenceに対する自然な返答のセリフ
-   * 熟語・慣用句をあまり使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
+   * englishSentenceに対するreceiverの返答。
+   * 熟語・慣用句をあまり使わず、英単語の意味が分かれば日本人でも理解できる文章であること。
    */
   englishReply: string,
   /**
    * japaneseReply
    *
-   * englishReplyの自然な日本語訳。
+   * englishReplyの日本語訳。
    */
   japaneseReply: string,
   /**

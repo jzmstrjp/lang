@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { SceneImage } from '@/components/ui/scene-image';
 
-const WITHOUT_PICTURE = false;
+const WITHOUT_PICTURE = true;
 
 type GeneratedProblem = {
   english: string;
@@ -34,6 +34,7 @@ export default function PromptTestPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const generateProblem = async (type: 'short' | 'medium' | 'long') => {
     setLoading(true);
@@ -66,6 +67,17 @@ export default function PromptTestPage() {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // 2秒後にフィードバックを消す
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      setError('クリップボードへのコピーに失敗しました');
     }
   };
 
