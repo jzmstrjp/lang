@@ -19,7 +19,8 @@
     "db:verify": "tsx scripts/verify-db.ts",
     "fix-missing-audio": "tsx scripts/fix-missing-audio.ts",
     "fix-missing-image": "tsx scripts/fix-missing-image.ts",
-    "check:image-coverage": "tsx scripts/check-image-coverage.ts"
+    "check:image-coverage": "tsx scripts/check-image-coverage.ts",
+    "generate:problems": "tsx scripts/generate-problems-with-gpt.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
