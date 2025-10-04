@@ -4,10 +4,14 @@
  * 画像URLがnullなProblemsレコードを取得して画像を生成・R2アップロード・DB更新するスクリプト
  */
 
-import type { Prisma } from '@prisma/client';
-import { prisma } from '../src/lib/prisma';
+import { PrismaClient, type Prisma } from '@prisma/client';
 // 動的インポート用の型定義のみ
 import type { GeneratedProblem } from '../src/lib/problem-generator';
+
+// スクリプト専用のPrismaClientインスタンスを作成（グローバルシングルトンを使わない）
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
 function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   if (Array.isArray(value)) {
