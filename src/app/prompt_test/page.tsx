@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { SceneImage } from '@/components/ui/scene-image';
 
-const WITHOUT_PICTURE = true;
+const WITHOUT_PICTURE = false;
 
 type GeneratedProblem = {
   english: string;
@@ -116,21 +116,7 @@ export default function PromptTestPage() {
               disabled={loading}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              短文生成
-            </button>
-            <button
-              onClick={() => generateProblem('medium')}
-              disabled={loading}
-              className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              中文生成
-            </button>
-            <button
-              onClick={() => generateProblem('long')}
-              disabled={loading}
-              className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              長文生成
+              生成テスト
             </button>
           </div>
 

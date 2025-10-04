@@ -2,7 +2,7 @@ import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
 import { generateImageBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
-import { WORD_COUNT_RULES, countWords, type ProblemLength } from '@/config/problem';
+import { countWords, type ProblemLength } from '@/config/problem';
 import type { Problem, VoiceType } from '@prisma/client';
 
 export type GenerateRequest = {
@@ -51,40 +51,9 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
 async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
-  const [
-    { default: problems1 },
-    { default: problems2 },
-    { default: problems3 },
-    { default: problems4 },
-    { default: problems5 },
-    { default: problems6 },
-    { default: problems7 },
-    { default: problems8 },
-  ] = await Promise.all([
-    import('../../problemData/problem1'),
-    import('../../problemData/problem2'),
-    import('../../problemData/problem3'),
-    import('../../problemData/problem4'),
-    import('../../problemData/problem5'),
-    import('../../problemData/problem6'),
-    import('../../problemData/problem7'),
-    import('../../problemData/problem8'),
-  ]);
+  const [{ default: problems10 }] = await Promise.all([import('../../problemData/problem10')]);
 
-  const { min, max } = WORD_COUNT_RULES[type];
-  const filteredProblems = [
-    ...problems1,
-    ...problems2,
-    ...problems3,
-    ...problems4,
-    ...problems5,
-    ...problems6,
-    ...problems7,
-    ...problems8,
-  ].filter((problem) => {
-    const wordCount = countWords(problem.englishSentence);
-    return wordCount >= min && wordCount <= max;
-  });
+  const filteredProblems = [...problems10];
 
   if (filteredProblems.length === 0) {
     throw new Error(
@@ -112,6 +81,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     receiverRole: selectedProblem.receiverRole,
     place: selectedProblem.place,
     patternId: null, // 通常問題はパターン学習に属さない
+    scenePrompt: selectedProblem.scenePrompt || null,
   };
 }
 
@@ -154,11 +124,12 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。映画俳優やアイドルのように端正な顔立ち
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。映画俳優やアイドルのように端正な顔立ち
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
 【ストーリー】
-${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
+${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
+- ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている

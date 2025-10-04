@@ -85,6 +85,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         receiverVoice: true,
         receiverRole: true,
         place: true,
+        scenePrompt: true,
       },
       take: batchSize,
       orderBy: {
@@ -130,6 +131,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           receiverVoice: problem.receiverVoice,
           receiverRole: problem.receiverRole,
           place: problem.place,
+          scenePrompt: problem.scenePrompt ?? null,
           patternId: null,
         };
 

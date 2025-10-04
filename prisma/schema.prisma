@@ -25,6 +25,7 @@ model Problem {
   receiverVoice    VoiceType
   receiverRole     String
   place            String
+  scenePrompt      String?
   
   // パターン学習用フィールド
   patternId        String?

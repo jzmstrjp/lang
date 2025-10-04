@@ -125,6 +125,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
               senderRole: '',
               receiverRole: '',
               place: '',
+              scenePrompt: null,
               patternId: null,
             },
             problem.id,
