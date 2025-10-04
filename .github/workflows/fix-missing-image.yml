@@ -3,14 +3,14 @@ name: 画像URL修復スクリプト
 on:
   # スケジュール実行
   # schedule:
-  # - cron: '*/10 * * * *'
+  #   - cron: '*/5 * * * *'
   # 手動実行
   workflow_dispatch:
     inputs:
       batch_size:
-        description: '処理件数の上限（デフォルト：5件）'
+        description: '処理件数の上限（デフォルト：3件）'
         required: false
-        default: '5'
+        default: '3'
         type: string
 
 jobs:
@@ -107,7 +107,7 @@ jobs:
       - name: Run fix-missing-image script
         if: steps.check_missing.outputs.should_run == 'true'
         run: |
-          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '5' }}"
+          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '3' }}"
 
           echo "🚀 画像URL修復スクリプトを開始します"
           echo "📊 処理件数上限: $INPUT_BATCH_SIZE件"
