@@ -291,9 +291,9 @@ if (require.main === module) {
   }
 
   (async () => {
-      await main(batchSize, checkOnly);
+    await main(batchSize, checkOnly);
   })().catch((error) => {
-      console.error('スクリプト実行エラー:', error);
+    console.error('スクリプト実行エラー:', error);
     process.exit(1);
   });
 }
