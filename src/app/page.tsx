@@ -1,7 +1,6 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { WORD_COUNT_RULES } from '@/config/problem';
 
 const links = [
@@ -22,7 +21,59 @@ const links = [
   },
 ];
 
-export default function Home() {
+type HomePageProps = {
+  searchParams: Promise<{ share?: string }>;
+};
+
+export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const awaitedSearchParams = await searchParams;
+  const shareCount = awaitedSearchParams.share;
+
+  // シェアパラメータがある場合は動的OGP
+  if (shareCount) {
+    const count = parseInt(shareCount, 10);
+    if (!isNaN(count) && count >= 1) {
+      const title = `${count}問連続正解しました！ - 英語きわめ太郎`;
+      const description = `【英語きわめ太郎】${count}問連続正解しました！`;
+      const ogImageUrl = `/api/og/${count}`;
+
+      return {
+        title,
+        description,
+        openGraph: {
+          title,
+          description,
+          url: 'https://en-ma.ster.jp.net/',
+          siteName: '英語きわめ太郎',
+          images: [
+            {
+              url: ogImageUrl,
+              width: 1200,
+              height: 630,
+              alt: `${count}問連続正解`,
+            },
+          ],
+          locale: 'ja_JP',
+          type: 'website',
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title,
+          description,
+          images: [ogImageUrl],
+        },
+      };
+    }
+  }
+
+  // 通常のメタデータはlayout.tsxから継承
+  return {};
+}
+
+export default async function Home({ searchParams }: HomePageProps) {
+  // searchParamsを使う必要はないが、generateMetadataとシグネチャを合わせる
+  await searchParams;
+
   return (
     <main className="mx-auto flex sm:min-h-[calc(80vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-2 sm:py-12 text-[#2a2b3c] sm:px-6">
       <div className="rounded-2xl overflow-hidden">

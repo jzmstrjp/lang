@@ -80,15 +80,19 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const settingsRef = useRef({
     isEnglishMode: true,
     isImageHiddenMode: false,
+    correctStreak: 0,
   });
-  const loadSettings = () => {
+
+  const loadSettings = useCallback(() => {
     if (typeof window === 'undefined') return;
 
+    const savedStreak = localStorage.getItem(`correctStreak-${length}`);
     settingsRef.current = {
       isEnglishMode: localStorage.getItem('englishMode') === 'true',
       isImageHiddenMode: localStorage.getItem('noImageMode') === 'true',
+      correctStreak: savedStreak ? parseInt(savedStreak, 10) : 0,
     };
-  };
+  }, [length]);
 
   // ProblemLength を直接使用
   const playAudio = useCallback((audio: HTMLAudioElement | null, duration: number) => {
@@ -173,7 +177,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     return () => {
       isMountedRef.current = false;
     };
-  }, [phase, sceneImage, refillQueueIfNeeded]);
+  }, [phase, sceneImage, refillQueueIfNeeded, loadSettings]);
 
   const handleStart = () => {
     setPhase({
@@ -246,6 +250,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
+  const isOnStreak = [5, 10, 20, 30, 50, 100].includes(settingsRef.current.correctStreak);
+
   return (
     <>
       {phase.kind === 'start-button' && (
@@ -315,6 +321,10 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                   onClick={() => {
                     const isCorrect = index === phase.correctIndex;
                     if (isCorrect) {
+                      // 連続正解数をインクリメント（localStorageのみ更新、refは次のloadSettings()で反映）
+                      const newStreak = settingsRef.current.correctStreak + 1;
+                      localStorage.setItem(`correctStreak-${length}`, newStreak.toString());
+
                       setPhase({
                         kind: 'correct',
                         problem: phase.problem,
@@ -325,6 +335,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                         playAudio(englishSentenceAudioRef.current, 0)
                       );
                     } else {
+                      // 連続正解数をリセット（localStorageのみ更新、refは次のloadSettings()で反映）
+                      localStorage.setItem(`correctStreak-${length}`, '0');
+
                       setPhase({
                         kind: 'incorrect',
                         problem: phase.problem,
@@ -357,22 +370,40 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       {phase.kind === 'correct' && (
         <section className="grid gap-4 text-center">
           <div className="px-6 py-2 text-cyan-600">
-            <h2 className="text-4xl font-bold">正解 🎉</h2>
-            <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
+            <h2 className="text-4xl font-bold">
+              {isOnStreak ? `${settingsRef.current.correctStreak}問連続 ` : ''}
+              正解 🎉
+            </h2>
+            <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
               <Image
                 src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1.webp`}
                 alt="ガッツポーズ"
                 width={500}
                 height={750}
                 unoptimized
+                className={isOnStreak ? 'opacity-50' : ''}
               />
+              {isOnStreak && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}/?share=${settingsRef.current.correctStreak}`;
+                    const tweetText = `【英語きわめ太郎】${settingsRef.current.correctStreak}問連続正解しました！`;
+                    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
+                    window.open(twitterUrl, '_blank', 'width=550,height=420');
+                  }}
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-black px-6 py-3 text-base font-semibold text-white shadow-lg shadow-black/50 transition enabled:hover:bg-gray-800"
+                >
+                  𝕏 で自慢する
+                </button>
+              )}
             </div>
             <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
               {phase.problem.englishSentence}
             </p>
             <p className="mt-4 text-lg text-[#2a2b3c]">{phase.problem.japaneseSentence}</p>
           </div>
-          <div className="flex flex-row gap-3 items-center justify-center">
+          <div className="flex flex-col gap-3 items-center justify-center">
             <button
               type="button"
               onClick={handleNextProblem}
