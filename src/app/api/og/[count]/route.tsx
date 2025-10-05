@@ -33,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ coun
         {/* 左側：正解画像 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1.png`}
+          src="https://en-ma.ster.jp.net/images/correct1.png"
           alt="ガッツポーズ"
           height={580}
           style={{
