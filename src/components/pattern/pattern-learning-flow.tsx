@@ -291,11 +291,13 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       {/* ランディングフェーズ */}
       {phase === 'landing' && (
         <div className="relative max-w-[500px] mx-auto">
-          <SceneImage
-            src={patternSet.examples[0].imageUrl}
-            alt={`${patternSet.examples[0].place}での会話シーン`}
-            opacity="medium"
-          />
+          <div className="opacity-50">
+            <SceneImage
+              src={patternSet.examples[0].imageUrl}
+              alt={`${patternSet.examples[0].place}での会話シーン`}
+              mode="top"
+            />
+          </div>
 
           <div className="absolute inset-0 flex items-center justify-center">
             <StartButton error={null} handleStart={handleStart} disabled={isAudioBusy}>
@@ -311,7 +313,7 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
           <SceneImage
             src={currentExample.imageUrl}
             alt={`${currentExample.place}での会話シーン`}
-            opacity="full"
+            mode="top"
           />
         </div>
       )}
@@ -320,11 +322,13 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       {phase === 'example-quiz' && currentExample && (
         <div className="relative max-w-[500px] mx-auto">
           {/* 背景画像 */}
-          <SceneImage
-            src={currentExample.imageUrl}
-            alt={`${currentExample.place}での会話シーン`}
-            opacity="low"
-          />
+          <div className="opacity-30">
+            <SceneImage
+              src={currentExample.imageUrl}
+              alt={`${currentExample.place}での会話シーン`}
+              mode="top"
+            />
+          </div>
 
           {/* クイズUI（画像の上に被せる） */}
           <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -363,11 +367,13 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       {phase === 'example-correct' && currentExample && (
         <div className="relative max-w-[500px] mx-auto">
           {/* 背景画像 */}
-          <SceneImage
-            src={currentExample.imageUrl}
-            alt={`${currentExample.place}での会話シーン`}
-            opacity="low"
-          />
+          <div className="opacity-30">
+            <SceneImage
+              src={currentExample.imageUrl}
+              alt={`${currentExample.place}での会話シーン`}
+              mode="top"
+            />
+          </div>
 
           {/* 正解UI（画像の上に被せる） */}
           <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -399,11 +405,13 @@ export default function PatternLearningFlow({ initialPatternSet }: PatternLearni
       {phase === 'example-incorrect' && currentExample && (
         <div className="relative max-w-[500px] mx-auto">
           {/* 背景画像 */}
-          <SceneImage
-            src={currentExample.imageUrl}
-            alt={`${currentExample.place}での会話シーン`}
-            opacity="low"
-          />
+          <div className="opacity-30">
+            <SceneImage
+              src={currentExample.imageUrl}
+              alt={`${currentExample.place}での会話シーン`}
+              mode="top"
+            />
+          </div>
 
           {/* 不正解UI（画像の上に被せる） */}
           <div className="absolute inset-0 flex items-center justify-center p-4">

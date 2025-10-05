@@ -3,39 +3,29 @@ import Image from 'next/image';
 type SceneImageProps = {
   src: string;
   alt: string;
-  opacity?: 'low' | 'medium' | 'full';
+  mode: 'top' | 'bottom';
   className?: string;
   onLoad?: () => void;
 };
 
 /**
  * 学習画面で使用する共通の画像コンポーネント
- * 縦横比: 500x750 (2:3)
+ * 元画像の縦横比: 500x750 (2:3)
+ * 表示領域: 500x333 (3:2) - 上半分または下半分を表示
  */
-export function SceneImage({
-  src,
-  alt,
-  opacity = 'full',
-  className = '',
-  onLoad,
-}: SceneImageProps) {
-  const opacityClass =
-    opacity === 'low' ? 'opacity-30' : opacity === 'medium' ? 'opacity-50' : 'opacity-100';
-
+export function SceneImage({ src, alt, mode, className = '', onLoad }: SceneImageProps) {
   return (
-    <div className="relative w-full max-w-[500px] mx-auto">
+    <div className="relative w-full max-w-[720px] mx-auto aspect-[2/1.4] overflow-hidden">
       <Image
         src={src}
         alt={alt}
         width={500}
         height={750}
-        className={`w-full h-auto object-contain ${opacityClass} ${className}`}
+        className={`absolute w-full h-auto object-cover ${mode === 'top' ? 'top-0' : 'bottom-0'} ${className}`}
         priority
         unoptimized
         onLoad={onLoad}
       />
-      {/* 画像中央の白い横線 */}
-      <div className="absolute top-1/2 left-0 w-full h-[2%] bg-white -translate-y-1/2" />
     </div>
   );
 }

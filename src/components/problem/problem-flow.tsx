@@ -20,7 +20,11 @@ type Phase =
       problem: ProblemWithAudio;
     }
   | {
-      kind: 'scene-ready';
+      kind: 'scene-sentence';
+      problem: ProblemWithAudio;
+    }
+  | {
+      kind: 'scene-reply';
       problem: ProblemWithAudio;
     }
   | {
@@ -162,7 +166,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         const shouldSkipImage = !sceneImage || settingsRef.current.isImageHiddenMode;
         if (shouldSkipImage) {
           setPhase({
-            kind: 'scene-ready',
+            kind: 'scene-sentence',
             problem: phase.problem,
           });
         }
@@ -206,7 +210,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         currentProblem.incorrectOptions,
       );
 
-    if (phase.kind === 'scene-entry' || phase.kind === 'scene-ready') {
+    if (phase.kind === 'scene-reply') {
       setPhase({
         kind: 'quiz',
         problem: phase.problem,
@@ -255,13 +259,15 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   return (
     <>
       {phase.kind === 'start-button' && (
-        <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
+        <div className="relative max-w-[720px] mx-auto aspect-[2/1.4]">
           {sceneImage && (
-            <SceneImage
-              src={sceneImage}
-              alt="英語と日本語のセリフを並べた2コマシーン"
-              opacity="medium"
-            />
+            <div className="opacity-50">
+              <SceneImage
+                src={sceneImage}
+                alt="英語と日本語のセリフを並べた2コマシーン"
+                mode="top"
+              />
+            </div>
           )}
 
           <div className="absolute inset-0 flex items-center justify-center">
@@ -271,7 +277,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           </div>
         </div>
       )}
-      {sceneImage && (
+      {/* scene-entry: 画像読み込み中 */}
+      {sceneImage && phase.kind === 'scene-entry' && (
         <section
           className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
         >
@@ -279,34 +286,65 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             <SceneImage
               src={sceneImage}
               alt="英語と日本語のセリフを並べた2コマシーン"
-              opacity="full"
-              className={
-                phase.kind === 'scene-entry' || phase.kind === 'scene-ready' ? 'block' : 'hidden'
-              }
+              mode="top"
               onLoad={() => {
-                console.log('[ProblemFlow] 画像読み込み完了');
-                if (phase.kind === 'scene-entry') {
-                  setPhase({
-                    kind: 'scene-ready',
-                    problem: phase.problem,
-                  });
-                }
+                console.log('[ProblemFlow] 画像読み込み完了 (scene-entry → scene-sentence)');
+                setPhase({
+                  kind: 'scene-sentence',
+                  problem: phase.problem,
+                });
               }}
             />
           </figure>
         </section>
       )}
 
-      {/* 画像がない or 画像なしモードの場合のシーン表示（scene-entry / scene-ready 限定） */}
-      {(phase.kind === 'scene-entry' || phase.kind === 'scene-ready') &&
+      {/* scene-sentence: 英語の文を再生中（上半分を表示） */}
+      {sceneImage && phase.kind === 'scene-sentence' && (
+        <section
+          className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
+        >
+          <figure className="flex w-full justify-center">
+            <SceneImage src={sceneImage} alt="英語と日本語のセリフを並べた2コマシーン" mode="top" />
+          </figure>
+        </section>
+      )}
+
+      {/* scene-reply: 返答音声を再生中（下半分を表示） */}
+      {sceneImage && phase.kind === 'scene-reply' && (
+        <section
+          className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
+        >
+          <figure className="flex w-full justify-center">
+            <SceneImage
+              src={sceneImage}
+              alt="英語と日本語のセリフを並べた2コマシーン"
+              mode="bottom"
+            />
+          </figure>
+        </section>
+      )}
+
+      {/* 画像がない or 画像なしモードの場合のシーン表示（scene-sentence） */}
+      {phase.kind === 'scene-sentence' &&
         (!sceneImage || settingsRef.current.isImageHiddenMode) && (
           <section className="grid place-items-center">
-            <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-              <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
+            <div className="w-full max-w-[720px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+              <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン（英語の文）</h3>
               <p className="font-bold text-2xl">{phase.problem.place}</p>
             </div>
           </section>
         )}
+
+      {/* 画像がない or 画像なしモードの場合のシーン表示（scene-reply） */}
+      {phase.kind === 'scene-reply' && (!sceneImage || settingsRef.current.isImageHiddenMode) && (
+        <section className="grid place-items-center">
+          <div className="w-full max-w-[720px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+            <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン（返答）</h3>
+            <p className="font-bold text-2xl">{phase.problem.place}</p>
+          </div>
+        </section>
+      )}
 
       {phase.kind === 'quiz' && (
         <section className="grid gap-6 sm:gap-8">
@@ -451,11 +489,18 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         onEnded={() => {
           setAudioBusy(false);
           if (phase.kind === 'quiz' || phase.kind === 'correct') return;
-          // scene-entry/scene-ready時のみ、返答音声を続けて再生
-          const replyAudioRef = settingsRef.current.isEnglishMode
-            ? englishReplyAudioRef
-            : japaneseReplyAudioRef;
-          void (replyAudioRef.current && playAudio(replyAudioRef.current, 0));
+
+          // scene-sentence時は scene-reply へ遷移して返答音声を再生
+          if (phase.kind === 'scene-sentence') {
+            setPhase({
+              kind: 'scene-reply',
+              problem: phase.problem,
+            });
+            const replyAudioRef = settingsRef.current.isEnglishMode
+              ? englishReplyAudioRef
+              : japaneseReplyAudioRef;
+            void (replyAudioRef.current && playAudio(replyAudioRef.current, 0));
+          }
         }}
       />
       <audio

@@ -217,7 +217,7 @@ export default function PromptTestPage() {
                     <SceneImage
                       src={assets.composite}
                       alt="Generated scene illustration"
-                      opacity="full"
+                      mode="top"
                       className="rounded-lg shadow-md"
                     />
                   </div>

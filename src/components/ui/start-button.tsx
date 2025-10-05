@@ -13,7 +13,7 @@ export const StartButton = ({
   children,
 }: PropsWithChildren<StartButtonProps>) => {
   return (
-    <div className="mt-8 flex flex-col items-center gap-4 text-center bg-white p-8 rounded-lg min-w-[80%] sm:min-w-[300px]">
+    <div className="flex flex-col items-center gap-4 text-center bg-white p-8 rounded-lg min-w-[80%] sm:min-w-[300px]">
       {error && <p className="text-sm text-rose-500">{error}</p>}
       <button
         type="button"
