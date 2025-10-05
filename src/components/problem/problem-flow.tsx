@@ -154,10 +154,6 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase.kind) {
-      case 'start-button':
-        // 特に何もしない
-        break;
-
       case 'scene-entry': {
         const shouldSkipImage = !sceneImage || settingsRef.current.isImageHiddenMode;
         if (shouldSkipImage) {

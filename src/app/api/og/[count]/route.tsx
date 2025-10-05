@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ coun
           position: 'relative',
           fontFamily: 'Noto Sans JP',
           fontWeight: 900,
-          background: "white",
+          background: 'white',
         }}
       >
         {/* 左側：正解画像 */}
