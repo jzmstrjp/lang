@@ -259,7 +259,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   return (
     <>
       {phase.kind === 'start-button' && (
-        <div className="relative max-w-[720px] mx-auto aspect-[2/1.4]">
+        <div className="relative max-w-[720px] mx-auto aspect-[2/1.45]">
           {sceneImage && (
             <div className="opacity-50">
               <SceneImage

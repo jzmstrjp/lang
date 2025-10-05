@@ -15,7 +15,7 @@ type SceneImageProps = {
  */
 export function SceneImage({ src, alt, mode, className = '', onLoad }: SceneImageProps) {
   return (
-    <div className="relative w-full max-w-[720px] mx-auto aspect-[2/1.4] overflow-hidden">
+    <div className="relative w-full max-w-[720px] mx-auto aspect-[2/1.45] overflow-hidden">
       <Image
         src={src}
         alt={alt}
