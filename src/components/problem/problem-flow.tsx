@@ -132,9 +132,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     if (!audio) return;
 
     audio.load();
+    setAudioBusy(true);
 
     setTimeout(() => {
-      setAudioBusy(true);
       audio.play().catch(() => {
         console.warn('英語音声の再生に失敗しました。');
         setAudioBusy(false);
