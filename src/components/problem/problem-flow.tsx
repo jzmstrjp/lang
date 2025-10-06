@@ -414,7 +414,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                 <button
                   type="button"
                   onClick={() => {
-                    const shareUrl = `${window.location.origin}?share=${setting.correctStreak}`;
+                    const shareUrl = `${window.location.origin}?streak=${setting.correctStreak}`;
                     const tweetText = `【英語きわめ太郎】${setting.correctStreak}問連続正解しました！`;
                     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
                     window.open(twitterUrl, '_blank', 'width=550,height=420');
