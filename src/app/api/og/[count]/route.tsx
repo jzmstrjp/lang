@@ -2,6 +2,11 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
+// フォント取得をグローバルスコープに移動（Edge Runtimeのプロセス再利用を活用）
+const fontDataPromise = fetch(
+  'https://fonts.gstatic.com/s/notosansjp/v55/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFLgk75s.ttf',
+).then((res) => res.arrayBuffer());
+
 export async function GET(request: Request, { params }: { params: Promise<{ count: string }> }) {
   const { count } = await params;
   const correctCount = parseInt(count, 10);
@@ -10,10 +15,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ coun
     return new Response('Invalid count', { status: 400 });
   }
 
-  // Noto Sans JPフォント（Black/900）を取得
-  const fontData = await fetch(
-    'https://fonts.gstatic.com/s/notosansjp/v55/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFLgk75s.ttf',
-  ).then((res) => res.arrayBuffer());
+  // キャッシュされたフォントデータを取得
+  const fontData = await fontDataPromise;
 
   return new ImageResponse(
     (
@@ -112,6 +115,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ coun
           weight: 900,
         },
       ],
+      headers: {
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+      },
     },
   );
 }
