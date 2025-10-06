@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { WORD_COUNT_RULES } from '@/config/problem';
+import { ALLOWED_SHARE_COUNTS } from '@/const';
 
 const links = [
   {
@@ -32,10 +33,13 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
   // シェアパラメータがある場合は動的OGP
   if (shareCount) {
     const count = parseInt(shareCount, 10);
-    if (!isNaN(count) && count >= 1) {
-      const title = `${count}問連続正解しました！ - 英語きわめ太郎`;
+    if (
+      !isNaN(count) &&
+      ALLOWED_SHARE_COUNTS.includes(count as (typeof ALLOWED_SHARE_COUNTS)[number])
+    ) {
+      const title = `【英語きわめ太郎】${count}問連続正解しました！`;
       const description = `【英語きわめ太郎】${count}問連続正解しました！`;
-      const ogImageUrl = `/api/og/${count}`;
+      const ogImageUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct-streak-ogp/correct${count}.png`;
 
       return {
         title,

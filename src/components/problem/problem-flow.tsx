@@ -7,6 +7,7 @@ import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex } from '@/lib/shuffle-utils';
+import { ALLOWED_SHARE_COUNTS } from '@/const';
 
 // 直和型によるPhase定義
 type Phase =
@@ -277,7 +278,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
-  const isOnStreak = [5, 10, 20, 30, 50, 100].includes(setting.correctStreak);
+  const isOnStreak = ALLOWED_SHARE_COUNTS.includes(
+    setting.correctStreak as (typeof ALLOWED_SHARE_COUNTS)[number],
+  );
 
   return (
     <>
