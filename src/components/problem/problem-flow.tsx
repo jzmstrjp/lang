@@ -13,7 +13,7 @@ type Phase =
   | {
       kind: 'start-button';
       error: string | null;
-      sceneImage: string | null;
+      problem: ProblemWithAudio;
     }
   | {
       kind: 'scene-entry';
@@ -50,6 +50,29 @@ type ApiProblemsResponse = {
   count: number;
 };
 
+type Setting = {
+  isEnglishMode: boolean;
+  isImageHiddenMode: boolean;
+  correctStreak: number;
+};
+
+const getCurrentSetting = (length: ProblemLength): Setting => {
+  if (typeof window === 'undefined')
+    return {
+      isEnglishMode: false,
+      isImageHiddenMode: false,
+      correctStreak: 0,
+    };
+
+  const correctStreakCount = localStorage.getItem(`correctStreak-${length}`);
+
+  return {
+    isEnglishMode: localStorage.getItem('englishMode') === 'true',
+    isImageHiddenMode: localStorage.getItem('noImageMode') === 'true',
+    correctStreak: Number(correctStreakCount) ?? 0,
+  };
+};
+
 export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
@@ -60,7 +83,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const [phase, setPhase] = useState<Phase>({
     kind: 'start-button',
     error: null,
-    sceneImage: initialProblem.imageUrl ?? null,
+    problem: initialProblem,
   });
 
   // グローバル状態（全phase共通）
@@ -77,22 +100,31 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
   const lastQueueLengthRef = useRef(0);
-  const settingsRef = useRef({
-    isEnglishMode: true,
-    isImageHiddenMode: false,
-    correctStreak: 0,
-  });
 
-  const loadSettings = useCallback(() => {
-    if (typeof window === 'undefined') return;
+  // Setting型の部分更新でlocalStorageとrefを同時に更新する関数
+  const updateSetting = useCallback(
+    (updates: Partial<Setting>) => {
+      if (typeof window === 'undefined') return;
 
-    const savedStreak = localStorage.getItem(`correctStreak-${length}`);
-    settingsRef.current = {
-      isEnglishMode: localStorage.getItem('englishMode') === 'true',
-      isImageHiddenMode: localStorage.getItem('noImageMode') === 'true',
-      correctStreak: savedStreak ? parseInt(savedStreak, 10) : 0,
-    };
-  }, [length]);
+      const currentSetting = getCurrentSetting(length);
+
+      const settingKeys = {
+        isEnglishMode: 'englishMode',
+        isImageHiddenMode: 'noImageMode',
+        correctStreak: `correctStreak-${length}`,
+      } as const satisfies Record<keyof Setting, string>;
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value !== undefined && currentSetting[key as keyof Setting] !== value) {
+          const storageKey = settingKeys[key as keyof typeof settingKeys];
+          localStorage.setItem(storageKey, value.toString());
+        }
+      });
+    },
+    [length],
+  );
+
+  const setting = getCurrentSetting(length);
 
   // ProblemLength を直接使用
   const playAudio = useCallback((audio: HTMLAudioElement | null, duration: number) => {
@@ -150,12 +182,11 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   // phaseごとの処理
   useEffect(() => {
     isMountedRef.current = true;
-    loadSettings();
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase.kind) {
       case 'scene-entry': {
-        const shouldSkipImage = !sceneImage || settingsRef.current.isImageHiddenMode;
+        const shouldSkipImage = !sceneImage || setting.isImageHiddenMode;
         if (shouldSkipImage) {
           setPhase({
             kind: 'scene-ready',
@@ -173,7 +204,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     return () => {
       isMountedRef.current = false;
     };
-  }, [phase, sceneImage, refillQueueIfNeeded, loadSettings]);
+  }, [phase, refillQueueIfNeeded, sceneImage, setting]);
 
   const handleStart = () => {
     setPhase({
@@ -230,7 +261,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       setPhase({
         kind: 'start-button',
         error: '次の問題がありません',
-        sceneImage: sceneImage,
+        problem: currentProblem,
       });
       return;
     }
@@ -246,7 +277,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
-  const isOnStreak = [5, 10, 20, 30, 50, 100].includes(settingsRef.current.correctStreak);
+  const isOnStreak = [5, 10, 20, 30, 50, 100].includes(setting.correctStreak);
 
   return (
     <>
@@ -267,42 +298,39 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           </div>
         </div>
       )}
-      {sceneImage && (
-        <section
-          className={`grid place-items-center ${settingsRef.current.isImageHiddenMode ? 'hidden' : ''}`}
-        >
-          <figure className="flex w-full justify-center">
-            <SceneImage
-              src={sceneImage}
-              alt="英語と日本語のセリフを並べた2コマシーン"
-              opacity="full"
-              className={
-                phase.kind === 'scene-entry' || phase.kind === 'scene-ready' ? 'block' : 'hidden'
-              }
-              onLoad={() => {
-                console.log('[ProblemFlow] 画像読み込み完了');
-                if (phase.kind === 'scene-entry') {
-                  setPhase({
-                    kind: 'scene-ready',
-                    problem: phase.problem,
-                  });
-                }
-              }}
-            />
-          </figure>
-        </section>
+      {/* シーン表示（scene-entry / scene-ready 限定） */}
+      {(phase.kind === 'scene-entry' || phase.kind === 'scene-ready') && (
+        <>
+          {/* 画像がある場合の表示 */}
+          {sceneImage && !setting.isImageHiddenMode ? (
+            <section className="grid place-items-center">
+              <figure className="flex w-full justify-center">
+                <SceneImage
+                  src={sceneImage}
+                  alt="英語と日本語のセリフを並べた2コマシーン"
+                  opacity="full"
+                  onLoad={() => {
+                    console.log('[ProblemFlow] 画像読み込み完了');
+                    if (phase.kind === 'scene-entry') {
+                      setPhase({
+                        kind: 'scene-ready',
+                        problem: phase.problem,
+                      });
+                    }
+                  }}
+                />
+              </figure>
+            </section>
+          ) : (
+            <section className="grid place-items-center">
+              <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+                <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
+                <p className="font-bold text-2xl">{phase.problem.place}</p>
+              </div>
+            </section>
+          )}
+        </>
       )}
-
-      {/* 画像がない or 画像なしモードの場合のシーン表示（scene-entry / scene-ready 限定） */}
-      {(phase.kind === 'scene-entry' || phase.kind === 'scene-ready') &&
-        (!sceneImage || settingsRef.current.isImageHiddenMode) && (
-          <section className="grid place-items-center">
-            <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-              <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
-              <p className="font-bold text-2xl">{phase.problem.place}</p>
-            </div>
-          </section>
-        )}
 
       {phase.kind === 'quiz' && (
         <section className="grid gap-6 sm:gap-8">
@@ -317,9 +345,9 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                   onClick={() => {
                     const isCorrect = index === phase.correctIndex;
                     if (isCorrect) {
-                      // 連続正解数をインクリメント（localStorageのみ更新、refは次のloadSettings()で反映）
-                      const newStreak = settingsRef.current.correctStreak + 1;
-                      localStorage.setItem(`correctStreak-${length}`, newStreak.toString());
+                      // 連続正解数をインクリメント（localStorageとrefを同時更新）
+                      const newStreak = setting.correctStreak + 1;
+                      updateSetting({ correctStreak: newStreak });
 
                       setPhase({
                         kind: 'correct',
@@ -331,8 +359,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                         playAudio(englishSentenceAudioRef.current, 0)
                       );
                     } else {
-                      // 連続正解数をリセット（localStorageのみ更新、refは次のloadSettings()で反映）
-                      localStorage.setItem(`correctStreak-${length}`, '0');
+                      // 連続正解数をリセット（localStorageとrefを同時更新）
+                      updateSetting({ correctStreak: 0 });
 
                       setPhase({
                         kind: 'incorrect',
@@ -367,7 +395,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         <section className="grid gap-4 text-center">
           <div className="px-6 py-2 text-cyan-600">
             <h2 className="text-4xl font-bold">
-              {isOnStreak ? `${settingsRef.current.correctStreak}問連続 ` : ''}
+              {isOnStreak ? `${setting.correctStreak}問連続 ` : ''}
               正解 🎉
             </h2>
             <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
@@ -383,8 +411,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                 <button
                   type="button"
                   onClick={() => {
-                    const shareUrl = `${window.location.origin}?share=${settingsRef.current.correctStreak}`;
-                    const tweetText = `【英語きわめ太郎】${settingsRef.current.correctStreak}問連続正解しました！`;
+                    const shareUrl = `${window.location.origin}?share=${setting.correctStreak}`;
+                    const tweetText = `【英語きわめ太郎】${setting.correctStreak}問連続正解しました！`;
                     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
                     window.open(twitterUrl, '_blank', 'width=550,height=420');
                   }}
@@ -448,7 +476,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           setAudioBusy(false);
           if (phase.kind === 'quiz' || phase.kind === 'correct') return;
           // scene-entry/scene-ready時のみ、返答音声を続けて再生
-          const replyAudioRef = settingsRef.current.isEnglishMode
+          const replyAudioRef = setting.isEnglishMode
             ? englishReplyAudioRef
             : japaneseReplyAudioRef;
           void (replyAudioRef.current && playAudio(replyAudioRef.current, 0));
