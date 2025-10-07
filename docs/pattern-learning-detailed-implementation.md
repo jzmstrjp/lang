@@ -383,6 +383,10 @@ export async function generatePatternExampleAudio(
   englishReply: string,
   senderVoice: VoiceType,
   receiverVoice: VoiceType,
+  senderRole: string,
+  receiverRole: string,
+  senderVoiceInstruction: string | null,
+  receiverVoiceInstruction: string | null,
 ): Promise<{
   audioEnUrl: string;
   audioJaUrl: string;
@@ -392,9 +396,24 @@ export async function generatePatternExampleAudio(
 
   // 3つの音声を並列生成
   const [enBuffer, jaBuffer, enReplyBuffer] = await Promise.all([
-    generateSpeechBuffer(englishSentence, voiceTypeToGender(senderVoice)),
-    generateSpeechBuffer(japaneseReply, voiceTypeToGender(receiverVoice)),
-    generateSpeechBuffer(englishReply, voiceTypeToGender(receiverVoice)),
+    generateSpeechBuffer(
+      englishSentence,
+      voiceTypeToGender(senderVoice),
+      senderVoiceInstruction,
+      senderRole,
+    ),
+    generateSpeechBuffer(
+      japaneseReply,
+      voiceTypeToGender(receiverVoice),
+      receiverVoiceInstruction,
+      receiverRole,
+    ),
+    generateSpeechBuffer(
+      englishReply,
+      voiceTypeToGender(receiverVoice),
+      receiverVoiceInstruction,
+      receiverRole,
+    ),
   ]);
 
   console.log(`[Pattern Audio] 音声バッファ生成完了`);
@@ -422,10 +441,17 @@ export async function generatePatternTestAudio(
   testId: string,
   englishSentence: string,
   senderVoice: VoiceType,
+  senderRole: string,
+  senderVoiceInstruction: string | null,
 ): Promise<string> {
   console.log(`[Pattern Test Audio] 音声生成開始: ${testId}`);
 
-  const audioBuffer = await generateSpeechBuffer(englishSentence, voiceTypeToGender(senderVoice));
+  const audioBuffer = await generateSpeechBuffer(
+    englishSentence,
+    voiceTypeToGender(senderVoice),
+    senderVoiceInstruction,
+    senderRole,
+  );
 
   const audioUrl = await uploadAudioToR2(audioBuffer, testId, 'en', voiceTypeToGender(senderVoice));
 

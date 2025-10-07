@@ -2,35 +2,31 @@
 
 import { useState } from 'react';
 import { SceneImage } from '@/components/ui/scene-image';
+import type { GeneratedProblem } from '@/types/generated-problem';
 
 const WITHOUT_PICTURE = true;
-
-type GeneratedProblem = {
-  english: string;
-  japaneseReply: string;
-  scenePrompt: string;
-  type: string;
-  sceneId: string;
-  options: string[];
-  correctIndex: number;
-  characterRoles?: {
-    character1: string;
-    character2: string;
-  };
-};
+const CORRECT_INDEX = 0;
 
 type AssetsData = {
   audio: {
     english: string;
     japanese: string;
+    englishReply?: string;
   };
   imagePrompt?: string;
   composite?: string | null;
 };
 
+type GenerateProblemResponse = {
+  problem: GeneratedProblem;
+  options: string[];
+  assets: AssetsData;
+};
+
 export default function PromptTestPage() {
   const [problem, setProblem] = useState<GeneratedProblem | null>(null);
   const [assets, setAssets] = useState<AssetsData | null>(null);
+  const [options, setOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -53,9 +49,10 @@ export default function PromptTestPage() {
         throw new Error('Failed to generate problem');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as GenerateProblemResponse;
       setProblem(data.problem);
       setAssets(data.assets);
+      setOptions(data.options);
 
       // 問題生成後に自動で音声再生を開始
       if (data.assets?.audio) {
@@ -226,23 +223,25 @@ export default function PromptTestPage() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
-                <p className="text-xl text-blue-900 font-medium">{problem.english}</p>
+                <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
+                <p className="mt-2 text-sm text-blue-500">{problem.senderVoiceInstruction}</p>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-green-800 mb-2">日本語返答</h3>
                 <p className="text-xl text-green-900 font-medium">{problem.japaneseReply}</p>
+                <p className="mt-2 text-sm text-green-500">{problem.receiverVoiceInstruction}</p>
               </div>
 
               {/* 選択肢を日本語返答の下に追加 */}
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-orange-800 mb-4">選択肢</h3>
                 <div className="space-y-3">
-                  {problem.options.map((option, index) => (
+                  {options.map((option, index) => (
                     <div
                       key={index}
                       className={`p-3 rounded-lg border-2 ${
-                        index === problem.correctIndex
+                        index === CORRECT_INDEX
                           ? 'bg-green-100 border-green-300 text-green-800'
                           : 'bg-white border-gray-200 text-gray-700'
                       }`}
@@ -250,14 +249,14 @@ export default function PromptTestPage() {
                       <div className="flex items-center gap-2">
                         <span
                           className={`font-bold text-sm px-2 py-1 rounded ${
-                            index === problem.correctIndex
+                            index === CORRECT_INDEX
                               ? 'bg-green-200 text-green-800'
                               : 'bg-gray-200 text-gray-600'
                           }`}
                         >
                           {index + 1}
                         </span>
-                        {index === problem.correctIndex && (
+                        {index === CORRECT_INDEX && (
                           <span className="text-green-600 font-semibold text-sm">✓ 正解</span>
                         )}
                         <span className="text-base">{option}</span>
@@ -270,13 +269,13 @@ export default function PromptTestPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-purple-50 border border-purple-200 rounded p-3">
                   <span className="font-semibold text-purple-800">シーン:</span>
-                  <p className="text-purple-700">{problem.sceneId}</p>
+                  <p className="text-purple-700">{problem.place}</p>
                 </div>
-                {problem.characterRoles && (
+                {(problem.senderRole || problem.receiverRole) && (
                   <div className="bg-cyan-50 border border-cyan-200 rounded p-3">
                     <span className="font-semibold text-cyan-800">キャラクター:</span>
                     <p className="text-cyan-700">
-                      {problem.characterRoles.character1} → {problem.characterRoles.character2}
+                      {problem.senderRole} → {problem.receiverRole}
                     </p>
                   </div>
                 )}

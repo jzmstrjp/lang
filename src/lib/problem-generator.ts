@@ -3,7 +3,9 @@ import { generateImageBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
 import { countWords, type ProblemLength } from '@/config/problem';
-import type { Problem, VoiceType } from '@prisma/client';
+import type { VoiceType } from '@prisma/client';
+import type { GeneratedProblem } from '@/types/generated-problem';
+export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
   type?: ProblemLength;
@@ -11,21 +13,6 @@ export type GenerateRequest = {
 };
 
 // Prismaの型を利用
-export type GeneratedProblem = Omit<
-  Problem,
-  | 'id'
-  | 'audioEnUrl'
-  | 'audioJaUrl'
-  | 'audioEnReplyUrl'
-  | 'imageUrl'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'incorrectOptions'
-  | 'audioReady'
-> & {
-  incorrectOptions: string[];
-};
-
 /**
  * VoiceTypeをVoiceGenderに変換
  */
@@ -51,9 +38,9 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
 async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
-  const [{ default: problems10 }] = await Promise.all([import('../../problemData/problem10')]);
+  const [{ default: problem10 }] = await Promise.all([import('../../problemData/problem10')]);
 
-  const filteredProblems = [...problems10];
+  const filteredProblems = [...problem10];
 
   if (filteredProblems.length === 0) {
     throw new Error(
@@ -82,6 +69,8 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     place: selectedProblem.place,
     patternId: null, // 通常問題はパターン学習に属さない
     scenePrompt: selectedProblem.scenePrompt || null,
+    senderVoiceInstruction: selectedProblem.senderVoiceInstruction ?? null,
+    receiverVoiceInstruction: selectedProblem.receiverVoiceInstruction ?? null,
   };
 }
 
@@ -169,14 +158,29 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
   englishReply?: string;
 }> {
   const audioPromises = [
-    generateSpeech(problem.englishSentence, voiceTypeToVoiceGender(problem.senderVoice)),
-    generateSpeech(problem.japaneseReply, voiceTypeToVoiceGender(problem.receiverVoice)),
+    generateSpeech(
+      problem.englishSentence,
+      voiceTypeToVoiceGender(problem.senderVoice),
+      problem.senderVoiceInstruction ?? null,
+      problem.senderRole,
+    ),
+    generateSpeech(
+      problem.japaneseReply,
+      voiceTypeToVoiceGender(problem.receiverVoice),
+      problem.receiverVoiceInstruction ?? null,
+      problem.receiverRole,
+    ),
   ];
 
   // englishReplyがある場合は英語返答の音声も生成
   if (problem.englishReply) {
     audioPromises.push(
-      generateSpeech(problem.englishReply, voiceTypeToVoiceGender(problem.receiverVoice)),
+      generateSpeech(
+        problem.englishReply,
+        voiceTypeToVoiceGender(problem.receiverVoice),
+        problem.receiverVoiceInstruction ?? null,
+        problem.receiverRole,
+      ),
     );
   }
 
@@ -207,14 +211,29 @@ export async function generateAndUploadAudioAssets(
   englishReply?: string;
 }> {
   const audioBufferPromises = [
-    generateSpeechBuffer(problem.englishSentence, voiceTypeToVoiceGender(problem.senderVoice)),
-    generateSpeechBuffer(problem.japaneseReply, voiceTypeToVoiceGender(problem.receiverVoice)),
+    generateSpeechBuffer(
+      problem.englishSentence,
+      voiceTypeToVoiceGender(problem.senderVoice),
+      problem.senderVoiceInstruction ?? null,
+      problem.senderRole,
+    ),
+    generateSpeechBuffer(
+      problem.japaneseReply,
+      voiceTypeToVoiceGender(problem.receiverVoice),
+      problem.receiverVoiceInstruction ?? null,
+      problem.receiverRole,
+    ),
   ];
 
   // englishReplyがある場合は英語返答の音声も生成
   if (problem.englishReply) {
     audioBufferPromises.push(
-      generateSpeechBuffer(problem.englishReply, voiceTypeToVoiceGender(problem.receiverVoice)),
+      generateSpeechBuffer(
+        problem.englishReply,
+        voiceTypeToVoiceGender(problem.receiverVoice),
+        problem.receiverVoiceInstruction ?? null,
+        problem.receiverRole,
+      ),
     );
   }
 

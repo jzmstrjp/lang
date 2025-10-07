@@ -47,53 +47,53 @@ type SeedProblemData = {
    * senderの役割
    * 例: カフェの店員、レストランの客、教師、生徒、上司、部下、同僚、デザイナー、エンジニア、プロジェクトマネージャー、母親、父親、息子、娘
    */
-  senderRole: string,
+  senderRole: string
   /**
    * senderVoice
    *
    * senderの声タイプ
    */
-  senderVoice: 'male' | 'female',
+  senderVoice: 'male' | 'female'
   /**
    * receiverRole
    *
    * senderの役割
    * 例: カフェの店員、レストランの客、教師、生徒、上司、部下、同僚、デザイナー、エンジニア、プロジェクトマネージャー、母親、父親、息子、娘
    */
-  receiverRole: string,
+  receiverRole: string
   /**
    * receiverVoice
    *
    * receiverの声タイプ
    * senderとは逆のタイプであること。
    */
-  receiverVoice: 'male' | 'female',
+  receiverVoice: 'male' | 'female'
   /**
    * englishSentence
    *
    * senderのセリフ。
    */
-  englishSentence: string,
+  englishSentence: string
   /**
    * japaneseSentence
    *
    * englishSentenceの日本語訳。
    * この文が、UI上で正解として表示される。
    */
-  japaneseSentence: string,
+  japaneseSentence: string
   /**
    * englishReply
    *
    * englishSentenceに対するreceiverの返答。
    * 熟語・慣用句をあまり使わず、英単語の意味が分かれば日本人でも理解できる文章であること。
    */
-  englishReply: string,
+  englishReply: string
   /**
    * japaneseReply
    *
    * englishReplyの日本語訳。
    */
-  japaneseReply: string,
+  japaneseReply: string
   /**
    * incorrectOptions
    *
@@ -103,6 +103,24 @@ type SeedProblemData = {
    * 3つとも、japaneseSentenceと同じ文字数であること。
    * 返答ではなく、何かを質問したり話しかける内容であること。
    */
-  incorrectOptions: [string, string, string],
+  incorrectOptions: [string, string, string]
+  /**
+   * senderVoiceInstruction
+   *
+   * senderの声のトーン
+   * senderRoleとenglishSentenceに適した指示であること。
+   * ニュアンス（カジュアル・フォーマル・丁寧・砕けた）や感情に言及した具体的な指示であること
+   * 例: 「明るく楽しみにしている気持ちを込めて」「厳しく冷たい口調で」「激しい怒りを込めて」「親切で落ち着いた丁寧な話し方」「カジュアルで親しみやすく、元気そうに」
+   */
+  senderVoiceInstruction: string
+  /**
+   * receiverVoiceInstruction
+   *
+   * receiverの声のトーン
+   * receiverRoleとjapaneseReplyに適した指示であること。
+   * ニュアンス（カジュアル・フォーマル・丁寧・砕けた）や感情に言及した具体的な指示であること
+   * 例: 「明るく楽しみにしている気持ちを込めて」「厳しく冷たい口調で」「激しい怒りを込めて」「親切で落ち着いた丁寧な話し方」「カジュアルで親しみやすく、元気そうに」
+   */
+  receiverVoiceInstruction: string
 }
 ```

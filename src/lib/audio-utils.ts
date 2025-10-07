@@ -30,7 +30,12 @@ function speakerToVoice(speaker: VoiceGender): string {
   return getVoiceFromGender(speaker);
 }
 
-export async function generateSpeech(input: string, speaker: VoiceGender) {
+export async function generateSpeech(
+  input: string,
+  speaker: VoiceGender,
+  instructions: string | null,
+  role: string,
+) {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
@@ -41,6 +46,9 @@ export async function generateSpeech(input: string, speaker: VoiceGender) {
     voice,
     input,
     speed: TTS_CONFIG.speed,
+    ...(instructions
+      ? { instructions: `${instructions}。${role}っぽく話してください。` }
+      : { instructions: `${role}っぽく話してください。` }),
   });
 
   const arrayBuffer = await result.arrayBuffer();
@@ -51,7 +59,12 @@ export async function generateSpeech(input: string, speaker: VoiceGender) {
 /**
  * 音声を生成してBufferを返す（アップロードは別途実行）
  */
-export async function generateSpeechBuffer(input: string, speaker: VoiceGender): Promise<Buffer> {
+export async function generateSpeechBuffer(
+  input: string,
+  speaker: VoiceGender,
+  instructions: string | null,
+  role: string,
+): Promise<Buffer> {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
@@ -62,6 +75,9 @@ export async function generateSpeechBuffer(input: string, speaker: VoiceGender):
     voice,
     input,
     speed: TTS_CONFIG.speed,
+    ...(instructions
+      ? { instructions: `${instructions}。${role}っぽく話してください。` }
+      : { instructions: `${role}っぽく話してください。` }),
   });
 
   const arrayBuffer = await result.arrayBuffer();
@@ -76,7 +92,9 @@ export async function generateSpeechAndUploadToR2(
   speaker: VoiceGender,
   problemId: string,
   language: 'en' | 'ja',
+  instructions: string | null,
+  role: string,
 ): Promise<string> {
-  const audioBuffer = await generateSpeechBuffer(input, speaker);
+  const audioBuffer = await generateSpeechBuffer(input, speaker, instructions, role);
   return uploadAudioToR2(audioBuffer, problemId, language, speaker);
 }

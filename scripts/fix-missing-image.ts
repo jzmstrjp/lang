@@ -86,6 +86,8 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         receiverRole: true,
         place: true,
         scenePrompt: true,
+        senderVoiceInstruction: true,
+        receiverVoiceInstruction: true,
       },
       take: batchSize,
       orderBy: {
@@ -133,6 +135,8 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           place: problem.place,
           scenePrompt: problem.scenePrompt ?? null,
           patternId: null,
+          senderVoiceInstruction: problem.senderVoiceInstruction ?? null,
+          receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
         };
 
         const imageUrl = await generateAndUploadImageAsset(generatedProblem, problem.id);

@@ -26,6 +26,8 @@ model Problem {
   receiverRole     String
   place            String
   scenePrompt      String?
+  senderVoiceInstruction String?
+  receiverVoiceInstruction String?
   
   // パターン学習用フィールド
   patternId        String?

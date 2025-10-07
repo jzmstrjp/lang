@@ -64,19 +64,8 @@ export async function POST(req: Request) {
     console.log('[test-generate] アセット生成完了');
 
     return NextResponse.json({
-      problem: {
-        english: problem.englishSentence,
-        japaneseReply: problem.japaneseReply,
-        scenePrompt: imagePrompt,
-        type: body.type || 'short',
-        sceneId: problem.place,
-        options: [problem.japaneseSentence, ...problem.incorrectOptions],
-        correctIndex: 0,
-        characterRoles: {
-          character1: problem.senderRole,
-          character2: problem.receiverRole,
-        },
-      },
+      problem,
+      options: [problem.japaneseSentence, ...problem.incorrectOptions],
       assets: {
         imagePrompt,
         composite: compositeImage,

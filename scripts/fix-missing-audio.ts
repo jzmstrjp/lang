@@ -58,14 +58,21 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
       select: {
         id: true,
         englishSentence: true,
+        japaneseSentence: true,
         japaneseReply: true,
         englishReply: true,
         senderVoice: true,
+        senderRole: true,
         receiverVoice: true,
+        receiverRole: true,
         audioEnUrl: true,
         audioJaUrl: true,
         audioEnReplyUrl: true,
         audioReady: true,
+        senderVoiceInstruction: true,
+        receiverVoiceInstruction: true,
+        place: true,
+        scenePrompt: true,
       },
       take: batchSize,
       orderBy: {
@@ -119,14 +126,16 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
               senderVoice: problem.senderVoice,
               receiverVoice: problem.receiverVoice,
               wordCount: 0, // 一時的な値（実際には使用されない）
-              japaneseSentence: '', // 一時的な値（実際には使用されない）
+              japaneseSentence: problem.japaneseSentence,
               englishReply: problem.englishReply,
               incorrectOptions: [],
-              senderRole: '',
-              receiverRole: '',
-              place: '',
-              scenePrompt: null,
+              senderRole: problem.senderRole,
+              receiverRole: problem.receiverRole,
+              place: problem.place,
+              scenePrompt: problem.scenePrompt ?? null,
               patternId: null,
+              senderVoiceInstruction: problem.senderVoiceInstruction ?? null,
+              receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
             },
             problem.id,
           );
@@ -153,6 +162,8 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           const englishReplyAudioBuffer = await generateSpeechBuffer(
             problem.englishReply!,
             problem.receiverVoice as VoiceGender,
+            problem.receiverVoiceInstruction ?? null,
+            problem.receiverRole,
           );
 
           const englishReplyAudioUrl = await uploadAudioToR2(
