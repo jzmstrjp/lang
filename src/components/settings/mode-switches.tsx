@@ -52,11 +52,17 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   const englishModeLabel = `日本語音声${isJapaneseAudioEnabled ? 'あり' : 'なし'}`;
   const imageModeLabel = `画像${isImageEnabled ? 'あり' : 'なし'}`;
 
+  const emitSettingChange = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('problem-setting-change'));
+  };
+
   const toggleEnglishMode = () => {
     const next = !isEnglishMode;
     setIsEnglishMode(next);
     setHasEnglishInteraction(true);
     localStorage.setItem(STORAGE_KEYS.english, next.toString());
+    emitSettingChange();
   };
 
   const toggleNoImageMode = () => {
@@ -64,6 +70,7 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
     setIsNoImageMode(next);
     setHasNoImageInteraction(true);
     localStorage.setItem(STORAGE_KEYS.noImage, next.toString());
+    emitSettingChange();
   };
 
   if (!isReady) {

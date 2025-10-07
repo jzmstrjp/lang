@@ -2,42 +2,47 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
-// 直和型によるPhase定義
-type Phase =
+type ServerPhase = {
+  problem: ProblemWithAudio;
+} & {
+  kind: 'start-button-server';
+};
+
+type ClientPhase = {
+  setting: Setting;
+  problem: ProblemWithAudio;
+} & (
   | {
-      kind: 'start-button';
+      kind: 'start-button-client';
       error: string | null;
-      problem: ProblemWithAudio;
     }
   | {
       kind: 'scene-entry';
-      problem: ProblemWithAudio;
     }
   | {
       kind: 'scene-ready';
-      problem: ProblemWithAudio;
     }
   | {
       kind: 'quiz';
-      problem: ProblemWithAudio;
       shuffledOptions: string[];
       correctIndex: number;
     }
   | {
       kind: 'correct';
-      problem: ProblemWithAudio;
     }
   | {
       kind: 'incorrect';
-      problem: ProblemWithAudio;
-    };
+    }
+);
+
+type Phase = ServerPhase | ClientPhase;
 
 export type ProblemLength = 'short' | 'medium' | 'long';
 
@@ -82,8 +87,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
 
   // 直和型のphase状態（統合）
   const [phase, setPhase] = useState<Phase>({
-    kind: 'start-button',
-    error: null,
+    kind: 'start-button-server',
     problem: initialProblem,
   });
 
@@ -92,40 +96,35 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const [isAudioBusy, setAudioBusy] = useState(false);
 
   // 現在の問題と画像を取得
-  const currentProblem = phase.kind === 'start-button' ? initialProblem : phase.problem;
+  const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
   const nextProblem = problemQueue[1] ?? null;
+  const phaseSetting = phase.kind === 'start-button-server' ? null : phase.setting;
   const englishSentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const japaneseReplyAudioRef = useRef<HTMLAudioElement | null>(null);
   const englishReplyAudioRef = useRef<HTMLAudioElement | null>(null);
-  const isMountedRef = useRef(false);
   const isPrefetchingNextRef = useRef(false);
   const lastQueueLengthRef = useRef(0);
 
-  // Setting型の部分更新でlocalStorageとrefを同時に更新する関数
-  const updateSetting = useCallback(
-    (updates: Partial<Setting>) => {
+  const persistSetting = useCallback(
+    (prevSetting: Setting, nextSetting: Setting) => {
       if (typeof window === 'undefined') return;
 
-      const currentSetting = getCurrentSetting(length);
-
-      const settingKeys = {
+      const keys = {
         isEnglishMode: 'englishMode',
         isImageHiddenMode: 'noImageMode',
         correctStreak: `correctStreak-${length}`,
       } as const satisfies Record<keyof Setting, string>;
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined && currentSetting[key as keyof Setting] !== value) {
-          const storageKey = settingKeys[key as keyof typeof settingKeys];
-          localStorage.setItem(storageKey, value.toString());
+      (Object.keys(keys) as Array<keyof Setting>).forEach((key) => {
+        if (prevSetting[key] !== nextSetting[key]) {
+          const storageKey = keys[key];
+          localStorage.setItem(storageKey, nextSetting[key].toString());
         }
       });
     },
     [length],
   );
-
-  const setting = getCurrentSetting(length);
 
   // ProblemLength を直接使用
   const playAudio = useCallback((audio: HTMLAudioElement | null, duration: number) => {
@@ -181,17 +180,27 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   }, [length, problemQueue.length]);
 
   // phaseごとの処理
-  useEffect(() => {
-    isMountedRef.current = true;
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
 
     // --- phaseごとの副作用をここに統合 ---
     switch (phase.kind) {
+      case 'start-button-server': {
+        setPhase({
+          kind: 'start-button-client',
+          error: null,
+          problem: phase.problem,
+          setting: getCurrentSetting(length),
+        });
+        break;
+      }
       case 'scene-entry': {
-        const shouldSkipImage = !sceneImage || setting.isImageHiddenMode;
+        const shouldSkipImage = !sceneImage || phase.setting.isImageHiddenMode;
         if (shouldSkipImage) {
           setPhase({
             kind: 'scene-ready',
             problem: phase.problem,
+            setting: getCurrentSetting(length),
           });
         }
 
@@ -201,16 +210,15 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         break;
       }
     }
-
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [phase, refillQueueIfNeeded, sceneImage, setting]);
+  }, [length, phase, refillQueueIfNeeded, sceneImage]);
 
   const handleStart = () => {
+    if (phase.kind !== 'start-button-client') return;
+
     setPhase({
       kind: 'scene-entry',
-      problem: initialProblem,
+      problem: phase.problem,
+      setting: getCurrentSetting(length),
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -220,6 +228,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       setPhase({
         kind: 'scene-entry',
         problem: phase.problem,
+        setting: getCurrentSetting(length),
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
     }
@@ -240,12 +249,15 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         problem: phase.problem,
         shuffledOptions,
         correctIndex: shuffledCorrectIndex,
+        setting: getCurrentSetting(length),
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
     }
   };
 
   const handleNextProblem = () => {
+    if (phase.kind === 'start-button-server') return;
+
     if (isPrefetchingNextRef.current) return;
 
     // searchパラメータがある場合のみURLをクリア
@@ -260,9 +272,10 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       // キューが空の場合はエラー状態にする
       console.error('[ProblemFlow] 問題キューが空です');
       setPhase({
-        kind: 'start-button',
+        kind: 'start-button-client',
         error: '次の問題がありません',
         problem: currentProblem,
+        setting: getCurrentSetting(length),
       });
       return;
     }
@@ -274,68 +287,86 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
     setPhase({
       kind: 'scene-entry',
       problem: nextProblemData,
+      setting: getCurrentSetting(length),
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
-  const isOnStreak = ALLOWED_SHARE_COUNTS.includes(
-    setting.correctStreak as (typeof ALLOWED_SHARE_COUNTS)[number],
-  );
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleSettingChange = () => {
+      setPhase((prev) => {
+        if (prev.kind !== 'start-button-client') return prev;
+        const refreshedSetting = getCurrentSetting(length);
+        return {
+          ...prev,
+          setting: refreshedSetting,
+        };
+      });
+    };
+
+    window.addEventListener('problem-setting-change', handleSettingChange);
+
+    return () => {
+      window.removeEventListener('problem-setting-change', handleSettingChange);
+    };
+  }, [length]);
+
+  const isOnStreak =
+    phaseSetting !== null &&
+    ALLOWED_SHARE_COUNTS.includes(
+      phaseSetting.correctStreak as (typeof ALLOWED_SHARE_COUNTS)[number],
+    );
 
   return (
     <>
-      {phase.kind === 'start-button' && (
+      {phase.kind === 'start-button-server' ? (
         <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
-          {sceneImage && (
-            <SceneImage
-              src={sceneImage}
-              alt="英語と日本語のセリフを並べた2コマシーン"
-              opacity="medium"
-            />
-          )}
-
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StartButton error={null} handleStart={handleStart} disabled={isAudioBusy}>
+              英語学習を始める
+            </StartButton>
+          </div>
+        </div>
+      ) : phase.kind === 'start-button-client' ? (
+        <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
+          <SceneDisplay
+            imageUrl={sceneImage}
+            place={phase.problem.place}
+            isHidden={phase.setting.isImageHiddenMode}
+            opacity="medium"
+            onImageLoad={undefined}
+          />
           <div className="absolute inset-0 flex items-center justify-center">
             <StartButton error={phase.error} handleStart={handleStart} disabled={isAudioBusy}>
               英語学習を始める
             </StartButton>
           </div>
         </div>
-      )}
-      {/* シーン表示（scene-entry / scene-ready 限定） */}
-      {(phase.kind === 'scene-entry' || phase.kind === 'scene-ready') && (
-        <>
-          {/* 画像がある場合の表示 */}
-          {sceneImage && !setting.isImageHiddenMode ? (
-            <section className="grid place-items-center">
-              <figure className="flex w-full justify-center">
-                <SceneImage
-                  src={sceneImage}
-                  alt="英語と日本語のセリフを並べた2コマシーン"
-                  opacity="full"
-                  onLoad={() => {
-                    console.log('[ProblemFlow] 画像読み込み完了');
-                    if (phase.kind === 'scene-entry') {
-                      setPhase({
-                        kind: 'scene-ready',
-                        problem: phase.problem,
-                      });
-                    }
-                  }}
-                />
-              </figure>
-            </section>
-          ) : (
-            <section className="grid place-items-center">
-              <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-                <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
-                <p className="font-bold text-2xl">{phase.problem.place}</p>
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
-      {phase.kind === 'quiz' && (
+      ) : phase.kind === 'scene-entry' ? (
+        <SceneDisplay
+          imageUrl={sceneImage}
+          place={phase.problem.place}
+          isHidden={phase.setting.isImageHiddenMode}
+          opacity="full"
+          onImageLoad={() => {
+            console.log('[ProblemFlow] 画像読み込み完了');
+            setPhase({
+              kind: 'scene-ready',
+              problem: phase.problem,
+              setting: getCurrentSetting(length),
+            });
+          }}
+        />
+      ) : phase.kind === 'scene-ready' ? (
+        <SceneDisplay
+          imageUrl={sceneImage}
+          place={phase.problem.place}
+          isHidden={phase.setting.isImageHiddenMode}
+          opacity="full"
+          onImageLoad={undefined}
+        />
+      ) : phase.kind === 'quiz' ? (
         <section className="grid gap-6 sm:gap-8">
           <div>
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
@@ -349,12 +380,17 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                     const isCorrect = index === phase.correctIndex;
                     if (isCorrect) {
                       // 連続正解数をインクリメント（localStorageとrefを同時更新）
-                      const newStreak = setting.correctStreak + 1;
-                      updateSetting({ correctStreak: newStreak });
+                      const prevSetting = phase.setting;
+                      const newSetting: Setting = {
+                        ...prevSetting,
+                        correctStreak: prevSetting.correctStreak + 1,
+                      };
+                      persistSetting(prevSetting, newSetting);
 
                       setPhase({
                         kind: 'correct',
                         problem: phase.problem,
+                        setting: newSetting,
                       });
                       // 正解だったらクリック時に再生
                       void (
@@ -363,11 +399,17 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                       );
                     } else {
                       // 連続正解数をリセット（localStorageとrefを同時更新）
-                      updateSetting({ correctStreak: 0 });
+                      const prevSetting = phase.setting;
+                      const newSetting: Setting = {
+                        ...prevSetting,
+                        correctStreak: 0,
+                      };
+                      persistSetting(prevSetting, newSetting);
 
                       setPhase({
                         kind: 'incorrect',
                         problem: phase.problem,
+                        setting: newSetting,
                       });
                     }
                   }}
@@ -392,13 +434,11 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             </button>
           </div>
         </section>
-      )}
-
-      {phase.kind === 'correct' && (
+      ) : phase.kind === 'correct' ? (
         <section className="grid gap-4 text-center">
           <div className="px-6 py-2 text-cyan-600">
             <h2 className="text-4xl font-bold">
-              {isOnStreak ? `${setting.correctStreak}問連続 ` : ''}
+              {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''}
               正解 🎉
             </h2>
             <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
@@ -414,8 +454,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
                 <button
                   type="button"
                   onClick={() => {
-                    const shareUrl = `${window.location.origin}?streak=${setting.correctStreak}`;
-                    const tweetText = `【英語きわめ太郎】${setting.correctStreak}問連続正解しました！`;
+                    const shareUrl = `${window.location.origin}?streak=${phase.setting.correctStreak}`;
+                    const tweetText = `【英語きわめ太郎】${phase.setting.correctStreak}問連続正解しました！`;
                     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
                     window.open(twitterUrl, '_blank', 'width=550,height=420');
                   }}
@@ -441,9 +481,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             </button>
           </div>
         </section>
-      )}
-
-      {phase.kind === 'incorrect' && (
+      ) : phase.kind === 'incorrect' ? (
         <section className="grid gap-4 text-center">
           <div className="px-6 py-2 text-blue-600">
             <h2 className="text-4xl font-bold pl-4">残念…</h2>
@@ -468,6 +506,8 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             </button>
           </div>
         </section>
+      ) : (
+        (null as never)
       )}
 
       <audio
@@ -479,9 +519,10 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
           setAudioBusy(false);
           if (phase.kind === 'quiz' || phase.kind === 'correct') return;
           // scene-entry/scene-ready時のみ、返答音声を続けて再生
-          const replyAudioRef = setting.isEnglishMode
-            ? englishReplyAudioRef
-            : japaneseReplyAudioRef;
+          const replyAudioRef =
+            phaseSetting && phaseSetting.isEnglishMode
+              ? englishReplyAudioRef
+              : japaneseReplyAudioRef;
           void (replyAudioRef.current && playAudio(replyAudioRef.current, 0));
         }}
       />
@@ -519,5 +560,44 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
         </>
       )}
     </>
+  );
+}
+
+// 共通シーン表示コンポーネント
+function SceneDisplay({
+  imageUrl,
+  place,
+  isHidden,
+  opacity,
+  onImageLoad,
+}: {
+  imageUrl: string | null;
+  place: string;
+  isHidden: boolean;
+  opacity: 'medium' | 'full';
+  onImageLoad?: () => void;
+}) {
+  if (imageUrl && !isHidden) {
+    return (
+      <section className="grid place-items-center">
+        <figure className="flex w-full justify-center">
+          <SceneImage
+            src={imageUrl}
+            alt="英語と日本語のセリフを並べた2コマシーン"
+            opacity={opacity}
+            onLoad={onImageLoad}
+          />
+        </figure>
+      </section>
+    );
+  }
+
+  return (
+    <section className="grid place-items-center">
+      <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
+        <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
+        <p className="font-bold text-2xl">{place}</p>
+      </div>
+    </section>
   );
 }
