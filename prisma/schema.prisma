@@ -68,3 +68,11 @@ model PatternSet {
 
   @@map("pattern_sets")
 }
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("admin_users")
+}
