@@ -596,7 +596,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
       )}
 
       {isAdmin && sceneImage && (
-        <div className="mt-16 flex justify-center">
+        <div className="mt-32 flex justify-center">
           <button
             type="button"
             onClick={handleRemoveImage}
