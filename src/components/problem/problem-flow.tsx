@@ -49,6 +49,7 @@ export type ProblemLength = 'short' | 'medium' | 'long';
 type ProblemFlowProps = {
   length: ProblemLength;
   initialProblem: ProblemWithAudio;
+  isAdmin: boolean;
 };
 
 type ApiProblemsResponse = {
@@ -79,7 +80,7 @@ const getCurrentSetting = (length: ProblemLength): Setting => {
   };
 };
 
-export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps) {
+export default function ProblemFlow({ length, initialProblem, isAdmin }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const router = useRouter();
@@ -94,7 +95,6 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   // グローバル状態（全phase共通）
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([initialProblem]);
   const [isAudioBusy, setAudioBusy] = useState(false);
-
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -105,6 +105,7 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
   const englishReplyAudioRef = useRef<HTMLAudioElement | null>(null);
   const isPrefetchingNextRef = useRef(false);
   const lastQueueLengthRef = useRef(0);
+  const isRemovingImageRef = useRef(false);
 
   const persistSetting = useCallback(
     (prevSetting: Setting, nextSetting: Setting) => {
@@ -290,6 +291,39 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
       setting: getCurrentSetting(length),
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
+  };
+
+  const handleRemoveImage = async () => {
+    const targetProblemId = currentProblem?.id;
+    if (!isAdmin || !targetProblemId || !currentProblem.imageUrl || isRemovingImageRef.current) {
+      return;
+    }
+
+    isRemovingImageRef.current = true;
+
+    try {
+      const response = await fetch('/api/admin/problems/remove-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ problemId: targetProblemId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error ?? '画像の削除に失敗しました。');
+      }
+
+      setPhase((prevPhase) => {
+        const updatedProblem = { ...prevPhase.problem, imageUrl: null };
+        return { ...prevPhase, problem: updatedProblem } as Phase;
+      });
+    } catch (error) {
+      console.error('[ProblemFlow] 画像削除エラー:', error);
+    } finally {
+      isRemovingImageRef.current = false;
+    }
   };
 
   useLayoutEffect(() => {
@@ -559,6 +593,18 @@ export default function ProblemFlow({ length, initialProblem }: ProblemFlowProps
             />
           )}
         </>
+      )}
+
+      {isAdmin && sceneImage && (
+        <div className="mt-16 flex justify-center">
+          <button
+            type="button"
+            onClick={handleRemoveImage}
+            className="inline-flex items-center justify-center rounded-full bg-rose-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-rose-900/30 transition enabled:hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            この問題の画像を削除
+          </button>
+        </div>
       )}
     </>
   );

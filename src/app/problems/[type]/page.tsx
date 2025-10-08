@@ -5,6 +5,8 @@ import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
 import { fetchProblems } from '@/lib/problem-service';
 import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
 import { StartButton } from '@/components/ui/start-button';
+import { getServerAuthSession } from '@/lib/auth/session';
+import { isAdminEmail } from '@/lib/auth/admin';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -39,7 +41,11 @@ async function ProblemContent({
     );
   }
 
-  return <ProblemFlow length={type} initialProblem={initialProblem} />;
+  const session = await getServerAuthSession();
+  const email = session?.user?.email ?? null;
+  const isAdmin = email ? await isAdminEmail(email) : false;
+
+  return <ProblemFlow length={type} initialProblem={initialProblem} isAdmin={isAdmin} />;
 }
 
 // Loading コンポーネント
