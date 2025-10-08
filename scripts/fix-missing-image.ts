@@ -134,7 +134,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           receiverRole: problem.receiverRole,
           place: problem.place,
           scenePrompt: problem.scenePrompt ?? null,
-          patternId: null,
           senderVoiceInstruction: problem.senderVoiceInstruction ?? null,
           receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
         };
