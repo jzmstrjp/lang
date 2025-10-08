@@ -29,44 +29,17 @@ model Problem {
   senderVoiceInstruction String?
   receiverVoiceInstruction String?
   
-  // パターン学習用フィールド
-  patternId        String?
-  patternSet       PatternSet? @relation(fields: [patternId], references: [id], onDelete: SetNull)
-  
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   @@unique([englishSentence])
   @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
-  @@index([patternId])
   @@map("problems")
 }
 
 enum VoiceType {
   male
   female
-}
-
-// パターン学習用モデル
-// パターンセット: 1つの文法パターン（例: "He is supposed to 〇〇〇."）の情報を保持
-// 3つの例文（Problem）とクイズをセットで管理
-model PatternSet {
-  id                   String    @id @default(cuid())
-  
-  // パターン情報（例: "He is supposed to be 〇〇〇."）
-  patternName          String
-  
-  // クイズ問題
-  correctAnswer        String    // 正解（例: "彼は〇〇〇はずだ。"）
-  incorrectOptions     Json      // 不正解の選択肢（配列）
-  
-  // リレーション
-  examples             Problem[] // このパターンに属する例文（Problemの配列）
-  
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-
-  @@map("pattern_sets")
 }
 
 model AdminUser {
