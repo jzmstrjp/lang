@@ -219,6 +219,8 @@ async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise
       return;
     }
 
+    const totalProblems = problemData.length;
+
     // 単語数ごとにカウント
     const wordCountMap = new Map<number, number>();
 
@@ -236,7 +238,54 @@ async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise
     });
 
     // 総計を表示
-    console.log(`  合計: ${problemData.length}問`);
+    console.log(`  合計: ${totalProblems}問`);
+
+    // incorrectOptionsが日本文より短い問題数を集計
+    const shorterIncorrectOptionsCount = problemData.reduce(
+      (acc: number, problem: { japaneseSentence?: string; incorrectOptions?: string[] }) => {
+        if (typeof problem.japaneseSentence !== 'string') {
+          return acc;
+        }
+
+        if (!Array.isArray(problem.incorrectOptions) || problem.incorrectOptions.length === 0) {
+          return acc;
+        }
+
+        const japaneseLength = problem.japaneseSentence.length;
+        const allShorter = problem.incorrectOptions.every(
+          (option) => typeof option === 'string' && option.length < japaneseLength,
+        );
+
+        return allShorter ? acc + 1 : acc;
+      },
+      0,
+    );
+
+    console.log('\n📝 incorrectOptionsが日本文より短い問題:');
+    console.log(`  ${shorterIncorrectOptionsCount}件 / ${totalProblems}件`);
+
+    const longerIncorrectOptionsCount = problemData.reduce(
+      (acc: number, problem: { japaneseSentence?: string; incorrectOptions?: string[] }) => {
+        if (typeof problem.japaneseSentence !== 'string') {
+          return acc;
+        }
+
+        if (!Array.isArray(problem.incorrectOptions) || problem.incorrectOptions.length === 0) {
+          return acc;
+        }
+
+        const japaneseLength = problem.japaneseSentence.length;
+        const allLonger = problem.incorrectOptions.every(
+          (option) => typeof option === 'string' && option.length > japaneseLength,
+        );
+
+        return allLonger ? acc + 1 : acc;
+      },
+      0,
+    );
+
+    console.log('\n📝 incorrectOptionsが日本文より長い問題:');
+    console.log(`  ${longerIncorrectOptionsCount}件 / ${totalProblems}件`);
   } catch (error) {
     console.log(
       '⚠️  単語数分布の分析に失敗しました:',
