@@ -261,7 +261,7 @@ async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise
       0,
     );
 
-    console.log('\n📝 incorrectOptionsが日本文より短い問題:');
+    console.log('\n📝 短い選択肢ばっか！:');
     console.log(`  ${shorterIncorrectOptionsCount}件 / ${totalProblems}件`);
 
     const longerIncorrectOptionsCount = problemData.reduce(
@@ -284,7 +284,7 @@ async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise
       0,
     );
 
-    console.log('\n📝 incorrectOptionsが日本文より長い問題:');
+    console.log('\n📝 長い選択肢ばっか！:');
     console.log(`  ${longerIncorrectOptionsCount}件 / ${totalProblems}件`);
   } catch (error) {
     console.log(

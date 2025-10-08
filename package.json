@@ -20,6 +20,7 @@
     "fix-missing-audio": "tsx scripts/fix-missing-audio.ts",
     "fix-missing-image": "tsx scripts/fix-missing-image.ts",
     "check:image-coverage": "tsx scripts/check-image-coverage.ts",
+    "check:incorrect-options-length": "tsx scripts/check-incorrect-options-length.ts",
     "generate:problems": "tsx scripts/generate-problems-with-gpt.ts"
   },
   "dependencies": {
