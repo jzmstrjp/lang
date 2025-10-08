@@ -601,6 +601,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
         <div className="mt-128 flex justify-center">
           <button
             type="button"
+            tabIndex={-1}
             onClick={handleRemoveImage}
             className="inline-flex items-center justify-center rounded-full bg-rose-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-rose-900/30 transition enabled:hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
