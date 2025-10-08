@@ -7,6 +7,8 @@ import {
 } from '@/lib/problem-generator';
 import OpenAI from 'openai';
 import { MODEL_SETTING } from '@/const';
+import { getServerAuthSession } from '@/lib/auth/session';
+import { isAdminEmail } from '@/lib/auth/admin';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -36,6 +38,13 @@ async function generateImage(prompt: string) {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerAuthSession();
+    const email = session?.user?.email ?? null;
+
+    if (!email || !(await isAdminEmail(email))) {
+      return NextResponse.json({ error: '権限がありません。' }, { status: 403 });
+    }
+
     const body: GenerateRequest = await req.json().catch(() => ({}));
 
     console.log('[test-generate] 問題生成開始');

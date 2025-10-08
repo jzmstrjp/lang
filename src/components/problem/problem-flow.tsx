@@ -294,6 +294,8 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
   };
 
   const handleRemoveImage = async () => {
+    if (!window.confirm('本当にこの問題の画像を削除しますか？')) return;
+
     const targetProblemId = currentProblem?.id;
     if (!isAdmin || !targetProblemId || !currentProblem.imageUrl || isRemovingImageRef.current) {
       return;
@@ -596,7 +598,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
       )}
 
       {isAdmin && sceneImage && (
-        <div className="mt-32 flex justify-center">
+        <div className="mt-128 flex justify-center">
           <button
             type="button"
             onClick={handleRemoveImage}
