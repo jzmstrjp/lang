@@ -573,7 +573,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
                             });
                           }
                         }}
-                        className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 pr-24 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
+                        className={`w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 ${isAdmin ? 'pr-24' : 'pr-5'} text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50`}
                         disabled={isAudioBusy}
                       >
                         {option.text}
@@ -583,7 +583,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
                           <button
                             type="button"
                             onClick={() => setEditingIncorrectOptionKey(optionKey)}
-                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white px-3 py-1 text-xs font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
                           >
                             編集
                           </button>
@@ -595,7 +595,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
                                 window.alert('これは正解です');
                               }
                             }}
-                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white px-3 py-1 text-xs font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
                           >
                             編集
                           </button>
