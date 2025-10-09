@@ -2,11 +2,12 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
-import { shuffleOptionsWithCorrectIndex } from '@/lib/shuffle-utils';
+import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
 type ServerPhase = {
@@ -31,7 +32,7 @@ type ClientPhase = {
     }
   | {
       kind: 'quiz';
-      shuffledOptions: string[];
+      shuffledOptions: ShuffledQuizOption[];
       correctIndex: number;
     }
   | {
@@ -62,6 +63,8 @@ type Setting = {
   isImageHiddenMode: boolean;
   correctStreak: number;
 };
+
+type EditableIncorrectOptionResult = { ok: true } | { ok: false; message: string };
 
 const getCurrentSetting = (length: ProblemLength): Setting => {
   if (typeof window === 'undefined')
@@ -95,6 +98,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
   // グローバル状態（全phase共通）
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([initialProblem]);
   const [isAudioBusy, setAudioBusy] = useState(false);
+  const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -213,6 +217,16 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     }
   }, [length, phase, refillQueueIfNeeded, sceneImage]);
 
+  useEffect(() => {
+    setEditingIncorrectOptionKey(null);
+  }, [currentProblem.id]);
+
+  useEffect(() => {
+    if (phase.kind !== 'quiz') {
+      setEditingIncorrectOptionKey(null);
+    }
+  }, [phase.kind]);
+
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
 
@@ -328,6 +342,91 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     }
   };
 
+  const updateIncorrectOption = async (
+    incorrectIndex: number,
+    nextText: string,
+  ): Promise<EditableIncorrectOptionResult> => {
+    if (!isAdmin) {
+      return { ok: false, message: '権限がありません。' };
+    }
+
+    const problemId = currentProblem?.id;
+
+    if (!problemId) {
+      return { ok: false, message: '問題が存在しません。' };
+    }
+
+    const trimmedText = nextText.trim();
+    if (!trimmedText) {
+      return { ok: false, message: '選択肢を入力してください。' };
+    }
+
+    try {
+      const response = await fetch('/api/admin/problems/update-incorrect-option', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          problemId,
+          optionIndex: incorrectIndex,
+          text: trimmedText,
+        }),
+      });
+
+      const data = (await response.json().catch(() => null)) as {
+        incorrectOptions: string[];
+        success?: boolean;
+        error?: string;
+      } | null;
+
+      if (!response.ok || !data?.incorrectOptions) {
+        return { ok: false, message: data?.error ?? '選択肢の更新に失敗しました。' };
+      }
+
+      setPhase((prevPhase) => {
+        if (prevPhase.problem.id !== problemId) {
+          return prevPhase;
+        }
+
+        const updatedProblem = {
+          ...prevPhase.problem,
+          incorrectOptions: data.incorrectOptions,
+        };
+
+        if (prevPhase.kind === 'quiz') {
+          return {
+            ...prevPhase,
+            problem: updatedProblem,
+            shuffledOptions: prevPhase.shuffledOptions.map((option) =>
+              option.kind === 'incorrect' && option.incorrectIndex === incorrectIndex
+                ? { ...option, text: trimmedText }
+                : option,
+            ),
+          };
+        }
+
+        return {
+          ...prevPhase,
+          problem: updatedProblem,
+        };
+      });
+
+      setProblemQueue((prevQueue) =>
+        prevQueue.map((problem) =>
+          problem.id === problemId
+            ? { ...problem, incorrectOptions: data.incorrectOptions }
+            : problem,
+        ),
+      );
+
+      return { ok: true };
+    } catch (error) {
+      console.error('[ProblemFlow] 選択肢更新エラー:', error);
+      return { ok: false, message: '選択肢の更新に失敗しました。' };
+    }
+  };
+
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
     const handleSettingChange = () => {
@@ -408,54 +507,91 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
           </div>
           <ul className="grid gap-3">
-            {phase.shuffledOptions.map((option, index) => (
-              <li key={`${option}-${index}`}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const isCorrect = index === phase.correctIndex;
-                    if (isCorrect) {
-                      // 連続正解数をインクリメント（localStorageとrefを同時更新）
-                      const prevSetting = phase.setting;
-                      const newSetting: Setting = {
-                        ...prevSetting,
-                        correctStreak: prevSetting.correctStreak + 1,
-                      };
-                      persistSetting(prevSetting, newSetting);
+            {phase.shuffledOptions.map((option, index) => {
+              const optionKey =
+                option.kind === 'incorrect'
+                  ? `${currentProblem.id}-incorrect-${option.incorrectIndex}`
+                  : `${currentProblem.id}-correct`;
+              const defaultIncorrectValue =
+                option.kind === 'incorrect' && option.incorrectIndex !== null
+                  ? (currentProblem.incorrectOptions[option.incorrectIndex] ?? option.text)
+                  : null;
+              const isEditing =
+                option.kind === 'incorrect' && editingIncorrectOptionKey === optionKey;
 
-                      setPhase({
-                        kind: 'correct',
-                        problem: phase.problem,
-                        setting: newSetting,
-                      });
-                      // 正解だったらクリック時に再生
-                      void (
-                        englishSentenceAudioRef.current &&
-                        playAudio(englishSentenceAudioRef.current, 0)
-                      );
-                    } else {
-                      // 連続正解数をリセット（localStorageとrefを同時更新）
-                      const prevSetting = phase.setting;
-                      const newSetting: Setting = {
-                        ...prevSetting,
-                        correctStreak: 0,
-                      };
-                      persistSetting(prevSetting, newSetting);
+              return (
+                <li key={`${optionKey}-${index}`} className="space-y-2">
+                  {isEditing && option.kind === 'incorrect' && defaultIncorrectValue !== null ? (
+                    <EditableIncorrectOption
+                      defaultValue={defaultIncorrectValue}
+                      onCancel={() => setEditingIncorrectOptionKey(null)}
+                      onSubmit={async (value) => {
+                        const result = await updateIncorrectOption(option.incorrectIndex, value);
+                        if (result.ok) {
+                          setEditingIncorrectOptionKey(null);
+                          return { ok: true as const };
+                        }
 
-                      setPhase({
-                        kind: 'incorrect',
-                        problem: phase.problem,
-                        setting: newSetting,
-                      });
-                    }
-                  }}
-                  className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]  disabled:opacity-50"
-                  disabled={isAudioBusy}
-                >
-                  {option}
-                </button>
-              </li>
-            ))}
+                        return { ok: false as const, message: result.message };
+                      }}
+                    />
+                  ) : (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isCorrect = index === phase.correctIndex;
+                          if (isCorrect) {
+                            const prevSetting = phase.setting;
+                            const newSetting: Setting = {
+                              ...prevSetting,
+                              correctStreak: prevSetting.correctStreak + 1,
+                            };
+                            persistSetting(prevSetting, newSetting);
+
+                            setPhase({
+                              kind: 'correct',
+                              problem: phase.problem,
+                              setting: newSetting,
+                            });
+                            void (
+                              englishSentenceAudioRef.current &&
+                              playAudio(englishSentenceAudioRef.current, 0)
+                            );
+                          } else {
+                            const prevSetting = phase.setting;
+                            const newSetting: Setting = {
+                              ...prevSetting,
+                              correctStreak: 0,
+                            };
+                            persistSetting(prevSetting, newSetting);
+
+                            setPhase({
+                              kind: 'incorrect',
+                              problem: phase.problem,
+                              setting: newSetting,
+                            });
+                          }
+                        }}
+                        className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 pr-24 text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50"
+                        disabled={isAudioBusy}
+                      >
+                        {option.text}
+                      </button>
+                      {isAdmin && option.kind === 'incorrect' && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingIncorrectOptionKey(optionKey)}
+                          className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white px-3 py-1 text-xs font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                        >
+                          編集
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
           <div className="flex justify-center">
             <button
@@ -610,6 +746,87 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
         </div>
       )}
     </>
+  );
+}
+
+type EditableIncorrectOptionProps = {
+  defaultValue: string;
+  onCancel: () => void;
+  onSubmit: (value: string) => Promise<EditableIncorrectOptionResult>;
+};
+
+function EditableIncorrectOption({
+  defaultValue,
+  onCancel,
+  onSubmit,
+}: EditableIncorrectOptionProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<{ text: string }>({
+    defaultValues: { text: defaultValue },
+  });
+
+  useEffect(() => {
+    reset({ text: defaultValue });
+  }, [defaultValue, reset]);
+
+  const submit = handleSubmit(async ({ text }) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setError('text', { type: 'manual', message: '選択肢を入力してください。' });
+      return;
+    }
+
+    const result = await onSubmit(trimmed);
+    if (!result.ok) {
+      setError('root', { type: 'manual', message: result.message });
+      return;
+    }
+
+    reset({ text: trimmed });
+  });
+
+  return (
+    <form
+      onSubmit={submit}
+      className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left shadow-sm shadow-[#d8cbb6]/40"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          {...register('text')}
+          autoFocus
+          disabled={isSubmitting}
+          className="flex-1 rounded-xl border border-[#d8cbb6] px-4 py-2 text-base text-[#2a2b3c] shadow-sm focus:border-[#2f8f9d] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]"
+        />
+        <div className="flex gap-2 sm:justify-end">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-4 py-2 text-sm font-semibold text-[#f4f1ea] shadow enabled:hover:bg-[#257682] disabled:opacity-60"
+          >
+            {isSubmitting ? '更新中…' : '更新'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onCancel();
+              reset({ text: defaultValue });
+            }}
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] px-4 py-2 text-sm font-semibold text-[#2a2b3c] shadow-sm enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+      {(errors.text || errors.root) && (
+        <p className="mt-2 text-sm text-rose-600">{errors.text?.message ?? errors.root?.message}</p>
+      )}
+    </form>
   );
 }
 

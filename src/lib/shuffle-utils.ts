@@ -10,6 +10,18 @@ export function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+export type ShuffledQuizOption =
+  | {
+      text: string;
+      kind: 'correct';
+      incorrectIndex: null;
+    }
+  | {
+      text: string;
+      kind: 'incorrect';
+      incorrectIndex: number;
+    };
+
 /**
  * 選択肢をシャッフルして正解のインデックスを返す
  * 正解は配列の先頭にあることを前提とする
@@ -17,18 +29,26 @@ export function shuffleArray<T>(array: T[]): T[] {
 export function shuffleOptionsWithCorrectIndex(
   correctOption: string,
   incorrectOptions: string[],
-): { options: string[]; correctIndex: number } {
-  const allOptions = [correctOption, ...incorrectOptions];
-  const zipped = allOptions.map((option, index) => ({ option, index }));
+): { options: ShuffledQuizOption[]; correctIndex: number } {
+  const baseOptions: ShuffledQuizOption[] = [
+    {
+      text: correctOption,
+      kind: 'correct',
+      incorrectIndex: null,
+    },
+    ...incorrectOptions.map<ShuffledQuizOption>((option, index) => ({
+      text: option,
+      kind: 'incorrect',
+      incorrectIndex: index,
+    })),
+  ];
 
-  // シャッフル
-  for (let i = zipped.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
-  }
+  const shuffled = shuffleArray(baseOptions);
 
-  const options = zipped.map((item) => item.option);
-  const correctIndex = zipped.findIndex((item) => item.index === 0);
+  const correctIndex = shuffled.findIndex((item) => item.kind === 'correct');
 
-  return { options, correctIndex: correctIndex === -1 ? 0 : correctIndex };
+  return {
+    options: shuffled,
+    correctIndex: correctIndex === -1 ? 0 : correctIndex,
+  };
 }
