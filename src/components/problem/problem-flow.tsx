@@ -578,15 +578,28 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
                       >
                         {option.text}
                       </button>
-                      {isAdmin && option.kind === 'incorrect' && (
-                        <button
-                          type="button"
-                          onClick={() => setEditingIncorrectOptionKey(optionKey)}
-                          className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white px-3 py-1 text-xs font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
-                        >
-                          編集
-                        </button>
-                      )}
+                      {isAdmin &&
+                        (option.kind === 'incorrect' ? (
+                          <button
+                            type="button"
+                            onClick={() => setEditingIncorrectOptionKey(optionKey)}
+                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white px-3 py-1 text-xs font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                          >
+                            編集
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (typeof window !== 'undefined') {
+                                window.alert('これは正解です');
+                              }
+                            }}
+                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white px-3 py-1 text-xs font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                          >
+                            編集
+                          </button>
+                        ))}
                     </div>
                   )}
                 </li>
