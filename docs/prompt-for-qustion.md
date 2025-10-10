@@ -1,62 +1,6 @@
 英語リスニングのクイズアプリを作っている。
 
-以下のTOEIC頻出単語や熟語を使った問題を作りたい。
-
-### 📦 ビジネス一般
-
-- submit（提出する）
-- approve / approval（承認する／承認）
-- deadline（締め切り）
-- supervisor（上司）
-- conference / seminar / workshop（会議／セミナー／研修）
-- schedule / reschedule（予定／予定を変更する）
-- attend / participant / attendee（出席する／参加者）
-- applicant / candidate（応募者／候補者）
-- promotion / demotion（昇進／降格）
-
-### 💰 経済・会計・取引
-
-- invoice / receipt / estimate / quotation（請求書／領収書／見積もり）
-- profit / revenue / expense / cost（利益／収益／費用／コスト）
-- budget / financial statement（予算／財務諸表）
-- refund / reimbursement（返金／払い戻し）
-- negotiate / contract / agreement（交渉する／契約／合意）
-
-### 🏢 オフィス・職場表現
-
-- make a reservation / appointment（予約を取る）
-- run out of ~（～を使い果たす）
-- be responsible for ~（～の責任がある）
-- in charge of ~（～を担当している）
-- on behalf of ~（～を代表して）
-- as soon as possible (ASAP)（できるだけ早く）
-- ahead of schedule / behind schedule（予定より早く／遅れて）
-
-### 🚗 通勤・出張・旅行
-
-- boarding pass / itinerary / departure / arrival（搭乗券／旅程／出発／到着）
-- carry-on luggage / baggage claim（機内持ち込み荷物／荷物受取所）
-- accommodation / vacancy / reservation（宿泊施設／空室／予約）
-- transportation / shuttle / fare（交通手段／送迎バス／運賃）
-
-### 🧾 熟語・慣用句
-
-- call off / put off / postpone（中止・延期する）
-- take over（引き継ぐ）
-- look forward to ~ing（～を楽しみにする）
-- fill out / fill in（記入する）
-- set up / arrange / organize（設定・手配・準備する）
-- turn in / hand in / submit（提出する）
-- carry out / conduct / perform（実施する）
-- come up with（思いつく）
-- be supposed to（～することになっている）
-
-### ✉️ よく出るビジネス文の型
-
-- We are pleased to inform you that...（～をお知らせできることを嬉しく思います）
-- Please be advised that...（～をご承知おきください）
-- Should you have any questions, please feel free to contact us.（ご質問があればお気軽にご連絡ください）
-- Due to unforeseen circumstances, ...（予期せぬ事情により～）
+TOEICの問題に出てくる単語や熟語を使って問題を作ってください。
 
 # 問題文の作り方
 
@@ -82,7 +26,7 @@ TypeScriptのコードブロックでください。
 - 日本語文は、直訳ではなく自然に翻訳したものであること。
   - 英文のニュアンス（カジュアル・フォーマル・丁寧・砕けた）を保つこと。
 - incorrectOptions
-  - incorrectOptionsの3つのセリフの文字数はjapaneseSentenceと正確に同じ文字数であること。japaneseSentenceより短い文は禁止する。似たような文章ばかりなのも禁止する。
+  - incorrectOptionsの3つのセリフの文字数はjapaneseSentenceと正確に同じ文字数であること。japaneseSentenceより短い文は禁止する。似たような文章ばかりなのも禁止する。3つの文章はそれぞれ別の単語から始まること。同じ単語から始まる文章は禁止する。
 
 ```TypeScript
 type SeedProblemData = {
@@ -164,7 +108,7 @@ type SeedProblemData = {
    * 短いセリフばかりだと「長いセリフを選べば正解だな」とユーザーに推測されてしまうのでやめてほしい。
    * 長いセリフばかりだと「短いセリフを選べば正解だな」とユーザーに推測されてしまうのでやめてほしい。
    * 「一番長いものが正解」「一番短いのが正解」「真ん中くらいのが正解」これを問題ごとにバラけさせてほしい。
-   * 3つのセリフの文字数はjapaneseSentenceと正確に同じ文字数であること。japaneseSentenceより短い文は禁止する。似たような文章ばかりなのも禁止する。
+   * 3つのセリフの文字数はjapaneseSentenceと正確に同じ文字数であること。japaneseSentenceより短い文は禁止する。似たような文章ばかりなのも禁止する。3つの文章はそれぞれ別の単語から始まること。同じ単語から始まる文章は禁止する。
    * 例: JapaneseSentenceが「よろしければ新作の抹茶ラテ、試してみませんか？」の場合には「すみません、抹茶のラテは売り切れてしまいました。」「抹茶のラテはありませんが、通常のカフェラテならございます。」「このバナナパフェが当店の一番人気でございます。」などを生成すること。
    */
   incorrectOptions: [string, string, string]
@@ -191,4 +135,4 @@ type SeedProblemData = {
 
 ## 重要
 
-- incorrectOptionsの3つのセリフの文字数はjapaneseSentenceと正確に同じ文字数であること。japaneseSentenceより短い文は禁止する。似たような文章ばかりなのも禁止する。
+- incorrectOptionsの3つのセリフの文字数はjapaneseSentenceと正確に同じ文字数であること。japaneseSentenceより短い文は禁止する。似たような文章ばかりなのも禁止する。3つの文章はそれぞれ別の単語から始まること。同じ単語から始まる文章は禁止する。
