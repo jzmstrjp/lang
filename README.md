@@ -53,10 +53,4 @@ npm run db:seed problemData/problemN.ts
 ```bash
 # すべての問題をシード
 npm run db:seed
-
-# パターン学習データをシード
-npm run db:seed:patterns
-
-# データベースの検証
-npm run db:verify
 ```
