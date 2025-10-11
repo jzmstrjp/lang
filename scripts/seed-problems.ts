@@ -6,6 +6,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 import { SeedProblemData, CreateProblemData } from '../src/types/problem';
 import { WORD_COUNT_RULES, type ProblemLength } from '../src/config/problem';
 import path from 'path';
@@ -18,7 +19,7 @@ function getPrismaClient() {
   if (!prisma) {
     prisma = new PrismaClient({
       log: ['error'],
-    });
+    }).$extends(withAccelerate());
   }
   return prisma;
 }
