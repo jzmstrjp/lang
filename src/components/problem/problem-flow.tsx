@@ -66,6 +66,8 @@ type Setting = {
 
 type EditableIncorrectOptionResult = { ok: true } | { ok: false; message: string };
 
+type RemovableField = 'imageUrl' | 'audioEnUrl' | 'audioEnReplyUrl' | 'audioJaUrl';
+
 const getCurrentSetting = (length: ProblemLength): Setting => {
   if (typeof window === 'undefined')
     return {
@@ -109,7 +111,12 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
   const englishReplyAudioRef = useRef<HTMLAudioElement | null>(null);
   const isPrefetchingNextRef = useRef(false);
   const lastQueueLengthRef = useRef(0);
-  const isRemovingImageRef = useRef(false);
+  const removingAssetRef = useRef<Record<RemovableField, boolean>>({
+    imageUrl: false,
+    audioEnUrl: false,
+    audioEnReplyUrl: false,
+    audioJaUrl: false,
+  });
 
   const persistSetting = useCallback(
     (prevSetting: Setting, nextSetting: Setting) => {
@@ -307,15 +314,27 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
-  const handleRemoveImage = async () => {
-    if (!window.confirm('本当にこの問題の画像を削除しますか？')) return;
+  const handleRemoveAsset = async (
+    field: RemovableField,
+    {
+      confirmMessage,
+      errorMessage,
+    }: {
+      confirmMessage: string;
+      errorMessage: string;
+    },
+  ) => {
+    if (!window.confirm(confirmMessage)) return;
 
     const targetProblemId = currentProblem?.id;
-    if (!isAdmin || !targetProblemId || !currentProblem.imageUrl || isRemovingImageRef.current) {
+    const currentAssetValue =
+      currentProblem && (currentProblem as Record<RemovableField, string | null>)[field];
+
+    if (!isAdmin || !targetProblemId || !currentAssetValue || removingAssetRef.current[field]) {
       return;
     }
 
-    isRemovingImageRef.current = true;
+    removingAssetRef.current[field] = true;
 
     try {
       const response = await fetch('/api/admin/problems/remove-image', {
@@ -323,24 +342,64 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ problemId: targetProblemId }),
+        body: JSON.stringify({ problemId: targetProblemId, field }),
       });
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        throw new Error(data?.error ?? '画像の削除に失敗しました。');
+        throw new Error(data?.error ?? errorMessage);
       }
 
       setPhase((prevPhase) => {
-        const updatedProblem = { ...prevPhase.problem, imageUrl: null };
+        const updatedProblem = {
+          ...prevPhase.problem,
+          [field]: null,
+          ...(field === 'imageUrl' ? {} : { audioReady: false }),
+        } as ProblemWithAudio;
         return { ...prevPhase, problem: updatedProblem } as Phase;
       });
+
+      setProblemQueue((prevQueue) =>
+        prevQueue.map((problem) =>
+          problem.id === targetProblemId
+            ? ({
+                ...problem,
+                [field]: null,
+                ...(field === 'imageUrl' ? {} : { audioReady: false }),
+              } as ProblemWithAudio)
+            : problem,
+        ),
+      );
     } catch (error) {
-      console.error('[ProblemFlow] 画像削除エラー:', error);
+      console.error(`[ProblemFlow] ${field}削除エラー:`, error);
     } finally {
-      isRemovingImageRef.current = false;
+      removingAssetRef.current[field] = false;
     }
   };
+
+  const handleRemoveImage = () =>
+    handleRemoveAsset('imageUrl', {
+      confirmMessage: '本当にこの問題の画像を削除しますか？',
+      errorMessage: '画像の削除に失敗しました。',
+    });
+
+  const handleRemoveAudioEn = () =>
+    handleRemoveAsset('audioEnUrl', {
+      confirmMessage: '本当に英語音声を削除しますか？',
+      errorMessage: '英語音声の削除に失敗しました。',
+    });
+
+  const handleRemoveAudioEnReply = () =>
+    handleRemoveAsset('audioEnReplyUrl', {
+      confirmMessage: '本当に英語返答音声を削除しますか？',
+      errorMessage: '英語返答音声の削除に失敗しました。',
+    });
+
+  const handleRemoveAudioJa = () =>
+    handleRemoveAsset('audioJaUrl', {
+      confirmMessage: '本当に日本語応答音声を削除しますか？',
+      errorMessage: '日本語応答音声の削除に失敗しました。',
+    });
 
   const updateIncorrectOption = async (
     incorrectIndex: number,
@@ -746,16 +805,47 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
         </>
       )}
 
-      {isAdmin && sceneImage && (
-        <div className="mt-128 flex justify-center">
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={handleRemoveImage}
-            className="inline-flex items-center justify-center rounded-full bg-rose-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-rose-900/30 transition enabled:hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            この問題の画像を削除
-          </button>
+      {isAdmin && (
+        <div className="mt-128 flex flex-col items-center gap-6">
+          {sceneImage && (
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={handleRemoveImage}
+              className="inline-flex items-center justify-center rounded-full bg-rose-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-rose-900/30 transition enabled:hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              この問題の画像を削除
+            </button>
+          )}
+          <div className="flex flex-col items-center gap-4">
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={handleRemoveAudioEn}
+              disabled={!currentProblem.audioEnUrl}
+              className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-sky-900/30 transition enabled:hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              英語音声を削除する
+            </button>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={handleRemoveAudioEnReply}
+              disabled={!currentProblem.audioEnReplyUrl}
+              className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-indigo-900/30 transition enabled:hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              英語返答音声を削除する
+            </button>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={handleRemoveAudioJa}
+              disabled={!currentProblem.audioJaUrl}
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-emerald-900/30 transition enabled:hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              日本語応答音声を削除する
+            </button>
+          </div>
         </div>
       )}
     </>
