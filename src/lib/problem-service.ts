@@ -247,21 +247,6 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
 }
 
 /**
- * searchが無い場合はキャッシュから、ある場合はDB検索から1件取得
- */
-export async function fetchFirstProblem(
-  type: ProblemLength,
-  search?: string,
-): Promise<ProblemWithAudio | null> {
-  if (search) {
-    const { problems } = await fetchProblems({ type, search, limit: 1 });
-    return problems[0] ?? null;
-  }
-
-  return fetchRandomProblem(type);
-}
-
-/**
  * 24時間キャッシュされた問題リストからランダムに1件を返す
  */
 export async function fetchRandomProblem(type: ProblemLength): Promise<ProblemWithAudio | null> {

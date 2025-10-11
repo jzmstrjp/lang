@@ -2,11 +2,12 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
-import { fetchFirstProblem } from '@/lib/problem-service';
+import type { ProblemWithAudio } from '@/lib/problem-service';
 import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
 import { StartButton } from '@/components/ui/start-button';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
+import { fetchProblems } from '@/lib/problem-service';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -14,6 +15,12 @@ type ProblemPageProps = {
   params: Promise<{ type: string }>;
   searchParams: Promise<{ search?: string }>;
 };
+
+function getBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return 'http://localhost:3000';
+}
 
 // データ取得部分を別コンポーネントに分離
 async function ProblemContent({
@@ -23,7 +30,32 @@ async function ProblemContent({
   type: ProblemLength;
   searchQuery?: string;
 }) {
-  const initialProblem = await fetchFirstProblem(type, searchQuery);
+  const baseUrl = getBaseUrl();
+  let initialProblem: ProblemWithAudio | null = null;
+
+  if (!searchQuery) {
+    try {
+      const cacheResponse = await fetch(`${baseUrl}/api/problem-cache/${type}`, {
+        cache: 'no-store',
+      });
+
+      if (cacheResponse.ok && cacheResponse.status === 200) {
+        const data = (await cacheResponse.json()) as { problem?: ProblemWithAudio | null };
+        initialProblem = data.problem ?? null;
+      }
+    } catch (error) {
+      console.warn('[ProblemPage] Failed to fetch cached problem:', error);
+    }
+  }
+
+  if (!initialProblem) {
+    const { problems } = await fetchProblems({
+      type,
+      search: searchQuery,
+      limit: 1,
+    });
+    initialProblem = problems[0] ?? null;
+  }
 
   if (!initialProblem) {
     return (
