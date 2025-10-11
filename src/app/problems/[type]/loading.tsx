@@ -1,18 +1,5 @@
-import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
-import { StartButton } from '@/components/ui/start-button';
+import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 
 export default function Loading() {
-  return (
-    <div className="relative max-w-[500px] mx-auto">
-      {/* 画像と同じアスペクト比（500x750 = 2:3）のプレースホルダー */}
-      <div className="w-full aspect-[2/3] rounded-lg" />
-
-      <div className="absolute inset-0 flex items-center justify-center">
-        <StartButton error={null} disabled>
-          <InlineLoadingSpinner />
-          <span className="ml-2">ページを取得中...</span>
-        </StartButton>
-      </div>
-    </div>
-  );
+  return <ProblemLoadingPlaceholder message="ページを取得中..." />;
 }

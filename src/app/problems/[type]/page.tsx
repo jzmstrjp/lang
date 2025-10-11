@@ -3,11 +3,10 @@ import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
 import type { ProblemWithAudio } from '@/lib/problem-service';
-import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
-import { StartButton } from '@/components/ui/start-button';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { fetchProblems } from '@/lib/problem-service';
+import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -94,23 +93,6 @@ function ProblemContent({
   return <ProblemFlow length={type} initialProblem={initialProblem} isAdmin={isAdmin} />;
 }
 
-// Loading コンポーネント
-function LoadingFallback() {
-  return (
-    <div className="relative max-w-[500px] mx-auto">
-      {/* 画像と同じアスペクト比（500x750 = 2:3）のプレースホルダー */}
-      <div className="w-full aspect-[2/3] rounded-lg" />
-
-      <div className="absolute inset-0 flex items-center justify-center">
-        <StartButton error={null} disabled>
-          <InlineLoadingSpinner />
-          <span className="ml-2">問題を取得中...</span>
-        </StartButton>
-      </div>
-    </div>
-  );
-}
-
 export default async function ProblemPage({ params, searchParams }: ProblemPageProps) {
   const { type } = await params;
 
@@ -125,7 +107,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
   return (
     <>
       <HeaderPortal>{displayName}</HeaderPortal>
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<ProblemLoadingPlaceholder message="問題を取得中..." />}>
         <ProblemContent
           type={type as ProblemLength}
           searchQuery={searchQuery}

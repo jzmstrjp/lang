@@ -11,9 +11,9 @@ export default function AdminPage() {
     (async () => {
       if (!email) return false;
       return isAdminEmail(email);
-    })()
+    })(),
   );
-  
+
   return (
     <div className="space-y-6">
       {!session && (
