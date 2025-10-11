@@ -19,7 +19,7 @@ function getPrismaClient() {
   if (!prisma) {
     prisma = new PrismaClient({
       log: ['error'],
-    }).$extends(withAccelerate());
+    }).$extends(withAccelerate()) as unknown as PrismaClient;
   }
   return prisma;
 }
