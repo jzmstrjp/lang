@@ -16,6 +16,12 @@ type ProblemPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
+function getBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return 'http://localhost:3000';
+}
+
 // データ取得部分を別コンポーネントに分離
 async function ProblemContent({
   type,
@@ -24,16 +30,14 @@ async function ProblemContent({
   type: ProblemLength;
   searchQuery?: string;
 }) {
+  const baseUrl = getBaseUrl();
   let initialProblem: ProblemWithAudio | null = null;
 
   if (!searchQuery) {
     try {
-      const cacheResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/problem-cache/${type}`,
-        {
-          cache: 'no-store',
-        },
-      );
+      const cacheResponse = await fetch(`${baseUrl}/api/problem-cache/${type}`, {
+        cache: 'no-store',
+      });
 
       if (cacheResponse.ok && cacheResponse.status === 200) {
         const data = (await cacheResponse.json()) as { problem?: ProblemWithAudio | null };
