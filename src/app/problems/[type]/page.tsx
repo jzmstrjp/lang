@@ -12,8 +12,8 @@ import { fetchProblems } from '@/lib/problem-service';
 const validTypes = ['short', 'medium', 'long'] as const;
 
 type ProblemPageProps = {
-  params: { type: string };
-  searchParams: { search?: string };
+  params: Promise<{ type: string }>;
+  searchParams: Promise<{ search?: string }>;
 };
 
 function getBaseUrl(): string {
@@ -22,38 +22,64 @@ function getBaseUrl(): string {
   return 'http://localhost:3000';
 }
 
-// データ取得部分を別コンポーネントに分離
-function ProblemContent({ type, searchQuery }: { type: ProblemLength; searchQuery?: string }) {
-  const baseUrl = getBaseUrl();
-  let initialProblem: ProblemWithAudio | null = null;
+type ProblemData = {
+  initialProblem: ProblemWithAudio | null;
+  isAdmin: boolean;
+};
 
-  if (!searchQuery) {
-    try {
-      const cacheResponse = use(
-        fetch(`${baseUrl}/api/problem-cache/${type}`, {
+function loadProblemData({
+  type,
+  searchQuery,
+}: {
+  type: ProblemLength;
+  searchQuery?: string;
+}): Promise<ProblemData> {
+  return (async () => {
+    const baseUrl = getBaseUrl();
+    let initialProblem: ProblemWithAudio | null = null;
+
+    if (!searchQuery) {
+      try {
+        const cacheResponse = await fetch(`${baseUrl}/api/problem-cache/${type}`, {
           cache: 'no-store',
-        }),
-      );
+        });
 
-      if (cacheResponse.ok && cacheResponse.status === 200) {
-        const data = use(cacheResponse.json()) as { problem?: ProblemWithAudio | null };
-        initialProblem = data.problem ?? null;
+        if (cacheResponse.ok && cacheResponse.status === 200) {
+          const data = (await cacheResponse.json()) as { problem?: ProblemWithAudio | null };
+          initialProblem = data.problem ?? null;
+        }
+      } catch (error) {
+        console.warn('[ProblemPage] Failed to fetch cached problem:', error);
       }
-    } catch (error) {
-      console.warn('[ProblemPage] Failed to fetch cached problem:', error);
     }
-  }
 
-  if (!initialProblem) {
-    const { problems } = use(
-      fetchProblems({
+    if (!initialProblem) {
+      const { problems } = await fetchProblems({
         type,
         search: searchQuery,
         limit: 1,
-      }),
-    );
-    initialProblem = problems[0] ?? null;
-  }
+      });
+      initialProblem = problems[0] ?? null;
+    }
+
+    const session = await getServerAuthSession();
+    const email = session?.user?.email ?? null;
+    const isAdmin = email ? await isAdminEmail(email) : false;
+
+    return { initialProblem, isAdmin };
+  })();
+}
+
+function ProblemContent({
+  type,
+  searchQuery,
+  dataPromise,
+}: {
+  type: ProblemLength;
+  searchQuery?: string;
+  dataPromise: Promise<ProblemData>;
+}) {
+  const { initialProblem, isAdmin } = use(dataPromise);
 
   if (!initialProblem) {
     return (
@@ -64,10 +90,6 @@ function ProblemContent({ type, searchQuery }: { type: ProblemLength; searchQuer
       </p>
     );
   }
-
-  const session = use(getServerAuthSession());
-  const email = session?.user?.email ?? null;
-  const isAdmin = email ? use(isAdminEmail(email)) : false;
 
   return <ProblemFlow length={type} initialProblem={initialProblem} isAdmin={isAdmin} />;
 }
@@ -89,21 +111,26 @@ function LoadingFallback() {
   );
 }
 
-export default function ProblemPage({ params, searchParams }: ProblemPageProps) {
-  const { type } = params;
+export default async function ProblemPage({ params, searchParams }: ProblemPageProps) {
+  const { type } = await params;
 
   if (!validTypes.includes(type as ProblemLength)) {
     notFound();
   }
 
-  const searchQuery = searchParams.search?.trim();
+  const searchQuery = (await searchParams).search?.trim();
   const displayName = type;
+  const problemDataPromise = loadProblemData({ type: type as ProblemLength, searchQuery });
 
   return (
     <>
       <HeaderPortal>{displayName}</HeaderPortal>
       <Suspense fallback={<LoadingFallback />}>
-        <ProblemContent type={type as ProblemLength} searchQuery={searchQuery} />
+        <ProblemContent
+          type={type as ProblemLength}
+          searchQuery={searchQuery}
+          dataPromise={problemDataPromise}
+        />
       </Suspense>
     </>
   );

@@ -7,8 +7,13 @@ import { use } from 'react';
 export default function AdminPage() {
   const session = use(getServerAuthSession());
   const email = session?.user?.email ?? null;
-  const isAdmin = email ? use(isAdminEmail(email)) : false;
-
+  const isAdmin = use(
+    (async () => {
+      if (!email) return false;
+      return isAdminEmail(email);
+    })()
+  );
+  
   return (
     <div className="space-y-6">
       {!session && (

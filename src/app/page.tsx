@@ -23,11 +23,11 @@ const links = [
 ];
 
 type HomePageProps = {
-  searchParams: { streak?: string };
+  searchParams: Promise<{ streak?: string }>;
 };
 
-export function generateMetadata({ searchParams }: HomePageProps): Metadata {
-  const awaitedSearchParams = searchParams;
+export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const awaitedSearchParams = await searchParams;
   const shareCount = awaitedSearchParams.streak;
 
   // シェアパラメータがある場合は動的OGP
