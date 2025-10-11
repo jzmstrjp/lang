@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
-import { fetchProblems } from '@/lib/problem-service';
+import { fetchFirstProblem } from '@/lib/problem-service';
 import { InlineLoadingSpinner } from '@/components/ui/loading-spinner';
 import { StartButton } from '@/components/ui/start-button';
 import { getServerAuthSession } from '@/lib/auth/session';
@@ -23,13 +23,7 @@ async function ProblemContent({
   type: ProblemLength;
   searchQuery?: string;
 }) {
-  const { problems } = await fetchProblems({
-    type,
-    search: searchQuery,
-    limit: 1,
-  });
-
-  const initialProblem = problems[0];
+  const initialProblem = await fetchFirstProblem(type, searchQuery);
 
   if (!initialProblem) {
     return (
