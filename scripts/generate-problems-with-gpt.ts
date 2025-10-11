@@ -17,6 +17,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const PROBLEMS_PER_ROUND = 3;
+const DEFAULT_TOTAL_PROBLEMS = 30;
+
 /**
  * プロンプトファイルを読み込む
  */
@@ -28,6 +31,19 @@ function loadPrompt(): string {
   }
 
   return fs.readFileSync(promptPath, 'utf-8');
+}
+
+/**
+ * words.mdに含まれる語彙リストを読み込む
+ */
+function loadWordsList(): string {
+  const wordsPath = path.join(process.cwd(), 'docs', 'words.md');
+
+  if (!fs.existsSync(wordsPath)) {
+    throw new Error(`語彙リストが見つかりません: ${wordsPath}`);
+  }
+
+  return fs.readFileSync(wordsPath, 'utf-8');
 }
 
 /**
@@ -94,12 +110,9 @@ async function generateProblemsWithHistory(
 }
 
 /**
- * 複数回のAPI呼び出しで30問を生成
+ * 複数回のAPI呼び出しで問題を生成（3問ずつレビュー付き）
  */
-async function generateMultipleProblems(
-  initialPrompt: string,
-  rounds: number = 6,
-): Promise<string[]> {
+async function generateMultipleProblems(initialPrompt: string, rounds: number): Promise<string[]> {
   const allCodes: string[] = [];
   let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
     {
@@ -108,38 +121,40 @@ async function generateMultipleProblems(
     },
   ];
 
-  // 最初の5問を生成
-  console.log('🤖 1回目: 最初の5問を生成中...');
-  let result = await generateProblemsWithHistory(messages);
-  messages = result.messages;
+  for (let i = 1; i <= rounds; i++) {
+    const isFirstRound = i === 1;
+    const totalGenerated = i * PROBLEMS_PER_ROUND;
 
-  // コードを抽出
-  const code1 = extractTypeScriptCode(result.content);
-  validateGeneratedCode(code1);
-  allCodes.push(code1);
-  console.log('✅ 1回目完了 (5問生成)\n');
+    console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の3問を生成中...' : 'さらに3問を生成中...'}`);
+    const generationResult = await generateProblemsWithHistory(messages);
+    messages = generationResult.messages;
 
-  // 残りの5回、「さらに5問お願いします」を繰り返す
-  for (let i = 2; i <= rounds; i++) {
-    console.log(`🤖 ${i}回目: さらに5問を生成中...`);
+    const draftCode = extractTypeScriptCode(generationResult.content);
+    validateGeneratedCode(draftCode);
 
-    // 会話履歴に「さらに5問お願いします」を追加
+    console.log('🧐 レビュー依頼中...');
     messages.push({
       role: 'user',
-      content: 'さらに5問お願いします',
+      content:
+        '批判的レビューをして、修正したJSONをください。指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。',
     });
 
-    result = await generateProblemsWithHistory(messages);
-    messages = result.messages;
+    const reviewResult = await generateProblemsWithHistory(messages);
+    messages = reviewResult.messages;
 
-    // コードを抽出
-    const code = extractTypeScriptCode(result.content);
-    validateGeneratedCode(code);
-    allCodes.push(code);
-    console.log(`✅ ${i}回目完了 (累計${i * 5}問)\n`);
+    const reviewedCode = extractTypeScriptCode(reviewResult.content);
+    validateGeneratedCode(reviewedCode);
+    allCodes.push(reviewedCode);
 
-    // API制限を考慮して少し待機
+    console.log(`✅ ${i}回目完了 (累計${totalGenerated}問)\n`);
+
     if (i < rounds) {
+      messages.push({
+        role: 'user',
+        content: 'さらに3問お願いします。同じ条件と語彙リストを守ってください。',
+      });
+
+      // API制限を考慮して少し待機
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
@@ -336,19 +351,21 @@ export default problemData;
  */
 async function main() {
   try {
-    // コマンドライン引数から生成回数を取得（デフォルト: 6）
+    // コマンドライン引数から生成回数を取得（デフォルト: 約30問分を確保する回数）
     const roundsArg = process.argv[2];
-    const rounds = roundsArg ? parseInt(roundsArg, 10) : 6;
+    const rounds = roundsArg
+      ? parseInt(roundsArg, 10)
+      : Math.ceil(DEFAULT_TOTAL_PROBLEMS / PROBLEMS_PER_ROUND);
 
     // バリデーション
     if (isNaN(rounds) || rounds < 1) {
       throw new Error('生成回数は1以上の整数を指定してください');
     }
 
-    const totalProblems = rounds * 5;
+    const totalProblems = rounds * PROBLEMS_PER_ROUND;
 
     console.log('🚀 問題生成スクリプト開始\n');
-    console.log(`📌 ${totalProblems}問（5問×${rounds}回）を生成します\n`);
+    console.log(`📌 ${totalProblems}問（${PROBLEMS_PER_ROUND}問×${rounds}回）を生成します\n`);
 
     // OpenAI API Keyの確認
     if (!process.env.OPENAI_API_KEY) {
@@ -361,6 +378,8 @@ async function main() {
     // プロンプトを読み込み
     console.log('📖 プロンプトを読み込み中...');
     const prompt = loadPrompt();
+    const wordsList = loadWordsList();
+    const promptWithWords = `${prompt.trim()}\n\n以下はdocs/words.mdに記載された重要な単語・熟語の一覧です。各問題で可能な限りこれらの語彙を活用してください:\n${wordsList}`;
     console.log('✅ プロンプト読み込み完了\n');
 
     // 次のファイル番号を取得
@@ -369,7 +388,7 @@ async function main() {
 
     // 複数回APIを呼び出して問題を生成
     console.log('🔄 生成処理開始...\n');
-    const allCodes = await generateMultipleProblems(prompt, rounds);
+    const allCodes = await generateMultipleProblems(promptWithWords, rounds);
 
     console.log('✅ すべてのコード生成完了\n');
 
