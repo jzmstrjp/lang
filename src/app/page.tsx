@@ -23,11 +23,11 @@ const links = [
 ];
 
 type HomePageProps = {
-  searchParams: Promise<{ streak?: string }>;
+  searchParams: { streak?: string };
 };
 
-export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
-  const awaitedSearchParams = await searchParams;
+export function generateMetadata({ searchParams }: HomePageProps): Metadata {
+  const awaitedSearchParams = searchParams;
   const shareCount = awaitedSearchParams.streak;
 
   // シェアパラメータがある場合は動的OGP
@@ -74,10 +74,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
   return {};
 }
 
-export default async function Home({ searchParams }: HomePageProps) {
-  // searchParamsを使う必要はないが、generateMetadataとシグネチャを合わせる
-  await searchParams;
-
+export default function Home() {
   return (
     <main className="mx-auto flex sm:min-h-[calc(80vh-3.5rem)] max-w-3xl flex-col items-center justify-center gap-6 px-4 py-2 sm:py-12 text-[#2a2b3c] sm:px-6">
       <div className="rounded-2xl overflow-hidden">

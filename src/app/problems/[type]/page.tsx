@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
@@ -12,8 +12,8 @@ import { fetchProblems } from '@/lib/problem-service';
 const validTypes = ['short', 'medium', 'long'] as const;
 
 type ProblemPageProps = {
-  params: Promise<{ type: string }>;
-  searchParams: Promise<{ search?: string }>;
+  params: { type: string };
+  searchParams: { search?: string };
 };
 
 function getBaseUrl(): string {
@@ -23,24 +23,20 @@ function getBaseUrl(): string {
 }
 
 // データ取得部分を別コンポーネントに分離
-async function ProblemContent({
-  type,
-  searchQuery,
-}: {
-  type: ProblemLength;
-  searchQuery?: string;
-}) {
+function ProblemContent({ type, searchQuery }: { type: ProblemLength; searchQuery?: string }) {
   const baseUrl = getBaseUrl();
   let initialProblem: ProblemWithAudio | null = null;
 
   if (!searchQuery) {
     try {
-      const cacheResponse = await fetch(`${baseUrl}/api/problem-cache/${type}`, {
-        cache: 'no-store',
-      });
+      const cacheResponse = use(
+        fetch(`${baseUrl}/api/problem-cache/${type}`, {
+          cache: 'no-store',
+        }),
+      );
 
       if (cacheResponse.ok && cacheResponse.status === 200) {
-        const data = (await cacheResponse.json()) as { problem?: ProblemWithAudio | null };
+        const data = use(cacheResponse.json()) as { problem?: ProblemWithAudio | null };
         initialProblem = data.problem ?? null;
       }
     } catch (error) {
@@ -49,11 +45,13 @@ async function ProblemContent({
   }
 
   if (!initialProblem) {
-    const { problems } = await fetchProblems({
-      type,
-      search: searchQuery,
-      limit: 1,
-    });
+    const { problems } = use(
+      fetchProblems({
+        type,
+        search: searchQuery,
+        limit: 1,
+      }),
+    );
     initialProblem = problems[0] ?? null;
   }
 
@@ -67,9 +65,9 @@ async function ProblemContent({
     );
   }
 
-  const session = await getServerAuthSession();
+  const session = use(getServerAuthSession());
   const email = session?.user?.email ?? null;
-  const isAdmin = email ? await isAdminEmail(email) : false;
+  const isAdmin = email ? use(isAdminEmail(email)) : false;
 
   return <ProblemFlow length={type} initialProblem={initialProblem} isAdmin={isAdmin} />;
 }
@@ -91,15 +89,14 @@ function LoadingFallback() {
   );
 }
 
-export default async function ProblemPage({ params, searchParams }: ProblemPageProps) {
-  const { type } = await params;
+export default function ProblemPage({ params, searchParams }: ProblemPageProps) {
+  const { type } = params;
 
   if (!validTypes.includes(type as ProblemLength)) {
     notFound();
   }
 
-  const awaitedSearchParams = await searchParams;
-  const searchQuery = awaitedSearchParams.search?.trim();
+  const searchQuery = searchParams.search?.trim();
   const displayName = type;
 
   return (
