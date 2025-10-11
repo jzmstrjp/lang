@@ -9,6 +9,8 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 
+import { places } from '../docs/for-prompt/scenes';
+
 // 環境変数を読み込み
 dotenv.config();
 
@@ -19,6 +21,23 @@ const openai = new OpenAI({
 
 const PROBLEMS_PER_ROUND = 3;
 const DEFAULT_TOTAL_PROBLEMS = 30;
+
+/**
+ * 配列から重複なしでランダムに要素を取得
+ */
+function pickRandomUniqueItems<T>(source: T[], count: number): T[] {
+  if (count > source.length) {
+    throw new Error('ランダム抽出数が配列の要素数を超えています');
+  }
+
+  const shuffled = [...source];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
+}
 
 /**
  * プロンプトファイルを読み込む
@@ -379,8 +398,27 @@ async function main() {
     console.log('📖 プロンプトを読み込み中...');
     const prompt = loadPrompt();
     const wordsList = loadWordsList();
-    const promptWithWords = `${prompt.trim()}\n\n以下はdocs/words.mdに記載された重要な単語・熟語の一覧です。各問題で可能な限りこれらの語彙を活用してください:\n${wordsList}`;
+    const requiredPlaceCount = 3;
+
+    if (PROBLEMS_PER_ROUND < requiredPlaceCount) {
+      throw new Error(
+        'PROBLEMS_PER_ROUNDは少なくとも3である必要があります（最初の3問の場所指定のため）。',
+      );
+    }
+
+    const initialPlaces = pickRandomUniqueItems(places, requiredPlaceCount);
+    const placeInstructionLines = initialPlaces
+      .map((place, index) => `${index + 1}問目: ${place}`)
+      .join('\n');
+    const placeInstruction = `最初の3問のplaceは必ず次の場所を順番に設定してください。\n${placeInstructionLines}\n4問目以降のplaceは従来の条件を守りつつ自由に設定してください。`;
+
+    const promptWithWords = `${prompt.trim()}\n\n${placeInstruction}\n\n以下はdocs/words.mdに記載された重要な単語・熟語の一覧です。各問題で可能な限りこれらの語彙を活用してください:\n${wordsList}`;
     console.log('✅ プロンプト読み込み完了\n');
+    console.log('🎯 最初の3問で使用する場所:');
+    initialPlaces.forEach((place, index) => {
+      console.log(`  ${index + 1}問目: ${place}`);
+    });
+    console.log('');
 
     // 次のファイル番号を取得
     const fileNumber = getNextProblemNumber();
