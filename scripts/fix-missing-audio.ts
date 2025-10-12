@@ -5,9 +5,20 @@
  */
 
 import { prisma } from '../src/lib/prisma';
-import { generateAndUploadAudioAssets } from '../src/lib/problem-generator';
 import type { VoiceGender } from '../src/config/voice';
 import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
+
+let audioUtilsModule: typeof import('../src/lib/audio-utils') | null = null;
+let r2ClientModule: typeof import('../src/lib/r2-client') | null = null;
+
+async function ensureAudioModules() {
+  if (!audioUtilsModule) {
+    audioUtilsModule = await import('../src/lib/audio-utils');
+  }
+  if (!r2ClientModule) {
+    r2ClientModule = await import('../src/lib/r2-client');
+  }
+}
 
 async function main(batchSize: number = 10, checkOnly: boolean = false) {
   try {
@@ -115,61 +126,65 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         const needsJapanese = !problem.audioJaUrl;
         const needsEnglishReply = !problem.audioEnReplyUrl && problem.englishReply;
 
-        if (needsEnglish || needsJapanese) {
-          console.log('   🎤 英語・日本語音声を生成中...');
+        if (needsEnglish || needsJapanese || needsEnglishReply) {
+          await ensureAudioModules();
+        }
 
-          // 共通ロジックを使用して音声生成・アップロード
-          const audioAssets = await generateAndUploadAudioAssets(
-            {
-              englishSentence: problem.englishSentence,
-              japaneseReply: problem.japaneseReply,
-              senderVoice: problem.senderVoice,
-              receiverVoice: problem.receiverVoice,
-              wordCount: 0, // 一時的な値（実際には使用されない）
-              japaneseSentence: problem.japaneseSentence,
-              englishReply: problem.englishReply,
-              incorrectOptions: [],
-              senderRole: problem.senderRole,
-              receiverRole: problem.receiverRole,
-              place: problem.place,
-              scenePrompt: problem.scenePrompt ?? null,
-              senderVoiceInstruction: problem.senderVoiceInstruction ?? null,
-              receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
-            },
-            problem.id,
+        const senderVoiceGender = problem.senderVoice as VoiceGender;
+        const receiverVoiceGender = problem.receiverVoice as VoiceGender;
+
+        if (needsEnglish && audioUtilsModule && r2ClientModule) {
+          console.log('   🎤 英語音声を生成中...');
+          const englishBuffer = await audioUtilsModule.generateSpeechBuffer(
+            problem.englishSentence,
+            senderVoiceGender,
+            problem.senderVoiceInstruction ?? null,
+            problem.senderRole,
           );
+          const englishUrl = await r2ClientModule.uploadAudioToR2(
+            englishBuffer,
+            problem.id,
+            'en',
+            senderVoiceGender,
+          );
+          updateData.audioEnUrl = englishUrl;
+          console.log(`   ✅ 英語音声アップロード完了: ${englishUrl}`);
+        }
 
-          if (needsEnglish) {
-            updateData.audioEnUrl = audioAssets.english;
-            console.log(`   ✅ 英語音声アップロード完了: ${audioAssets.english}`);
-          }
-
-          if (needsJapanese) {
-            updateData.audioJaUrl = audioAssets.japanese;
-            console.log(`   ✅ 日本語音声アップロード完了: ${audioAssets.japanese}`);
-          }
+        if (needsJapanese && audioUtilsModule && r2ClientModule) {
+          console.log('   🎤 日本語音声を生成中...');
+          const japaneseBuffer = await audioUtilsModule.generateSpeechBuffer(
+            problem.japaneseReply,
+            receiverVoiceGender,
+            problem.receiverVoiceInstruction ?? null,
+            problem.receiverRole,
+          );
+          const japaneseUrl = await r2ClientModule.uploadAudioToR2(
+            japaneseBuffer,
+            problem.id,
+            'ja',
+            receiverVoiceGender,
+          );
+          updateData.audioJaUrl = japaneseUrl;
+          console.log(`   ✅ 日本語音声アップロード完了: ${japaneseUrl}`);
         }
 
         // 英語返答の音声生成
-        if (needsEnglishReply) {
+        if (needsEnglishReply && audioUtilsModule && r2ClientModule) {
           console.log('   🎤 英語返答音声を生成中...');
 
-          // 英語返答の音声を個別に生成・アップロード
-          const { generateSpeechBuffer } = await import('../src/lib/audio-utils');
-          const { uploadAudioToR2 } = await import('../src/lib/r2-client');
-
-          const englishReplyAudioBuffer = await generateSpeechBuffer(
+          const englishReplyAudioBuffer = await audioUtilsModule.generateSpeechBuffer(
             problem.englishReply!,
-            problem.receiverVoice as VoiceGender,
+            receiverVoiceGender,
             problem.receiverVoiceInstruction ?? null,
             problem.receiverRole,
           );
 
-          const englishReplyAudioUrl = await uploadAudioToR2(
+          const englishReplyAudioUrl = await r2ClientModule.uploadAudioToR2(
             englishReplyAudioBuffer,
             problem.id,
             'en-reply',
-            problem.receiverVoice as VoiceGender,
+            receiverVoiceGender,
           );
 
           updateData.audioEnReplyUrl = englishReplyAudioUrl;
