@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "postinstall": "prisma generate",
+    "postinstall": "if [ \\\"$NODE_ENV\\\" = \\\"production\\\" ]; then prisma generate --no-engine; else prisma generate; fi",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
