@@ -50,7 +50,7 @@ export type ProblemLength = 'short' | 'medium' | 'long';
 type ProblemFlowProps = {
   length: ProblemLength;
   initialProblem: ProblemWithAudio;
-  isAdmin: boolean;
+  isAdminPromise: Promise<boolean>;
 };
 
 type ApiProblemsResponse = {
@@ -85,7 +85,7 @@ const getCurrentSetting = (length: ProblemLength): Setting => {
   };
 };
 
-export default function ProblemFlow({ length, initialProblem, isAdmin }: ProblemFlowProps) {
+export default function ProblemFlow({ length, initialProblem, isAdminPromise }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const router = useRouter();
@@ -102,6 +102,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -235,6 +236,27 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     }
   }, [phase.kind]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.resolve(isAdminPromise)
+      .then((result) => {
+        if (isMounted) {
+          setIsAdmin(Boolean(result));
+        }
+      })
+      .catch((error) => {
+        console.error('[ProblemFlow] isAdmin取得に失敗しました:', error);
+        if (isMounted) {
+          setIsAdmin(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdminPromise]);
+
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
 
@@ -331,7 +353,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     const currentAssetValue =
       currentProblem && (currentProblem as Record<RemovableField, string | null>)[field];
 
-    if (!isAdmin || !targetProblemId || !currentAssetValue || removingAssetRef.current[field]) {
+    if (!targetProblemId || !currentAssetValue || removingAssetRef.current[field]) {
       return;
     }
 
@@ -403,7 +425,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     });
 
   const handleDeleteProblem = async () => {
-    if (!isAdmin || isDeletingProblem) {
+    if (isDeletingProblem) {
       return;
     }
 
@@ -469,10 +491,6 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
     incorrectIndex: number,
     nextText: string,
   ): Promise<EditableIncorrectOptionResult> => {
-    if (!isAdmin) {
-      return { ok: false, message: '権限がありません。' };
-    }
-
     const problemId = currentProblem?.id;
 
     if (!problemId) {

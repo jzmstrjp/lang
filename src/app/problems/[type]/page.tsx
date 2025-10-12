@@ -21,10 +21,7 @@ function getBaseUrl(): string {
   return 'http://localhost:3000';
 }
 
-type ProblemData = {
-  initialProblem: ProblemWithAudio | null;
-  isAdmin: boolean;
-};
+type ProblemData = ProblemWithAudio | null;
 
 function loadProblemData({
   type,
@@ -61,24 +58,31 @@ function loadProblemData({
       initialProblem = problems[0] ?? null;
     }
 
-    const session = await getServerAuthSession();
-    const email = session?.user?.email ?? null;
-    const isAdmin = email ? await isAdminEmail(email) : false;
-
-    return { initialProblem, isAdmin };
+    return initialProblem;
   })();
 }
+
+const fetchIsAdmin = async () => {
+  const session = await getServerAuthSession();
+  const email = session?.user?.email ?? null;
+  if (!email) {
+    return false;
+  }
+  return isAdminEmail(email);
+};
 
 function ProblemContent({
   type,
   searchQuery,
   dataPromise,
+  isAdminPromise,
 }: {
   type: ProblemLength;
   searchQuery?: string;
   dataPromise: Promise<ProblemData>;
+  isAdminPromise: Promise<boolean>;
 }) {
-  const { initialProblem, isAdmin } = use(dataPromise);
+  const initialProblem = use(dataPromise);
 
   if (!initialProblem) {
     return (
@@ -90,7 +94,9 @@ function ProblemContent({
     );
   }
 
-  return <ProblemFlow length={type} initialProblem={initialProblem} isAdmin={isAdmin} />;
+  return (
+    <ProblemFlow length={type} initialProblem={initialProblem} isAdminPromise={isAdminPromise} />
+  );
 }
 
 export default async function ProblemPage({ params, searchParams }: ProblemPageProps) {
@@ -103,6 +109,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
   const searchQuery = (await searchParams).search?.trim();
   const displayName = type;
   const problemDataPromise = loadProblemData({ type: type as ProblemLength, searchQuery });
+  const isAdminPromise = fetchIsAdmin();
 
   return (
     <>
@@ -112,6 +119,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
           type={type as ProblemLength}
           searchQuery={searchQuery}
           dataPromise={problemDataPromise}
+          isAdminPromise={isAdminPromise}
         />
       </Suspense>
     </>
