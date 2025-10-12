@@ -45,7 +45,7 @@ export function SettingsMenu({ className = '' }: SettingsMenuProps) {
         aria-expanded={isOpen}
         aria-label="設定"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-10 w-10 items-center justify-center text-white transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="flex h-10 w-10 items-center justify-center text-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
