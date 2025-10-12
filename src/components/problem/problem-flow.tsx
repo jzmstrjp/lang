@@ -561,7 +561,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
           onImageLoad={undefined}
         />
       ) : phase.kind === 'quiz' ? (
-        <section className="grid gap-6 sm:gap-8">
+        <section className="grid gap-6 sm:gap-6">
           <div>
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
           </div>
@@ -692,6 +692,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
                 width={500}
                 height={750}
                 unoptimized
+                priority
                 className={isOnStreak ? 'opacity-50' : ''}
               />
               {isOnStreak && (
@@ -737,6 +738,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
                 width={500}
                 height={750}
                 unoptimized
+                priority
               />
             </div>
           </div>
@@ -806,7 +808,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
       )}
 
       {isAdmin && (
-        <div className="mt-128 flex flex-col items-center gap-6">
+        <div className="mt-160 flex flex-col items-center gap-6">
           {sceneImage && (
             <button
               type="button"

@@ -72,7 +72,7 @@ export default function RootLayout({
             <SettingsMenu className="ml-4" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:pt-10 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+        <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:pt-6 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
           {children}
         </main>
         <Analytics />
