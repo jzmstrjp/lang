@@ -561,11 +561,13 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
           onImageLoad={undefined}
         />
       ) : phase.kind === 'quiz' ? (
-        <section className="grid gap-6 sm:gap-6 pt-4 max-w-[500px] mx-auto">
+        <section className="grid pt-4 max-w-[500px] mx-auto">
           <div>
-            <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
+            <p className="text-center text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
+              この英文の意味は？
+            </p>
           </div>
-          <ul className="grid gap-3">
+          <ul className="grid gap-3 mt-4">
             {phase.shuffledOptions.map((option, index) => {
               const optionKey =
                 option.kind === 'incorrect'
@@ -665,7 +667,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
               );
             })}
           </ul>
-          <div className="flex justify-center">
+          <div className="flex justify-center mt-4">
             <button
               type="button"
               onClick={() => {
@@ -680,7 +682,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
         </section>
       ) : phase.kind === 'correct' ? (
         <section className="grid gap-4 text-center">
-          <div className="px-6 py-2 text-cyan-600">
+          <div className="px-6 py-6 text-cyan-600">
             <h2 className="text-4xl font-bold">
               {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''}
               正解 🎉
@@ -729,7 +731,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
         </section>
       ) : phase.kind === 'incorrect' ? (
         <section className="grid gap-4 text-center">
-          <div className="px-6 py-2 text-blue-600">
+          <div className="px-6 py-6 text-blue-600">
             <h2 className="text-4xl font-bold pl-4">残念…</h2>
             <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
               <Image
