@@ -76,7 +76,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
 
 export default function Home() {
   return (
-    <div className="mx-auto flex flex-col items-center justify-center gap-6 lg:pt-10 text-[#2a2b3c]">
+    <div className="mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 lg:pt-10 text-[#2a2b3c]">
       <div className="rounded-2xl overflow-hidden">
         <Image
           src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/top.webp`}
