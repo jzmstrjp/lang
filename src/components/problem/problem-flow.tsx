@@ -561,7 +561,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
           onImageLoad={undefined}
         />
       ) : phase.kind === 'quiz' ? (
-        <section className="grid gap-6 sm:gap-6">
+        <section className="grid gap-6 sm:gap-6 pt-4 max-w-[500px] mx-auto">
           <div>
             <p className="text-xl font-semibold text-[#2a2b3c] sm:text-2xl">この英文の意味は？</p>
           </div>
