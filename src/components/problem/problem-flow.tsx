@@ -649,7 +649,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
               この英文の意味は？
             </p>
           </div>
-          <ul className="grid gap-3 mt-4">
+          <ul className="grid gap-3 mt-6">
             {phase.shuffledOptions.map((option, index) => {
               const optionKey =
                 option.kind === 'incorrect'
@@ -716,7 +716,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
                             });
                           }
                         }}
-                        className={`w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 ${isAdmin ? 'pr-24' : 'pr-5'} text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50`}
+                        className={`w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 ${isAdmin ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50`}
                         disabled={isAudioBusy}
                       >
                         {option.text}
@@ -726,7 +726,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
                           <button
                             type="button"
                             onClick={() => setEditingIncorrectOptionKey(optionKey)}
-                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                            className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
                           >
                             編集
                           </button>
@@ -738,7 +738,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
                                 window.alert('これは正解です');
                               }
                             }}
-                            className="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                            className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
                           >
                             編集
                           </button>
@@ -749,7 +749,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
               );
             })}
           </ul>
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-center mt-6">
             <button
               type="button"
               onClick={() => {
@@ -763,11 +763,11 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           </div>
         </section>
       ) : phase.kind === 'correct' ? (
-        <section className="grid gap-4 text-center">
+        <section className="grid text-center max-w-[500px] mx-auto">
           <div className="px-6 py-6 text-cyan-600">
-            <h2 className="text-4xl font-bold">
-              {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''}
-              正解 🎉
+            <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
+              <div className="transform scale-x-[-1]">🎉</div>
+              {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''} 正解<div>🎉</div>
             </h2>
             <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
               <Image
@@ -800,7 +800,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
             </p>
             <p className="mt-4 text-lg text-[#2a2b3c]">{phase.problem.japaneseSentence}</p>
           </div>
-          <div className="flex flex-col gap-3 items-center justify-center">
+          <div className="">
             <button
               type="button"
               onClick={handleNextProblem}
@@ -812,7 +812,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           </div>
         </section>
       ) : phase.kind === 'incorrect' ? (
-        <section className="grid gap-4 text-center">
+        <section className="grid gap-2 text-center">
           <div className="px-6 py-6 text-blue-600">
             <h2 className="text-4xl font-bold pl-4">残念…</h2>
             <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
