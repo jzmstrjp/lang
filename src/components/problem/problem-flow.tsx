@@ -101,6 +101,7 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([initialProblem]);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
+  const [isDeletingProblem, setDeletingProblem] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -397,9 +398,72 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
 
   const handleRemoveAudioJa = () =>
     handleRemoveAsset('audioJaUrl', {
-      confirmMessage: '本当に日本語応答音声を削除しますか？',
-      errorMessage: '日本語応答音声の削除に失敗しました。',
+      confirmMessage: '本当に日本語返答音声を削除しますか？',
+      errorMessage: '日本語返答音声の削除に失敗しました。',
     });
+
+  const handleDeleteProblem = async () => {
+    if (!isAdmin || isDeletingProblem) {
+      return;
+    }
+
+    const targetProblemId = currentProblem?.id;
+    if (!targetProblemId) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      '本当にこの問題自体を削除しますか？\nこの操作は取り消せません。',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingProblem(true);
+
+    try {
+      const response = await fetch('/api/admin/problems/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ problemId: targetProblemId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const message = data?.error ?? '問題の削除に失敗しました。';
+        window.alert(message);
+        return;
+      }
+
+      if (phase.kind === 'start-button-server') {
+        setProblemQueue((prevQueue) =>
+          prevQueue.filter((problem) => problem.id !== targetProblemId),
+        );
+        const nextProblemData =
+          problemQueue.find((problem) => problem.id !== targetProblemId) ?? null;
+        setPhase({
+          kind: 'start-button-client',
+          error: nextProblemData ? null : '次の問題がありません',
+          problem: nextProblemData ?? phase.problem,
+          setting: getCurrentSetting(length),
+        });
+        return;
+      }
+
+      handleNextProblem();
+    } catch (error) {
+      console.error('[ProblemFlow] 問題削除エラー:', error);
+      window.alert('問題の削除に失敗しました。');
+    } finally {
+      setDeletingProblem(false);
+    }
+  };
 
   const updateIncorrectOption = async (
     incorrectIndex: number,
@@ -847,9 +911,18 @@ export default function ProblemFlow({ length, initialProblem, isAdmin }: Problem
               disabled={!currentProblem.audioJaUrl}
               className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-emerald-900/30 transition enabled:hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              日本語応答音声を削除する
+              日本語返答音声を削除する
             </button>
           </div>
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={handleDeleteProblem}
+            disabled={isDeletingProblem}
+            className="inline-flex items-center justify-center rounded-full bg-red-700 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-red-900/30 transition enabled:hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeletingProblem ? '削除中…' : 'この問題自体を削除する'}
+          </button>
         </div>
       )}
     </>
