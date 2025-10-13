@@ -10,15 +10,17 @@ import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
+type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
+
 type ServerPhase = {
-  problem: ProblemWithAudio;
+  problem: ProblemWithStaticFlag;
 } & {
   kind: 'start-button-server';
 };
 
 type ClientPhase = {
   setting: Setting;
-  problem: ProblemWithAudio;
+  problem: ProblemWithStaticFlag;
 } & (
   | {
       kind: 'start-button-client';
@@ -49,7 +51,7 @@ export type ProblemLength = 'short' | 'medium' | 'long';
 
 type ProblemFlowProps = {
   length: ProblemLength;
-  initialProblem: ProblemWithAudio;
+  initialProblem: ProblemWithStaticFlag;
   isAdminPromise: Promise<boolean>;
 };
 
@@ -98,7 +100,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   });
 
   // グローバル状態（全phase共通）
-  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([initialProblem]);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([initialProblem]);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
@@ -106,6 +108,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
+  const canEditCurrentProblem = isAdmin && !currentProblem?.isStatic;
   const nextProblem = problemQueue[1] ?? null;
   const phaseSetting = phase.kind === 'start-button-server' ? null : phase.setting;
   const englishSentenceAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -347,7 +350,14 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       errorMessage: string;
     },
   ) => {
-    if (!window.confirm(confirmMessage)) return;
+    if (currentProblem?.isStatic) {
+      if (typeof window !== 'undefined') {
+        window.alert('静的な問題は変更できません。');
+      }
+      return;
+    }
+
+    if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) return;
 
     const targetProblemId = currentProblem?.id;
     const currentAssetValue =
@@ -374,11 +384,11 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       }
 
       setPhase((prevPhase) => {
-        const updatedProblem = {
+        const updatedProblem: ProblemWithStaticFlag = {
           ...prevPhase.problem,
           [field]: null,
           ...(field === 'imageUrl' ? {} : { audioReady: false }),
-        } as ProblemWithAudio;
+        };
         return { ...prevPhase, problem: updatedProblem } as Phase;
       });
 
@@ -389,7 +399,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
                 ...problem,
                 [field]: null,
                 ...(field === 'imageUrl' ? {} : { audioReady: false }),
-              } as ProblemWithAudio)
+              } as ProblemWithStaticFlag)
             : problem,
         ),
       );
@@ -426,6 +436,13 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
 
   const handleDeleteProblem = async () => {
     if (isDeletingProblem) {
+      return;
+    }
+
+    if (currentProblem?.isStatic) {
+      if (typeof window !== 'undefined') {
+        window.alert('静的な問題は削除できません。');
+      }
       return;
     }
 
@@ -492,6 +509,10 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     nextText: string,
   ): Promise<EditableIncorrectOptionResult> => {
     const problemId = currentProblem?.id;
+
+    if (currentProblem?.isStatic) {
+      return { ok: false, message: '静的な問題は編集できません。' };
+    }
 
     if (!problemId) {
       return { ok: false, message: '問題が存在しません。' };
@@ -716,12 +737,12 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
                             });
                           }
                         }}
-                        className={`w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 ${isAdmin ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50`}
+                        className={`w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50`}
                         disabled={isAudioBusy}
                       >
                         {option.text}
                       </button>
-                      {isAdmin &&
+                      {canEditCurrentProblem &&
                         (option.kind === 'incorrect' ? (
                           <button
                             type="button"
@@ -891,7 +912,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         </>
       )}
 
-      {isAdmin && (
+      {canEditCurrentProblem && (
         <div className="mt-160 flex flex-col items-center gap-6">
           {sceneImage && (
             <button
