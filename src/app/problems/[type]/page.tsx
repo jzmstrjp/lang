@@ -18,7 +18,9 @@ type ProblemPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-type ProblemData = ProblemWithAudio | null;
+type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
+
+type ProblemData = ProblemWithStaticFlag | null;
 
 const STATIC_PROBLEM_DATA: Record<ProblemLength, ProblemWithAudio[]> = {
   short: shortProblems,
@@ -26,14 +28,15 @@ const STATIC_PROBLEM_DATA: Record<ProblemLength, ProblemWithAudio[]> = {
   long: longProblems,
 };
 
-function getRandomStaticProblem(type: ProblemLength): ProblemWithAudio | null {
+function getRandomStaticProblem(type: ProblemLength): ProblemWithStaticFlag | null {
   const problems = STATIC_PROBLEM_DATA[type];
   if (!problems?.length) {
     return null;
   }
 
   const randomIndex = Math.floor(Math.random() * problems.length);
-  return problems[randomIndex] ?? null;
+  const problem = problems[randomIndex];
+  return problem ? { ...problem, isStatic: true } : null;
 }
 
 function loadProblemData({
@@ -44,7 +47,7 @@ function loadProblemData({
   searchQuery?: string;
 }): Promise<ProblemData> {
   return (async () => {
-    let initialProblem: ProblemWithAudio | null = null;
+    let initialProblem: ProblemWithStaticFlag | null = null;
 
     if (!searchQuery) {
       initialProblem = getRandomStaticProblem(type);
@@ -56,7 +59,8 @@ function loadProblemData({
         search: searchQuery,
         limit: 1,
       });
-      initialProblem = problems[0] ?? null;
+      const firstProblem = problems[0];
+      initialProblem = firstProblem ? { ...firstProblem } : null;
     }
 
     return initialProblem;
