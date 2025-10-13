@@ -117,22 +117,24 @@ ${problem.place}
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
+- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）が向かい合っている。
 - ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
-- ${receiverName}（${receiverGenderText}）はまだ描かない
+- ${senderName}（${senderGenderText}）だけを描く。${receiverName}（${receiverGenderText}）はまだ描かない。
 - ${senderName}（${senderGenderText}）が右を向いているアングル
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
+- ${receiverName}（${receiverGenderText}）だけを描く。${senderName}（${senderGenderText}）は描かない。
 - ${receiverName}（${receiverGenderText}）が左を向いているアングル
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
-- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は微妙に異なる
-- 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えてください。
-- セリフに対して不自然な画像はNG
+- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は角度が異なるべき。
+- 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えること。
+- 重要: セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
     - Good: 「コーヒーをお願いします」というセリフなので、まだ手元にコーヒーがない

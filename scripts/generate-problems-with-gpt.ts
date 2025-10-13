@@ -97,16 +97,27 @@ async function generateProblemsWithHistory(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
 ): Promise<{ content: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> }> {
   try {
-    const response = await openai.chat.completions.create({
+    const formattedMessages = messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
+
+    const response = await openai.responses.create({
       model: 'gpt-4.1',
-      messages,
-      temperature: 0.7,
-      max_tokens: 4000,
+      input: formattedMessages,
+      temperature: 0.8,
     });
 
-    const content = response.choices[0]?.message?.content;
+    if (response.status === 'incomplete') {
+      const detail = response.incomplete_details?.reason ?? 'unknown';
+      console.error('raw_response', JSON.stringify(response, null, 2));
+      throw new Error(`GPTからのレスポンスが完了しませんでした（reason: ${detail}）`);
+    }
+
+    const content = response.output_text;
 
     if (!content) {
+      console.error('raw_response', JSON.stringify(response, null, 2));
       throw new Error('GPTからのレスポンスが空です');
     }
 

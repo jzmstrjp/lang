@@ -1,7 +1,7 @@
 import type { ImageGenerateParams } from 'openai/resources/images';
 
 export const MODEL_SETTING = {
-  model: 'gpt-image-1',
+  model: 'gpt-image-1-mini',
   size: '1024x1536',
   quality: 'medium',
 } as const satisfies Omit<ImageGenerateParams, 'prompt'>;
