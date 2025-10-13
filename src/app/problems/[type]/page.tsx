@@ -7,6 +7,9 @@ import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { fetchProblems } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
+import shortProblems from '@/app/staticProbremData/short';
+import mediumProblems from '@/app/staticProbremData/medium';
+import longProblems from '@/app/staticProbremData/long';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -15,13 +18,23 @@ type ProblemPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:3000';
-}
-
 type ProblemData = ProblemWithAudio | null;
+
+const STATIC_PROBLEM_DATA: Record<ProblemLength, ProblemWithAudio[]> = {
+  short: shortProblems,
+  medium: mediumProblems,
+  long: longProblems,
+};
+
+function getRandomStaticProblem(type: ProblemLength): ProblemWithAudio | null {
+  const problems = STATIC_PROBLEM_DATA[type];
+  if (!problems?.length) {
+    return null;
+  }
+
+  const randomIndex = Math.floor(Math.random() * problems.length);
+  return problems[randomIndex] ?? null;
+}
 
 function loadProblemData({
   type,
@@ -31,22 +44,10 @@ function loadProblemData({
   searchQuery?: string;
 }): Promise<ProblemData> {
   return (async () => {
-    const baseUrl = getBaseUrl();
     let initialProblem: ProblemWithAudio | null = null;
 
     if (!searchQuery) {
-      try {
-        const cacheResponse = await fetch(`${baseUrl}/api/problem-cache/${type}`, {
-          cache: 'no-store',
-        });
-
-        if (cacheResponse.ok && cacheResponse.status === 200) {
-          const data = (await cacheResponse.json()) as { problem?: ProblemWithAudio | null };
-          initialProblem = data.problem ?? null;
-        }
-      } catch (error) {
-        console.warn('[ProblemPage] Failed to fetch cached problem:', error);
-      }
+      initialProblem = getRandomStaticProblem(type);
     }
 
     if (!initialProblem) {
