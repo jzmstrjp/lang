@@ -112,8 +112,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。端正な顔立ちをしている。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。端正な顔立ちをしている。
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}

@@ -105,7 +105,7 @@ async function generateProblemsWithHistory(
     const response = await openai.responses.create({
       model: 'gpt-4.1',
       input: formattedMessages,
-      temperature: 0.8,
+      temperature: 0.7,
     });
 
     if (response.status === 'incomplete') {
@@ -166,7 +166,7 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
     messages.push({
       role: 'user',
       content:
-        '批判的レビューをして、修正したJSONをください。指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。',
+        '「自然な英文かどうか」「ルールを守れているかどうか」批判的レビューをして、修正したJSONをください。指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。',
     });
 
     const reviewResult = await generateProblemsWithHistory(messages);
