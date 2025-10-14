@@ -110,14 +110,14 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   });
 
   // グローバル状態（全phase共通）
-  const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([initialProblem]);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([]);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
-  const nextProblem = problemQueue[1] ?? null;
+  const nextProblem = problemQueue[0] ?? null;
   const phaseSetting = phase.kind === 'start-button-server' ? null : phase.setting;
   const englishSentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const japaneseReplyAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -170,8 +170,8 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
 
   // キューに次の問題がなければ追加で問題を取得（常に検索なし）
   const refillQueueIfNeeded = useCallback(async () => {
-    // 次の問題（problemQueue[1]）がある、または既に補充中なら何もしない
-    if (problemQueue.length > 1 || isPrefetchingNextRef.current) return;
+    // 次の問題（problemQueue[0]）がある、または既に補充中なら何もしない
+    if (problemQueue.length > 0 || isPrefetchingNextRef.current) return;
 
     console.log('[ProblemFlow] キュー補充チェック: 補充開始');
     isPrefetchingNextRef.current = true;
@@ -300,8 +300,8 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       router.push(pathname);
     }
 
-    // キューから先頭を削除して、次の問題を取得
-    const nextProblemData = problemQueue[1];
+    // キューの先頭が次の問題
+    const nextProblemData = problemQueue[0];
 
     if (!nextProblemData) {
       // キューが空の場合はエラー状態にする
@@ -315,7 +315,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       return;
     }
 
-    // キューから現在の問題を削除
+    // キューから次の問題を削除（これが新たな現在の問題になる）
     setProblemQueue((prev) => prev.slice(1));
 
     // 切り替え直後に英語音声を再生
@@ -468,11 +468,9 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       }
 
       if (phase.kind === 'start-button-server') {
-        setProblemQueue((prevQueue) =>
-          prevQueue.filter((problem) => problem.id !== targetProblemId),
-        );
-        const nextProblemData =
-          problemQueue.find((problem) => problem.id !== targetProblemId) ?? null;
+        const updatedQueue = problemQueue.filter((problem) => problem.id !== targetProblemId);
+        setProblemQueue(updatedQueue);
+        const nextProblemData = updatedQueue[0] ?? null;
         setPhase({
           kind: 'start-button-client',
           error: nextProblemData ? null : '次の問題がありません',
