@@ -315,7 +315,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       return;
     }
 
-    // キューから現在の問題を削除して次の問題をセット
+    // キューから現在の問題を削除
     setProblemQueue((prev) => prev.slice(1));
 
     // 切り替え直後に英語音声を再生
