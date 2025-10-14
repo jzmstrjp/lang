@@ -637,148 +637,75 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       phaseSetting.correctStreak as (typeof ALLOWED_SHARE_COUNTS)[number],
     );
 
+  const handleSceneImageLoad = useCallback(() => {
+    console.log('[ProblemFlow] 画像読み込み完了');
+    setPhase((prev) => {
+      if (prev.kind !== 'scene-entry') return prev;
+      return {
+        kind: 'scene-ready',
+        problem: prev.problem,
+        setting: getCurrentSetting(length),
+      };
+    });
+  }, [length]);
+
   return (
     <>
-      {phase.kind === 'start-button-server' ? (
-        <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <StartButton error={null} handleStart={handleStart} disabled={isAudioBusy}>
-              英語学習を始める
-            </StartButton>
-          </div>
-        </div>
-      ) : phase.kind === 'start-button-client' ? (
-        <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
-          <SceneDisplay
-            imageUrl={sceneImage}
-            place={phase.problem.place}
-            isHidden={phase.setting.isImageHiddenMode}
-            opacity="medium"
-            onImageLoad={undefined}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <StartButton error={phase.error} handleStart={handleStart} disabled={isAudioBusy}>
-              英語学習を始める
-            </StartButton>
-          </div>
-        </div>
-      ) : phase.kind === 'scene-entry' ? (
-        <SceneDisplay
-          imageUrl={sceneImage}
+      {phase.kind === 'start-button-server' && (
+        <StartButtonServerView onStart={handleStart} disabled={isAudioBusy} />
+      )}
+      {phase.kind === 'start-button-client' && (
+        <StartButtonClientView
+          sceneImage={sceneImage}
           place={phase.problem.place}
           isHidden={phase.setting.isImageHiddenMode}
-          opacity="full"
-          onImageLoad={() => {
-            console.log('[ProblemFlow] 画像読み込み完了');
-            setPhase({
-              kind: 'scene-ready',
-              problem: phase.problem,
-              setting: getCurrentSetting(length),
-            });
+          error={phase.error}
+          disabled={isAudioBusy}
+          onStart={handleStart}
+        />
+      )}
+      {phase.kind === 'scene-entry' && (
+        <SceneEntryView
+          sceneImage={sceneImage}
+          place={phase.problem.place}
+          isHidden={phase.setting.isImageHiddenMode}
+          onSceneReady={handleSceneImageLoad}
+        />
+      )}
+      {phase.kind === 'scene-ready' && (
+        <SceneReadyView
+          sceneImage={sceneImage}
+          place={phase.problem.place}
+          isHidden={phase.setting.isImageHiddenMode}
+        />
+      )}
+      {phase.kind === 'quiz' && (
+        <QuizPhaseView
+          phase={phase}
+          currentProblem={currentProblem}
+          isAdminPromise={isAdminPromise}
+          isStaticProblem={currentProblem.isStatic ?? false}
+          isAudioBusy={isAudioBusy}
+          editingIncorrectOptionKey={editingIncorrectOptionKey}
+          onChangeEditingIncorrectOption={setEditingIncorrectOptionKey}
+          updateIncorrectOption={updateIncorrectOption}
+          onSelectOption={handleOptionSelect}
+          onReplayAudio={() => {
+            playAudio(englishSentenceAudioRef.current, 0);
           }}
         />
-      ) : phase.kind === 'scene-ready' ? (
-        <SceneDisplay
-          imageUrl={sceneImage}
-          place={phase.problem.place}
-          isHidden={phase.setting.isImageHiddenMode}
-          opacity="full"
-          onImageLoad={undefined}
+      )}
+      {phase.kind === 'correct' && (
+        <CorrectPhaseView
+          phase={phase}
+          isOnStreak={isOnStreak}
+          length={length}
+          isAudioBusy={isAudioBusy}
+          onNextProblem={handleNextProblem}
         />
-      ) : phase.kind === 'quiz' ? (
-        <Suspense>
-          <QuizOptionsSection
-            phase={phase}
-            currentProblem={currentProblem}
-            isAdminPromise={isAdminPromise}
-            isStaticProblem={currentProblem.isStatic ?? false}
-            isAudioBusy={isAudioBusy}
-            editingIncorrectOptionKey={editingIncorrectOptionKey}
-            onChangeEditingIncorrectOption={setEditingIncorrectOptionKey}
-            updateIncorrectOption={updateIncorrectOption}
-            onSelectOption={handleOptionSelect}
-            onReplayAudio={() => {
-              playAudio(englishSentenceAudioRef.current, 0);
-            }}
-          />
-        </Suspense>
-      ) : phase.kind === 'correct' ? (
-        <section className="grid text-center max-w-[500px] mx-auto">
-          <div className="px-6 py-6 text-cyan-600">
-            <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
-              <div className="transform scale-x-[-1]">🎉</div>
-              {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''} 正解<div>🎉</div>
-            </h2>
-            <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1.webp`}
-                alt="ガッツポーズ"
-                width={500}
-                height={750}
-                unoptimized
-                priority
-                className={isOnStreak ? 'opacity-50' : ''}
-              />
-              {isOnStreak && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const courseName = length.charAt(0).toUpperCase() + length.slice(1);
-                    const shareUrl = `${window.location.origin}?streak=${phase.setting.correctStreak}`;
-                    const tweetText = `【英語きわめ太郎】${courseName}コースで${phase.setting.correctStreak}問連続正解しました！`;
-                    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
-                    window.open(twitterUrl, '_blank', 'width=550,height=420');
-                  }}
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-black px-6 py-3 text-base font-semibold text-white shadow-lg shadow-black/50 enabled:hover:bg-gray-800"
-                >
-                  𝕏 で自慢する
-                </button>
-              )}
-            </div>
-            <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
-              {phase.problem.englishSentence}
-            </p>
-            <p className="mt-4 text-lg text-[#2a2b3c]">{phase.problem.japaneseSentence}</p>
-          </div>
-          <div className="">
-            <button
-              type="button"
-              onClick={handleNextProblem}
-              className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 enabled:hover:bg-[#c3684f] disabled:opacity-60"
-              disabled={isAudioBusy}
-            >
-              次の問題へ
-            </button>
-          </div>
-        </section>
-      ) : phase.kind === 'incorrect' ? (
-        <section className="grid gap-2 text-center">
-          <div className="px-6 py-6 text-blue-600">
-            <h2 className="text-4xl font-bold pl-4">残念…</h2>
-            <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1.webp?1`}
-                alt="ショックな様子"
-                width={500}
-                height={750}
-                unoptimized
-                priority
-              />
-            </div>
-          </div>
-          <div className="flex flex-row gap-3 items-center justify-center">
-            <button
-              type="button"
-              onClick={handleRetryQuiz}
-              className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
-              disabled={isAudioBusy}
-            >
-              再挑戦
-            </button>
-          </div>
-        </section>
-      ) : (
-        (null as never)
+      )}
+      {phase.kind === 'incorrect' && (
+        <IncorrectPhaseView isAudioBusy={isAudioBusy} onRetry={handleRetryQuiz} />
       )}
 
       <audio
@@ -846,6 +773,229 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         />
       </Suspense>
     </>
+  );
+}
+
+type StartButtonServerViewProps = {
+  onStart: () => void;
+  disabled: boolean;
+};
+
+function StartButtonServerView({ onStart, disabled }: StartButtonServerViewProps) {
+  return (
+    <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
+      <div className="absolute inset-0 flex items-center justify-center">
+        <StartButton error={null} handleStart={onStart} disabled={disabled}>
+          英語学習を始める
+        </StartButton>
+      </div>
+    </div>
+  );
+}
+
+type StartButtonClientViewProps = {
+  sceneImage: string | null;
+  place: string;
+  isHidden: boolean;
+  error: string | null;
+  disabled: boolean;
+  onStart: () => void;
+};
+
+function StartButtonClientView({
+  sceneImage,
+  place,
+  isHidden,
+  error,
+  disabled,
+  onStart,
+}: StartButtonClientViewProps) {
+  return (
+    <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
+      <SceneDisplay imageUrl={sceneImage} place={place} isHidden={isHidden} opacity="medium" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <StartButton error={error} handleStart={onStart} disabled={disabled}>
+          英語学習を始める
+        </StartButton>
+      </div>
+    </div>
+  );
+}
+
+type SceneEntryViewProps = {
+  sceneImage: string | null;
+  place: string;
+  isHidden: boolean;
+  onSceneReady: () => void;
+};
+
+function SceneEntryView({ sceneImage, place, isHidden, onSceneReady }: SceneEntryViewProps) {
+  return (
+    <SceneDisplay
+      imageUrl={sceneImage}
+      place={place}
+      isHidden={isHidden}
+      opacity="full"
+      onImageLoad={onSceneReady}
+    />
+  );
+}
+
+type SceneReadyViewProps = {
+  sceneImage: string | null;
+  place: string;
+  isHidden: boolean;
+};
+
+function SceneReadyView({ sceneImage, place, isHidden }: SceneReadyViewProps) {
+  return <SceneDisplay imageUrl={sceneImage} place={place} isHidden={isHidden} opacity="full" />;
+}
+
+type QuizPhaseViewProps = {
+  phase: Extract<ClientPhase, { kind: 'quiz' }>;
+  currentProblem: ProblemWithStaticFlag;
+  isAdminPromise: Promise<boolean>;
+  isStaticProblem: boolean;
+  isAudioBusy: boolean;
+  editingIncorrectOptionKey: string | null;
+  onChangeEditingIncorrectOption: Dispatch<SetStateAction<string | null>>;
+  updateIncorrectOption: (
+    incorrectIndex: number,
+    nextText: string,
+  ) => Promise<EditableIncorrectOptionResult>;
+  onSelectOption: (selectedIndex: number) => void;
+  onReplayAudio: () => void;
+};
+
+function QuizPhaseView({
+  phase,
+  currentProblem,
+  isAdminPromise,
+  isStaticProblem,
+  isAudioBusy,
+  editingIncorrectOptionKey,
+  onChangeEditingIncorrectOption,
+  updateIncorrectOption,
+  onSelectOption,
+  onReplayAudio,
+}: QuizPhaseViewProps) {
+  return (
+    <Suspense>
+      <QuizOptionsSection
+        phase={phase}
+        currentProblem={currentProblem}
+        isAdminPromise={isAdminPromise}
+        isStaticProblem={isStaticProblem}
+        isAudioBusy={isAudioBusy}
+        editingIncorrectOptionKey={editingIncorrectOptionKey}
+        onChangeEditingIncorrectOption={onChangeEditingIncorrectOption}
+        updateIncorrectOption={updateIncorrectOption}
+        onSelectOption={onSelectOption}
+        onReplayAudio={onReplayAudio}
+      />
+    </Suspense>
+  );
+}
+
+type CorrectPhaseViewProps = {
+  phase: Extract<ClientPhase, { kind: 'correct' }>;
+  isOnStreak: boolean;
+  length: ProblemLength;
+  isAudioBusy: boolean;
+  onNextProblem: () => void;
+};
+
+function CorrectPhaseView({
+  phase,
+  isOnStreak,
+  length,
+  isAudioBusy,
+  onNextProblem,
+}: CorrectPhaseViewProps) {
+  return (
+    <section className="grid text-center max-w-[500px] mx-auto">
+      <div className="px-6 py-6 text-cyan-600">
+        <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
+          <div className="transform scale-x-[-1]">🎉</div>
+          {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''} 正解<div>🎉</div>
+        </h2>
+        <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
+          <Image
+            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1.webp`}
+            alt="ガッツポーズ"
+            width={500}
+            height={750}
+            unoptimized
+            priority
+            className={isOnStreak ? 'opacity-50' : ''}
+          />
+          {isOnStreak && (
+            <button
+              type="button"
+              onClick={() => {
+                const courseName = length.charAt(0).toUpperCase() + length.slice(1);
+                const shareUrl = `${window.location.origin}?streak=${phase.setting.correctStreak}`;
+                const tweetText = `【英語きわめ太郎】${courseName}コースで${phase.setting.correctStreak}問連続正解しました！`;
+                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
+                window.open(twitterUrl, '_blank', 'width=550,height=420');
+              }}
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-black px-6 py-3 text-base font-semibold text-white shadow-lg shadow-black/50 enabled:hover:bg-gray-800"
+            >
+              𝕏 で自慢する
+            </button>
+          )}
+        </div>
+        <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
+          {phase.problem.englishSentence}
+        </p>
+        <p className="mt-4 text-lg text-[#2a2b3c]">{phase.problem.japaneseSentence}</p>
+      </div>
+      <div className="">
+        <button
+          type="button"
+          onClick={onNextProblem}
+          className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 enabled:hover:bg-[#c3684f] disabled:opacity-60"
+          disabled={isAudioBusy}
+        >
+          次の問題へ
+        </button>
+      </div>
+    </section>
+  );
+}
+
+type IncorrectPhaseViewProps = {
+  isAudioBusy: boolean;
+  onRetry: () => void;
+};
+
+function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
+  return (
+    <section className="grid gap-2 text-center">
+      <div className="px-6 py-6 text-blue-600">
+        <h2 className="text-4xl font-bold pl-4">残念…</h2>
+        <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
+          <Image
+            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1.webp?1`}
+            alt="ショックな様子"
+            width={500}
+            height={750}
+            unoptimized
+            priority
+          />
+        </div>
+      </div>
+      <div className="flex flex-row gap-3 items-center justify-center">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+          disabled={isAudioBusy}
+        >
+          再挑戦
+        </button>
+      </div>
+    </section>
   );
 }
 
