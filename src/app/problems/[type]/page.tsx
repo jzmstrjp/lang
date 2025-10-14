@@ -39,7 +39,7 @@ function getRandomStaticProblem(type: ProblemLength): ProblemWithStaticFlag | nu
   return problem ? { ...problem, isStatic: true } : null;
 }
 
-function loadProblemData({
+function loadInitialProblem({
   type,
   searchQuery,
 }: {
@@ -79,15 +79,15 @@ const fetchIsAdmin = async () => {
 function ProblemContent({
   type,
   searchQuery,
-  dataPromise,
+  initialProblemPromise,
   isAdminPromise,
 }: {
   type: ProblemLength;
   searchQuery?: string;
-  dataPromise: Promise<ProblemData>;
+  initialProblemPromise: Promise<ProblemData>;
   isAdminPromise: Promise<boolean>;
 }) {
-  const initialProblem = use(dataPromise);
+  const initialProblem = use(initialProblemPromise);
 
   if (!initialProblem) {
     return (
@@ -113,7 +113,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
 
   const searchQuery = (await searchParams).search?.trim();
   const displayName = type;
-  const problemDataPromise = loadProblemData({ type: type as ProblemLength, searchQuery });
+  const initialProblemPromise = loadInitialProblem({ type: type as ProblemLength, searchQuery });
   const isAdminPromise = fetchIsAdmin();
 
   return (
@@ -123,7 +123,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
         <ProblemContent
           type={type as ProblemLength}
           searchQuery={searchQuery}
-          dataPromise={problemDataPromise}
+          initialProblemPromise={initialProblemPromise}
           isAdminPromise={isAdminPromise}
         />
       </Suspense>
