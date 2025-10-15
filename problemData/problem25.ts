@@ -617,6 +617,589 @@ const problemData: SeedProblemData[] = [
       'レイトチェックアウトではなく早朝チェックインを希望します。',
     ],
   },
+  {
+    place: '空港の搭乗ゲート前',
+    senderRole: '搭乗アナウンス係',
+    senderVoice: 'female',
+    receiverRole: '乗客',
+    receiverVoice: 'male',
+    englishSentence: 'Your flight has been pushed back again.',
+    japaneseSentence: 'お客様の便は再び遅延となりました。',
+    englishReply: 'Oh, not again. Do you know how long?',
+    japaneseReply: 'またですか。どれくらいの遅れでしょうか？',
+    scenePrompt:
+      '搭乗ゲート前で待機中の乗客に、係員がフライトの再遅延を伝える場面。電光掲示板には変更表示が点滅している。',
+    senderVoiceInstruction: '申し訳なさそうに、落ち着いたトーンで説明する。',
+    receiverVoiceInstruction: '困惑しながらも冷静に尋ねる口調で。',
+    incorrectOptions: [
+      '出発時刻が予定より早まりました。', // 逆の意味
+      'ドラゴンが滑走路を占領してしまいました。', // 馬鹿馬鹿しい
+      '定刻どおりの運航となっています。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'オフィスの会議室',
+    senderRole: '上司',
+    senderVoice: 'male',
+    receiverRole: '部下',
+    receiverVoice: 'female',
+    englishSentence: "Let's circle back on this tomorrow morning.",
+    japaneseSentence: 'この件は明日の朝に再確認しましょう。',
+    englishReply: 'Got it. I’ll prepare the updates by then.',
+    japaneseReply: '了解です。それまでに更新しておきます。',
+    scenePrompt: '会議の終盤、議論を一時保留して翌日のフォローアップを提案する上司。',
+    senderVoiceInstruction: '落ち着いて締めくくるように、やや疲れた声で。',
+    receiverVoiceInstruction: '前向きに引き取る柔らかいトーンで。',
+    incorrectOptions: [
+      '今日中に結論を出してしまいましょう。', // 逆の意味
+      'イルカ会議で検討してもらいましょう。', // 馬鹿馬鹿しい
+      '午後に改めて確認してもよいですか。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'ホテルのフロントデスク',
+    senderRole: 'フロントスタッフ',
+    senderVoice: 'female',
+    receiverRole: '宿泊客',
+    receiverVoice: 'male',
+    englishSentence: 'Could I offer you a late checkout today?',
+    japaneseSentence: '本日レイトチェックアウトをご案内してもよろしいでしょうか？',
+    englishReply: 'That would be perfect. Thank you so much.',
+    japaneseReply: '助かります。ありがとうございます。',
+    scenePrompt: '宿泊客がチェックアウト手続きに訪れた際、スタッフが柔軟な提案をする場面。',
+    senderVoiceInstruction: '丁寧で柔らかい口調で親切に提案する。',
+    receiverVoiceInstruction: '安堵して感謝する落ち着いたトーンで。',
+    incorrectOptions: [
+      '早朝チェックアウトしか対応できません。', // 逆の意味
+      'ワームホール経由でお帰りいただけます。', // 馬鹿馬鹿しい
+      '通常の時間でのチェックアウトも可能です。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'カフェのカウンター',
+    senderRole: '店員',
+    senderVoice: 'male',
+    receiverRole: '客',
+    receiverVoice: 'female',
+    englishSentence: 'Your drink will be out in a jiffy.',
+    japaneseSentence: 'お飲み物はすぐにお出ししますね。',
+    englishReply: 'No rush, take your time.',
+    japaneseReply: '急がなくて大丈夫です、ゆっくりで。',
+    scenePrompt: 'カフェで注文後、手際よく準備しているスタッフが客に軽く声をかける。',
+    senderVoiceInstruction: '明るく親しみやすく、軽い調子で。',
+    receiverVoiceInstruction: '穏やかで丁寧に返す口調で。',
+    incorrectOptions: [
+      '明日お渡しする予定です。', // 逆の意味
+      '空を飛んでお届けしますね。', // 馬鹿馬鹿しい
+      '少々お時間をいただきますね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '会社の休憩室',
+    senderRole: '同僚',
+    senderVoice: 'female',
+    receiverRole: '同僚',
+    receiverVoice: 'male',
+    englishSentence: 'I’m feeling a bit under the weather today.',
+    japaneseSentence: '今日はちょっと体調が優れないんです。',
+    englishReply: 'Oh no, take it easy and rest up.',
+    japaneseReply: 'そうでしたか、無理せず休んでくださいね。',
+    scenePrompt: '休憩中、少し疲れた様子の社員が同僚に体調不良を打ち明ける。',
+    senderVoiceInstruction: '弱々しく、それでも明るさを残した口調で。',
+    receiverVoiceInstruction: '優しく気遣う穏やかな声で。',
+    incorrectOptions: [
+      '今日はものすごく元気いっぱいです。', // 逆の意味
+      '今日は月まで出勤してきました。', // 馬鹿馬鹿しい
+      '今日は少し眠気がありますね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '職場のデスク',
+    senderRole: '同僚',
+    senderVoice: 'male',
+    receiverRole: '同僚',
+    receiverVoice: 'female',
+    englishSentence: 'Let’s play it by ear tomorrow.',
+    japaneseSentence: '明日は様子を見て臨機応変に対応しましょう。',
+    englishReply: 'Sounds good. I’ll stay flexible.',
+    japaneseReply: 'いいですね。柔軟に動けるようにします。',
+    scenePrompt:
+      '翌日の業務計画を立てながら、天候や状況次第で対応を決めようと話しているオフィスの昼休み。',
+    senderVoiceInstruction: '軽い雑談のように、前向きで柔らかなトーンで。',
+    receiverVoiceInstruction: '同意しながら穏やかに答える口調で。',
+    incorrectOptions: [
+      '明日は厳格にスケジュール通りに進めましょう。', // 逆の意味
+      'ペンギンの行動に合わせて対応しましょう。', // 馬鹿馬鹿しい
+      '予定通り進めつつ臨機応変に考えましょう。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'スーパーのレジ前',
+    senderRole: '店員',
+    senderVoice: 'female',
+    receiverRole: '客',
+    receiverVoice: 'male',
+    englishSentence: 'Would you like to go paperless today?',
+    japaneseSentence: '本日レシートを電子化にしますか？',
+    englishReply: 'Yes, please. Save the paper.',
+    japaneseReply: 'お願いします。紙は節約したいです。',
+    scenePrompt:
+      '支払い時に環境配慮型の電子レシートを勧めるレジスタッフ。買い物客はマイバッグを持っている。',
+    senderVoiceInstruction: '丁寧で明るく提案する声で。',
+    receiverVoiceInstruction: '感じよく同意する穏やかな口調で。',
+    incorrectOptions: [
+      '本日は必ず紙のレシートが必要です。', // 逆の意味
+      '今日は木の葉でレシートを印刷します。', // 馬鹿馬鹿しい
+      '希望されるなら紙のレシートも出せます。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'カスタマーサポートの電話',
+    senderRole: 'オペレーター',
+    senderVoice: 'female',
+    receiverRole: '顧客',
+    receiverVoice: 'male',
+    englishSentence: 'May I put you on hold for a moment?',
+    japaneseSentence: '少々お待ちいただけますか？',
+    englishReply: 'Sure, take your time.',
+    japaneseReply: 'どうぞ、ごゆっくり。',
+    scenePrompt:
+      '問い合わせの途中で別の部署に確認が必要になり、保留にする許可を取る電話オペレーター。',
+    senderVoiceInstruction: '柔らかく丁寧に申し出る声で。',
+    receiverVoiceInstruction: '落ち着いて承諾する優しい口調で。',
+    incorrectOptions: [
+      'すぐにお切りしてもよろしいですか？', // 逆の意味
+      '少々お歌いいただけますか？', // 馬鹿馬鹿しい
+      '確認の間、しばらくお待ちください。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '会社のエレベーター前',
+    senderRole: '同僚',
+    senderVoice: 'male',
+    receiverRole: '上司',
+    receiverVoice: 'female',
+    englishSentence: 'I’ll keep you in the loop on this.',
+    japaneseSentence: 'この件の進捗は随時共有しますね。',
+    englishReply: 'Thanks, I appreciate that.',
+    japaneseReply: 'ありがとう、助かります。',
+    scenePrompt:
+      'オフィスで上司とすれ違いざまに、新しいプロジェクトの報告タイミングを伝えるシーン。',
+    senderVoiceInstruction: 'ていねいで誠実なトーンで短く伝える。',
+    receiverVoiceInstruction: '信頼感をもって穏やかに感謝を述べる。',
+    incorrectOptions: [
+      'この件の進捗はすべて非公開にしますね。', // 逆の意味
+      'この件の進捗はハトに伝えておきますね。', // 馬鹿馬鹿しい
+      'この件の報告は明日まとめて送りますね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'カフェのテラス席',
+    senderRole: '友人',
+    senderVoice: 'female',
+    receiverRole: '友人',
+    receiverVoice: 'male',
+    englishSentence: 'You really hit the nail on the head.',
+    japaneseSentence: 'まさにその通りだね。',
+    englishReply: 'Glad we’re on the same page.',
+    japaneseReply: '意見が合ってうれしいよ。',
+    scenePrompt: '友人同士がカフェで話し合い、相手の指摘が的を射ていたことを称賛する瞬間。',
+    senderVoiceInstruction: '感心したように明るく賛同する声で。',
+    receiverVoiceInstruction: 'うれしそうに穏やかに返す口調で。',
+    incorrectOptions: [
+      '全然違う方向を指しているね。', // 逆の意味
+      'ハンマーでテーブルを叩いちゃったね。', // 馬鹿馬鹿しい
+      'その意見は少し惜しいかもしれないね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '本社オフィスのワークスペース',
+    senderRole: 'プロジェクトマネージャー',
+    senderVoice: 'female',
+    receiverRole: 'アシスタント',
+    receiverVoice: 'male',
+    englishSentence: 'Could you follow up with her by noon?',
+    japaneseSentence: '彼女へのフォローを正午までにお願いできますか？',
+    englishReply: 'Sure. I’ll call her and send a note.',
+    japaneseReply: 'わかりました。連絡してメモも送ります。',
+    scenePrompt:
+      '午前の進捗確認。クライアント担当者へ確認事項が残っており、PMが期限を切ってフォロー依頼をしている。デスクにはタスク管理ボードとラップトップ。',
+    senderVoiceInstruction: '端的でていねい、時間を意識させる落ち着いた口調で。',
+    receiverVoiceInstruction: '即応の意思を示すはっきりした声で、前向きに。',
+    incorrectOptions: [
+      '明日に延ばしてください。', // 逆の意味寄り
+      '宇宙評議会に回します。', // 馬鹿馬鹿しい
+      'すぐ完了扱いにしてください。', // もっともらしい誤答
+    ],
+  },
+  {
+    place: 'ビジネスホテルのフロント',
+    senderRole: 'フロントスタッフ',
+    senderVoice: 'male',
+    receiverRole: '宿泊客',
+    receiverVoice: 'female',
+    englishSentence: 'Breakfast is complimentary for premier members today.',
+    japaneseSentence: '本日はプレミア会員のお客様は朝食が無料です。',
+    englishReply: 'Great, I’ll have it before checkout.',
+    japaneseReply: '助かります。チェックアウト前にいただきます。',
+    scenePrompt:
+      '朝のフロント。会員種別を確認しながら、スタッフが特典を案内。ロビーには軽食コーナーと観葉植物。',
+    senderVoiceInstruction: '親切で落ち着いた丁寧語、案内口調で。',
+    receiverVoiceInstruction: '礼儀正しく喜びを含む柔らかなトーンで。',
+    incorrectOptions: [
+      '有料での提供のみとなります。', // 逆の意味
+      '恐竜用の朝食も無料です。', // 馬鹿馬鹿しい
+      '対象外ですが割引は適用されます。', // もっともらしい誤答
+    ],
+  },
+  {
+    place: '社内会議室',
+    senderRole: 'チームリード',
+    senderVoice: 'female',
+    receiverRole: '開発メンバー',
+    receiverVoice: 'male',
+    englishSentence: 'Let’s table this and revisit after the demo.',
+    japaneseSentence: 'この件はいったん保留にして、デモ後に再検討しましょう。',
+    englishReply: 'Understood. I’ll park the item for now.',
+    japaneseReply: '承知しました。ひとまずこの議題は置いておきます。',
+    scenePrompt:
+      'スプリントレビュー前の短時間ミーティング。時間が押しており、議題の棚上げを提案する場面。ホワイトボードにタイムライン。',
+    senderVoiceInstruction: '時間管理を意識した冷静なトーンで簡潔に。',
+    receiverVoiceInstruction: '落ち着いて納得し、端的に受ける口調で。',
+    incorrectOptions: [
+      '今すぐ最優先で決め切りましょう。', // 逆の意味
+      '議題は風船にして飛ばしましょう。', // 馬鹿馬鹿しい
+      '資料が出そろってから再開します。', // もっともらしい誤答
+    ],
+  },
+  {
+    place: 'オフィスのスタンドアップミーティング',
+    senderRole: 'プロダクトマネージャー',
+    senderVoice: 'male',
+    receiverRole: 'デザイナー',
+    receiverVoice: 'female',
+    englishSentence: 'We’re running up against the deadline.',
+    japaneseSentence: '締切が目前まで迫ってきています。',
+    englishReply: 'I see. I’ll prioritize the key screens.',
+    japaneseReply: '了解です。重要な画面を優先します。',
+    scenePrompt:
+      '朝の立ち会議。バーンダウンが遅れており、PMが緊迫感を共有。壁には進捗ボード、時計は9時少し前。',
+    senderVoiceInstruction: '焦りは抑えつつ引き締める落ち着いた声で。',
+    receiverVoiceInstruction: '前向きで頼れるトーン、即応を示す。',
+    incorrectOptions: [
+      '締切は無期限に延長されました。', // 逆の意味
+      '締切は月面時間で動きます。', // 馬鹿馬鹿しい
+      '締切より後ろに作業を回します。', // もっともらしい誤答
+    ],
+  },
+  {
+    place: '社内チャット／打合せスペース',
+    senderRole: 'プロジェクトコーディネーター',
+    senderVoice: 'female',
+    receiverRole: 'エンジニア',
+    receiverVoice: 'male',
+    englishSentence: 'Could you loop James in on that thread?',
+    japaneseSentence: 'そのスレッドにジェームズを参加させてもらえますか？',
+    englishReply: 'Sure. I’ll add him to the conversation.',
+    japaneseReply: '了解です。会話に追加しておきます。',
+    scenePrompt:
+      '要件整理中のチャンネル。関係者を巻き込む必要があり、コーディネーターが追加依頼。PC画面にはチャットUI。',
+    senderVoiceInstruction: '柔らかく実務的、抜け漏れを防ぐ調子で。',
+    receiverVoiceInstruction: '手際の良さが伝わる落ち着いた承諾の声で。',
+    incorrectOptions: [
+      '彼は外しておきましょう。', // 逆の意味
+      '彼はテレパシーで参加します。', // 馬鹿馬鹿しい
+      '後で要点だけ私から伝えます。', // もっともらしい誤答
+    ],
+  },
+  {
+    place: 'オフィスの会議室',
+    senderRole: 'チームリーダー',
+    senderVoice: 'female',
+    receiverRole: 'メンバー',
+    receiverVoice: 'male',
+    englishSentence: 'Could you clarify your last point?',
+    japaneseSentence: '最後の発言をもう少し説明してもらえますか？',
+    englishReply: 'Sure, I meant the budget part.',
+    japaneseReply: 'はい、予算の部分のことです。',
+    scenePrompt:
+      '週次ミーティング中。リーダーがメンバーの発言意図を確認している。会議テーブルに資料が広がっている。',
+    senderVoiceInstruction: '落ち着いて、丁寧に質問するトーンで。',
+    receiverVoiceInstruction: '冷静に補足説明をする穏やかな声で。',
+    incorrectOptions: [
+      '前の説明を省略してもらえますか？', // 逆の意味
+      '火星語で説明してもらえますか？', // 馬鹿馬鹿しい
+      '要点をもう少し短くまとめてもらえますか？', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'カフェの一角',
+    senderRole: '友人',
+    senderVoice: 'male',
+    receiverRole: '友人',
+    receiverVoice: 'female',
+    englishSentence: 'I really appreciate your help yesterday.',
+    japaneseSentence: '昨日は本当に助かりました。ありがとう。',
+    englishReply: 'Anytime. I’m glad it worked out.',
+    japaneseReply: 'いつでも。うまくいってよかったよ。',
+    scenePrompt: '友人がプレゼン準備を手伝ってもらった翌日。コーヒー片手に感謝を伝える場面。',
+    senderVoiceInstruction: '素直な感謝の気持ちを込めて。',
+    receiverVoiceInstruction: '軽く笑顔を含んだ親しみあるトーンで。',
+    incorrectOptions: [
+      '昨日は全然うまくいきませんでした。', // 逆の意味
+      'タイムマシンで助けに行きました。', // 馬鹿馬鹿しい
+      '前日に相談してくれて助かりました。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '社内メールの打合せスペース',
+    senderRole: '上司',
+    senderVoice: 'female',
+    receiverRole: '部下',
+    receiverVoice: 'male',
+    englishSentence: 'Please submit the report by 5 p.m.',
+    japaneseSentence: '午後5時までにレポートを提出してください。',
+    englishReply: 'Understood. I’ll finish it right after lunch.',
+    japaneseReply: '承知しました。昼食後に仕上げます。',
+    scenePrompt: '月次報告の締め切り前。上司がスケジュールを再確認する。',
+    senderVoiceInstruction: '事務的だが丁寧に、明確に伝える口調で。',
+    receiverVoiceInstruction: '真面目で誠実に答えるトーンで。',
+    incorrectOptions: [
+      '夜までに送れば大丈夫です。', // 逆の意味
+      'レポートをハトに運ばせましょう。', // 馬鹿馬鹿しい
+      '午前中にドラフト版を送ります。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '商談の会議室',
+    senderRole: '営業担当',
+    senderVoice: 'male',
+    receiverRole: '顧客',
+    receiverVoice: 'female',
+    englishSentence: 'We can accommodate small changes if needed.',
+    japaneseSentence: '必要であれば小さな変更には対応できます。',
+    englishReply: 'That’s good to know. I’ll check with my team.',
+    japaneseReply: 'それは助かります。チームと確認しますね。',
+    scenePrompt: '新しい契約内容をすり合わせ中。柔軟な対応を示す営業担当。',
+    senderVoiceInstruction: '落ち着いて信頼感を与える柔らかい口調で。',
+    receiverVoiceInstruction: '安心した様子で丁寧に応答する声で。',
+    incorrectOptions: [
+      'こちらでは一切の変更を受け付けません。', // 逆の意味
+      'ユニコーンの承認があれば変更可能です。', // 馬鹿馬鹿しい
+      '仕様書を確認のうえ検討させていただきます。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '会議後のオフィス通路',
+    senderRole: '同僚',
+    senderVoice: 'female',
+    receiverRole: '同僚',
+    receiverVoice: 'male',
+    englishSentence: 'Let’s postpone the review until next week.',
+    japaneseSentence: 'レビューは来週まで延期しましょう。',
+    englishReply: 'Good idea. We need more data anyway.',
+    japaneseReply: 'いい考えですね。どうせデータも足りませんし。',
+    scenePrompt: '今週中のレビュー予定を、都合により翌週にずらす話をしている同僚たち。',
+    senderVoiceInstruction: '軽く提案する調子でフレンドリーに。',
+    receiverVoiceInstruction: '納得しながら冗談めかして返すトーンで。',
+    incorrectOptions: [
+      '今すぐレビューを実施しましょう。', // 逆の意味
+      '永遠にレビューを延期しましょう。', // 馬鹿馬鹿しい
+      '金曜日に再調整するのがよさそうですね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'オフィスの受付エリア',
+    senderRole: '受付担当',
+    senderVoice: 'female',
+    receiverRole: '来訪者',
+    receiverVoice: 'male',
+    englishSentence: 'Could you please sign in at the front desk?',
+    japaneseSentence: '受付でご署名をお願いいたします。',
+    englishReply: 'Of course, here’s my ID as well.',
+    japaneseReply: 'もちろんです。身分証もあります。',
+    scenePrompt: '来客がビルに到着。受付スタッフが入館記録の署名を丁寧に案内する。',
+    senderVoiceInstruction: '明るく丁寧に案内する声で。',
+    receiverVoiceInstruction: '礼儀正しく落ち着いたトーンで返答する。',
+    incorrectOptions: [
+      '入館記録は不要ですのでお帰りください。', // 逆の意味
+      'サインは透明インクでお願いします。', // 馬鹿馬鹿しい
+      '受付票にお名前を書いてください。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '会議室のドア前',
+    senderRole: 'マネージャー',
+    senderVoice: 'male',
+    receiverRole: '同僚',
+    receiverVoice: 'female',
+    englishSentence: 'Let’s delegate this task to the new intern.',
+    japaneseSentence: 'このタスクは新しいインターンに任せましょう。',
+    englishReply: 'Sounds good. She could use the experience.',
+    japaneseReply: 'いいですね。良い経験になると思います。',
+    scenePrompt:
+      '進行中のプロジェクトで細かい仕事を分担。新メンバーを育てる目的で割り当てを決める場面。',
+    senderVoiceInstruction: '穏やかに、提案するような声で。',
+    receiverVoiceInstruction: '同意しながら肯定的に答えるトーンで。',
+    incorrectOptions: [
+      'このタスクは私が直接やります。', // 逆の意味
+      'このタスクはタコに任せましょう。', // 馬鹿馬鹿しい
+      'このタスクは別のチームに依頼しましょう。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'カスタマーサポートセンター',
+    senderRole: 'オペレーター',
+    senderVoice: 'female',
+    receiverRole: '顧客',
+    receiverVoice: 'male',
+    englishSentence: 'I apologize for the inconvenience caused.',
+    japaneseSentence: 'ご不便をおかけして申し訳ございません。',
+    englishReply: 'No worries, thanks for resolving it quickly.',
+    japaneseReply: '大丈夫です。すぐ対応してくれてありがとうございます。',
+    scenePrompt: '電話サポート中。顧客の不具合対応が完了した直後に、担当者がお詫びを述べる。',
+    senderVoiceInstruction: '誠実で落ち着いたトーンで丁寧に謝る。',
+    receiverVoiceInstruction: 'やわらかく安心した様子で返す声で。',
+    incorrectOptions: [
+      'ご不便をおかけして光栄です。', // 逆の意味
+      'ご不便をおかけして宇宙まで謝罪しました。', // 馬鹿馬鹿しい
+      '対応が遅れて申し訳ありませんでした。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '営業部のデスク',
+    senderRole: '上司',
+    senderVoice: 'male',
+    receiverRole: '部下',
+    receiverVoice: 'female',
+    englishSentence: 'Please confirm the client’s order details.',
+    japaneseSentence: '顧客の注文内容を確認してください。',
+    englishReply: 'Will do. I’ll double-check the quantities.',
+    japaneseReply: '了解です。数量を再確認します。',
+    scenePrompt: '出荷前の最終確認。上司がミス防止のため注文詳細を見直すよう指示する。',
+    senderVoiceInstruction: 'きっぱりと明確に伝える落ち着いた声で。',
+    receiverVoiceInstruction: '前向きで責任感あるトーンで。',
+    incorrectOptions: [
+      '顧客の注文は確認せずに送ってください。', // 逆の意味
+      '顧客の注文は夢の中で確認してください。', // 馬鹿馬鹿しい
+      '顧客情報をシステムで再度照合します。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '社内のブレインストーミング会議',
+    senderRole: 'プロジェクトマネージャー',
+    senderVoice: 'female',
+    receiverRole: 'エンジニア',
+    receiverVoice: 'male',
+    englishSentence: 'Let’s figure out a better way to track progress.',
+    japaneseSentence: '進捗を管理するより良い方法を考えましょう。',
+    englishReply: 'I agree. Maybe a shared dashboard would help.',
+    japaneseReply: '賛成です。共有ダッシュボードが役立ちそうですね。',
+    scenePrompt: '週次のチーム会議で、進捗管理ツールの改善を検討している。',
+    senderVoiceInstruction: '前向きで建設的なトーンで提案する。',
+    receiverVoiceInstruction: '即興的にアイデアを出す柔らかい声で。',
+    incorrectOptions: [
+      '進捗は考えずに感覚で進めましょう。', // 逆の意味
+      '進捗は占いで決めましょう。', // 馬鹿馬鹿しい
+      '進捗を紙ベースで整理するのもありですね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'オフィスの会議室',
+    senderRole: '部長',
+    senderVoice: 'male',
+    receiverRole: '社員',
+    receiverVoice: 'female',
+    englishSentence: 'Could you verify the figures once more?',
+    japaneseSentence: 'もう一度数字を確認してもらえますか？',
+    englishReply: 'Sure, I’ll cross-check them right away.',
+    japaneseReply: 'もちろんです。すぐに確認します。',
+    scenePrompt: '月次報告前の最終チェック。部長が報告書の数値確認を依頼している。',
+    senderVoiceInstruction: '落ち着いたが少し急いでいるようなトーンで。',
+    receiverVoiceInstruction: '誠実に対応する真面目な口調で。',
+    incorrectOptions: [
+      '報告書の数字はそのままで結構です。', // 逆の意味
+      '宇宙の法則に基づいて確認します。', // 馬鹿馬鹿しい
+      '合計値だけを再計算しておきます。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'レストランのテーブル席',
+    senderRole: 'ウェイター',
+    senderVoice: 'male',
+    receiverRole: '客',
+    receiverVoice: 'female',
+    englishSentence: 'May I recommend today’s special to you?',
+    japaneseSentence: '本日のおすすめをお勧めしてもよろしいでしょうか？',
+    englishReply: 'Yes, please. What do you have today?',
+    japaneseReply: 'お願いします。今日は何がありますか？',
+    scenePrompt: 'ランチタイムのレストラン。店員が笑顔で日替わりメニューを紹介しようとしている。',
+    senderVoiceInstruction: '親しみを込めて丁寧に勧めるトーンで。',
+    receiverVoiceInstruction: '少し興味を持った明るい声で。',
+    incorrectOptions: [
+      'おすすめは一切ありません。', // 逆の意味
+      '今日のおすすめは空気のスープです。', // 馬鹿馬鹿しい
+      'デザートのおすすめを先に聞いてもよろしいですか？', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'オンライン会議中',
+    senderRole: 'プロジェクトマネージャー',
+    senderVoice: 'female',
+    receiverRole: 'エンジニア',
+    receiverVoice: 'male',
+    englishSentence: 'Let’s consolidate all feedback by Friday.',
+    japaneseSentence: '金曜日までに全てのフィードバックをまとめましょう。',
+    englishReply: 'Got it. I’ll start compiling them today.',
+    japaneseReply: '了解です。今日からまとめ始めます。',
+    scenePrompt:
+      'プロジェクト進行中の週次ミーティング。提出物に対する意見を整理する計画を立てている。',
+    senderVoiceInstruction: '前向きでリーダーシップを感じる明るい声で。',
+    receiverVoiceInstruction: '即座に対応する意欲的なトーンで。',
+    incorrectOptions: [
+      '全てのフィードバックを削除しましょう。', // 逆の意味
+      '全てのフィードバックを詩にして提出しましょう。', // 馬鹿馬鹿しい
+      '一部のコメントだけを先にまとめておきます。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: '社内カフェスペース',
+    senderRole: '同僚',
+    senderVoice: 'male',
+    receiverRole: '同僚',
+    receiverVoice: 'female',
+    englishSentence: 'You should take a short break.',
+    japaneseSentence: '少し休憩したほうがいいですよ。',
+    englishReply: 'Yeah, I’ve been staring at this screen too long.',
+    japaneseReply: 'そうですね、画面を見すぎて目が疲れました。',
+    scenePrompt: '集中して作業している同僚に、軽く休憩を勧める雑談シーン。',
+    senderVoiceInstruction: '気軽で優しい口調で。',
+    receiverVoiceInstruction: '疲れをにじませつつ同意するトーンで。',
+    incorrectOptions: [
+      '少しも休憩しないほうがいいですよ。', // 逆の意味
+      '少しだけ月に行ってきたほうがいいですよ。', // 馬鹿馬鹿しい
+      '今の作業が落ち着いたら休憩しますね。', // 惜しくも自然な誤答
+    ],
+  },
+  {
+    place: 'クライアントとの電話会議',
+    senderRole: '営業担当',
+    senderVoice: 'female',
+    receiverRole: '顧客',
+    receiverVoice: 'male',
+    englishSentence: 'We should confirm the timeline before proceeding.',
+    japaneseSentence: '進める前にスケジュールを確認すべきですね。',
+    englishReply: 'Absolutely. Let me check with our design team.',
+    japaneseReply: 'その通りです。デザインチームに確認します。',
+    scenePrompt: '次フェーズへの移行前に、納期と工程を整理している会議。',
+    senderVoiceInstruction: '冷静でプロフェッショナルなトーンで。',
+    receiverVoiceInstruction: '真剣に同意する落ち着いた声で。',
+    incorrectOptions: [
+      'スケジュールは確認せず進めましょう。', // 逆の意味
+      'スケジュールは占い師に聞いてみましょう。', // 馬鹿馬鹿しい
+      'スケジュールを共有してから進めましょう。', // 惜しくも自然な誤答
+    ],
+  },
 ];
 
 export default problemData;
