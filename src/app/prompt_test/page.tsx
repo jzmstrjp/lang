@@ -1,289 +1,34 @@
-'use client';
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import PromptTestClient from './prompt-test-client';
+import { getServerAuthSession } from '@/lib/auth/session';
+import { isAdminEmail } from '@/lib/auth/admin';
 
-import { useState } from 'react';
-import { SceneImage } from '@/components/ui/scene-image';
-import type { GeneratedProblem } from '@/types/generated-problem';
-
-const WITHOUT_PICTURE = true;
-const CORRECT_INDEX = 0;
-
-type AssetsData = {
-  audio: {
-    english: string;
-    japanese: string;
-    englishReply?: string;
-  };
-  imagePrompt?: string;
-  composite?: string | null;
-};
-
-type GenerateProblemResponse = {
-  problem: GeneratedProblem;
-  options: string[];
-  assets: AssetsData;
-};
-
-export default function PromptTestPage() {
-  const [problem, setProblem] = useState<GeneratedProblem | null>(null);
-  const [assets, setAssets] = useState<AssetsData | null>(null);
-  const [options, setOptions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const generateProblem = async (type: 'short' | 'medium' | 'long') => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/problem/test-generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type, withoutPicture: WITHOUT_PICTURE }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate problem');
-      }
-
-      const data = (await response.json()) as GenerateProblemResponse;
-      setProblem(data.problem);
-      setAssets(data.assets);
-      setOptions(data.options);
-
-      // 問題生成後に自動で音声再生を開始
-      if (data.assets?.audio) {
-        setTimeout(() => {
-          playAudioSequenceWithAssets(data.assets);
-        }, 500); // 少し遅延を入れてUIが更新されてから再生
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // 2秒後にフィードバックを消す
-    } catch (err) {
-      console.error('Failed to copy:', err);
-      setError('クリップボードへのコピーに失敗しました');
-    }
-  };
-
-  const playAudioSequenceWithAssets = async (audioAssets: AssetsData) => {
-    if (!audioAssets?.audio || isPlaying) return;
-
-    setIsPlaying(true);
-
-    try {
-      // 英語音声を再生
-      const englishAudio = new Audio(audioAssets.audio.english);
-      await new Promise<void>((resolve, reject) => {
-        englishAudio.onended = () => resolve();
-        englishAudio.onerror = () => reject(new Error('English audio failed'));
-        englishAudio.play();
-      });
-
-      // 少し間を空ける
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // 日本語音声を再生
-      const japaneseAudio = new Audio(audioAssets.audio.japanese);
-      await new Promise<void>((resolve, reject) => {
-        japaneseAudio.onended = () => resolve();
-        japaneseAudio.onerror = () => reject(new Error('Japanese audio failed'));
-        japaneseAudio.play();
-      });
-    } catch (err) {
-      console.error('Audio playback error:', err);
-      setError('音声の再生に失敗しました');
-    } finally {
-      setIsPlaying(false);
-    }
-  };
-
+function PromptTestSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center mb-4 text-gray-800">プロンプトテスト</h1>
-        <p className="text-center text-gray-600 mb-8">
-          問題生成後、自動で音声が再生されます（英語→日本語の順）
-        </p>
-
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex gap-4 justify-center mb-6">
-            <button
-              onClick={() => generateProblem('short')}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              生成テスト
-            </button>
-          </div>
-
-          {loading && (
-            <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="mt-2 text-gray-600">生成中...</p>
-            </div>
-          )}
-
-          {isPlaying && (
-            <div className="text-center py-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 border border-green-300 rounded-lg">
-                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-green-800 font-medium">🔊 音声再生中...</span>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-red-600">エラー: {error}</p>
-            </div>
-          )}
-
-          {problem && !loading && (
-            <div className="space-y-6">
-              {/* 画像生成プロンプトを常に表示 */}
-              {assets?.imagePrompt && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-amber-800">画像生成プロンプト</h3>
-                    <button
-                      onClick={() => copyToClipboard(assets.imagePrompt || '')}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md transition-colors"
-                      title="クリップボードにコピー"
-                    >
-                      {copied ? (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          <span>コピーしました!</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <span>コピー</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="text-sm text-amber-700 leading-relaxed whitespace-pre-line bg-white border border-amber-200 rounded p-3">
-                    {assets.imagePrompt}
-                  </div>
-                </div>
-              )}
-
-              {/* 生成された画像を表示 */}
-              {assets?.composite && (
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-purple-800 mb-2">生成された画像</h3>
-                  <div className="flex justify-center">
-                    <SceneImage
-                      src={assets.composite}
-                      alt="Generated scene illustration"
-                      opacity="full"
-                      className="rounded-lg shadow-md"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
-                <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
-                <p className="mt-2 text-sm text-blue-500">{problem.senderVoiceInstruction}</p>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-green-800 mb-2">日本語返答</h3>
-                <p className="text-xl text-green-900 font-medium">{problem.japaneseReply}</p>
-                <p className="mt-2 text-sm text-green-500">{problem.receiverVoiceInstruction}</p>
-              </div>
-
-              {/* 選択肢を日本語返答の下に追加 */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-orange-800 mb-4">選択肢</h3>
-                <div className="space-y-3">
-                  {options.map((option, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg border-2 ${
-                        index === CORRECT_INDEX
-                          ? 'bg-green-100 border-green-300 text-green-800'
-                          : 'bg-white border-gray-200 text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`font-bold text-sm px-2 py-1 rounded ${
-                            index === CORRECT_INDEX
-                              ? 'bg-green-200 text-green-800'
-                              : 'bg-gray-200 text-gray-600'
-                          }`}
-                        >
-                          {index + 1}
-                        </span>
-                        {index === CORRECT_INDEX && (
-                          <span className="text-green-600 font-semibold text-sm">✓ 正解</span>
-                        )}
-                        <span className="text-base">{option}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="bg-purple-50 border border-purple-200 rounded p-3">
-                  <span className="font-semibold text-purple-800">シーン:</span>
-                  <p className="text-purple-700">{problem.place}</p>
-                </div>
-                {(problem.senderRole || problem.receiverRole) && (
-                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3">
-                    <span className="font-semibold text-cyan-800">キャラクター:</span>
-                    <p className="text-cyan-700">
-                      {problem.senderRole} → {problem.receiverRole}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        <div className="h-10 bg-gray-200 animate-pulse rounded mb-4" />
+        <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
+          <div className="h-6 bg-gray-100 animate-pulse rounded" />
+          <div className="h-40 bg-gray-100 animate-pulse rounded" />
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function PromptTestPage() {
+  const session = await getServerAuthSession();
+  const email = session?.user?.email ?? null;
+
+  if (!email || !(await isAdminEmail(email))) {
+    notFound();
+  }
+
+  return (
+    <Suspense fallback={<PromptTestSkeleton />}>
+      <PromptTestClient />
+    </Suspense>
   );
 }
