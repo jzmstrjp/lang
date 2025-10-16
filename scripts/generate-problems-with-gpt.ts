@@ -165,8 +165,16 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
     console.log('🧐 レビュー依頼中...');
     messages.push({
       role: 'user',
-      content:
-        '「自然な英文かどうか」「ルールを守れているかどうか」批判的レビューをして、修正したJSONをください。指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。',
+      content: `以下の観点で批判的レビューをして、修正したJSONをください。
+        
+1. englishSentence: その場面でその役割の人が、本当にそんなセリフを言うか？もっと自然で適切な言い回しがあるのでは？
+2. japaneseSentence: 場面や役割も考えて、englishSentenceの日本語訳として自然か？日本人ならもっと別の言い方をするのでは？
+3. englishReply: その場面でその役割の人が、englishSentenceに対して本当にそんなセリフを返すか？もっと自然で適切な言い回しがあるのでは？
+4. japaneseReply: 場面や役割も考えて、englishReplyの日本語訳として自然か？日本人ならもっと別の言い方をするのでは？
+5. incorrectOptions: それぞれのセリフが、必ず異なる語から始まっているか？同じ語で始まる文は禁止です。
+
+指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。
+        `,
     });
 
     const reviewResult = await generateProblemsWithHistory(messages);
