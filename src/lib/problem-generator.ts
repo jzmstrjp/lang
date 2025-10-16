@@ -38,9 +38,9 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
 async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
-  const [{ default: problem25 }] = await Promise.all([import('../../problemData/problem25')]);
+  const [{ default: problem26 }] = await Promise.all([import('../../problemData/problem26')]);
 
-  const filteredProblems = [...problem25];
+  const filteredProblems = [...problem26];
 
   if (filteredProblems.length === 0) {
     throw new Error(
