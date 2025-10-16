@@ -100,6 +100,7 @@ const getCurrentSetting = (length: ProblemLength): Setting => {
 export default function ProblemFlow({ length, initialProblem, isAdminPromise }: ProblemFlowProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
+  const withSubtitle = searchParams.get('subtitle')?.trim() || undefined;
   const router = useRouter();
   const pathname = usePathname();
 
@@ -660,6 +661,8 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           error={phase.error}
           disabled={isAudioBusy}
           onStart={handleStart}
+          sentence1={withSubtitle && phase.problem.japaneseSentence}
+          sentence2={withSubtitle && phase.problem.japaneseReply}
         />
       )}
       {phase.kind === 'scene-entry' && (
@@ -668,6 +671,8 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           place={phase.problem.place}
           isHidden={phase.setting.isImageHiddenMode}
           onSceneReady={handleSceneImageLoad}
+          sentence1={withSubtitle && phase.problem.japaneseSentence}
+          sentence2={withSubtitle && phase.problem.japaneseReply}
         />
       )}
       {phase.kind === 'scene-ready' && (
@@ -675,6 +680,8 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           sceneImage={sceneImage}
           place={phase.problem.place}
           isHidden={phase.setting.isImageHiddenMode}
+          sentence1={withSubtitle && phase.problem.japaneseSentence}
+          sentence2={withSubtitle && phase.problem.japaneseReply}
         />
       )}
       {phase.kind === 'quiz' && (
@@ -798,6 +805,8 @@ type StartButtonClientViewProps = {
   error: string | null;
   disabled: boolean;
   onStart: () => void;
+  sentence1?: string;
+  sentence2?: string;
 };
 
 function StartButtonClientView({
@@ -807,10 +816,19 @@ function StartButtonClientView({
   error,
   disabled,
   onStart,
+  sentence1,
+  sentence2,
 }: StartButtonClientViewProps) {
   return (
     <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
-      <SceneDisplay imageUrl={sceneImage} place={place} isHidden={isHidden} opacity="medium" />
+      <SceneDisplay
+        imageUrl={sceneImage}
+        place={place}
+        isHidden={isHidden}
+        opacity="medium"
+        sentence1={sentence1}
+        sentence2={sentence2}
+      />
       <div className="absolute inset-0 flex items-center justify-center">
         <StartButton error={error} handleStart={onStart} disabled={disabled}>
           英語学習を始める
@@ -825,9 +843,18 @@ type SceneEntryViewProps = {
   place: string;
   isHidden: boolean;
   onSceneReady: () => void;
+  sentence1?: string;
+  sentence2?: string;
 };
 
-function SceneEntryView({ sceneImage, place, isHidden, onSceneReady }: SceneEntryViewProps) {
+function SceneEntryView({
+  sceneImage,
+  place,
+  isHidden,
+  onSceneReady,
+  sentence1,
+  sentence2,
+}: SceneEntryViewProps) {
   return (
     <SceneDisplay
       imageUrl={sceneImage}
@@ -835,6 +862,8 @@ function SceneEntryView({ sceneImage, place, isHidden, onSceneReady }: SceneEntr
       isHidden={isHidden}
       opacity="full"
       onImageLoad={onSceneReady}
+      sentence1={sentence1}
+      sentence2={sentence2}
     />
   );
 }
@@ -843,10 +872,27 @@ type SceneReadyViewProps = {
   sceneImage: string | null;
   place: string;
   isHidden: boolean;
+  sentence1?: string;
+  sentence2?: string;
 };
 
-function SceneReadyView({ sceneImage, place, isHidden }: SceneReadyViewProps) {
-  return <SceneDisplay imageUrl={sceneImage} place={place} isHidden={isHidden} opacity="full" />;
+function SceneReadyView({
+  sceneImage,
+  place,
+  isHidden,
+  sentence1,
+  sentence2,
+}: SceneReadyViewProps) {
+  return (
+    <SceneDisplay
+      imageUrl={sceneImage}
+      place={place}
+      isHidden={isHidden}
+      opacity="full"
+      sentence1={sentence1}
+      sentence2={sentence2}
+    />
+  );
 }
 
 type QuizPhaseViewProps = {
@@ -1287,12 +1333,16 @@ function SceneDisplay({
   isHidden,
   opacity,
   onImageLoad,
+  sentence1,
+  sentence2,
 }: {
   imageUrl: string | null;
   place: string;
   isHidden: boolean;
   opacity: 'medium' | 'full';
   onImageLoad?: () => void;
+  sentence1?: string;
+  sentence2?: string;
 }) {
   if (imageUrl && !isHidden) {
     return (
@@ -1303,6 +1353,8 @@ function SceneDisplay({
             alt="英語と日本語のセリフを並べた2コマシーン"
             opacity={opacity}
             onLoad={onImageLoad}
+            sentence1={sentence1}
+            sentence2={sentence2}
           />
         </figure>
       </section>

@@ -6,6 +6,8 @@ type SceneImageProps = {
   opacity?: 'low' | 'medium' | 'full';
   className?: string;
   onLoad?: () => void;
+  sentence1?: string;
+  sentence2?: string;
 };
 
 /**
@@ -18,6 +20,8 @@ export function SceneImage({
   opacity = 'full',
   className = '',
   onLoad,
+  sentence1,
+  sentence2,
 }: SceneImageProps) {
   const opacityClass =
     opacity === 'low' ? 'opacity-30' : opacity === 'medium' ? 'opacity-50' : 'opacity-100';
@@ -36,6 +40,26 @@ export function SceneImage({
       />
       {/* 画像中央の白い横線 */}
       <div className="absolute top-1/2 left-0 w-full h-[2%] bg-white -translate-y-1/2" />
+
+      {/* sentence1: 区切り棒の上あたり */}
+      {sentence1 && (
+        <div
+          className="absolute left-[3%] right-[3%] text-center text-white bg-black/50 p-2 bottom-[53%]"
+          style={{ textShadow: '0 0 4px black' }}
+        >
+          {sentence1}
+        </div>
+      )}
+
+      {/* sentence2: 画像の一番下 */}
+      {sentence2 && (
+        <div
+          className="absolute bottom-[2%] left-[3%] right-[3%] text-center text-white bg-black/50 p-2"
+          style={{ textShadow: '0 0 4px black' }}
+        >
+          {sentence2}
+        </div>
+      )}
     </div>
   );
 }
