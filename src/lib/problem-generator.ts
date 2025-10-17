@@ -117,23 +117,15 @@ ${problem.place}
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
-- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）が向かい合っている。
-- ${senderName}（${senderGenderText}）が、${receiverName}（${receiverGenderText}）に対して「${problem.japaneseSentence}」と言う。それに対し、${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と答える。
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
-- ${senderName}（${senderGenderText}）だけを描く。${receiverName}（${receiverGenderText}）はまだ描かない。
-- ${senderName}（${senderGenderText}）が右を向いているアングル
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
-- ${receiverName}（${receiverGenderText}）だけを描く。${senderName}（${senderGenderText}）は描かない。
-- ${receiverName}（${receiverGenderText}）が左を向いているアングル
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
-- ${senderName}（${senderGenderText}）と${receiverName}（${receiverGenderText}）は対面しているわけなので、1コマ目と2コマ目の背景は角度が異なるべき。
-- 対話しているように見えるように、1コマ目と2コマ目のカメラアングルを変えること。
 - 重要: セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
@@ -143,7 +135,7 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
     - Good: 「ATMはどこですか？」というセリフなので、まだATMの前に立っていない
 - 画像を見ただけで【ストーリー】を完全に想起できるように正確に描写すること。
 - 漫画だが、吹き出し・台詞は描かないこと。写真のみで表現すること。
-- 生成AIっぽくない自然なテイストで描写すること。
+- 生成AIっぽくない、自然な本物の写真を生成すること。
 
 ## 重要
 - 上下のコマの高さは正確に同じであること。
