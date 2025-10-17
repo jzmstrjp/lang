@@ -103,9 +103,9 @@ async function generateProblemsWithHistory(
     }));
 
     const response = await openai.responses.create({
-      model: 'gpt-5',
+      model: 'gpt-4.1',
       input: formattedMessages,
-      // temperature: 0.7,
+      temperature: 0.7,
     });
 
     if (response.status === 'incomplete') {
