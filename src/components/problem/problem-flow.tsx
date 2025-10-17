@@ -1016,7 +1016,7 @@ type IncorrectPhaseViewProps = {
 function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
   return (
     <section className="grid gap-2 text-center">
-      <div className="px-6 py-6 text-blue-600">
+      <div className="px-6 py-6 text-rose-600">
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
           <Image
