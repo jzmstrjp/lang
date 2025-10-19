@@ -11,9 +11,9 @@ const problemData: SeedProblemData[] = [
     senderVoice: 'male',
     receiverRole: 'パイロット',
     receiverVoice: 'female',
-    englishSentence: "A new enemy unit detected! Stay sharp out there!",
+    englishSentence: 'A new enemy unit detected! Stay sharp out there!',
     japaneseSentence: '新型の敵機を確認！油断するな！',
-    englishReply: "Copy that! This is what I live for!",
+    englishReply: 'Copy that! This is what I live for!',
     japaneseReply: '了解！こういうのを待ってました！',
     scenePrompt:
       '【1コマ目】宇宙艦のブリッジ。司令官が巨大モニターに映る赤い敵機を見つめながら、緊迫した表情で指示を出す。背後ではオペレーターたちが慌ただしく動いている。【2コマ目】漆黒の宇宙空間。新型の敵モビルスーツが光を反射しながら接近。パイロットの女性はコックピット内でヘルメット越しに笑みを浮かべ、操縦桿を握って出撃準備を整えている。背景には星々と爆発の閃光。',
@@ -24,7 +24,7 @@ const problemData: SeedProblemData[] = [
       '敵機のパーツをネットで注文しました！', // 馬鹿馬鹿しい
       '新型ではなく旧式の敵機です。', // 現実的に誤り
     ],
-  }  
+  },
 ];
 
 export default problemData;
