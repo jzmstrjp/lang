@@ -8,17 +8,17 @@ const links = [
   {
     href: '/problems/short',
     label: 'short',
-    description: `短い文 (${WORD_COUNT_RULES.short.min}〜${WORD_COUNT_RULES.short.max}語)`,
+    description: `短い文`,
   },
   {
     href: '/problems/medium',
     label: 'medium',
-    description: `中くらいの文 (${WORD_COUNT_RULES.medium.min}〜${WORD_COUNT_RULES.medium.max}語)`,
+    description: `中くらいの文`,
   },
   {
     href: '/problems/long',
     label: 'long',
-    description: `少し長い文 (${WORD_COUNT_RULES.long.min}〜${WORD_COUNT_RULES.long.max}語)`,
+    description: `少し長い文`,
   },
 ];
 
