@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { WORD_COUNT_RULES } from '@/config/problem';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
 const links = [
