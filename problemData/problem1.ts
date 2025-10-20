@@ -25,24 +25,44 @@ const problemData: SeedProblemData[] = [
   //     '新型ではなく旧式の敵機です。', // 現実的に誤り
   //   ],
   // },
+  // {
+  //   place: '【1コマ目】近未来のオフィスの会議室 【2コマ目】深夜の無人オフィスで光るモニターの前',
+  //   senderRole: 'エンジニア',
+  //   senderVoice: 'male',
+  //   receiverRole: 'AIアシスタント',
+  //   receiverVoice: 'female',
+  //   englishSentence: 'Hey, AI! Adjust the meeting schedule!',
+  //   japaneseSentence: 'ヘイ、AI！ミーティングのスケジュールを調整してくれ！',
+  //   englishReply: 'I’ve checked everyone’s availability and set it for 3 a.m.!',
+  //   japaneseReply: '全メンバーの空きスケジュールを確認し、午前3時に設定しました！',
+  //   scenePrompt:
+  //     '【1コマ目】近未来的なオフィス。男性エンジニアが机の上のホログラムAI端末に向かって話しかけている。背後にはチームのメンバーたちがコーヒーを片手に作業中。【2コマ目】深夜の無人オフィス。AIの画面に「MEETING 3:00 A.M.」と表示され、外は真っ暗。エンジニアはモニターを見つめながら絶望の表情を浮かべている。',
+  //   senderVoiceInstruction: '気軽に頼むようなカジュアルなトーンで、少し焦りを混ぜて。',
+  //   receiverVoiceInstruction: '事務的で正確、結果に満足しているような口調で。',
+  //   incorrectOptions: [
+  //     'ヘイ、AI！ミーティングのスケジュールを削除してくれ！', // 真逆
+  //     '今日は会議をやめて全員で映画を観よう！', // 馬鹿馬鹿しい
+  //     '明日のミーティングのスケジュールを固定してくれ！', // 意味が異なる
+  //   ],
+  // },
   {
-    place: '【1コマ目】近未来のオフィスの会議室 【2コマ目】深夜の無人オフィスで光るモニターの前',
-    senderRole: 'エンジニア',
+    place: '【1コマ目】オフィスの会議室 【2コマ目】ラグビーのスタジアムの中央',
+    senderRole: 'プロジェクトマネージャー',
     senderVoice: 'male',
-    receiverRole: 'AIアシスタント',
-    receiverVoice: 'female',
-    englishSentence: 'Hey, AI! Adjust the meeting schedule!',
-    japaneseSentence: 'ヘイ、AI！ミーティングのスケジュールを調整してくれ！',
-    englishReply: 'I’ve checked everyone’s availability and set it for 3 a.m.!',
-    japaneseReply: '全メンバーの空きスケジュールを確認し、午前3時に設定しました！',
+    receiverRole: 'エンジニア',
+    receiverVoice: 'male',
+    englishSentence: 'Let’s proceed with this project using Scrum development.',
+    japaneseSentence: 'このプロジェクトはスクラム開発で進めよう。',
+    englishReply: 'Got it! Let’s form a solid scrum and get to work!',
+    japaneseReply: 'しっかりスクラムを組んでやって行きましょう！',
     scenePrompt:
-      '【1コマ目】近未来的なオフィス。男性エンジニアが机の上のホログラムAI端末に向かって話しかけている。背後にはチームのメンバーたちがコーヒーを片手に作業中。【2コマ目】深夜の無人オフィス。AIの画面に「MEETING 3:00 A.M.」と表示され、外は真っ暗。エンジニアはモニターを見つめながら絶望の表情を浮かべている。',
-    senderVoiceInstruction: '気軽に頼むようなカジュアルなトーンで、少し焦りを混ぜて。',
-    receiverVoiceInstruction: '事務的で正確、結果に満足しているような口調で。',
+      '【1コマ目】明るいオフィスの会議室。プロジェクトマネージャーがホワイトボードの前で意気揚々と発表している。ボードには「SCRUM」と大きく書かれ、チームメンバーが真剣に頷いている。【2コマ目】青空の下、ラグビー場。全員がラグビーのユニフォームを着てスクラムを組みながらノートPCでコードを書いている。',
+    senderVoiceInstruction: '落ち着いたが前向きなトーンで、チームを鼓舞するように。',
+    receiverVoiceInstruction: 'やる気に満ちた明るい声で、少し熱が入りすぎた調子で。',
     incorrectOptions: [
-      'ヘイ、AI！ミーティングのスケジュールを削除してくれ！', // 真逆
-      '今日は会議をやめて全員で映画を観よう！', // 馬鹿馬鹿しい
-      '明日のミーティングのスケジュールを固定してくれ！', // 意味が異なる
+      'このプロジェクトは完全なウォーターフォールで進めよう。', // 真逆
+      'プロジェクトは君が適当に進めておいてくれ！', // 馬鹿馬鹿しい
+      'このプロジェクトはアジャイルではなくカンバンで進めよう。', // 現実的に異なる
     ],
   },
 ];
