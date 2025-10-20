@@ -44,7 +44,7 @@ export function SceneImage({
       {/* sentence1: 区切り棒の上あたり */}
       {sentence1 && (
         <div
-          className="absolute left-[3%] right-[3%] text-center text-white bg-black/50 p-2 bottom-[53%]"
+          className="absolute left-[3%] right-[3%] text-center text-white bg-black/50 p-1 bottom-[53%]"
           style={{ textShadow: '0 0 4px black' }}
         >
           {sentence1}
@@ -54,7 +54,7 @@ export function SceneImage({
       {/* sentence2: 画像の一番下 */}
       {sentence2 && (
         <div
-          className="absolute bottom-[2%] left-[3%] right-[3%] text-center text-white bg-black/50 p-2"
+          className="absolute bottom-[2%] left-[3%] right-[3%] text-center text-white bg-black/50 p-1"
           style={{ textShadow: '0 0 4px black' }}
         >
           {sentence2}
