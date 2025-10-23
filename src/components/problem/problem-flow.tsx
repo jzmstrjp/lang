@@ -2,17 +2,7 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-  Dispatch,
-  SetStateAction,
-  Suspense,
-  use,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { Suspense, use, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
@@ -113,7 +103,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   // グローバル状態（全phase共通）
   const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([]);
   const [isAudioBusy, setAudioBusy] = useState(false);
-  const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
@@ -237,17 +226,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       }
     }
   }, [length, phase, refillQueueIfNeeded, sceneImage]);
-
-  useEffect(() => {
-    setEditingIncorrectOptionKey(null);
-  }, [currentProblem.id]);
-
-  useEffect(() => {
-    if (phase.kind !== 'quiz') {
-      setEditingIncorrectOptionKey(null);
-    }
-  }, [phase.kind]);
-
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
 
@@ -691,8 +669,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           isAdminPromise={isAdminPromise}
           isStaticProblem={currentProblem.isStatic ?? false}
           isAudioBusy={isAudioBusy}
-          editingIncorrectOptionKey={editingIncorrectOptionKey}
-          onChangeEditingIncorrectOption={setEditingIncorrectOptionKey}
           updateIncorrectOption={updateIncorrectOption}
           onSelectOption={handleOptionSelect}
           onReplayAudio={() => {
@@ -901,8 +877,6 @@ type QuizPhaseViewProps = {
   isAdminPromise: Promise<boolean>;
   isStaticProblem: boolean;
   isAudioBusy: boolean;
-  editingIncorrectOptionKey: string | null;
-  onChangeEditingIncorrectOption: Dispatch<SetStateAction<string | null>>;
   updateIncorrectOption: (
     incorrectIndex: number,
     nextText: string,
@@ -917,8 +891,6 @@ function QuizPhaseView({
   isAdminPromise,
   isStaticProblem,
   isAudioBusy,
-  editingIncorrectOptionKey,
-  onChangeEditingIncorrectOption,
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
@@ -926,13 +898,12 @@ function QuizPhaseView({
   return (
     <Suspense>
       <QuizOptionsSection
+        key={phase.problem.id}
         phase={phase}
         currentProblem={currentProblem}
         isAdminPromise={isAdminPromise}
         isStaticProblem={isStaticProblem}
         isAudioBusy={isAudioBusy}
-        editingIncorrectOptionKey={editingIncorrectOptionKey}
-        onChangeEditingIncorrectOption={onChangeEditingIncorrectOption}
         updateIncorrectOption={updateIncorrectOption}
         onSelectOption={onSelectOption}
         onReplayAudio={onReplayAudio}
@@ -1049,8 +1020,6 @@ type QuizOptionsSectionProps = {
   isAdminPromise: Promise<boolean>;
   isStaticProblem: boolean;
   isAudioBusy: boolean;
-  editingIncorrectOptionKey: string | null;
-  onChangeEditingIncorrectOption: Dispatch<SetStateAction<string | null>>;
   updateIncorrectOption: (
     incorrectIndex: number,
     nextText: string,
@@ -1065,12 +1034,11 @@ function QuizOptionsSection({
   isAdminPromise,
   isStaticProblem,
   isAudioBusy,
-  editingIncorrectOptionKey,
-  onChangeEditingIncorrectOption,
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
 }: QuizOptionsSectionProps) {
+  const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const isAdmin = use(isAdminPromise);
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
@@ -1098,11 +1066,11 @@ function QuizOptionsSection({
               {isEditing && option.kind === 'incorrect' && defaultIncorrectValue !== null ? (
                 <EditableIncorrectOption
                   defaultValue={defaultIncorrectValue}
-                  onCancel={() => onChangeEditingIncorrectOption(null)}
+                  onCancel={() => setEditingIncorrectOptionKey(null)}
                   onSubmit={async (value) => {
                     const result = await updateIncorrectOption(option.incorrectIndex, value);
                     if (result.ok) {
-                      onChangeEditingIncorrectOption(null);
+                      setEditingIncorrectOptionKey(null);
                       return { ok: true as const };
                     }
 
@@ -1123,7 +1091,7 @@ function QuizOptionsSection({
                     (option.kind === 'incorrect' ? (
                       <button
                         type="button"
-                        onClick={() => onChangeEditingIncorrectOption(optionKey)}
+                        onClick={() => setEditingIncorrectOptionKey(optionKey)}
                         className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
                       >
                         編集
