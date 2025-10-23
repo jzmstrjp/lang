@@ -63,6 +63,18 @@
   --share-button-text: #ffffff;
   --share-button-shadow: #000000;
   --share-button-hover: #666666;
+
+  /* シーンボックス */
+  --scene-box-border: #d8cbb6;
+
+  /* コースリンク */
+  --course-link-border: #d8cbb6;
+  --course-link-bg: #ffffff;
+  --course-link-text: #2a2b3c;
+  --course-link-secondary-text: #d77a61;
+  --course-link-hover-border: #2f8f9d;
+  --course-link-hover-bg: #ffffff;
+  --course-link-hover-text: #2f8f9d;
 }
 
 @theme inline {
@@ -153,6 +165,18 @@
   --share-button-text: #ffffff;
   --share-button-shadow: #1da1f2;
   --share-button-hover: #1a8cd8;
+
+  /* シーンボックス */
+  --scene-box-border: transparent;
+
+  /* コースリンク */
+  --course-link-border: transparent;
+  --course-link-bg: rgba(255, 255, 255, 0.7);
+  --course-link-text: #000000;
+  --course-link-secondary-text: #000000;
+  --course-link-hover-border: transparent;
+  --course-link-hover-bg: rgba(255, 255, 255, 1);
+  --course-link-hover-text: #000000;
 }
 
 @media (prefers-color-scheme: dark) {

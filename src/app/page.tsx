@@ -81,6 +81,7 @@ export default function Home() {
           src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/top.webp`}
           alt="なぜだかいつのまにか英語が聞き取れるようになるサイト"
           unoptimized
+          priority
           width={1200}
           height={630}
         />
@@ -90,10 +91,12 @@ export default function Home() {
           <Link
             key={href}
             href={href}
-            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-[var(--text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--primary)] hover:text-[var(--primary)] sm:flex-1"
+            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--course-link-border)] bg-[var(--course-link-bg)] px-5 py-4 text-[var(--course-link-text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--course-link-hover-border)] hover:bg-[var(--course-link-hover-bg)] hover:text-[var(--course-link-hover-text)] sm:flex-1"
           >
             <span className="text-2xl sm:text-xl font-semibold capitalize">{label}</span>
-            <span className="text-sm font-medium text-[var(--secondary)]">{description}</span>
+            <span className="text-sm font-medium text-[var(--course-link-secondary-text)]">
+              {description}
+            </span>
           </Link>
         ))}
       </nav>
