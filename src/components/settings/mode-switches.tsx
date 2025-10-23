@@ -34,8 +34,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
       // ダークモードのテーマを適用
       if (savedDarkMode === 'true') {
         document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1a5866');
       } else {
         document.documentElement.removeAttribute('data-theme');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff');
       }
     };
 
