@@ -144,12 +144,10 @@ body {
 
 [data-theme='dark'] body {
   background: linear-gradient(
-    135deg,
-    #0d3d47 0%,
-    #1a4d5a 25%,
-    #0f4c59 50%,
-    #1a5866 75%,
-    #0d3d47 100%
+    180deg,
+    #1a3d5a 0%,
+    #2a5d7a 50%,
+    #1a4d6a 100%
   );
   background-attachment: fixed;
 }
