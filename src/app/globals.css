@@ -154,12 +154,6 @@ body {
   background-attachment: fixed;
 }
 
-/* ダークテーマ時に正解・不正解画像の明度を上げ、コントラストを下げる */
-[data-theme='dark'] img[src*='correct'],
-[data-theme='dark'] img[src*='incorrect'] {
-  filter: brightness(1.3) contrast(0.85);
-}
-
 button {
   cursor: pointer !important;
 }
