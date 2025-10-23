@@ -928,6 +928,24 @@ function CorrectPhaseView({
   isAudioBusy,
   onNextProblem,
 }: CorrectPhaseViewProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.getAttribute('data-theme') === 'dark');
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="grid text-center max-w-[500px] mx-auto">
       <div className="px-6 py-6 text-[var(--success)]">
@@ -937,7 +955,7 @@ function CorrectPhaseView({
         </h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1.webp`}
+            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1${isDarkMode ? 'dark' : ''}.webp`}
             alt="ガッツポーズ"
             width={500}
             height={750}
@@ -986,13 +1004,31 @@ type IncorrectPhaseViewProps = {
 };
 
 function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.getAttribute('data-theme') === 'dark');
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="grid gap-2 text-center">
       <div className="px-6 py-6 text-[var(--error-dark)]">
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1.webp?1`}
+            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1${isDarkMode ? 'dark' : ''}.webp?1`}
             alt="ショックな様子"
             width={500}
             height={750}

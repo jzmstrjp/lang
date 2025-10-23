@@ -34,8 +34,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
       // ダークモードのテーマを適用
       if (savedDarkMode === 'true') {
         document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1a3d5a');
       } else {
         document.documentElement.removeAttribute('data-theme');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff');
       }
     };
 
@@ -63,7 +65,7 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   const isImageEnabled = !isNoImageMode;
   const englishModeLabel = `日本語音声${isJapaneseAudioEnabled ? 'あり' : 'なし'}`;
   const imageModeLabel = `画像${isImageEnabled ? 'あり' : 'なし'}`;
-  const darkModeLabel = `${isDarkMode ? 'ダークテーマ' : 'ライトテーマ'}`;
+  const darkModeLabel = `ダークテーマ${isDarkMode ? 'ON' : 'OFF'}`;
 
   const emitSettingChange = () => {
     if (typeof window === 'undefined') return;
@@ -122,10 +124,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasEnglishInteraction ? 'transition-colors duration-200' : ''
-          } ${isJapaneseAudioEnabled ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}
+          } ${isJapaneseAudioEnabled ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--background)] ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--switch-toggle)] ${
               hasEnglishInteraction ? 'transition-transform duration-200' : ''
             } ${isJapaneseAudioEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
@@ -141,10 +143,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasNoImageInteraction ? 'transition-colors duration-200' : ''
-          } ${isImageEnabled ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}
+          } ${isImageEnabled ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--background)] ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--switch-toggle)] ${
               hasNoImageInteraction ? 'transition-transform duration-200' : ''
             } ${isImageEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
@@ -160,10 +162,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasDarkModeInteraction ? 'transition-colors duration-200' : ''
-          } ${isDarkMode ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}
+          } ${isDarkMode ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--background)] ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--switch-toggle)] ${
               hasDarkModeInteraction ? 'transition-transform duration-200' : ''
             } ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`}
           />
