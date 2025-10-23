@@ -8,6 +8,7 @@ type SceneImageProps = {
   onLoad?: () => void;
   sentence1?: string;
   sentence2?: string;
+  isBlurred?: boolean;
 };
 
 /**
@@ -22,12 +23,13 @@ export function SceneImage({
   onLoad,
   sentence1,
   sentence2,
+  isBlurred = false,
 }: SceneImageProps) {
   const opacityClass =
     opacity === 'low' ? 'opacity-30' : opacity === 'medium' ? 'opacity-50' : 'opacity-100';
 
   return (
-    <div className="relative w-full max-w-[500px] mx-auto">
+    <div className={`relative w-full max-w-[500px] mx-auto ${isBlurred ? 'blur-md' : ''}`}>
       <Image
         src={src}
         alt={alt}

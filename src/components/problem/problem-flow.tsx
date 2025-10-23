@@ -804,6 +804,7 @@ function StartButtonClientView({
         opacity="medium"
         sentence1={sentence1}
         sentence2={sentence2}
+        isBlurred
       />
       <div className="absolute inset-0 flex items-center justify-center">
         <StartButton error={error} handleStart={onStart} disabled={disabled}>
@@ -1303,6 +1304,7 @@ function SceneDisplay({
   onImageLoad,
   sentence1,
   sentence2,
+  isBlurred = false,
 }: {
   imageUrl: string | null;
   place: string;
@@ -1311,6 +1313,7 @@ function SceneDisplay({
   onImageLoad?: () => void;
   sentence1?: string;
   sentence2?: string;
+  isBlurred?: boolean;
 }) {
   if (imageUrl && !isHidden) {
     return (
@@ -1323,6 +1326,7 @@ function SceneDisplay({
             onLoad={onImageLoad}
             sentence1={sentence1}
             sentence2={sentence2}
+            isBlurred={isBlurred}
           />
         </figure>
       </section>
