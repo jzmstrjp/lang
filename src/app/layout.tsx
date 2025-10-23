@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { HEADER_PORTAL_ID } from '@/components/layout/header-portal-id';
 import { SettingsMenu } from '@/components/settings/settings-menu';
-import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
@@ -63,7 +62,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-[var(--background)] text-[var(--text)] antialiased`}
         suppressHydrationWarning
       >
-        <ThemeColorMeta />
         <header className="border-[var(--header-border)] lg:bg-transparent lg:h-0">
           <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-2 sm:px-6">
             <div className="flex flex-1 items-center gap-2">
