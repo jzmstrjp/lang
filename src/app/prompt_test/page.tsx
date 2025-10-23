@@ -6,12 +6,12 @@ import { isAdminEmail } from '@/lib/auth/admin';
 
 function PromptTestSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[var(--background)] py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="h-10 bg-gray-200 animate-pulse rounded mb-4" />
-        <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
-          <div className="h-6 bg-gray-100 animate-pulse rounded" />
-          <div className="h-40 bg-gray-100 animate-pulse rounded" />
+        <div className="h-10 bg-[var(--border)] animate-pulse rounded mb-4" />
+        <div className="bg-[var(--background)] rounded-lg shadow-md p-6 space-y-4">
+          <div className="h-6 bg-[var(--border)] animate-pulse rounded" />
+          <div className="h-40 bg-[var(--border)] animate-pulse rounded" />
         </div>
       </div>
     </div>

@@ -9,22 +9,34 @@ type ModeSwitchesProps = {
 const STORAGE_KEYS = {
   english: 'englishMode',
   noImage: 'noImageMode',
+  darkMode: 'darkMode',
 } as const;
 
 export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   const [isEnglishMode, setIsEnglishMode] = useState(false);
   const [isNoImageMode, setIsNoImageMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [hasEnglishInteraction, setHasEnglishInteraction] = useState(false);
   const [hasNoImageInteraction, setHasNoImageInteraction] = useState(false);
+  const [hasDarkModeInteraction, setHasDarkModeInteraction] = useState(false);
 
   useEffect(() => {
     const syncModes = () => {
       const savedEnglishMode = localStorage.getItem(STORAGE_KEYS.english);
       const savedNoImageMode = localStorage.getItem(STORAGE_KEYS.noImage);
+      const savedDarkMode = localStorage.getItem(STORAGE_KEYS.darkMode);
 
       setIsEnglishMode(savedEnglishMode === 'true');
       setIsNoImageMode(savedNoImageMode === 'true');
+      setIsDarkMode(savedDarkMode === 'true');
+
+      // ダークモードのテーマを適用
+      if (savedDarkMode === 'true') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
     };
 
     syncModes();
@@ -51,6 +63,7 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   const isImageEnabled = !isNoImageMode;
   const englishModeLabel = `日本語音声${isJapaneseAudioEnabled ? 'あり' : 'なし'}`;
   const imageModeLabel = `画像${isImageEnabled ? 'あり' : 'なし'}`;
+  const darkModeLabel = `${isDarkMode ? 'ダークテーマ' : 'ライトテーマ'}`;
 
   const emitSettingChange = () => {
     if (typeof window === 'undefined') return;
@@ -73,14 +86,31 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
     emitSettingChange();
   };
 
+  const toggleDarkMode = () => {
+    const next = !isDarkMode;
+    setIsDarkMode(next);
+    setHasDarkModeInteraction(true);
+    localStorage.setItem(STORAGE_KEYS.darkMode, next.toString());
+
+    // ダークモードのテーマを即座に適用
+    if (next) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+
+    emitSettingChange();
+  };
+
   if (!isReady) {
     return (
       <div
         className={`${containerClassName} opacity-0 pointer-events-none select-none`}
         aria-hidden="true"
       >
-        <div className="h-6 w-11 rounded-full bg-[#d8cbb6]" />
-        <div className="h-6 w-11 rounded-full bg-[#d8cbb6]" />
+        <div className="h-6 w-11 rounded-full bg-[var(--border)]" />
+        <div className="h-6 w-11 rounded-full bg-[var(--border)]" />
+        <div className="h-6 w-11 rounded-full bg-[var(--border)]" />
       </div>
     );
   }
@@ -92,10 +122,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasEnglishInteraction ? 'transition-colors duration-200' : ''
-          } ${isJapaneseAudioEnabled ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'}`}
+          } ${isJapaneseAudioEnabled ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--background)] ${
               hasEnglishInteraction ? 'transition-transform duration-200' : ''
             } ${isJapaneseAudioEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
@@ -111,10 +141,10 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
           type="button"
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasNoImageInteraction ? 'transition-colors duration-200' : ''
-          } ${isImageEnabled ? 'bg-[#2f8f9d]' : 'bg-[#d8cbb6]'}`}
+          } ${isImageEnabled ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--background)] ${
               hasNoImageInteraction ? 'transition-transform duration-200' : ''
             } ${isImageEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
@@ -122,6 +152,25 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
 
         <div className="flex flex-col">
           <span className="font-bold transition-opacity">{imageModeLabel}</span>
+        </div>
+      </div>
+
+      <div onClick={toggleDarkMode} className="cursor-pointer flex items-center justify-start">
+        <button
+          type="button"
+          className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
+            hasDarkModeInteraction ? 'transition-colors duration-200' : ''
+          } ${isDarkMode ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--background)] ${
+              hasDarkModeInteraction ? 'transition-transform duration-200' : ''
+            } ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`}
+          />
+        </button>
+
+        <div className="flex flex-col">
+          <span className="font-bold transition-opacity">{darkModeLabel}</span>
         </div>
       </div>
     </div>

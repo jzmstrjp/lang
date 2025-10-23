@@ -29,25 +29,29 @@ export function SceneImage({
     opacity === 'low' ? 'opacity-30' : opacity === 'medium' ? 'opacity-50' : 'opacity-100';
 
   return (
-    <div className={`relative w-full max-w-[500px] mx-auto ${isBlurred ? 'blur-sm' : ''}`}>
+    <div className={`relative w-full max-w-[500px] sm:mt-2 mx-auto ${isBlurred ? 'blur-sm' : ''}`}>
       <Image
         src={src}
         alt={alt}
         width={500}
         height={750}
         className={`w-full h-auto object-contain ${opacityClass} ${className}`}
+        style={{
+          maskImage:
+            'linear-gradient(to bottom, black 0%, black 48.7%, transparent 48.7%, transparent 51.3%, black 51.3%, black 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, black 0%, black 48.7%, transparent 48.7%, transparent 51.3%, black 51.3%, black 100%)',
+        }}
         priority
         unoptimized
         onLoad={onLoad}
       />
-      {/* 画像中央の白い横線 */}
-      <div className="absolute top-1/2 left-0 w-full h-[2%] bg-white -translate-y-1/2" />
 
       {/* sentence1: 区切り棒の上あたり */}
       {sentence1 && (
         <div
-          className="absolute left-[3%] right-[3%] text-center text-white bg-black/50 p-1 bottom-[53%]"
-          style={{ textShadow: '0 0 4px black' }}
+          className="absolute left-[3%] right-[3%] text-center text-[var(--background)] bg-[var(--overlay-dark)] p-1 bottom-[53%]"
+          style={{ textShadow: '0 0 4px var(--text-black)' }}
         >
           {sentence1}
         </div>
@@ -56,8 +60,8 @@ export function SceneImage({
       {/* sentence2: 画像の一番下 */}
       {sentence2 && (
         <div
-          className="absolute bottom-[2%] left-[3%] right-[3%] text-center text-white bg-black/50 p-1"
-          style={{ textShadow: '0 0 4px black' }}
+          className="absolute bottom-[2%] left-[3%] right-[3%] text-center text-[var(--background)] bg-[var(--overlay-dark)] p-1"
+          style={{ textShadow: '0 0 4px var(--text-black)' }}
         >
           {sentence2}
         </div>

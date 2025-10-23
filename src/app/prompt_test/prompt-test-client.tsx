@@ -110,26 +110,26 @@ export default function PromptTestClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[var(--background)] py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center mb-4 text-gray-800">プロンプトテスト</h1>
-        <p className="text-center text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold text-center mb-4 text-[var(--text)]">プロンプトテスト</h1>
+        <p className="text-center text-[var(--text-muted)] mb-8">
           問題生成後、自動で音声が再生されます（英語→日本語の順）
         </p>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-[var(--background)] rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-wrap gap-4 justify-center mb-6">
             <button
               onClick={() => generateProblem(DEFAULT_TYPE, 'withoutImage')}
               disabled={loading}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-[var(--primary)] text-[var(--primary-text)] rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               画像なしで生成
             </button>
             <button
               onClick={() => generateProblem(DEFAULT_TYPE, 'withImage')}
               disabled={loading}
-              className="px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-[var(--secondary)] text-[var(--secondary-text)] rounded-lg hover:bg-[var(--secondary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               画像ありで生成
             </button>
@@ -138,12 +138,12 @@ export default function PromptTestClient() {
           {loading && (
             <div className="space-y-4" aria-live="polite">
               <div className="flex items-center justify-center gap-3 py-4">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p className="text-gray-600">生成中...</p>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+                <p className="text-[var(--text-muted)]">生成中...</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="h-24 bg-gray-100 animate-pulse rounded-md" />
-                <div className="h-24 bg-gray-100 animate-pulse rounded-md" />
+                <div className="h-24 bg-[var(--border)] animate-pulse rounded-md" />
+                <div className="h-24 bg-[var(--border)] animate-pulse rounded-md" />
               </div>
             </div>
           )}
@@ -158,8 +158,8 @@ export default function PromptTestClient() {
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <p className="text-red-600">エラー: {error}</p>
+            <div className="bg-[var(--error)]/10 border border-[var(--error)] rounded-lg p-4 mb-4">
+              <p className="text-[var(--error-dark)]">エラー: {error}</p>
             </div>
           )}
 

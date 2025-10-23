@@ -54,13 +54,16 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-white text-slate-900 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-[var(--background)] text-[var(--text)] antialiased`}
         suppressHydrationWarning
       >
-        <header className="border-gray-800 lg:bg-transparent lg:h-0">
+        <header className="border-[var(--header-border)] lg:bg-transparent lg:h-0">
           <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-2 sm:px-6">
             <div className="flex flex-1 items-center gap-2">
-              <Link href="/" className="text-lg font-bold tracking-wide text-black flex gap-2">
+              <Link
+                href="/"
+                className="text-lg font-bold tracking-wide text-[var(--text-black)] flex gap-2"
+              >
                 英語きわめ太郎
                 <span
                   id={HEADER_PORTAL_ID}
@@ -72,7 +75,7 @@ export default function RootLayout({
             <SettingsMenu className="ml-4" />
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 pb-16 pt-0 lg:pt-4 font-sans text-[#2a2b3c] sm:px-6 lg:max-w-4xl">
+        <main className="mx-auto max-w-3xl px-4 pb-16 pt-0 lg:pt-4 font-sans text-[var(--text)] sm:px-6 lg:max-w-4xl">
           {children}
         </main>
         <Analytics />

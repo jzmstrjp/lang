@@ -1,21 +1,138 @@
 @import 'tailwindcss';
 
 :root {
+  /* 背景色 */
   --background: #ffffff;
+  --background-secondary: #f4f1ea;
+
+  /* テキスト色 */
   --foreground: #2a2b3c;
+  --text: #2a2b3c;
+  --text-muted: #666666;
+  --text-light: #f4f1ea;
+  --text-black: #000000;
+
+  /* プライマリーカラー */
+  --primary: #2f8f9d;
+  --primary-hover: #257682;
+  --primary-text: #f4f1ea;
+
+  /* セカンダリーカラー */
+  --secondary: #d77a61;
+  --secondary-hover: #c3684f;
+  --secondary-text: #f4f1ea;
+
+  /* ボーダー */
+  --border: #d8cbb6;
+  --border-dark: #2a2b3c;
+
+  /* ステータスカラー */
+  --success: #2f8f9d;
+  --error: #f43f5e;
+  --error-dark: #e11d48;
+
+  /* オーバーレイ */
+  --overlay: rgba(0, 0, 0, 0.1);
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+
+  /* 管理者用 */
+  --admin-delete: #b91c1c;
+  --admin-delete-hover: #dc2626;
+  --admin-remove: #dc2626;
+  --admin-remove-hover: #ef4444;
+  --admin-audio-en: #0284c7;
+  --admin-audio-en-hover: #0ea5e9;
+  --admin-audio-en-reply: #4f46e5;
+  --admin-audio-en-reply-hover: #6366f1;
+  --admin-audio-ja: #059669;
+  --admin-audio-ja-hover: #10b981;
+
+  /* ヘッダー */
+  --header-border: #1f2937;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-light: var(--text-light);
+  --color-text-black: var(--text-black);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-text: var(--primary-text);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-text: var(--secondary-text);
+  --color-border: var(--border);
+  --color-border-dark: var(--border-dark);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-error-dark: var(--error-dark);
+  --color-overlay: var(--overlay);
+  --color-overlay-dark: var(--overlay-dark);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+[data-theme='dark'] {
+  /* 背景色 */
+  --background: #0f4c59;
+  --background-secondary: #1a5866;
+
+  /* テキスト色 */
+  --foreground: #ffffff;
+  --text: #ffffff;
+  --text-muted: #e0e0e0;
+  --text-light: #1a1b26;
+  --text-black: #ffffff;
+
+  /* プライマリーカラー */
+  --primary: #ffffff;
+  --primary-hover: #e0e0e0;
+  --primary-text: #000000;
+
+  /* セカンダリーカラー */
+  --secondary: #ffffff;
+  --secondary-hover: #e0e0e0;
+  --secondary-text: #000000;
+
+  /* ボーダー */
+  --border: #ffffff;
+  --border-dark: #ffffff;
+
+  /* ステータスカラー */
+  --success: #ffffff;
+  --error: #ff6b8a;
+  --error-dark: #ff6b8a;
+
+  /* オーバーレイ */
+  --overlay: rgba(0, 0, 0, 0.3);
+  --overlay-dark: rgba(0, 0, 0, 0.7);
+
+  /* 管理者用 */
+  --admin-delete: #f7768e;
+  --admin-delete-hover: #ff9e64;
+  --admin-remove: #f7768e;
+  --admin-remove-hover: #ff9e64;
+  --admin-audio-en: #7dcfff;
+  --admin-audio-en-hover: #b4f9f8;
+  --admin-audio-en-reply: #bb9af7;
+  --admin-audio-en-reply-hover: #c0caf5;
+  --admin-audio-ja: #9ece6a;
+  --admin-audio-ja-hover: #b4f9f8;
+
+  /* ヘッダー */
+  --header-border: #414868;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #2a2b3c;
+  :root:not([data-theme]) {
+    /* システムのダークモード設定を尊重する場合 */
+    /* 現在は手動切り替えのみなのでコメントアウト */
+    /* --background: #1a1b26; */
+    /* --foreground: #c0caf5; */
   }
 }
 
@@ -23,6 +140,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+[data-theme='dark'] body {
+  background: linear-gradient(
+    135deg,
+    #0d3d47 0%,
+    #1a4d5a 25%,
+    #0f4c59 50%,
+    #1a5866 75%,
+    #0d3d47 100%
+  );
+  background-attachment: fixed;
+}
+
+/* ダークテーマ時に正解・不正解画像の明度を上げ、コントラストを下げる */
+[data-theme='dark'] img[src*='correct'],
+[data-theme='dark'] img[src*='incorrect'] {
+  filter: brightness(1.3) contrast(0.85);
 }
 
 button {

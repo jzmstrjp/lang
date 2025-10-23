@@ -23,9 +23,11 @@ export default function AdminPage() {
       )}
 
       {session && !isAdmin && (
-        <section className="space-y-4 rounded-lg border border-red-200 bg-red-50 p-6">
+        <section className="space-y-4 rounded-lg border border-[var(--error)] bg-[var(--error)]/10 p-6">
           <div className="space-y-1">
-            <p className="text-base font-semibold text-red-700">アクセス権がありません</p>
+            <p className="text-base font-semibold text-[var(--admin-delete)]">
+              アクセス権がありません
+            </p>
           </div>
           <SignOutButton />
         </section>
@@ -34,7 +36,7 @@ export default function AdminPage() {
       {session && isAdmin && (
         <section className="">
           <div>
-            <p className="text-base mb-4 font-semibold text-slate-900">
+            <p className="text-base mb-4 font-semibold text-[var(--text)]">
               ようこそ、{session.user?.name ?? '管理者'} さん
             </p>
           </div>

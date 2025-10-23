@@ -75,7 +75,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
 
 export default function Home() {
   return (
-    <div className="mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 lg:pt-10 text-[#2a2b3c]">
+    <div className="mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 lg:pt-10 text-[var(--text)]">
       <div className="rounded-2xl overflow-hidden">
         <Image
           src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/top.webp`}
@@ -90,10 +90,10 @@ export default function Home() {
           <Link
             key={href}
             href={href}
-            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 transition hover:border-[#2f8f9d] hover:text-[#2f8f9d] sm:flex-1"
+            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-[var(--text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--primary)] hover:text-[var(--primary)] sm:flex-1"
           >
             <span className="text-2xl sm:text-xl font-semibold capitalize">{label}</span>
-            <span className="text-sm font-medium text-[#d77a61]">{description}</span>
+            <span className="text-sm font-medium text-[var(--secondary)]">{description}</span>
           </Link>
         ))}
       </nav>

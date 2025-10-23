@@ -930,7 +930,7 @@ function CorrectPhaseView({
 }: CorrectPhaseViewProps) {
   return (
     <section className="grid text-center max-w-[500px] mx-auto">
-      <div className="px-6 py-6 text-cyan-600">
+      <div className="px-6 py-6 text-[var(--success)]">
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
           {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''} 正解<div>🎉</div>
@@ -955,22 +955,22 @@ function CorrectPhaseView({
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
                 window.open(twitterUrl, '_blank', 'width=550,height=420');
               }}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-black px-6 py-3 text-base font-semibold text-white shadow-lg shadow-black/50 enabled:hover:bg-gray-800"
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-[var(--text-black)] px-6 py-3 text-base font-semibold text-[var(--background)] shadow-lg shadow-[var(--text-black)]/50 enabled:hover:bg-[var(--text-muted)]"
             >
               𝕏 で自慢する
             </button>
           )}
         </div>
-        <p className="mt-4 text-2xl font-semibold text-[#2a2b3c]">
+        <p className="mt-4 text-2xl font-semibold text-[var(--text)]">
           {phase.problem.englishSentence}
         </p>
-        <p className="mt-4 text-lg text-[#2a2b3c]">{phase.problem.japaneseSentence}</p>
+        <p className="mt-4 text-lg text-[var(--text)]">{phase.problem.japaneseSentence}</p>
       </div>
       <div className="">
         <button
           type="button"
           onClick={onNextProblem}
-          className="inline-flex items-center justify-center rounded-full bg-[#d77a61] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#d77a61]/40 enabled:hover:bg-[#c3684f] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--secondary)] px-6 py-3 text-base font-semibold text-[var(--secondary-text)] shadow-lg shadow-[var(--secondary)]/40 enabled:hover:bg-[var(--secondary-hover)] disabled:opacity-60"
           disabled={isAudioBusy}
         >
           次の問題へ
@@ -988,7 +988,7 @@ type IncorrectPhaseViewProps = {
 function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
   return (
     <section className="grid gap-2 text-center">
-      <div className="px-6 py-6 text-rose-600">
+      <div className="px-6 py-6 text-[var(--error-dark)]">
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
           <Image
@@ -1005,7 +1005,7 @@ function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] bg-[#ffffff] px-6 py-3 text-base font-semibold text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-60"
           disabled={isAudioBusy}
         >
           再挑戦
@@ -1046,7 +1046,7 @@ function QuizOptionsSection({
   return (
     <section className="grid pt-4 max-w-[500px] mx-auto">
       <div>
-        <p className="text-center text-xl font-semibold text-[#2a2b3c] sm:text-2xl">
+        <p className="text-center text-xl font-semibold text-[var(--text)] sm:text-2xl">
           この英文の意味は？
         </p>
       </div>
@@ -1083,7 +1083,7 @@ function QuizOptionsSection({
                   <button
                     type="button"
                     onClick={() => onSelectOption(index)}
-                    className={`w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[#2a2b3c] shadow-sm shadow-[#d8cbb6]/40 enabled:hover:border-[#2f8f9d] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d] disabled:opacity-50`}
+                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-50`}
                     disabled={isAudioBusy}
                   >
                     {option.text}
@@ -1093,7 +1093,7 @@ function QuizOptionsSection({
                       <button
                         type="button"
                         onClick={() => setEditingIncorrectOptionKey(optionKey)}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[var(--primary)] bg-[var(--background)] p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         編集
                       </button>
@@ -1105,7 +1105,7 @@ function QuizOptionsSection({
                             window.alert('これは正解です');
                           }
                         }}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[#2f8f9d] bg-white p-2 text-sm min-w-[4rem] font-semibold text-[#2f8f9d] shadow-sm enabled:hover:bg-[#2f8f9d] enabled:hover:text-[#f4f1ea]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[var(--primary)] bg-[var(--background)] p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         編集
                       </button>
@@ -1120,7 +1120,7 @@ function QuizOptionsSection({
         <button
           type="button"
           onClick={onReplayAudio}
-          className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-[#2f8f9d]/30 enabled:hover:bg-[#257682] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--primary)]/30 enabled:hover:bg-[var(--primary-hover)] disabled:opacity-60"
           disabled={!phase.problem.audioEnUrl || isAudioBusy}
         >
           もう一度聞く
@@ -1167,7 +1167,7 @@ function AdminProblemActions({
           type="button"
           tabIndex={-1}
           onClick={onRemoveImage}
-          className="inline-flex items-center justify-center rounded-full bg-rose-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-rose-900/30 transition enabled:hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           この問題の画像を削除
         </button>
@@ -1178,7 +1178,7 @@ function AdminProblemActions({
           tabIndex={-1}
           onClick={onRemoveAudioEn}
           disabled={!currentProblem.audioEnUrl}
-          className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-sky-900/30 transition enabled:hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           英語音声を削除する
         </button>
@@ -1187,7 +1187,7 @@ function AdminProblemActions({
           tabIndex={-1}
           onClick={onRemoveAudioEnReply}
           disabled={!currentProblem.audioEnReplyUrl}
-          className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-indigo-900/30 transition enabled:hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-audio-en-reply)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en-reply)]/30 transition enabled:hover:bg-[var(--admin-audio-en-reply-hover)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           英語返答音声を削除する
         </button>
@@ -1196,7 +1196,7 @@ function AdminProblemActions({
           tabIndex={-1}
           onClick={onRemoveAudioJa}
           disabled={!currentProblem.audioJaUrl}
-          className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-emerald-900/30 transition enabled:hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-audio-ja)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-ja)]/30 transition enabled:hover:bg-[var(--admin-audio-ja-hover)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           日本語返答音声を削除する
         </button>
@@ -1206,7 +1206,7 @@ function AdminProblemActions({
         tabIndex={-1}
         onClick={onDeleteProblem}
         disabled={isDeletingProblem}
-        className="inline-flex items-center justify-center rounded-full bg-red-700 px-6 py-3 text-base font-semibold text-[#f4f1ea] shadow-lg shadow-red-900/30 transition enabled:hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isDeletingProblem ? '削除中…' : 'この問題自体を削除する'}
       </button>
@@ -1258,20 +1258,20 @@ function EditableIncorrectOption({
   return (
     <form
       onSubmit={submit}
-      className="w-full rounded-2xl border border-[#d8cbb6] bg-[#ffffff] px-5 py-4 text-left shadow-sm shadow-[#d8cbb6]/40"
+      className="w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left shadow-sm shadow-[var(--border)]/40"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           {...register('text')}
           autoFocus
           disabled={isSubmitting}
-          className="flex-1 rounded-xl border border-[#d8cbb6] px-4 py-2 text-base text-[#2a2b3c] shadow-sm focus:border-[#2f8f9d] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f8f9d]"
+          className="flex-1 rounded-xl border border-[var(--border)] px-4 py-2 text-base text-[var(--text)] shadow-sm focus:border-[var(--primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
         />
         <div className="flex gap-2 sm:justify-end">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-[#2f8f9d] px-4 py-2 text-sm font-semibold text-[#f4f1ea] shadow enabled:hover:bg-[#257682] disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-text)] shadow enabled:hover:bg-[var(--primary-hover)] disabled:opacity-60"
           >
             {isSubmitting ? '更新中…' : '更新'}
           </button>
@@ -1282,14 +1282,16 @@ function EditableIncorrectOption({
               reset({ text: defaultValue });
             }}
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full border border-[#d8cbb6] px-4 py-2 text-sm font-semibold text-[#2a2b3c] shadow-sm enabled:hover:border-[#d77a61] enabled:hover:text-[#d77a61] disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-60"
           >
             キャンセル
           </button>
         </div>
       </div>
       {(errors.text || errors.root) && (
-        <p className="mt-2 text-sm text-rose-600">{errors.text?.message ?? errors.root?.message}</p>
+        <p className="mt-2 text-sm text-[var(--error-dark)]">
+          {errors.text?.message ?? errors.root?.message}
+        </p>
       )}
     </form>
   );
@@ -1335,8 +1337,8 @@ function SceneDisplay({
 
   return (
     <section className="grid place-items-center">
-      <div className="w-full max-w-[500px] p-6 text-center text-[#2a2b3c] leading-relaxed bg-white rounded-lg border border-[#d8cbb6]">
-        <h3 className="font-semibold mb-3 text-lg text-[#2f8f9d]">シーン</h3>
+      <div className="w-full max-w-[500px] p-6 text-center text-[var(--text)] leading-relaxed bg-[var(--background)] rounded-lg border border-[var(--border)]">
+        <h3 className="font-semibold mb-3 text-lg text-[var(--primary)]">シーン</h3>
         <p className="font-bold text-2xl">{place}</p>
       </div>
     </section>

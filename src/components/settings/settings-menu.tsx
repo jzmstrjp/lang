@@ -45,7 +45,7 @@ export function SettingsMenu({ className = '' }: SettingsMenuProps) {
         aria-expanded={isOpen}
         aria-label="設定"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-10 w-10 items-center justify-center text-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="flex h-10 w-10 items-center justify-center text-[var(--text-black)] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--background)]"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -69,7 +69,10 @@ export function SettingsMenu({ className = '' }: SettingsMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" aria-hidden="true" />
+        <div
+          className="fixed inset-0 z-40 bg-[var(--overlay)] backdrop-blur-sm"
+          aria-hidden="true"
+        />
       )}
 
       {isOpen && (
@@ -77,7 +80,7 @@ export function SettingsMenu({ className = '' }: SettingsMenuProps) {
           ref={panelRef}
           role="dialog"
           aria-label="設定メニュー"
-          className="fixed top-3 right-3 z-50 w-[260px] rounded-2xl border border-[#d8cbb6] bg-white p-5 text-[#2a2b3c] shadow-2xl shadow-black/20"
+          className="fixed top-3 right-3 z-50 w-[260px] rounded-2xl border border-[var(--border)] bg-[var(--background)] p-5 text-[var(--text)] shadow-2xl shadow-[var(--text-black)]/20"
         >
           <ModeSwitches />
         </div>
