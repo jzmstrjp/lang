@@ -973,7 +973,7 @@ function CorrectPhaseView({
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
                 window.open(twitterUrl, '_blank', 'width=550,height=420');
               }}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-[var(--text-black)] px-6 py-3 text-base font-semibold text-[var(--background)] shadow-lg shadow-[var(--text-black)]/50 enabled:hover:bg-[var(--text-muted)]"
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center whitespace-nowrap rounded-full bg-[var(--share-button-bg)] px-6 py-3 text-base font-semibold text-[var(--share-button-text)] shadow-lg shadow-[var(--share-button-shadow)]/50 enabled:hover:bg-[var(--share-button-hover)]"
             >
               𝕏 で自慢する
             </button>

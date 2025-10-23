@@ -57,6 +57,12 @@
 
   /* ヘッダー */
   --header-border: #1f2937;
+
+  /* シェアボタン */
+  --share-button-bg: #000000;
+  --share-button-text: #ffffff;
+  --share-button-shadow: #000000;
+  --share-button-hover: #666666;
 }
 
 @theme inline {
@@ -141,6 +147,12 @@
 
   /* ヘッダー */
   --header-border: #414868;
+
+  /* シェアボタン */
+  --share-button-bg: #1da1f2;
+  --share-button-text: #ffffff;
+  --share-button-shadow: #1da1f2;
+  --share-button-hover: #1a8cd8;
 }
 
 @media (prefers-color-scheme: dark) {
