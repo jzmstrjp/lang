@@ -964,7 +964,7 @@ function CorrectPhaseView({
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
           <div className="flex flex-row items-center justify-center gap-2 flex-wrap">
-            <div>{isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''}</div>
+            {isOnStreak && <div>{phase.setting.correctStreak}問連続</div>}
             <div>正解</div>
           </div>
           <div>🎉</div>
