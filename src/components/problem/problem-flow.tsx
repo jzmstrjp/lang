@@ -1423,8 +1423,8 @@ function SceneDisplay({
   }
 
   return (
-    <section className="grid place-items-center">
-      <div className="w-full max-w-[500px] p-6 text-center text-[var(--text)] leading-relaxed bg-[var(--background)] rounded-lg border border-[var(--scene-box-border)]">
+    <section className={`${isBlurred ? 'hidden' : ''}`}>
+      <div className="w-[290px] p-6 text-center text-[var(--text)] leading-relaxed bg-[var(--background)] rounded-lg border border-[var(--scene-box-border)]">
         <h3 className="font-semibold mb-3 text-lg text-[var(--primary)]">シーン</h3>
         <p className="font-bold text-2xl">{place}</p>
       </div>
