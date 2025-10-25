@@ -5,6 +5,8 @@
   --background: #ffffff;
   --background-secondary: #f4f1ea;
 
+  --dialog-background: #ffffff;
+
   /* テキスト色 */
   --foreground: #2a2b3c;
   --text: #2a2b3c;
@@ -106,6 +108,8 @@
   /* 背景色 */
   --background: #00000040;
   --background-secondary: #1a5866;
+
+  --dialog-background: #1a5275;
 
   /* テキスト色 */
   --foreground: #ffffff;

@@ -104,6 +104,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([]);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
+  const [isAdminModalOpen, setAdminModalOpen] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -273,6 +274,8 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     if (phase.kind === 'start-button-server') return;
 
     if (isPrefetchingNextRef.current) return;
+
+    setAdminModalOpen(false);
 
     // searchパラメータがある場合のみURLをクリア
     if (searchQuery) {
@@ -450,6 +453,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         const updatedQueue = problemQueue.filter((problem) => problem.id !== targetProblemId);
         setProblemQueue(updatedQueue);
         const nextProblemData = updatedQueue[0] ?? null;
+        setAdminModalOpen(false);
         setPhase({
           kind: 'start-button-client',
           error: nextProblemData ? null : '次の問題がありません',
@@ -627,7 +631,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   }, [length]);
 
   return (
-    <>
+    <div className="flex items-center justify-center h-[100dvh]">
       {phase.kind === 'start-button-server' && (
         <StartButtonServerView onStart={handleStart} disabled={isAudioBusy} />
       )}
@@ -674,6 +678,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           onReplayAudio={() => {
             playAudio(englishSentenceAudioRef.current, 0);
           }}
+          onOpenAdminModal={() => setAdminModalOpen(true)}
         />
       )}
       {phase.kind === 'correct' && (
@@ -740,20 +745,24 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       )}
 
       <Suspense>
-        <AdminProblemActions
-          isAdminPromise={isAdminPromise}
-          isStaticProblem={currentProblem.isStatic ?? false}
-          sceneImage={sceneImage}
-          currentProblem={currentProblem}
-          isDeletingProblem={isDeletingProblem}
-          onRemoveImage={handleRemoveImage}
-          onRemoveAudioEn={handleRemoveAudioEn}
-          onRemoveAudioEnReply={handleRemoveAudioEnReply}
-          onRemoveAudioJa={handleRemoveAudioJa}
-          onDeleteProblem={handleDeleteProblem}
-        />
+        {isAdminModalOpen ? (
+          <AdminProblemActions
+            isAdminPromise={isAdminPromise}
+            isStaticProblem={currentProblem.isStatic ?? false}
+            sceneImage={sceneImage}
+            currentProblem={currentProblem}
+            isDeletingProblem={isDeletingProblem}
+            onRemoveImage={handleRemoveImage}
+            onRemoveAudioEn={handleRemoveAudioEn}
+            onRemoveAudioEnReply={handleRemoveAudioEnReply}
+            onRemoveAudioJa={handleRemoveAudioJa}
+            onDeleteProblem={handleDeleteProblem}
+            isModalOpen={isAdminModalOpen}
+            onClose={() => setAdminModalOpen(false)}
+          />
+        ) : null}
       </Suspense>
-    </>
+    </div>
   );
 }
 
@@ -884,6 +893,7 @@ type QuizPhaseViewProps = {
   ) => Promise<EditableIncorrectOptionResult>;
   onSelectOption: (selectedIndex: number) => void;
   onReplayAudio: () => void;
+  onOpenAdminModal: () => void;
 };
 
 function QuizPhaseView({
@@ -895,6 +905,7 @@ function QuizPhaseView({
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
+  onOpenAdminModal,
 }: QuizPhaseViewProps) {
   return (
     <Suspense>
@@ -908,6 +919,7 @@ function QuizPhaseView({
         updateIncorrectOption={updateIncorrectOption}
         onSelectOption={onSelectOption}
         onReplayAudio={onReplayAudio}
+        onOpenAdminModal={onOpenAdminModal}
       />
     </Suspense>
   );
@@ -948,10 +960,14 @@ function CorrectPhaseView({
 
   return (
     <section className="grid text-center max-w-[500px] mx-auto">
-      <div className="px-6 py-6 text-[var(--success)]">
+      <div className="px-6 mb-6 text-[var(--success)]">
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
-          {isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''} 正解<div>🎉</div>
+          <div className="flex flex-row items-center justify-center gap-2 flex-wrap">
+            <div>{isOnStreak ? `${phase.setting.correctStreak}問連続 ` : ''}</div>
+            <div>正解</div>
+          </div>
+          <div>🎉</div>
         </h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
           <Image
@@ -1063,6 +1079,7 @@ type QuizOptionsSectionProps = {
   ) => Promise<EditableIncorrectOptionResult>;
   onSelectOption: (selectedIndex: number) => void;
   onReplayAudio: () => void;
+  onOpenAdminModal: () => void;
 };
 
 function QuizOptionsSection({
@@ -1074,13 +1091,14 @@ function QuizOptionsSection({
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
+  onOpenAdminModal,
 }: QuizOptionsSectionProps) {
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const isAdmin = use(isAdminPromise);
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
   return (
-    <section className="grid pt-4 max-w-[500px] mx-auto">
+    <section className="grid w-[500px] max-w-full mx-auto">
       <div>
         <p className="text-center text-xl font-semibold text-[var(--text)] sm:text-2xl">
           この英文の意味は？
@@ -1162,6 +1180,17 @@ function QuizOptionsSection({
           もう一度聞く
         </button>
       </div>
+      {canEditCurrentProblem && (
+        <div className="flex justify-center mt-10">
+          <button
+            type="button"
+            onClick={onOpenAdminModal}
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+          >
+            管理者向け機能
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -1177,6 +1206,8 @@ type AdminProblemActionsProps = {
   onRemoveAudioEnReply: () => void;
   onRemoveAudioJa: () => void;
   onDeleteProblem: () => void;
+  isModalOpen: boolean;
+  onClose: () => void;
 };
 
 function AdminProblemActions({
@@ -1190,62 +1221,82 @@ function AdminProblemActions({
   onRemoveAudioEnReply,
   onRemoveAudioJa,
   onDeleteProblem,
+  isModalOpen,
+  onClose,
 }: AdminProblemActionsProps) {
   const isAdmin = use(isAdminPromise);
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
-  if (!canEditCurrentProblem) return null;
+  if (!canEditCurrentProblem || !isModalOpen) return null;
 
   return (
-    <div className="mt-160 flex flex-col items-center gap-6">
-      {sceneImage && (
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={onRemoveImage}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          この問題の画像を削除
-        </button>
-      )}
-      <div className="flex flex-col items-center gap-4">
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={onRemoveAudioEn}
-          disabled={!currentProblem.audioEnUrl}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          英語音声を削除する
-        </button>
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={onRemoveAudioEnReply}
-          disabled={!currentProblem.audioEnReplyUrl}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-audio-en-reply)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en-reply)]/30 transition enabled:hover:bg-[var(--admin-audio-en-reply-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          英語返答音声を削除する
-        </button>
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={onRemoveAudioJa}
-          disabled={!currentProblem.audioJaUrl}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--admin-audio-ja)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-ja)]/30 transition enabled:hover:bg-[var(--admin-audio-ja-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          日本語返答音声を削除する
-        </button>
-      </div>
-      <button
-        type="button"
-        tabIndex={-1}
-        onClick={onDeleteProblem}
-        disabled={isDeletingProblem}
-        className="inline-flex items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="管理者向け機能"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40"
+        onClick={(event) => event.stopPropagation()}
       >
-        {isDeletingProblem ? '削除中…' : 'この問題自体を削除する'}
-      </button>
+        <div className="space-y-6">
+          {sceneImage && (
+            <button
+              type="button"
+              onClick={onRemoveImage}
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              この問題の画像を削除
+            </button>
+          )}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onRemoveAudioEn}
+              disabled={!currentProblem.audioEnUrl}
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              英語音声を削除する
+            </button>
+            <button
+              type="button"
+              onClick={onRemoveAudioEnReply}
+              disabled={!currentProblem.audioEnReplyUrl}
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en-reply)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en-reply)]/30 transition enabled:hover:bg-[var(--admin-audio-en-reply-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              英語返答音声を削除する
+            </button>
+            <button
+              type="button"
+              onClick={onRemoveAudioJa}
+              disabled={!currentProblem.audioJaUrl}
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-ja)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-ja)]/30 transition enabled:hover:bg-[var(--admin-audio-ja-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              日本語返答音声を削除する
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={onDeleteProblem}
+            disabled={isDeletingProblem}
+            className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeletingProblem ? '削除中…' : 'この問題自体を削除する'}
+          </button>
+        </div>
+        <div className="flex justify-center mt-20">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+            aria-label="モーダルを閉じる"
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
