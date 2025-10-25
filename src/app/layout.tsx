@@ -77,7 +77,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <header className="border-[var(--header-border)] lg:bg-transparent h-0">
-          <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-2 sm:px-6">
+          <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-1.5">
             <div className="flex flex-1 items-center gap-2">
               <Link
                 href="/"
@@ -91,7 +91,7 @@ export default function RootLayout({
                 />
               </Link>
             </div>
-            <SettingsMenu className="ml-4" />
+            <SettingsMenu />
           </div>
         </header>
         <main className="mx-auto max-w-3xl px-4 font-sans text-[var(--text)] sm:px-6 lg:max-w-4xl">
