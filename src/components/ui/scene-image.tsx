@@ -29,7 +29,9 @@ export function SceneImage({
     opacity === 'low' ? 'opacity-30' : opacity === 'medium' ? 'opacity-50' : 'opacity-100';
 
   return (
-    <div className={`relative w-full w-[500px] max-w-full sm:mt-2 mx-auto ${isBlurred ? 'blur-sm' : ''}`}>
+    <div
+      className={`relative w-full w-[500px] max-w-full sm:mt-2 mx-auto ${isBlurred ? 'blur-sm' : ''}`}
+    >
       <Image
         src={src}
         alt={alt}

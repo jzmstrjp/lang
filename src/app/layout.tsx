@@ -95,9 +95,7 @@ export default function RootLayout({
           </div>
         </header>
         <main className="mx-auto max-w-3xl px-4 font-sans text-[var(--text)] sm:px-6 lg:max-w-4xl">
-          <div className="flex items-center justify-center min-h-[100dvh]">
-          {children}
-          </div>
+          <div className="flex items-center justify-center min-h-[100dvh]">{children}</div>
         </main>
         <Analytics />
       </body>
