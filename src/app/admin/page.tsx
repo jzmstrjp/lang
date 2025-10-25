@@ -15,7 +15,7 @@ export default function AdminPage() {
   );
 
   return (
-    <div className="h-[100dvh] flex items-center justify-center text-center">
+    <div className="text-center">
       {!session && (
         <section className="space-y-4 text-center">
           <GoogleSignInButton />

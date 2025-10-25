@@ -13,7 +13,7 @@ export const StartButton = ({
   children,
 }: PropsWithChildren<StartButtonProps>) => {
   return (
-    <div className="flex flex-col items-center gap-4 text-center bg-[var(--background)] py-8 px-12 rounded-lg whitespace-nowrap border border-[var(--start-button-border)]">
+    <div className="flex flex-col items-center gap-4 text-center bg-[var(--background)] py-8 px-4 rounded-lg w-[300px] border border-[var(--start-button-border)]">
       {error && <p className="text-sm text-[var(--error)]">{error}</p>}
       <button
         type="button"

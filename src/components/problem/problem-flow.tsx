@@ -631,7 +631,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   }, [length]);
 
   return (
-    <div className="flex items-center justify-center h-[100dvh]">
+    <div className="max-w-full">
       {phase.kind === 'start-button-server' && (
         <StartButtonServerView onStart={handleStart} disabled={isAudioBusy} />
       )}
@@ -773,7 +773,7 @@ type StartButtonServerViewProps = {
 
 function StartButtonServerView({ onStart, disabled }: StartButtonServerViewProps) {
   return (
-    <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
+    <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
       <div className="absolute inset-0 flex items-center justify-center">
         <StartButton error={null} handleStart={onStart} disabled={disabled}>
           英語学習を始める
@@ -805,7 +805,7 @@ function StartButtonClientView({
   sentence2,
 }: StartButtonClientViewProps) {
   return (
-    <div className="relative max-w-[500px] mx-auto aspect-[2/3]">
+    <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
       <SceneDisplay
         imageUrl={sceneImage}
         place={place}
@@ -959,7 +959,7 @@ function CorrectPhaseView({
   }, []);
 
   return (
-    <section className="grid text-center max-w-[500px] mx-auto">
+    <section className="grid text-center w-[500px] max-w-full mx-auto">
       <div className="px-6 mb-6 text-[var(--success)]">
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
@@ -1098,7 +1098,7 @@ function QuizOptionsSection({
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
   return (
-    <section className="grid w-[500px] max-w-full mx-auto">
+    <section className="grid w-[500px] max-w-full max-w-full mx-auto">
       <div>
         <p className="text-center text-xl font-semibold text-[var(--text)] sm:text-2xl">
           この英文の意味は？
@@ -1424,7 +1424,7 @@ function SceneDisplay({
 
   return (
     <section className={`${isBlurred ? 'hidden' : ''}`}>
-      <div className="w-[290px] p-6 text-center text-[var(--text)] leading-relaxed bg-[var(--background)] rounded-lg border border-[var(--scene-box-border)]">
+      <div className="w-[300px] p-6 text-center text-[var(--text)] leading-relaxed bg-[var(--background)] rounded-lg border border-[var(--scene-box-border)]">
         <h3 className="font-semibold mb-3 text-lg text-[var(--primary)]">シーン</h3>
         <p className="font-bold text-2xl">{place}</p>
       </div>
