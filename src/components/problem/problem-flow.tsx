@@ -64,7 +64,6 @@ type Setting = {
   isEnglishMode: boolean;
   isImageHiddenMode: boolean;
   correctStreak: number;
-  isDarkMode: boolean;
 };
 
 type EditableIncorrectOptionResult = { ok: true } | { ok: false; message: string };
@@ -77,7 +76,6 @@ const getCurrentSetting = (length: ProblemLength): Setting => {
       isEnglishMode: false,
       isImageHiddenMode: false,
       correctStreak: 0,
-      isDarkMode: false,
     };
 
   const correctStreakCount = localStorage.getItem(`correctStreak-${length}`);
@@ -86,7 +84,6 @@ const getCurrentSetting = (length: ProblemLength): Setting => {
     isEnglishMode: localStorage.getItem('englishMode') === 'true',
     isImageHiddenMode: localStorage.getItem('noImageMode') === 'true',
     correctStreak: Number(correctStreakCount) ?? 0,
-    isDarkMode: localStorage.getItem('darkMode') === 'true',
   };
 };
 
@@ -133,7 +130,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         isEnglishMode: 'englishMode',
         isImageHiddenMode: 'noImageMode',
         correctStreak: `correctStreak-${length}`,
-        isDarkMode: 'darkMode',
       } as const satisfies Record<keyof Setting, string>;
 
       (Object.keys(keys) as Array<keyof Setting>).forEach((key) => {
@@ -957,7 +953,7 @@ function CorrectPhaseView({
         </h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1${phase.setting.isDarkMode ? 'dark' : ''}.webp`}
+            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct1.webp`}
             alt="ガッツポーズ"
             width={500}
             height={750}
@@ -1006,14 +1002,14 @@ type IncorrectPhaseViewProps = {
   phase: Extract<ClientPhase, { kind: 'incorrect' }>;
 };
 
-function IncorrectPhaseView({ phase, isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
+function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
   return (
     <section className="grid gap-2 text-center">
       <div className="px-6 py-6 text-[var(--error-dark)]">
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1${phase.setting.isDarkMode ? 'dark' : ''}.webp?1`}
+            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect1.webp`}
             alt="ショックな様子"
             width={500}
             height={750}
