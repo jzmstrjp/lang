@@ -1025,6 +1025,877 @@ const problemData: SeedProblemData[] = [
       '支援の代わりに踊りで応援します。',
     ],
   },
+  {
+    place: '会社の廊下',
+    senderRole: '同僚',
+    senderVoice: 'male',
+    receiverRole: '同僚',
+    receiverVoice: 'female',
+    englishSentence: 'Did Sarah actually finish that report?',
+    japaneseSentence: 'サラ、本当にあの報告書終わらせたの？',
+    englishReply: 'Yeah, she pulled an all-nighter.',
+    japaneseReply: 'うん、徹夜で仕上げたんだ。',
+    scenePrompt: '同僚同士が廊下で立ち話をしている。話題は社内で有名な遅筆の同僚について。',
+    senderVoiceInstruction: '半信半疑で驚きを混ぜて。',
+    receiverVoiceInstruction: '少し感心したように落ち着いて。',
+    incorrectOptions: [
+      'サラはまだ報告書を放置してるの？', // 真逆
+      'ちなみにエマが終わらせたの？', // 誤情報
+      'サラは報告書を食べたの？', // 馬鹿
+    ],
+  },
+  {
+    place: 'カフェのカウンター',
+    senderRole: '客',
+    senderVoice: 'female',
+    receiverRole: '店員',
+    receiverVoice: 'male',
+    englishSentence: 'Did Tom really pay for everyone?',
+    japaneseSentence: 'トムが本当に全員分払ったの？',
+    englishReply: 'He did, and left a big tip.',
+    japaneseReply: 'そうなんです、しかもチップまで置いていきました。',
+    scenePrompt: 'カフェのカウンターで支払い後、客が店員に確認している。笑顔がこぼれている。',
+    senderVoiceInstruction: '信じられないというトーンで。',
+    receiverVoiceInstruction: '楽しそうに説明する口調で。',
+    incorrectOptions: [
+      'トムは誰の分も払ってません。', // 真逆
+      'ところでベンが全員分払いました。', // 誤情報
+      'トムはチップで泳ぎました。', // 馬鹿
+    ],
+  },
+  {
+    place: '大学の食堂',
+    senderRole: '学生A',
+    senderVoice: 'female',
+    receiverRole: '学生B',
+    receiverVoice: 'male',
+    englishSentence: 'Did Mia just skip another class?',
+    japaneseSentence: 'ミア、また授業サボったの？',
+    englishReply: 'Yeah, third time this week.',
+    japaneseReply: 'うん、今週でもう3回目だよ。',
+    scenePrompt: '大学の食堂で学生たちが昼食を取りながら噂話をしている。軽い笑いが混じる。',
+    senderVoiceInstruction: '呆れながらも面白がる感じで。',
+    receiverVoiceInstruction: '軽く笑いながら返す。',
+    incorrectOptions: [
+      'ミアは今全部の授業出てるよ。', // 真逆
+      'ちなみにエマがサボったんでしょ？', // 誤情報
+      'ミアは授業を食べたんだよ。', // 馬鹿
+    ],
+  },
+
+  {
+    place: '病院の受付',
+    senderRole: '看護師',
+    senderVoice: 'female',
+    receiverRole: '患者',
+    receiverVoice: 'male',
+    englishSentence: 'Thank you for helping Mrs. Lee.',
+    japaneseSentence: 'リーさんを手伝ってくださってありがとうございます。',
+    englishReply: 'No problem, she seemed kind.',
+    japaneseReply: 'いえ、優しそうな方でしたから。',
+    scenePrompt: '病院の受付で、患者を案内した後に看護師が礼を述べている。穏やかな空気。',
+    senderVoiceInstruction: '感謝を込めて柔らかく。',
+    receiverVoiceInstruction: '控えめに笑って答える。',
+    incorrectOptions: [
+      'リーさんを困らせてくださってありがとうございます。', // 真逆
+      'ちなみにスミスさんを手伝ってくれましたか？', // 誤情報
+      'リーさんを空に運んでくださってありがとうございます。', // 馬鹿
+    ],
+  },
+  {
+    place: '大学の研究室',
+    senderRole: '学生',
+    senderVoice: 'male',
+    receiverRole: '教授',
+    receiverVoice: 'female',
+    englishSentence: 'I’m sorry about David’s mistake.',
+    japaneseSentence: 'デイビッドのミスについて申し訳ありません。',
+    englishReply: 'It’s fine, just correct it soon.',
+    japaneseReply: '大丈夫、早めに直しておいてね。',
+    scenePrompt: '教授がレポートを見ながら学生に話している。穏やかだが少し厳しい空気。',
+    senderVoiceInstruction: '真摯に謝る落ち着いた口調で。',
+    receiverVoiceInstruction: '穏やかに受け入れるトーンで。',
+    incorrectOptions: [
+      'デイビッドの成功について申し訳ありません。', // 真逆
+      'ちなみにジョンのミスについて謝ります。', // 誤情報
+      'デイビッドのミスを額縁に飾りました。', // 馬鹿
+    ],
+  },
+  {
+    place: 'スポーツジムのトレーニングエリア',
+    senderRole: 'トレーナー',
+    senderVoice: 'female',
+    receiverRole: '会員',
+    receiverVoice: 'male',
+    englishSentence: 'You did great today, Mark!',
+    japaneseSentence: 'マーク、今日は本当によく頑張りましたね！',
+    englishReply: 'Thanks, I feel stronger already.',
+    japaneseReply: 'ありがとうございます、もう力がついた気がします。',
+    scenePrompt: 'ジムのトレーニングエリアで汗を拭く会員にトレーナーが声をかけている。',
+    senderVoiceInstruction: '明るく励ますように。',
+    receiverVoiceInstruction: '爽やかに笑って答える。',
+    incorrectOptions: [
+      'マーク、今日は本当によく怠けましたね！', // 真逆
+      'ところでケビンが頑張ってましたね！', // 誤情報
+      'マーク、今日は地球を持ち上げましたね！', // 馬鹿
+    ],
+  },
+  {
+    place: 'オフィスのデスクエリア',
+    senderRole: '同僚',
+    senderVoice: 'female',
+    receiverRole: '同僚',
+    receiverVoice: 'male',
+    englishSentence: 'Did Olivia finish early again?',
+    japaneseSentence: 'オリビア、また早く終わったの？',
+    englishReply: 'Of course, she’s always ahead.',
+    japaneseReply: 'もちろん、いつも一歩先だね。',
+    scenePrompt: 'デスクで同僚が軽口を交わしている。周囲は和やかな雰囲気。',
+    senderVoiceInstruction: '冗談めかして軽く尋ねる。',
+    receiverVoiceInstruction: '感心しつつ少し笑うトーンで。',
+    incorrectOptions: [
+      'オリビアはまた遅れてるの？', // 真逆
+      'ところでメアリーが早く終わった？', // 誤情報
+      'オリビアは時間を食べたの？', // 馬鹿
+    ],
+  },
+  {
+    place: 'カフェの席',
+    senderRole: '友人',
+    senderVoice: 'male',
+    receiverRole: '友人',
+    receiverVoice: 'female',
+    englishSentence: 'Did Chris forget his keys again?',
+    japaneseSentence: 'クリス、また鍵忘れたの？',
+    englishReply: 'Yep, like every single Monday.',
+    japaneseReply: 'うん、毎週月曜の恒例だよ。',
+    scenePrompt: '二人の友人がコーヒーを飲みながら笑っている。外は晴れた昼下がり。',
+    senderVoiceInstruction: '呆れ半分で冗談っぽく。',
+    receiverVoiceInstruction: '苦笑しながら軽く答える。',
+    incorrectOptions: [
+      'クリスは鍵を見つけたの？', // 真逆
+      'ちなみにダンが鍵を忘れたの？', // 誤情報
+      'クリスは鍵を食べたの？', // 馬鹿
+    ],
+  },
+  {
+    place: '大学の講義室',
+    senderRole: '学生A',
+    senderVoice: 'female',
+    receiverRole: '学生B',
+    receiverVoice: 'male',
+    englishSentence: 'Is Noah sleeping again in class?',
+    japaneseSentence: 'ノア、また授業中に寝てるの？',
+    englishReply: 'He never fails to impress.',
+    japaneseReply: 'ほんと期待を裏切らないね。',
+    scenePrompt: '静かな講義室で、後ろの席の学生が笑いをこらえている。',
+    senderVoiceInstruction: '小声で皮肉っぽく。',
+    receiverVoiceInstruction: '笑いをこらえながら軽く答える。',
+    incorrectOptions: [
+      'ノアは今日ずっと起きてるの？', // 真逆
+      'ちなみにエイデンが寝てるの？', // 誤情報
+      'ノアは夢の中で授業してるの？', // 馬鹿
+    ],
+  },
+  {
+    place: 'レストランのテーブル席',
+    senderRole: '店員',
+    senderVoice: 'female',
+    receiverRole: '客',
+    receiverVoice: 'male',
+    englishSentence: 'Please ask Emma to wait here.',
+    japaneseSentence: 'エマさんにここでお待ちいただけますか？',
+    englishReply: 'Sure, I’ll tell her right away.',
+    japaneseReply: 'わかりました、すぐに伝えます。',
+    scenePrompt:
+      'レストランでスタッフが追加のゲストを案内しようとしている。落ち着いた雰囲気の店内。',
+    senderVoiceInstruction: '丁寧で落ち着いたトーンで。',
+    receiverVoiceInstruction: '礼儀正しく明るく答える。',
+    incorrectOptions: [
+      'エマさんを外に追い出してください。', // 真逆
+      'ちなみにミアさんをここに呼びますか？', // 誤情報
+      'エマさんを空に飛ばしてください。', // 馬鹿
+    ],
+  },
+  {
+    place: '会社の会議室',
+    senderRole: '上司',
+    senderVoice: 'male',
+    receiverRole: '部下',
+    receiverVoice: 'female',
+    englishSentence: 'Let’s include Jack in this plan.',
+    japaneseSentence: 'この計画にジャックも入れよう。',
+    englishReply: 'Good idea. He’ll be helpful.',
+    japaneseReply: 'いいですね。彼は力になりそうです。',
+    scenePrompt: 'ホワイトボード前で上司がプロジェクトの構成を話している。資料が机に広がっている。',
+    senderVoiceInstruction: 'リーダーらしく前向きなトーンで。',
+    receiverVoiceInstruction: '同意しながら穏やかに答える。',
+    incorrectOptions: [
+      'ジャックをこの計画から外そう。', // 真逆
+      'ちなみにルークを入れよう。', // 誤情報
+      'ジャックを紙に描こう。', // 馬鹿
+    ],
+  },
+  {
+    place: '大学の研究室',
+    senderRole: '教授',
+    senderVoice: 'male',
+    receiverRole: '学生',
+    receiverVoice: 'female',
+    englishSentence: 'Remind David about tomorrow’s meeting.',
+    japaneseSentence: 'デイビッドに明日の会議を思い出させて。',
+    englishReply: 'Got it. I’ll message him soon.',
+    japaneseReply: '了解です。すぐに連絡します。',
+    scenePrompt: '研究室で教授がスケジュールを確認している。机には資料とノートパソコン。',
+    senderVoiceInstruction: '穏やかに指示するトーンで。',
+    receiverVoiceInstruction: '素直に受け止めて答える。',
+    incorrectOptions: [
+      'デイビッドに会議を忘れさせて。', // 真逆
+      'ちなみにトーマスに伝えますか？', // 誤情報
+      'デイビッドを明日会議にしよう。', // 馬鹿
+    ],
+  },
+  {
+    place: 'オフィスの休憩室',
+    senderRole: '同僚',
+    senderVoice: 'female',
+    receiverRole: '同僚',
+    receiverVoice: 'male',
+    englishSentence: 'Did Ben eat my sandwich again?',
+    japaneseSentence: 'ベン、また私のサンドイッチ食べた？',
+    englishReply: 'Looks like it. He’s guilty again.',
+    japaneseReply: 'そうみたい。またやっちゃったね。',
+    scenePrompt: 'オフィスの冷蔵庫前。空のランチボックスを見つめる同僚。別の同僚が笑っている。',
+    senderVoiceInstruction: '少し呆れた軽いトーンで。',
+    receiverVoiceInstruction: '冗談まじりに笑いながら答える。',
+    incorrectOptions: [
+      'ベンは今日休みじゃなかった？', // 誤情報
+      'サンドイッチをちゃんと返した？', // 真逆
+      'ベンはサンドイッチを額に貼った？', // 馬鹿
+    ],
+  },
+  {
+    place: '大学のキャンパス',
+    senderRole: '学生A',
+    senderVoice: 'male',
+    receiverRole: '学生B',
+    receiverVoice: 'female',
+    englishSentence: 'Is Lily dating Jake now?',
+    japaneseSentence: 'リリー、今ジェイクと付き合ってるの？',
+    englishReply: 'Yeah, just started last week.',
+    japaneseReply: 'うん、先週からみたいだよ。',
+    scenePrompt: '昼休みのキャンパスベンチで、学生たちが噂話をしている。背景には学生のざわめき。',
+    senderVoiceInstruction: '興味津々で軽く尋ねるトーン。',
+    receiverVoiceInstruction: '少し驚きつつ楽しげに話す。',
+    incorrectOptions: [
+      'リリーは今ひとりなの？', // 真逆
+      'ちなみにエマとジェイクが付き合ってる？', // 誤情報
+      'リリーはジェイクをペットにした？', // 馬鹿
+    ],
+  },
+  {
+    place: 'バーのカウンター',
+    senderRole: '友人A',
+    senderVoice: 'female',
+    receiverRole: '友人B',
+    receiverVoice: 'male',
+    englishSentence: 'Did Max forget his wallet again?',
+    japaneseSentence: 'マックス、また財布忘れたの？',
+    englishReply: 'Of course. Same as last Friday.',
+    japaneseReply: 'もちろん、先週の金曜と同じさ。',
+    scenePrompt: '夜のバー。友人がカウンターで笑いながら会計をしている。隣の友人が肩をすくめる。',
+    senderVoiceInstruction: '呆れ半分、笑い混じりで。',
+    receiverVoiceInstruction: '軽く皮肉っぽく、冗談で返す。',
+    incorrectOptions: [
+      'マックスは今日は財布持ってる？', // 真逆
+      'ジェイクが財布忘れたの？', // 誤情報
+      'マックスは財布を飲んだの？', // 馬鹿
+    ],
+  },
+  {
+    place: '会社の受付',
+    senderRole: '受付担当',
+    senderVoice: 'female',
+    receiverRole: '来客',
+    receiverVoice: 'male',
+    englishSentence: 'Has Mr. Allen checked in yet?',
+    japaneseSentence: 'アレン様はもう受付を済まされましたか？',
+    englishReply: 'Yes, he’s waiting upstairs now.',
+    japaneseReply: 'はい、現在上の階でお待ちです。',
+    scenePrompt:
+      'オフィスの受付カウンター。来客対応中のスタッフが確認している。背後に観葉植物と企業ロゴ。',
+    senderVoiceInstruction: '丁寧で落ち着いた確認のトーンで。',
+    receiverVoiceInstruction: '穏やかに、安心させる口調で。',
+    incorrectOptions: [
+      'アレン様はまだ到着されてませんか？', // 誤情報
+      '彼は本日来社されませんか？', // 真逆
+      'アレン様は空を飛んで来られましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: 'オフィスの会議室',
+    senderRole: '部長',
+    senderVoice: 'male',
+    receiverRole: '秘書',
+    receiverVoice: 'female',
+    englishSentence: 'Did Clara approve the document?',
+    japaneseSentence: 'クララはその書類を承認しましたか？',
+    englishReply: 'Yes, she signed it this morning.',
+    japaneseReply: 'はい、今朝署名されました。',
+    scenePrompt: '部長が次の会議前に秘書へ確認している。テーブルの上には資料が並ぶ。',
+    senderVoiceInstruction: '事務的で落ち着いたトーンで。',
+    receiverVoiceInstruction: '丁寧に報告するトーンで。',
+    incorrectOptions: [
+      'クララはその書類を破棄しましたか？', // 真逆
+      'ちなみにメアリーが承認しましたか？', // 誤情報
+      'クララは書類を食べましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '病院のナースステーション',
+    senderRole: '医師',
+    senderVoice: 'male',
+    receiverRole: '看護師',
+    receiverVoice: 'female',
+    englishSentence: 'Is Dr. White on duty today?',
+    japaneseSentence: 'ホワイト先生は今日勤務されていますか？',
+    englishReply: 'Yes, he’s in Room 3 now.',
+    japaneseReply: 'はい、今3号室にいらっしゃいます。',
+    scenePrompt:
+      '病棟のナースステーション。医師が当直医の所在を確認している。背後ではモニター音が響く。',
+    senderVoiceInstruction: '落ち着いた確認のトーンで。',
+    receiverVoiceInstruction: '明確で丁寧に答えるトーンで。',
+    incorrectOptions: [
+      'ホワイト先生は今日はお休みですか？', // 真逆
+      'ちなみにグリーン先生が勤務中ですか？', // 誤情報
+      'ホワイト先生は月で診察してますか？', // 馬鹿
+    ],
+  },
+  {
+    place: '会社の給湯室',
+    senderRole: '同僚',
+    senderVoice: 'female',
+    receiverRole: '同僚',
+    receiverVoice: 'male',
+    englishSentence: 'Did Zoe spill her coffee again?',
+    japaneseSentence: 'ゾーイ、またコーヒーこぼしたの？',
+    englishReply: 'Yeah, third time this week!',
+    japaneseReply: 'そう、今週で3回目だよ！',
+    scenePrompt: '給湯室で同僚たちが笑いながら雑談している。カップの横にはコーヒーの染み。',
+    senderVoiceInstruction: '少し呆れたように軽く言う。',
+    receiverVoiceInstruction: '冗談っぽく笑いながら答える。',
+    incorrectOptions: [
+      'ゾーイはまたお茶をこぼしたの？', // 誤情報
+      '彼女は今週一度もこぼしてないの？', // 真逆
+      'ゾーイはコーヒーで泳いだの？', // 馬鹿
+    ],
+  },
+  {
+    place: '映画館のロビー',
+    senderRole: '友人',
+    senderVoice: 'male',
+    receiverRole: '友人',
+    receiverVoice: 'female',
+    englishSentence: 'Is Ethan crying again?',
+    japaneseSentence: 'イーサン、また泣いてるの？',
+    englishReply: 'Yeah, same scene as last time.',
+    japaneseReply: 'うん、前と同じシーンで。',
+    scenePrompt: '映画が終わった直後のロビー。友人が感動して涙を拭っている。',
+    senderVoiceInstruction: '冗談まじりでやや呆れ気味に。',
+    receiverVoiceInstruction: 'くすっと笑うトーンで。',
+    incorrectOptions: [
+      'イーサンは笑ってるの？', // 真逆
+      'ところでリアムが泣いてるの？', // 誤情報
+      'イーサンは涙で泳いでるの？', // 馬鹿
+    ],
+  },
+  {
+    place: 'レストランのテーブル席',
+    senderRole: '恋人',
+    senderVoice: 'female',
+    receiverRole: '恋人',
+    receiverVoice: 'male',
+    englishSentence: 'Has Chloe finished her meal?',
+    japaneseSentence: 'クロエはもう食べ終わったの？',
+    englishReply: 'Not yet, she’s still enjoying it.',
+    japaneseReply: 'まだ、ゆっくり味わってるよ。',
+    scenePrompt: '夕食デート中のテーブル。恋人が笑顔で話している。食後のワインが並ぶ。',
+    senderVoiceInstruction: '柔らかく、優しい口調で。',
+    receiverVoiceInstruction: '穏やかに微笑むようなトーンで。',
+    incorrectOptions: [
+      'クロエはもう帰ったの？', // 真逆
+      'ちなみにミアが食べ終わったの？', // 誤情報
+      'クロエは皿を食べたの？', // 馬鹿
+    ],
+  },
+  {
+    place: 'オフィスの会議室',
+    senderRole: 'マネージャー',
+    senderVoice: 'female',
+    receiverRole: '部下',
+    receiverVoice: 'male',
+    englishSentence: 'Did Ryan send the report?',
+    japaneseSentence: 'ライアンは報告書を送った？',
+    englishReply: 'Yes, about ten minutes ago.',
+    japaneseReply: 'はい、10分ほど前に送りました。',
+    scenePrompt:
+      '会議前の確認シーン。マネージャーが部下に資料提出状況を尋ねている。ノートPCが開かれている。',
+    senderVoiceInstruction: '落ち着いて確認するトーンで。',
+    receiverVoiceInstruction: '事務的に正確に答えるトーンで。',
+    incorrectOptions: [
+      'ライアンはまだ送ってませんか？', // 誤情報
+      '彼は報告書を削除しましたか？', // 真逆
+      'ライアンは鳩で送りましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '商談中のカフェ',
+    senderRole: '営業担当',
+    senderVoice: 'male',
+    receiverRole: 'クライアント',
+    receiverVoice: 'female',
+    englishSentence: 'Is Anna joining this project?',
+    japaneseSentence: 'アナはこのプロジェクトに参加するんですか？',
+    englishReply: 'Yes, she starts next week.',
+    japaneseReply: 'はい、来週から参加します。',
+    scenePrompt:
+      'カフェのテーブルで商談中。営業担当がチーム構成を説明している。温かいコーヒーの湯気が立つ。',
+    senderVoiceInstruction: '丁寧で控えめな確認のトーンで。',
+    receiverVoiceInstruction: '安心して答えるトーンで。',
+    incorrectOptions: [
+      'アナはこの仕事を断りましたか？', // 真逆
+      'ところでエマが参加するんですか？', // 誤情報
+      'アナは犬として参加するんですか？', // 馬鹿
+    ],
+  },
+  {
+    place: '建設現場',
+    senderRole: '現場監督',
+    senderVoice: 'male',
+    receiverRole: '作業員',
+    receiverVoice: 'female',
+    englishSentence: 'Has Tom checked the safety gear?',
+    japaneseSentence: 'トムは安全装備を確認した？',
+    englishReply: 'Yes, everything’s in place now.',
+    japaneseReply: 'はい、すべて問題ありません。',
+    scenePrompt: '建設現場で監督が安全確認を行っている。作業音とヘルメットの音が響く。',
+    senderVoiceInstruction: '短く確認する口調で。',
+    receiverVoiceInstruction: '安心感のある報告トーンで。',
+    incorrectOptions: [
+      'トムはまだ確認してませんか？', // 誤情報
+      '彼は安全装備を壊しましたか？', // 真逆
+      'トムは装備を食べましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: 'カフェのテラス席',
+    senderRole: '友人',
+    senderVoice: 'female',
+    receiverRole: '友人',
+    receiverVoice: 'male',
+    englishSentence: 'Is Lily coming tonight?',
+    japaneseSentence: 'リリーは今夜来るの？',
+    englishReply: 'Yeah, she texted me earlier.',
+    japaneseReply: 'うん、さっき連絡あったよ。',
+    scenePrompt: '夕暮れのカフェテラス。友人同士が次の集まりの話をしている。',
+    senderVoiceInstruction: '軽く会話するように。',
+    receiverVoiceInstruction: '気楽に返すトーンで。',
+    incorrectOptions: [
+      'リリーはもう来ましたか？', // 誤情報
+      '彼女は今夜来ないの？', // 真逆
+      'リリーは月から来るの？', // 馬鹿
+    ],
+  },
+  {
+    place: '大学のキャンパス',
+    senderRole: '学生',
+    senderVoice: 'male',
+    receiverRole: '友人',
+    receiverVoice: 'female',
+    englishSentence: 'Did Ben pass the exam?',
+    japaneseSentence: 'ベンは試験に受かった？',
+    englishReply: 'He did, just barely though.',
+    japaneseReply: '受かったよ、ギリギリだけどね。',
+    scenePrompt: 'キャンパス内のベンチで学生同士が試験結果を話している。春の午後の光が差し込む。',
+    senderVoiceInstruction: '軽く世間話をするトーンで。',
+    receiverVoiceInstruction: '笑い交じりに答えるトーンで。',
+    incorrectOptions: [
+      'ベンは試験を受けなかった？', // 真逆
+      'ところでトムは合格した？', // 誤情報
+      'ベンは試験を食べた？', // 馬鹿
+    ],
+  },
+  {
+    place: '公園のベンチ',
+    senderRole: '近所の人',
+    senderVoice: 'female',
+    receiverRole: '男性',
+    receiverVoice: 'male',
+    englishSentence: 'Has Mia moved already?',
+    japaneseSentence: 'ミアはもう引っ越したの？',
+    englishReply: 'Yes, last weekend actually.',
+    japaneseReply: 'うん、先週末にね。',
+    scenePrompt: '穏やかな昼下がりの公園。近所の住民同士が最近の出来事を話している。',
+    senderVoiceInstruction: '柔らかい世間話のトーンで。',
+    receiverVoiceInstruction: '懐かしむように答えるトーンで。',
+    incorrectOptions: [
+      'ミアはまだ荷造り中？', // 誤情報
+      '彼女は引っ越しをやめたの？', // 真逆
+      'ミアは月に引っ越したの？', // 馬鹿
+    ],
+  },
+  {
+    place: '会社の廊下',
+    senderRole: '上司',
+    senderVoice: 'male',
+    receiverRole: '部下',
+    receiverVoice: 'female',
+    englishSentence: 'Is Jake on the call?',
+    japaneseSentence: 'ジェイクは会議に出てる？',
+    englishReply: 'Yes, he joined a minute ago.',
+    japaneseReply: 'はい、さっき参加しました。',
+    scenePrompt: 'オフィスの廊下で上司が部下に確認する。会議室のドアの向こうから声が聞こえる。',
+    senderVoiceInstruction: '短く確認するように。',
+    receiverVoiceInstruction: '明るく即答するトーンで。',
+    incorrectOptions: [
+      'ジェイクはまだ休憩中ですか？', // 誤情報
+      '彼は会議を欠席しましたか？', // 真逆
+      'ジェイクは鳥会議に出てますか？', // 馬鹿
+    ],
+  },
+  {
+    place: '学校の図書室',
+    senderRole: '司書',
+    senderVoice: 'female',
+    receiverRole: '学生',
+    receiverVoice: 'male',
+    englishSentence: 'Did Emma return her book?',
+    japaneseSentence: 'エマは本を返しましたか？',
+    englishReply: 'Yes, just this morning.',
+    japaneseReply: 'はい、今朝返しました。',
+    scenePrompt: '静かな図書室。司書が貸出記録を見ながら学生に確認している。',
+    senderVoiceInstruction: '穏やかに確認するトーンで。',
+    receiverVoiceInstruction: '落ち着いて答えるトーンで。',
+    incorrectOptions: [
+      'エマはまだ借りてますか？', // 誤情報
+      '彼女は本をなくしましたか？', // 真逆
+      'エマは本を食べましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '音楽スタジオ',
+    senderRole: '音響スタッフ',
+    senderVoice: 'male',
+    receiverRole: '歌手',
+    receiverVoice: 'female',
+    englishSentence: 'Has Noah finished recording?',
+    japaneseSentence: 'ノアは録音を終えた？',
+    englishReply: 'Almost, one track left.',
+    japaneseReply: 'ほぼです、あと一曲です。',
+    scenePrompt: 'レコーディングスタジオ。スタッフがブース越しに歌手へ進行状況を伝える。',
+    senderVoiceInstruction: '冷静に確認する口調で。',
+    receiverVoiceInstruction: '軽く息を整えながら答えるトーンで。',
+    incorrectOptions: [
+      'ノアはまだ休憩中ですか？', // 誤情報
+      '彼は録音を放棄しましたか？', // 真逆
+      'ノアはマイクを食べましたか？', // 馬鹿
+    ],
+  },
+
+  {
+    place: '出版社の受付',
+    senderRole: '編集者',
+    senderVoice: 'female',
+    receiverRole: '来客',
+    receiverVoice: 'male',
+    englishSentence: 'Has Mr. Brown arrived for the meeting?',
+    japaneseSentence: 'ブラウンさんは会議にもう来られましたか？',
+    englishReply: 'Yes, he’s waiting in the lobby.',
+    japaneseReply: 'はい、ロビーでお待ちです。',
+    scenePrompt: '出版社の受付前。編集者が来客の到着を確認している。廊下の奥に会議室が見える。',
+    senderVoiceInstruction: '礼儀正しく、確認するようなトーンで。',
+    receiverVoiceInstruction: '丁寧に、穏やかに答える。',
+    incorrectOptions: [
+      'ブラウンさんはまだ家にいますか？', // 誤情報
+      '彼は会議をキャンセルしましたか？', // 真逆
+      'ブラウンさんは空を飛びましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: 'レストランのキッチン',
+    senderRole: 'シェフ',
+    senderVoice: 'male',
+    receiverRole: '副料理長',
+    receiverVoice: 'female',
+    englishSentence: 'Did Emma finish plating the desserts?',
+    japaneseSentence: 'エマはデザートの盛り付けを終えたか？',
+    englishReply: 'Almost, she’s doing the last plate now.',
+    japaneseReply: 'ほぼです、今最後の皿を仕上げています。',
+    scenePrompt:
+      '忙しいディナータイムの厨房。シェフが進行状況を確認している。皿の上にチョコレートソースがかかる音がする。',
+    senderVoiceInstruction: '焦り気味だが冷静を保つトーンで。',
+    receiverVoiceInstruction: '手を動かしながら短く返す調子で。',
+    incorrectOptions: [
+      'エマはまだ仕込み中ですか？', // 誤情報
+      '彼女は盛り付けを全部やめましたか？', // 真逆
+      'エマは皿を食べましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '高校の職員室',
+    senderRole: '教師',
+    senderVoice: 'female',
+    receiverRole: '同僚教師',
+    receiverVoice: 'male',
+    englishSentence: 'Is Sarah attending the meeting today?',
+    japaneseSentence: 'サラ先生は今日の会議に出席しますか？',
+    englishReply: 'Yes, she confirmed it this morning.',
+    japaneseReply: 'はい、今朝出席すると連絡がありました。',
+    scenePrompt:
+      '放課後の職員室。先生たちが会議の予定を確認している。机の上にはプリントとコーヒー。',
+    senderVoiceInstruction: '確認するような落ち着いたトーンで。',
+    receiverVoiceInstruction: '事実を穏やかに伝えるトーンで。',
+    incorrectOptions: [
+      'サラ先生は今日休暇ですか？', // 誤情報
+      '彼女は会議を欠席しますか？', // 真逆
+      'サラ先生は宇宙で授業してますか？', // 馬鹿
+    ],
+  },
+  {
+    place: '病院の受付',
+    senderRole: '看護師',
+    senderVoice: 'female',
+    receiverRole: '患者',
+    receiverVoice: 'male',
+    englishSentence: 'Mr. Harris canceled his appointment today.',
+    japaneseSentence: 'ハリスさんは今日の予約をキャンセルされました。',
+    englishReply: 'I see, thanks for letting me know.',
+    japaneseReply: 'わかりました、お知らせありがとうございます。',
+    scenePrompt: '病院の受付で看護師が患者に他の予約状況を伝えている。待合室には数人が座っている。',
+    senderVoiceInstruction: '丁寧で落ち着いたトーンで話す。',
+    receiverVoiceInstruction: '穏やかに理解を示すトーンで話す。',
+    incorrectOptions: [
+      'ハリスさんは今日の予約を変更されました。', // 誤情報
+      '実はハリスさんは予約を2倍にしました。', // 馬鹿
+      'ハリスさんは今日の予約を追加されました。', // 真逆
+    ],
+  },
+  {
+    place: '会社の休憩室',
+    senderRole: '同僚',
+    senderVoice: 'male',
+    receiverRole: '同僚',
+    receiverVoice: 'female',
+    englishSentence: 'Olivia got promoted last week.',
+    japaneseSentence: 'オリビアは先週昇進したんだよ。',
+    englishReply: 'Wow, she totally deserves it!',
+    japaneseReply: 'すごい、彼女なら当然ですね！',
+    scenePrompt: '昼休みの休憩室。コーヒー片手に同僚同士が雑談している。軽い驚きと称賛の雰囲気。',
+    senderVoiceInstruction: '嬉しそうに話すカジュアルなトーンで。',
+    receiverVoiceInstruction: '明るく驚いた調子で返す。',
+    incorrectOptions: [
+      'オリビアは先週解雇されたんだよ。', // 真逆
+      'ちなみにイーサンが昇進したんだよ。', // 誤情報
+      'オリビアは猫に昇進したんだよ。', // 馬鹿
+    ],
+  },
+  {
+    place: '大学のキャンパスカフェ',
+    senderRole: '学生',
+    senderVoice: 'female',
+    receiverRole: '友人',
+    receiverVoice: 'male',
+    englishSentence: 'Noah dropped out last semester.',
+    japaneseSentence: 'ノアは前の学期で退学したの。',
+    englishReply: 'Really? I thought he was doing fine.',
+    japaneseReply: '本当に？順調だと思ってたよ。',
+    scenePrompt: 'キャンパスのカフェで学生同士が近況を話している。周囲には他の学生が談笑している。',
+    senderVoiceInstruction: '少し驚きつつも淡々と伝えるトーンで。',
+    receiverVoiceInstruction: '信じられないという感じで驚くトーンで。',
+    incorrectOptions: [
+      'ノアは前の学期で卒業したの。', // 真逆
+      'ちなみにリアムが退学したの。', // 誤情報
+      'ノアはパン屋に転生したの。', // 馬鹿
+    ],
+  },
+
+  {
+    place: 'カフェのカウンター',
+    senderRole: 'バリスタ',
+    senderVoice: 'male',
+    receiverRole: '常連客',
+    receiverVoice: 'female',
+    englishSentence: 'Mark loves our new espresso blend.',
+    japaneseSentence: 'マークは新しいエスプレッソブレンドを気に入ってますよ。',
+    englishReply: 'Oh really? I should try it next time.',
+    japaneseReply: 'そうなんですか？今度飲んでみますね。',
+    scenePrompt:
+      '朝のカフェ。バリスタが常連客に新しいブレンドの評判を伝えている。店内はコーヒーの香りで満ちている。',
+    senderVoiceInstruction: 'フレンドリーで軽い調子で話す。',
+    receiverVoiceInstruction: '興味を持って柔らかく返す。',
+    incorrectOptions: [
+      'マークは新しいブレンドを嫌ってますよ。', // 真逆
+      'ちなみにエマは紅茶しか飲みませんよ。', // 誤情報
+      'マークはコーヒーに住んでますよ。', // 馬鹿
+    ],
+  },
+  {
+    place: '出版社のオフィス',
+    senderRole: '編集長',
+    senderVoice: 'female',
+    receiverRole: '編集者',
+    receiverVoice: 'male',
+    englishSentence: 'Lisa submitted the cover design today.',
+    japaneseSentence: 'リサが今日カバーデザインを提出しました。',
+    englishReply: 'Perfect, we can start printing then.',
+    japaneseReply: '良かったです、それなら印刷に入れますね。',
+    scenePrompt: '編集部で新刊の進行確認をしている場面。机に印刷見本やデザイン資料が広がっている。',
+    senderVoiceInstruction: '安心したような穏やかなトーンで。',
+    receiverVoiceInstruction: '実務的で冷静なトーンで。',
+    incorrectOptions: [
+      'リサはデザインを破って捨てました。', // 真逆
+      'ところでマイクが代わりに描きました。', // 誤情報
+      'リサは表紙に犬を貼りました。', // 馬鹿
+    ],
+  },
+  {
+    place: '大学の研究室',
+    senderRole: '教授',
+    senderVoice: 'male',
+    receiverRole: '助手',
+    receiverVoice: 'female',
+    englishSentence: 'Jacob found an error in our data.',
+    japaneseSentence: 'ジェイコブがデータのミスを見つけました。',
+    englishReply: 'Good catch, I’ll fix it right away.',
+    japaneseReply: '助かりました、すぐ修正します。',
+    scenePrompt: '研究室で教授が助手に報告している。ホワイトボードには数式とグラフが書かれている。',
+    senderVoiceInstruction: '少し驚いたような口調で。',
+    receiverVoiceInstruction: '感謝を込めて素早く答えるトーンで。',
+    incorrectOptions: [
+      'ジェイコブはデータをすべて消しました。', // 真逆
+      'ちなみにメアリーがグラフを修正しました。', // 誤情報
+      'ジェイコブはデータを食べました。', // 馬鹿
+    ],
+  },
+  {
+    place: 'テレビ局のスタジオ',
+    senderRole: 'ディレクター',
+    senderVoice: 'female',
+    receiverRole: 'アシスタント',
+    receiverVoice: 'male',
+    englishSentence: 'Is Daniel ready for the live broadcast?',
+    japaneseSentence: 'ダニエルは生放送の準備できてる？',
+    englishReply: 'Yes, he’s waiting by the camera.',
+    japaneseReply: 'はい、カメラの前で待機しています。',
+    scenePrompt:
+      'スタジオでディレクターがアシスタントに出演者の準備を確認する。照明がまぶしく、カウントダウンが始まっている。',
+    senderVoiceInstruction: '急ぎながらも冷静に確認するトーンで。',
+    receiverVoiceInstruction: '緊張を抑えつつ確実に答えるトーンで。',
+    incorrectOptions: [
+      'ダニエルはまだメイク中ですか？', // 誤情報
+      '彼は今日出演を拒否しましたか？', // 真逆
+      'ダニエルは放送を空でしますか？', // 馬鹿
+    ],
+  },
+  {
+    place: 'IT企業のオフィス',
+    senderRole: 'プロジェクトマネージャー',
+    senderVoice: 'male',
+    receiverRole: 'エンジニア',
+    receiverVoice: 'female',
+    englishSentence: 'Did Sophia finish the new module?',
+    japaneseSentence: 'ソフィアは新しいモジュールを完成させた？',
+    englishReply: 'Almost. She’s testing the final build now.',
+    japaneseReply: 'ほぼです。今最終ビルドをテスト中です。',
+    scenePrompt:
+      'オフィスでマネージャーが進捗確認をする。モニターにコードとグラフが表示されている。',
+    senderVoiceInstruction: '落ち着いた確認のトーンで。',
+    receiverVoiceInstruction: '冷静に報告する穏やかなトーンで。',
+    incorrectOptions: [
+      'ソフィアは開発を全部やめましたか？', // 真逆
+      '彼女は別のチームに移動しましたか？', // 誤情報
+      'ソフィアは猫にプログラムさせましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '空港のVIPラウンジ',
+    senderRole: 'スタッフ',
+    senderVoice: 'female',
+    receiverRole: '乗客',
+    receiverVoice: 'male',
+    englishSentence: 'Is Mr. Carter already boarding?',
+    japaneseSentence: 'カーター様はすでに搭乗されましたか？',
+    englishReply: 'Not yet, he’s still in the lounge.',
+    japaneseReply: 'まだです。ラウンジ内にいらっしゃいます。',
+    scenePrompt: '空港ラウンジでスタッフがVIP乗客の搭乗状況を確認する。窓の外に飛行機が見える。',
+    senderVoiceInstruction: '丁寧で落ち着いた確認のトーンで。',
+    receiverVoiceInstruction: '穏やかに、事実を伝えるトーンで。',
+    incorrectOptions: [
+      'カーター様はすでに離陸されましたか？', // 真逆
+      '彼はゲートでお土産を買っていますか？', // 誤情報
+      'カーター様は翼で飛びましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '映画撮影スタジオ',
+    senderRole: '監督',
+    senderVoice: 'male',
+    receiverRole: 'カメラマン',
+    receiverVoice: 'female',
+    englishSentence: 'Is Emma ready for the next scene?',
+    japaneseSentence: 'エマは次のシーンの準備できてる？',
+    englishReply: 'Yes, she’s on standby by the set.',
+    japaneseReply: 'はい、セットのそばで待機しています。',
+    scenePrompt:
+      '映画撮影現場で監督がエマの準備状況を確認する場面。ライトが当たり、クルーが慌ただしく動いている。',
+    senderVoiceInstruction: '短く確認する口調で、テンポよく。',
+    receiverVoiceInstruction: '冷静で確信を持って答えるトーンで。',
+    incorrectOptions: [
+      'エマはまだ衣装合わせ中ですか？', // 誤情報・疑問文
+      '彼女は今日撮影に来ませんか？', // 真逆・疑問文
+      'エマはドラゴンに変身しましたか？', // 馬鹿・疑問文
+    ],
+  },
+  {
+    place: '会社の会議室',
+    senderRole: 'マネージャー',
+    senderVoice: 'female',
+    receiverRole: '部下',
+    receiverVoice: 'male',
+    englishSentence: 'Did Mr. Lewis approve the budget?',
+    japaneseSentence: 'ルイスさんは予算を承認しましたか？',
+    englishReply: 'Not yet, he said he’ll review it tonight.',
+    japaneseReply: 'まだです。今夜確認すると言っていました。',
+    scenePrompt:
+      '会議前にマネージャーが部下に進捗を確認する場面。資料とノートPCがテーブルに広がっている。',
+    senderVoiceInstruction: '穏やかに、確認を取る口調で。',
+    receiverVoiceInstruction: '丁寧で落ち着いた報告のトーンで。',
+    incorrectOptions: [
+      'ルイスさんはすでに全額却下しましたか？', // 真逆
+      'その予算はマリアさんが承認しましたか？', // 誤情報
+      'ルイスさんは宝くじで解決しましたか？', // 馬鹿
+    ],
+  },
+  {
+    place: '音楽ホールの舞台袖',
+    senderRole: '指揮者',
+    senderVoice: 'male',
+    receiverRole: '演奏者',
+    receiverVoice: 'female',
+    englishSentence: 'Has Kevin tuned his violin yet?',
+    japaneseSentence: 'ケビンはもうバイオリンの調弦を済ませた？',
+    englishReply: 'Yes, he finished just a minute ago.',
+    japaneseReply: 'はい、ちょうどさっき終えました。',
+    scenePrompt:
+      '本番前の舞台裏で、指揮者が演奏者に仲間の準備状況を確認している。背景にはざわめきと楽器の音。',
+    senderVoiceInstruction: '控えめな声で確認するように。',
+    receiverVoiceInstruction: '軽く頷くような落ち着いたトーンで。',
+    incorrectOptions: [
+      'ケビンはまだ弦を探していますか？', // 誤情報
+      '彼は今日チューニングをやめましたか？', // 真逆
+      'ケビンはバイオリンを食べましたか？', // 馬鹿
+    ],
+  },
 ];
 
 export default problemData;
