@@ -1375,7 +1375,7 @@ function SceneDisplay({
 }) {
   if (imageUrl && !isHidden) {
     return (
-      <section className="grid place-items-center">
+      <section>
         <figure className="flex w-full justify-center">
           <SceneImage
             src={imageUrl}
