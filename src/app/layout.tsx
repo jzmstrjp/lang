@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { HEADER_PORTAL_ID } from '@/components/layout/header-portal-id';
 import { SettingsMenu } from '@/components/settings/settings-menu';
+import { ThemeColorUpdater } from '@/components/layout/theme-color-updater';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
@@ -57,13 +58,16 @@ export default function RootLayout({
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a3d5a" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-[var(--background)] text-[var(--text)] antialiased`}
       >
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+          <div className="ios-safe-top" aria-hidden="true" />
+          <ThemeColorUpdater />
           <header className="border-[var(--header-border)] lg:bg-transparent h-0">
             <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-1.5">
               <div className="flex flex-1 items-center gap-2">

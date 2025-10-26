@@ -5,6 +5,9 @@
   --background: #ffffff;
   --background-secondary: #f4f1ea;
 
+  /* セーフエリア用カラー */
+  --safe-top-color: #ffffff;
+
   --dialog-background: #ffffff;
 
   /* テキスト色 */
@@ -106,8 +109,11 @@
 
 [data-theme='dark'] {
   /* 背景色 */
-  --background: #00000040;
+  --background: #1a3d5a;
   --background-secondary: #1a5866;
+
+  /* セーフエリア用カラー */
+  --safe-top-color: #1a3d5a;
 
   --dialog-background: #1a5275;
 
@@ -209,4 +215,20 @@ button {
 
 button:disabled {
   cursor: not-allowed !important;
+}
+
+/* iOS Safe Area Top */
+@supports (padding: env(safe-area-inset-top)) {
+  .ios-safe-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background: var(--safe-top-color);
+    z-index: 9999;
+    pointer-events: none;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
 }
