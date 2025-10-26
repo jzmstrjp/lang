@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 
 type ModeSwitchesProps = {
   className?: string;
@@ -9,36 +10,26 @@ type ModeSwitchesProps = {
 const STORAGE_KEYS = {
   english: 'englishMode',
   noImage: 'noImageMode',
-  darkMode: 'darkMode',
 } as const;
 
 export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   const [isEnglishMode, setIsEnglishMode] = useState(false);
   const [isNoImageMode, setIsNoImageMode] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [hasEnglishInteraction, setHasEnglishInteraction] = useState(false);
   const [hasNoImageInteraction, setHasNoImageInteraction] = useState(false);
   const [hasDarkModeInteraction, setHasDarkModeInteraction] = useState(false);
 
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDarkMode = resolvedTheme === 'dark';
+
   useEffect(() => {
     const syncModes = () => {
       const savedEnglishMode = localStorage.getItem(STORAGE_KEYS.english);
       const savedNoImageMode = localStorage.getItem(STORAGE_KEYS.noImage);
-      const savedDarkMode = localStorage.getItem(STORAGE_KEYS.darkMode);
 
       setIsEnglishMode(savedEnglishMode === 'true');
       setIsNoImageMode(savedNoImageMode === 'true');
-      setIsDarkMode(savedDarkMode === 'true');
-
-      // ダークモードのテーマを適用
-      if (savedDarkMode === 'true') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1a3d5a');
-      } else {
-        document.documentElement.removeAttribute('data-theme');
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff');
-      }
     };
 
     syncModes();
@@ -89,18 +80,8 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   };
 
   const toggleDarkMode = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
     setHasDarkModeInteraction(true);
-    localStorage.setItem(STORAGE_KEYS.darkMode, next.toString());
-
-    // ダークモードのテーマを即座に適用
-    if (next) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-
+    setTheme(isDarkMode ? 'light' : 'dark');
     emitSettingChange();
   };
 

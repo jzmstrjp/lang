@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { ThemeProvider } from 'next-themes';
 import { HEADER_PORTAL_ID } from '@/components/layout/header-portal-id';
 import { SettingsMenu } from '@/components/settings/settings-menu';
 import { Analytics } from '@vercel/analytics/next';
@@ -58,46 +59,34 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                const savedDarkMode = localStorage.getItem('darkMode');
-                if (savedDarkMode === 'true') {
-                  document.documentElement.setAttribute('data-theme', 'dark');
-                  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1a3d5a');
-                }
-              })();
-            `,
-          }}
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-[var(--background)] text-[var(--text)] antialiased`}
-        suppressHydrationWarning
       >
-        <header className="border-[var(--header-border)] lg:bg-transparent h-0">
-          <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-1.5">
-            <div className="flex flex-1 items-center gap-2">
-              <Link
-                href="/"
-                className="text-lg font-bold tracking-wide text-[var(--text-black)] flex gap-2"
-              >
-                英語きわめ太郎
-                <span
-                  id={HEADER_PORTAL_ID}
-                  className="flex-1 truncate text-lg font-bold capitalize"
-                  aria-live="polite"
-                />
-              </Link>
+        <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+          <header className="border-[var(--header-border)] lg:bg-transparent h-0">
+            <div className="mx-auto flex h-12 sm:h-14 w-full items-center pl-4 pr-1.5">
+              <div className="flex flex-1 items-center gap-2">
+                <Link
+                  href="/"
+                  className="text-lg font-bold tracking-wide text-[var(--text-black)] flex gap-2"
+                >
+                  英語きわめ太郎
+                  <span
+                    id={HEADER_PORTAL_ID}
+                    className="flex-1 truncate text-lg font-bold capitalize"
+                    aria-live="polite"
+                  />
+                </Link>
+              </div>
+              <SettingsMenu />
             </div>
-            <SettingsMenu />
-          </div>
-        </header>
-        <main className="mx-auto max-w-3xl px-4 font-sans text-[var(--text)] sm:px-6 lg:max-w-4xl">
-          <div className="flex items-center justify-center min-h-[100dvh]">{children}</div>
-        </main>
-        <Analytics />
+          </header>
+          <main className="mx-auto max-w-3xl px-4 font-sans text-[var(--text)] sm:px-6 lg:max-w-4xl">
+            <div className="flex items-center justify-center min-h-[100dvh]">{children}</div>
+          </main>
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );
