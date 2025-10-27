@@ -114,18 +114,22 @@ ${problem.place}
 【登場人物】
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。端正な顔立ちをしている。
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。端正な顔立ちをしている。
+- 二人は向かい合っている。
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
+- まだ${receiverName}は描かないこと
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
+- ${senderName}は描かないこと
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
+- 二人は向かい合っているわけなので、カメラのアングルや背景もそのように描写すること。
 - 重要: セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
