@@ -988,7 +988,7 @@ function CorrectPhaseView({
         <button
           type="button"
           onClick={onNextProblem}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--secondary)] px-6 py-3 text-base font-semibold text-[var(--secondary-text)] shadow-lg shadow-[var(--secondary)]/40 enabled:hover:bg-[var(--secondary-hover)] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--secondary)] px-6 py-3 text-base font-semibold text-[var(--secondary-text)] shadow-lg shadow-[var(--secondary)]/40 enabled:hover:bg-[var(--secondary-hover)] disabled:opacity-30"
           disabled={isAudioBusy}
         >
           次の問題へ
@@ -1026,7 +1026,7 @@ function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
           disabled={isAudioBusy}
         >
           再挑戦
@@ -1106,7 +1106,7 @@ function QuizOptionsSection({
                   <button
                     type="button"
                     onClick={() => onSelectOption(index)}
-                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-50`}
+                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:opacity-40`}
                     disabled={isAudioBusy}
                   >
                     {option.text}
@@ -1143,7 +1143,7 @@ function QuizOptionsSection({
         <button
           type="button"
           onClick={onReplayAudio}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--primary)]/30 enabled:hover:bg-[var(--primary-hover)] disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--primary)]/30 enabled:hover:bg-[var(--primary-hover)] disabled:opacity-30"
           disabled={!phase.problem.audioEnUrl || isAudioBusy}
         >
           もう一度聞く
@@ -1215,7 +1215,7 @@ function AdminProblemActions({
             <button
               type="button"
               onClick={onRemoveImage}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
               この問題の画像を削除
             </button>
@@ -1225,7 +1225,7 @@ function AdminProblemActions({
               type="button"
               onClick={onRemoveAudioEn}
               disabled={!currentProblem.audioEnUrl}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
               英語音声を削除する
             </button>
@@ -1233,7 +1233,7 @@ function AdminProblemActions({
               type="button"
               onClick={onRemoveAudioEnReply}
               disabled={!currentProblem.audioEnReplyUrl}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en-reply)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en-reply)]/30 transition enabled:hover:bg-[var(--admin-audio-en-reply-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en-reply)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en-reply)]/30 transition enabled:hover:bg-[var(--admin-audio-en-reply-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
               英語返答音声を削除する
             </button>
@@ -1241,7 +1241,7 @@ function AdminProblemActions({
               type="button"
               onClick={onRemoveAudioJa}
               disabled={!currentProblem.audioJaUrl}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-ja)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-ja)]/30 transition enabled:hover:bg-[var(--admin-audio-ja-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-ja)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-ja)]/30 transition enabled:hover:bg-[var(--admin-audio-ja-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
               日本語返答音声を削除する
             </button>
@@ -1250,7 +1250,7 @@ function AdminProblemActions({
             type="button"
             onClick={onDeleteProblem}
             disabled={isDeletingProblem}
-            className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-30"
           >
             {isDeletingProblem ? '削除中…' : 'この問題自体を削除する'}
           </button>
@@ -1327,7 +1327,7 @@ function EditableIncorrectOption({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-text)] shadow enabled:hover:bg-[var(--primary-hover)] disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-text)] shadow enabled:hover:bg-[var(--primary-hover)] disabled:opacity-30"
           >
             {isSubmitting ? '更新中…' : '更新'}
           </button>
@@ -1338,7 +1338,7 @@ function EditableIncorrectOption({
               reset({ text: defaultValue });
             }}
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
           >
             キャンセル
           </button>
