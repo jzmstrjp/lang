@@ -1,3 +1,6 @@
+import type { Dirent } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
 import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
 import { generateImageBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
@@ -5,12 +8,58 @@ import type { VoiceGender } from '@/config/voice';
 import { countWords, type ProblemLength } from '@/config/problem';
 import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
+import type { SeedProblemData } from '@/types/problem';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
   type?: ProblemLength;
   withoutPicture?: boolean;
 };
+
+let cachedSeedProblems: SeedProblemData[] | null = null;
+
+/**
+ * problemData配下の全SeedProblemDataを動的に読み込む
+ */
+async function loadSeedProblems(): Promise<SeedProblemData[]> {
+  if (cachedSeedProblems) {
+    return cachedSeedProblems;
+  }
+
+  const problemDataDir = path.join(process.cwd(), 'problemData');
+
+  let entries: Dirent[];
+  try {
+    entries = await readdir(problemDataDir, { withFileTypes: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`problemDataディレクトリの読み込みに失敗しました: ${message}`);
+  }
+
+  const problemFiles = entries
+    .filter(
+      (entry) => entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts'),
+    )
+    .map((entry) => entry.name)
+    .sort();
+
+  if (problemFiles.length === 0) {
+    cachedSeedProblems = [];
+    return cachedSeedProblems;
+  }
+
+  const problemModuleArrays = await Promise.all(
+    problemFiles.map(async (file) => {
+      const moduleData = (await import(`../../problemData/${file.replace(/\.ts$/, '')}`)) as {
+        default?: SeedProblemData[];
+      };
+      return moduleData.default ?? [];
+    }),
+  );
+
+  cachedSeedProblems = problemModuleArrays.flat();
+  return cachedSeedProblems;
+}
 
 // Prismaの型を利用
 /**
@@ -38,9 +87,8 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
 async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
-  const [{ default: problem1 }] = await Promise.all([import('../../problemData/problem1')]);
-
-  const filteredProblems = [...problem1];
+  const seedProblems = await loadSeedProblems();
+  const filteredProblems = seedProblems;
 
   if (filteredProblems.length === 0) {
     throw new Error(
@@ -121,15 +169,15 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
-- まだ${receiverName}は描かないこと
+- まだ${receiverName}（${receiverGenderText}）は描かないこと
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
-- ${senderName}は描かないこと
+- もう${senderName}（${senderGenderText}）は描かないこと
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
-- 二人は向かい合っているわけなので、カメラのアングルや背景もそのように描写すること。
+- 二人は向かい合っているわけなので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
 - 重要: セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
@@ -145,7 +193,7 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 - 上下のコマの高さは正確に同じであること。
 
 【禁止事項】
-- 同じコマに、同じ人物を2回描画してはならない。
+- 同じコマの中で同じ人物を2回描画してはならない。
 `;
 }
 

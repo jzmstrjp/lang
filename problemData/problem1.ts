@@ -25,26 +25,26 @@ const problemData: SeedProblemData[] = [
   //     '新型ではなく旧式の敵機です。', // 現実的に誤り
   //   ],
   // },
-  {
-    place: 'システム開発会社のオフィス',
-    senderRole: '先輩エンジニア',
-    senderVoice: 'male',
-    receiverRole: '後輩エンジニア',
-    receiverVoice: 'female',
-    englishSentence: "Sorry, the internet's down again!",
-    japaneseSentence: 'ごめん、またインターネットが壊れてもうたんやけど！？',
-    englishReply: "Just run 'npm run dev' again. That should fix it.",
-    japaneseReply: '先輩、そんな時は npm run dev してください！',
-    scenePrompt:
-      '【1コマ目】先輩エンジニアがパソコンの前で焦りながら後輩に助けを求めている【2コマ目】後輩ような笑みを浮かべながら先輩に解決方法を教えている。',
-    senderVoiceInstruction: '焦った様子。',
-    receiverVoiceInstruction: '優しく助けてくれる様子。少し呆れている。',
-    incorrectOptions: [
-      'ワイがインターネットを発明したんやで！', // 真逆
-      'インターネットブラウザって何ですか？', // 馬鹿馬鹿しい
-      '今日は７時間も働いてもうた！クタクタや！', // 意味が異なる
-    ],
-  },
+  // {
+  //   place: 'システム開発会社のオフィス',
+  //   senderRole: '先輩エンジニア',
+  //   senderVoice: 'male',
+  //   receiverRole: '後輩エンジニア',
+  //   receiverVoice: 'female',
+  //   englishSentence: "Sorry, the internet's down again!",
+  //   japaneseSentence: 'ごめん、またインターネットが壊れてもうたんやけど！？',
+  //   englishReply: "Just run 'npm run dev' again. That should fix it.",
+  //   japaneseReply: '先輩、そんな時は npm run dev してください！',
+  //   scenePrompt:
+  //     '【1コマ目】先輩エンジニアがパソコンの前で焦りながら後輩に助けを求めている【2コマ目】後輩ような笑みを浮かべながら先輩に解決方法を教えている。',
+  //   senderVoiceInstruction: '焦った様子。',
+  //   receiverVoiceInstruction: '優しく助けてくれる様子。少し呆れている。',
+  //   incorrectOptions: [
+  //     'ワイがインターネットを発明したんやで！', // 真逆
+  //     'インターネットブラウザって何ですか？', // 馬鹿馬鹿しい
+  //     '今日は７時間も働いてもうた！クタクタや！', // 意味が異なる
+  //   ],
+  // },
 ];
 
 export default problemData;

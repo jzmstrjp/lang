@@ -171,7 +171,7 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
 2. japaneseSentence: 場面や役割も考えて、englishSentenceの日本語訳として自然か？日本人ならもっと別の言い方をするのでは？
 3. englishReply: その場面でその役割の人が、englishSentenceに対して本当にそんなセリフを返すか？もっと自然で適切な言い回しがあるのでは？
 4. japaneseReply: 場面や役割も考えて、englishReplyの日本語訳として自然か？日本人ならもっと別の言い方をするのでは？
-5. incorrectOptions: それぞれのセリフが、必ず異なる語から始まっているか？同じ語で始まる文は禁止です。
+5. incorrectOptions: それぞれのセリフが、必ず異なる語から始まっているか？同じ語で始まる文は禁止です。これまでの問題と同じ語で始まるincorrectOptionばかりではないか？それは正答が推測されてしまうので禁止です。
 
 指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。
         `,
