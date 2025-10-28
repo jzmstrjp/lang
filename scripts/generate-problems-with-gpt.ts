@@ -22,6 +22,29 @@ const openai = new OpenAI({
 const PROBLEMS_PER_ROUND = 3;
 const DEFAULT_TOTAL_PROBLEMS = 30;
 
+type TokenUsage = {
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
+};
+
+function logTokenUsage(usage: TokenUsage | undefined, context: string) {
+  if (!usage) {
+    console.log(`ℹ️ ${context}のトークン情報を取得できませんでした`);
+    return;
+  }
+
+  const {
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    total_tokens: totalTokens,
+  } = usage;
+
+  console.log(
+    `📊 ${context} トークン使用量: 入力 ${inputTokens ?? '-'} / 出力 ${outputTokens ?? '-'} / 合計 ${totalTokens ?? '-'}`,
+  );
+}
+
 /**
  * 配列から重複なしでランダムに要素を取得
  */
@@ -95,6 +118,7 @@ function getNextProblemNumber(): number {
  */
 async function generateProblemsWithHistory(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  context = 'OpenAIレスポンス',
 ): Promise<{ content: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> }> {
   try {
     const formattedMessages = messages.map((message) => ({
@@ -120,6 +144,8 @@ async function generateProblemsWithHistory(
       console.error('raw_response', JSON.stringify(response, null, 2));
       throw new Error('GPTからのレスポンスが空です');
     }
+
+    logTokenUsage(response.usage, context);
 
     // 会話履歴に追加
     const updatedMessages = [
@@ -156,7 +182,7 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
     const totalGenerated = i * PROBLEMS_PER_ROUND;
 
     console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の3問を生成中...' : 'さらに3問を生成中...'}`);
-    const generationResult = await generateProblemsWithHistory(messages);
+    const generationResult = await generateProblemsWithHistory(messages, `${i}回目の生成`);
     messages = generationResult.messages;
 
     const draftCode = extractTypeScriptCode(generationResult.content);
@@ -168,16 +194,16 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
       content: `以下の観点で批判的レビューをして、修正したJSONをください。
         
 1. englishSentence: その場面でその役割の人が、本当にそんなセリフを言うか？もっと自然で適切な言い回しがあるのでは？
-2. japaneseSentence: 場面や役割も考えて、englishSentenceの日本語訳として自然か？日本人ならもっと別の言い方をするのでは？
+2. japaneseSentence: 場面や役割も考えて、englishSentenceの日本語訳として自然か？翻訳として正しいか？日本語として不自然ではないか？
 3. englishReply: その場面でその役割の人が、englishSentenceに対して本当にそんなセリフを返すか？もっと自然で適切な言い回しがあるのでは？
-4. japaneseReply: 場面や役割も考えて、englishReplyの日本語訳として自然か？日本人ならもっと別の言い方をするのでは？
+4. japaneseReply: 場面や役割も考えて、englishReplyの日本語訳として自然か？翻訳として正しいか？日本語として不自然ではないか？
 5. incorrectOptions: それぞれのセリフが、必ず異なる語から始まっているか？同じ語で始まる文は禁止です。これまでの問題と同じ語で始まるincorrectOptionばかりではないか？それは正答が推測されてしまうので禁止です。
 
 指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。
         `,
     });
 
-    const reviewResult = await generateProblemsWithHistory(messages);
+    const reviewResult = await generateProblemsWithHistory(messages, `${i}回目のレビュー`);
     messages = reviewResult.messages;
 
     const reviewedCode = extractTypeScriptCode(reviewResult.content);
@@ -187,6 +213,14 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
     console.log(`✅ ${i}回目完了 (累計${totalGenerated}問)\n`);
 
     if (i < rounds) {
+      const initialUserMessage = messages[0];
+      const latestAssistantMessage = messages[messages.length - 1];
+
+      if (!initialUserMessage || !latestAssistantMessage) {
+        throw new Error('メッセージ履歴の整形に失敗しました');
+      }
+
+      messages = [initialUserMessage, latestAssistantMessage];
       messages.push({
         role: 'user',
         content: 'さらに3問お願いします。同じ条件と語彙リストを守ってください。',
