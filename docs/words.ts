@@ -1,17 +1,5 @@
 export const words = [
   // Business / Contracts
-  'breach of contract',
-  'buyout',
-  'collateral',
-  'comply with regulations',
-  'contingency plan',
-  'corporate governance',
-  'cost-effective',
-  'disclosure',
-  'dividend',
-  'due diligence',
-  'expenditure',
-  'fiduciary duty',
   'franchise',
   'liability',
   'merger and acquisition',
