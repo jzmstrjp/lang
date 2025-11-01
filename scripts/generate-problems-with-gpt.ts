@@ -9,7 +9,6 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 
-import { places } from '../docs/for-prompt/scenes';
 import { words } from '../docs/words';
 
 // 環境変数を読み込み
@@ -64,23 +63,6 @@ function logTokenUsage(usage: TokenUsage | undefined, context: string) {
   console.log(
     `📊 ${context} トークン使用量: 入力 ${inputTokens ?? '-'} / 出力 ${outputTokens ?? '-'} / 合計 ${totalTokens ?? '-'}`,
   );
-}
-
-/**
- * 配列から重複なしでランダムに要素を取得
- */
-function pickRandomUniqueItems<T>(source: T[], count: number): T[] {
-  if (count > source.length) {
-    throw new Error('ランダム抽出数が配列の要素数を超えています');
-  }
-
-  const shuffled = [...source];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled.slice(0, count);
 }
 
 /**
@@ -185,17 +167,14 @@ function createWordInstruction(
   }
 
   const header = isFirstRound
-    ? `${problemCount}問を生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceにちょうど1回だけ自然に組み込んでください。`
-    : `さらに${problemCount}問生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceにちょうど1回だけ自然に組み込んでください。`;
+    ? `${problemCount}問を生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceに自然に組み込んでください。`
+    : `さらに${problemCount}問生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceに自然に組み込んでください。`;
 
   const assignments = wordsForRound
     .map((word, index) => `${globalOffset + index + 1}問目: ${word}`)
     .join('\n');
 
-  const footer =
-    '指定語彙は対応するenglishSentenceにのみ1回使用し、それ以外の文では使わないでください。';
-
-  return `${header}\n${assignments}\n${footer}`;
+  return `${header}\n${assignments}`;
 }
 
 function createFormatRetryInstruction(errorMessage: string): string {
@@ -215,12 +194,6 @@ async function generateMultipleProblems(
   wordAssignments: readonly string[],
 ): Promise<string[]> {
   const allCodes: string[] = [];
-  let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    {
-      role: 'user',
-      content: initialPrompt,
-    },
-  ];
 
   for (let i = 1; i <= rounds; i++) {
     const isFirstRound = i === 1;
@@ -232,11 +205,6 @@ async function generateMultipleProblems(
       throw new Error('語彙割り当てが不足しています');
     }
 
-    messages.push({
-      role: 'user',
-      content: createWordInstruction(roundWords, roundStartIndex, isFirstRound),
-    });
-
     console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の3問を生成中...' : 'さらに3問を生成中...'}`);
     console.log('🗂️ 今回指定する語彙:');
     roundWords.forEach((word, index) => {
@@ -245,13 +213,23 @@ async function generateMultipleProblems(
 
     let generatedCodeForRound: string | null = null;
     let lastValidationError: Error | null = null;
+    const baseMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      {
+        role: 'user',
+        content: initialPrompt,
+      },
+      {
+        role: 'user',
+        content: createWordInstruction(roundWords, roundStartIndex, isFirstRound),
+      },
+    ];
+    let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [...baseMessages];
 
     for (let attempt = 1; attempt <= MAX_CODE_ATTEMPTS; attempt++) {
       const attemptLabel =
         attempt === 1 ? `${i}回目の生成` : `${i}回目の生成 (再試行${attempt - 1})`;
 
       const generationResult = await generateProblemsWithHistory(messages, attemptLabel);
-      messages = generationResult.messages;
 
       const candidateCode = extractTypeScriptCode(generationResult.content);
 
@@ -271,10 +249,20 @@ async function generateMultipleProblems(
           );
         }
 
-        messages.push({
-          role: 'user',
-          content: createFormatRetryInstruction(lastValidationError.message),
-        });
+        const latestAssistantMessage =
+          generationResult.messages[generationResult.messages.length - 1];
+        if (!latestAssistantMessage || latestAssistantMessage.role !== 'assistant') {
+          throw new Error('最新のアシスタントメッセージを取得できませんでした');
+        }
+
+        messages = [
+          ...baseMessages,
+          latestAssistantMessage,
+          {
+            role: 'user',
+            content: createFormatRetryInstruction(lastValidationError.message),
+          },
+        ];
       }
     }
 
@@ -287,15 +275,6 @@ async function generateMultipleProblems(
     console.log(`✅ ${i}回目完了 (累計${totalGenerated}問)\n`);
 
     if (i < rounds) {
-      const initialUserMessage = messages[0];
-      const latestAssistantMessage = messages[messages.length - 1];
-
-      if (!initialUserMessage || !latestAssistantMessage) {
-        throw new Error('メッセージ履歴の整形に失敗しました');
-      }
-
-      messages = [initialUserMessage, latestAssistantMessage];
-
       // API制限を考慮して少し待機
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -553,21 +532,7 @@ async function main() {
     // プロンプトを読み込み
     console.log('📖 プロンプトを読み込み中...');
     const prompt = loadPrompt();
-    const requiredPlaceCount = 3;
 
-    if (PROBLEMS_PER_ROUND < requiredPlaceCount) {
-      throw new Error(
-        'PROBLEMS_PER_ROUNDは少なくとも3である必要があります（最初の3問の場所指定のため）。',
-      );
-    }
-
-    const initialPlaces = pickRandomUniqueItems(places, requiredPlaceCount);
-    const placeInstructionLines = initialPlaces
-      .map((place, index) => `${index + 1}問目: ${place}`)
-      .join('\n');
-    const placeInstruction = `最初の3問のplaceは必ず次の場所を順番に設定してください。\n${placeInstructionLines}\n4問目以降のplaceは従来の条件を守りつつ自由に設定してください。`;
-
-    const promptWithPlaceInstruction = `${prompt.trim()}\n\n${placeInstruction}`;
     if (words.length < totalProblems) {
       throw new Error(
         `語彙リストの語数が不足しています（必要:${totalProblems}語 / 現在:${words.length}語）。`,
@@ -575,14 +540,10 @@ async function main() {
     }
 
     const wordAssignments = words.slice(0, totalProblems);
-    const initialPrompt = `${promptWithPlaceInstruction}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
+    const initialPrompt = `${prompt}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
     console.log('✅ プロンプト読み込み完了\n');
-    console.log('🎯 最初の3問で使用する場所:');
-    initialPlaces.forEach((place, index) => {
-      console.log(`  ${index + 1}問目: ${place}`);
-    });
+    console.log('📍 place設定方針:');
     console.log('');
-
     console.log('🧠 最初の3問で使用する語彙:');
     wordAssignments.slice(0, PROBLEMS_PER_ROUND).forEach((word, index) => {
       console.log(`  ${index + 1}問目: ${word}`);

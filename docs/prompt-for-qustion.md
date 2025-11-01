@@ -127,10 +127,10 @@ type SeedProblemData = {
    *
    * senderRoleの言いそうなセリフであること。receiverRoleのセリフではない。
    *
-   * japaneseSentenceが疑問文だった場合には、incorrectOptionsの各文も必ず疑問文にすること。
+   * japaneseSentenceが疑問文だった場合には、incorrectOptionsの各文も全て疑問文にすること。
    *
    * 問題ごとにランダムにさまざまな文章を生成してほしい。文頭の語もバラバラにすること。
-   * 3つの文の文頭は必ず違う語で始まること。
+   * incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
    * ただし「まずは」「ちなみに」「ところで」などを文頭に加えて誤魔化すような卑怯な生成はしないでください。
    *
    * 1つは馬鹿馬鹿しい文章にすること。問題ごとにさまざまな馬鹿馬鹿しい発想をすること。例:「当店で一番不人気な、とても苦いパフェはいかがですか？」「全て期限切れの食材で作ったパフェはいかがですか？本日限定ですよ！」
@@ -147,6 +147,7 @@ type SeedProblemData = {
 ## 重要
 
 - 多様な問題を作りたい。
+- incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 以下のプロパティには「コメントで書かれたルールを守れている根拠」をTypeScriptコメントとして書いてください。
   - englishSentence
   - japaneseSentence
