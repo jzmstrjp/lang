@@ -501,6 +501,53 @@ export default problemData;
 }
 
 /**
+ * 使用済み語彙をwords.tsから除外
+ */
+function removeUsedWordsFromWordList(wordsToRemove: readonly string[]): void {
+  if (wordsToRemove.length === 0) {
+    return;
+  }
+
+  const wordsPath = path.join(process.cwd(), 'docs', 'words.ts');
+
+  if (!fs.existsSync(wordsPath)) {
+    console.warn(`⚠️ 語彙ファイルが見つからないため削除をスキップします: ${wordsPath}`);
+    return;
+  }
+
+  const originalContent = fs.readFileSync(wordsPath, 'utf-8');
+  const lines = originalContent.split('\n');
+  const remainingWords = new Set(wordsToRemove);
+
+  const updatedLines = lines.filter((line) => {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^(['"])(.+)\1,\s*$/);
+    if (!match) {
+      return true;
+    }
+
+    const wordValue = match[2];
+    if (remainingWords.has(wordValue)) {
+      remainingWords.delete(wordValue);
+      return false;
+    }
+
+    return true;
+  });
+
+  if (remainingWords.size > 0) {
+    console.warn(
+      `⚠️ 次の語彙はwords.tsで見つからず削除できませんでした: ${Array.from(remainingWords).join(', ')}`,
+    );
+  }
+
+  const updatedContent = updatedLines.join('\n');
+  if (updatedContent !== originalContent) {
+    fs.writeFileSync(wordsPath, updatedContent, 'utf-8');
+  }
+}
+
+/**
  * メイン処理
  */
 async function main() {
@@ -564,6 +611,9 @@ async function main() {
     console.log('💾 ファイルを保存中...');
     const savedPath = saveProblemFile(allCodes, fileNumber, totalProblems);
     console.log(`✅ 保存完了: ${savedPath}\n`);
+    console.log('🧹 使用済み語彙をwords.tsから削除中...');
+    removeUsedWordsFromWordList(wordAssignments);
+    console.log('✅ 語彙リストを更新しました\n');
 
     console.log(`🎉 問題生成完了！${totalProblems}問を生成しました`);
 
