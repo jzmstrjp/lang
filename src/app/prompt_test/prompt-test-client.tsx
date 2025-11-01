@@ -148,15 +148,6 @@ export default function PromptTestClient() {
             </div>
           )}
 
-          {isPlaying && (
-            <div className="text-center py-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 border border-green-300 rounded-lg">
-                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-green-800 font-medium">🔊 音声再生中...</span>
-              </div>
-            </div>
-          )}
-
           {error && (
             <div className="bg-[var(--error)]/10 border border-[var(--error)] rounded-lg p-4 mb-4">
               <p className="text-[var(--error-dark)]">エラー: {error}</p>
