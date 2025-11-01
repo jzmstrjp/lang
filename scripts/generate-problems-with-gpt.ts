@@ -10,6 +10,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 import { places } from '../docs/for-prompt/scenes';
+import { words } from '../docs/words';
 
 // 環境変数を読み込み
 dotenv.config();
@@ -21,6 +22,26 @@ const openai = new OpenAI({
 
 const PROBLEMS_PER_ROUND = 3;
 const DEFAULT_TOTAL_PROBLEMS = 30;
+const MAX_CODE_ATTEMPTS = 3;
+
+const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
+1. TypeScriptのコードブロックで、SeedProblemDataの配列要素のみを${PROBLEMS_PER_ROUND}件出力してください。
+2. 各要素は { ... } 形式のオブジェクトで、末尾にカンマを付けてください。
+3. コードブロック内に配列リテラル以外の宣言（例: const, export, =, problemData）を含めないでください。ファイル全体やその他の定義を再掲しないでください。
+
+出力例:
+\`\`\`ts
+{
+  // 1問目
+},
+{
+  // 2問目
+},
+{
+  // 3問目
+},
+\`\`\`
+`;
 
 type TokenUsage = {
   input_tokens?: number;
@@ -73,19 +94,6 @@ function loadPrompt(): string {
   }
 
   return fs.readFileSync(promptPath, 'utf-8');
-}
-
-/**
- * words.mdに含まれる語彙リストを読み込む
- */
-function loadWordsList(): string {
-  const wordsPath = path.join(process.cwd(), 'docs', 'words.md');
-
-  if (!fs.existsSync(wordsPath)) {
-    throw new Error(`語彙リストが見つかりません: ${wordsPath}`);
-  }
-
-  return fs.readFileSync(wordsPath, 'utf-8');
 }
 
 /**
@@ -165,10 +173,47 @@ async function generateProblemsWithHistory(
   }
 }
 
+function createWordInstruction(
+  wordsForRound: readonly string[],
+  globalOffset: number,
+  isFirstRound: boolean,
+): string {
+  const problemCount = wordsForRound.length;
+
+  if (problemCount === 0) {
+    throw new Error('語彙割り当てが空です');
+  }
+
+  const header = isFirstRound
+    ? `${problemCount}問を生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceにちょうど1回だけ自然に組み込んでください。`
+    : `さらに${problemCount}問生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceにちょうど1回だけ自然に組み込んでください。`;
+
+  const assignments = wordsForRound
+    .map((word, index) => `${globalOffset + index + 1}問目: ${word}`)
+    .join('\n');
+
+  const footer =
+    '指定語彙は対応するenglishSentenceにのみ1回使用し、それ以外の文では使わないでください。';
+
+  return `${header}\n${assignments}\n${footer}`;
+}
+
+function createFormatRetryInstruction(errorMessage: string): string {
+  return [
+    '出力形式に問題があります。次のルールを守り、同じコードブロック形式で修正版を再出力してください。',
+    OUTPUT_FORMAT_INSTRUCTION,
+    `前回のエラー内容: ${errorMessage}`,
+  ].join('\n\n');
+}
+
 /**
- * 複数回のAPI呼び出しで問題を生成（3問ずつレビュー付き）
+ * 複数回のAPI呼び出しで問題を生成（3問ずつ）
  */
-async function generateMultipleProblems(initialPrompt: string, rounds: number): Promise<string[]> {
+async function generateMultipleProblems(
+  initialPrompt: string,
+  rounds: number,
+  wordAssignments: readonly string[],
+): Promise<string[]> {
   const allCodes: string[] = [];
   let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
     {
@@ -180,35 +225,64 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
   for (let i = 1; i <= rounds; i++) {
     const isFirstRound = i === 1;
     const totalGenerated = i * PROBLEMS_PER_ROUND;
+    const roundStartIndex = (i - 1) * PROBLEMS_PER_ROUND;
+    const roundWords = wordAssignments.slice(roundStartIndex, roundStartIndex + PROBLEMS_PER_ROUND);
 
-    console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の3問を生成中...' : 'さらに3問を生成中...'}`);
-    const generationResult = await generateProblemsWithHistory(messages, `${i}回目の生成`);
-    messages = generationResult.messages;
+    if (roundWords.length === 0) {
+      throw new Error('語彙割り当てが不足しています');
+    }
 
-    const draftCode = extractTypeScriptCode(generationResult.content);
-    validateGeneratedCode(draftCode);
-
-    console.log('🧐 レビュー依頼中...');
     messages.push({
       role: 'user',
-      content: `以下の観点で批判的レビューをして、修正したJSONをください。
-        
-1. englishSentence: その場面でその役割の人が、本当にそんなセリフを言うか？もっと自然で適切な言い回しがあるのでは？
-2. japaneseSentence: 場面や役割も考えて、englishSentenceの日本語訳として自然か？翻訳として正しいか？日本語として不自然ではないか？
-3. englishReply: その場面でその役割の人が、englishSentenceに対して本当にそんなセリフを返すか？もっと自然で適切な言い回しがあるのでは？
-4. japaneseReply: 場面や役割も考えて、englishReplyの日本語訳として自然か？翻訳として正しいか？日本語として不自然ではないか？
-5. incorrectOptions: それぞれのセリフが、必ず異なる語から始まっているか？同じ語で始まる文は禁止です。これまでの問題と同じ語で始まるincorrectOptionばかりではないか？それは正答が推測されてしまうので禁止です。
-
-指摘点を踏まえた最終稿を、TypeScriptのコードブロックで3問分の配列要素だけ返してください。
-        `,
+      content: createWordInstruction(roundWords, roundStartIndex, isFirstRound),
     });
 
-    const reviewResult = await generateProblemsWithHistory(messages, `${i}回目のレビュー`);
-    messages = reviewResult.messages;
+    console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の3問を生成中...' : 'さらに3問を生成中...'}`);
+    console.log('🗂️ 今回指定する語彙:');
+    roundWords.forEach((word, index) => {
+      console.log(`  ${roundStartIndex + index + 1}問目: ${word}`);
+    });
 
-    const reviewedCode = extractTypeScriptCode(reviewResult.content);
-    validateGeneratedCode(reviewedCode);
-    allCodes.push(reviewedCode);
+    let generatedCodeForRound: string | null = null;
+    let lastValidationError: Error | null = null;
+
+    for (let attempt = 1; attempt <= MAX_CODE_ATTEMPTS; attempt++) {
+      const attemptLabel =
+        attempt === 1 ? `${i}回目の生成` : `${i}回目の生成 (再試行${attempt - 1})`;
+
+      const generationResult = await generateProblemsWithHistory(messages, attemptLabel);
+      messages = generationResult.messages;
+
+      const candidateCode = extractTypeScriptCode(generationResult.content);
+
+      try {
+        validateGeneratedCode(candidateCode);
+        generatedCodeForRound = candidateCode;
+        break;
+      } catch (error) {
+        lastValidationError = error instanceof Error ? error : new Error(String(error));
+        console.warn(
+          `⚠️ ${attemptLabel}でフォーマット検証に失敗しました: ${lastValidationError.message}`,
+        );
+
+        if (attempt === MAX_CODE_ATTEMPTS) {
+          throw new Error(
+            `${attemptLabel}で有効なコードを取得できませんでした: ${lastValidationError.message}`,
+          );
+        }
+
+        messages.push({
+          role: 'user',
+          content: createFormatRetryInstruction(lastValidationError.message),
+        });
+      }
+    }
+
+    if (!generatedCodeForRound) {
+      throw lastValidationError ?? new Error('コード生成に失敗しました');
+    }
+
+    allCodes.push(generatedCodeForRound);
 
     console.log(`✅ ${i}回目完了 (累計${totalGenerated}問)\n`);
 
@@ -221,10 +295,6 @@ async function generateMultipleProblems(initialPrompt: string, rounds: number): 
       }
 
       messages = [initialUserMessage, latestAssistantMessage];
-      messages.push({
-        role: 'user',
-        content: 'さらに3問お願いします。同じ条件と語彙リストを守ってください。',
-      });
 
       // API制限を考慮して少し待機
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -253,12 +323,43 @@ function extractTypeScriptCode(response: string): string {
  * 生成されたコードを検証
  */
 function validateGeneratedCode(code: string): void {
-  // 基本的な構文チェック
-  if (!code.includes('{') || !code.includes('}')) {
-    throw new Error('生成されたコードが不正です（オブジェクト構造が見つかりません）');
+  const trimmed = code.trim();
+
+  if (!trimmed) {
+    throw new Error('コードブロックが空です');
   }
 
-  // 必須フィールドの存在確認
+  const lines = trimmed.split('\n');
+  const firstContentLine = lines.find((line) => !/^\s*(\/\/.*)?$/.test(line));
+
+  if (!firstContentLine) {
+    throw new Error('有効なデータ行が見つかりません');
+  }
+
+  if (!firstContentLine.trim().startsWith('{')) {
+    throw new Error('最初のオブジェクトが { で始まっていません');
+  }
+
+  const forbiddenLine = lines.find((line) => /^\s*(const|let|var|export)\b/.test(line));
+  if (forbiddenLine) {
+    throw new Error('配列要素以外の宣言が含まれています');
+  }
+
+  const lastContentLine = [...lines].reverse().find((line) => !/^\s*(\/\/.*)?$/.test(line));
+  if (!lastContentLine) {
+    throw new Error('有効なデータ行が見つかりません');
+  }
+
+  const trimmedLast = lastContentLine.trim();
+  if (!/^\},?(?:\s*\/\/.*)?$/.test(trimmedLast)) {
+    throw new Error('最後の行が } または }, で終わっていません');
+  }
+
+  const placeCount = (trimmed.match(/\bplace\s*:/g) ?? []).length;
+  if (placeCount !== PROBLEMS_PER_ROUND) {
+    throw new Error(`place フィールドの数が${PROBLEMS_PER_ROUND}件ではありません`);
+  }
+
   const requiredFields = [
     'place',
     'senderRole',
@@ -273,7 +374,7 @@ function validateGeneratedCode(code: string): void {
   ];
 
   for (const field of requiredFields) {
-    if (!code.includes(field)) {
+    if (!trimmed.includes(field)) {
       throw new Error(`生成されたコードに必須フィールド "${field}" が見つかりません`);
     }
   }
@@ -385,7 +486,9 @@ async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise
  * 複数のコードブロックを結合
  */
 function mergeProblemCodes(codes: string[]): string {
-  return codes.join(',\n');
+  // 各コードブロックの末尾のカンマと空白を削除してから結合
+  const trimmedCodes = codes.map((code) => code.trim().replace(/,\s*$/, ''));
+  return trimmedCodes.join(',\n');
 }
 
 /**
@@ -450,7 +553,6 @@ async function main() {
     // プロンプトを読み込み
     console.log('📖 プロンプトを読み込み中...');
     const prompt = loadPrompt();
-    const wordsList = loadWordsList();
     const requiredPlaceCount = 3;
 
     if (PROBLEMS_PER_ROUND < requiredPlaceCount) {
@@ -465,11 +567,25 @@ async function main() {
       .join('\n');
     const placeInstruction = `最初の3問のplaceは必ず次の場所を順番に設定してください。\n${placeInstructionLines}\n4問目以降のplaceは従来の条件を守りつつ自由に設定してください。`;
 
-    const promptWithWords = `${prompt.trim()}\n\n${placeInstruction}\n\n以下はdocs/words.mdに記載された重要な単語・熟語の一覧です。各問題で可能な限りこれらの語彙を活用してください:\n${wordsList}`;
+    const promptWithPlaceInstruction = `${prompt.trim()}\n\n${placeInstruction}`;
+    if (words.length < totalProblems) {
+      throw new Error(
+        `語彙リストの語数が不足しています（必要:${totalProblems}語 / 現在:${words.length}語）。`,
+      );
+    }
+
+    const wordAssignments = words.slice(0, totalProblems);
+    const initialPrompt = `${promptWithPlaceInstruction}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
     console.log('✅ プロンプト読み込み完了\n');
     console.log('🎯 最初の3問で使用する場所:');
     initialPlaces.forEach((place, index) => {
       console.log(`  ${index + 1}問目: ${place}`);
+    });
+    console.log('');
+
+    console.log('🧠 最初の3問で使用する語彙:');
+    wordAssignments.slice(0, PROBLEMS_PER_ROUND).forEach((word, index) => {
+      console.log(`  ${index + 1}問目: ${word}`);
     });
     console.log('');
 
@@ -479,7 +595,7 @@ async function main() {
 
     // 複数回APIを呼び出して問題を生成
     console.log('🔄 生成処理開始...\n');
-    const allCodes = await generateMultipleProblems(promptWithWords, rounds);
+    const allCodes = await generateMultipleProblems(initialPrompt, rounds, wordAssignments);
 
     console.log('✅ すべてのコード生成完了\n');
 

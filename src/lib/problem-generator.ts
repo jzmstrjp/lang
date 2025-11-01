@@ -162,9 +162,9 @@ ${problem.place}
 【登場人物】
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。端正な顔立ちをしている。
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。端正な顔立ちをしている。
-- 二人は向かい合っている。
 
 【ストーリー】
+- 二人が向かい合って会話をしている。
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【1コマ目】
@@ -177,7 +177,7 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
-- 二人は向かい合っているわけなので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
+- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
 - 重要: セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
