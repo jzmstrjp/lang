@@ -104,6 +104,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([]);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
+  const [isImprovingTranslation, setImprovingTranslation] = useState(false);
   const [isAdminModalOpen, setAdminModalOpen] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
@@ -472,6 +473,111 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     }
   };
 
+  const handleImproveTranslation = async () => {
+    if (isImprovingTranslation) {
+      return;
+    }
+
+    if (currentProblem?.isStatic) {
+      if (typeof window !== 'undefined') {
+        window.alert('静的な問題は変更できません。');
+      }
+      return;
+    }
+
+    const targetProblemId = currentProblem?.id;
+    const englishSentence = currentProblem?.englishSentence;
+    const japaneseSentence = currentProblem?.japaneseSentence;
+    const scenePrompt = currentProblem?.scenePrompt;
+
+    if (!targetProblemId || !englishSentence || !japaneseSentence) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    setImprovingTranslation(true);
+
+    try {
+      // AIで日本語訳を改善
+      const improveResponse = await fetch('/api/admin/problems/improve-translation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ englishSentence, japaneseSentence, scenePrompt }),
+      });
+
+      if (!improveResponse.ok) {
+        const data = await improveResponse.json().catch(() => null);
+        const message = data?.error ?? '日本語訳の改善に失敗しました。';
+        window.alert(message);
+        return;
+      }
+
+      const improveData = await improveResponse.json();
+      const newJapaneseSentence = improveData.improvedTranslation;
+
+      if (!newJapaneseSentence || typeof newJapaneseSentence !== 'string') {
+        window.alert('改善された日本語訳の取得に失敗しました。');
+        return;
+      }
+
+      // 確認ダイアログを表示
+      const confirmed = window.confirm(
+        `「${englishSentence}」の日本語訳を\n「${japaneseSentence}」から\n「${newJapaneseSentence}」に変更していいですか？`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // DBを更新
+      const updateResponse = await fetch('/api/admin/problems/update-translation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ problemId: targetProblemId, japaneseSentence: newJapaneseSentence }),
+      });
+
+      if (!updateResponse.ok) {
+        const data = await updateResponse.json().catch(() => null);
+        const message = data?.error ?? '日本語訳の更新に失敗しました。';
+        window.alert(message);
+        return;
+      }
+
+      // 成功したら状態を更新
+      setPhase((prevPhase) => {
+        const updatedProblem: ProblemWithStaticFlag = {
+          ...prevPhase.problem,
+          japaneseSentence: newJapaneseSentence,
+        };
+        return { ...prevPhase, problem: updatedProblem } as Phase;
+      });
+
+      setProblemQueue((prevQueue) =>
+        prevQueue.map((problem) =>
+          problem.id === targetProblemId
+            ? ({ ...problem, japaneseSentence: newJapaneseSentence } as ProblemWithStaticFlag)
+            : problem,
+        ),
+      );
+
+      window.alert('日本語訳を更新しました！');
+    } catch (error) {
+      console.error('[ProblemFlow] 日本語訳改善エラー:', error);
+      if (typeof window !== 'undefined') {
+        window.alert('日本語訳の改善中にエラーが発生しました。');
+      }
+    } finally {
+      setImprovingTranslation(false);
+    }
+  };
+
   const updateIncorrectOption = async (
     incorrectIndex: number,
     nextText: string,
@@ -752,11 +858,13 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
             sceneImage={sceneImage}
             currentProblem={currentProblem}
             isDeletingProblem={isDeletingProblem}
+            isImprovingTranslation={isImprovingTranslation}
             onRemoveImage={handleRemoveImage}
             onRemoveAudioEn={handleRemoveAudioEn}
             onRemoveAudioEnReply={handleRemoveAudioEnReply}
             onRemoveAudioJa={handleRemoveAudioJa}
             onDeleteProblem={handleDeleteProblem}
+            onImproveTranslation={handleImproveTranslation}
             isModalOpen={isAdminModalOpen}
             onClose={() => setAdminModalOpen(false)}
           />
@@ -1170,11 +1278,13 @@ type AdminProblemActionsProps = {
   sceneImage: string | null;
   currentProblem: ProblemWithStaticFlag;
   isDeletingProblem: boolean;
+  isImprovingTranslation: boolean;
   onRemoveImage: () => void;
   onRemoveAudioEn: () => void;
   onRemoveAudioEnReply: () => void;
   onRemoveAudioJa: () => void;
   onDeleteProblem: () => void;
+  onImproveTranslation: () => void;
   isModalOpen: boolean;
   onClose: () => void;
 };
@@ -1185,11 +1295,13 @@ function AdminProblemActions({
   sceneImage,
   currentProblem,
   isDeletingProblem,
+  isImprovingTranslation,
   onRemoveImage,
   onRemoveAudioEn,
   onRemoveAudioEnReply,
   onRemoveAudioJa,
   onDeleteProblem,
+  onImproveTranslation,
   isModalOpen,
   onClose,
 }: AdminProblemActionsProps) {
@@ -1217,9 +1329,17 @@ function AdminProblemActions({
               onClick={onRemoveImage}
               className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              この問題の画像を削除
+              画像を削除する
             </button>
           )}
+          <button
+            type="button"
+            onClick={onImproveTranslation}
+            disabled={isImprovingTranslation}
+            className="inline-flex w-full items-center justify-center rounded-full bg-yellow-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            {isImprovingTranslation ? '改善中…' : '日本語訳を改善する'}
+          </button>
           <div className="space-y-3">
             <button
               type="button"
@@ -1252,7 +1372,7 @@ function AdminProblemActions({
             disabled={isDeletingProblem}
             className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-30"
           >
-            {isDeletingProblem ? '削除中…' : 'この問題自体を削除する'}
+            {isDeletingProblem ? '削除中…' : '問題自体を削除する'}
           </button>
         </div>
         <div className="flex justify-center mt-20">
