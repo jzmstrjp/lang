@@ -788,13 +788,18 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         />
       )}
       {phase.kind === 'correct' && (
-        <CorrectPhaseView
-          phase={phase}
-          isOnStreak={isOnStreak}
-          length={length}
-          isAudioBusy={isAudioBusy}
-          onNextProblem={handleNextProblem}
-        />
+        <Suspense>
+          <CorrectPhaseView
+            phase={phase}
+            isOnStreak={isOnStreak}
+            length={length}
+            isAudioBusy={isAudioBusy}
+            onNextProblem={handleNextProblem}
+            isAdminPromise={isAdminPromise}
+            isStaticProblem={currentProblem.isStatic ?? false}
+            onOpenAdminModal={() => setAdminModalOpen(true)}
+          />
+        </Suspense>
       )}
       {phase.kind === 'incorrect' && (
         <IncorrectPhaseView phase={phase} isAudioBusy={isAudioBusy} onRetry={handleRetryQuiz} />
@@ -1039,6 +1044,9 @@ type CorrectPhaseViewProps = {
   length: ProblemLength;
   isAudioBusy: boolean;
   onNextProblem: () => void;
+  isAdminPromise: Promise<boolean>;
+  isStaticProblem: boolean;
+  onOpenAdminModal: () => void;
 };
 
 function CorrectPhaseView({
@@ -1047,8 +1055,13 @@ function CorrectPhaseView({
   length,
   isAudioBusy,
   onNextProblem,
+  isAdminPromise,
+  isStaticProblem,
+  onOpenAdminModal,
 }: CorrectPhaseViewProps) {
   const [imageVariant] = useState(() => Math.floor(Math.random() * 2) + 1);
+  const isAdmin = use(isAdminPromise);
+  const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
   return (
     <section className="grid text-center w-[500px] max-w-full mx-auto">
@@ -1102,6 +1115,17 @@ function CorrectPhaseView({
           次の問題へ
         </button>
       </div>
+      {canEditCurrentProblem && (
+        <div className="flex justify-center mt-10">
+          <button
+            type="button"
+            onClick={onOpenAdminModal}
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+          >
+            管理者向け機能
+          </button>
+        </div>
+      )}
     </section>
   );
 }
