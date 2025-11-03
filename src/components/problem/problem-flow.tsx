@@ -9,6 +9,7 @@ import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
+import { ExternalLink } from 'lucide-react';
 
 type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
 
@@ -1060,8 +1061,18 @@ function CorrectPhaseView({
   onOpenAdminModal,
 }: CorrectPhaseViewProps) {
   const [imageVariant] = useState(() => Math.floor(Math.random() * 2) + 1);
+  const [selectedText, setSelectedText] = useState('');
   const isAdmin = use(isAdminPromise);
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
+
+  const handleTextSelection = () =>
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const text = selection?.toString().trim() || '';
+      if (text) {
+        setSelectedText(text);
+      }
+    }, 300);
 
   return (
     <section className="grid text-center w-[500px] max-w-full mx-auto">
@@ -1100,9 +1111,26 @@ function CorrectPhaseView({
             </button>
           )}
         </div>
-        <p className="mt-4 text-2xl font-semibold text-[var(--text)]">
+        <p
+          className="mt-4 text-2xl font-semibold text-[var(--text)] select-text cursor-text"
+          onMouseUp={handleTextSelection}
+          onTouchEnd={handleTextSelection}
+        >
           {phase.problem.englishSentence}
         </p>
+        {selectedText && (
+          <div className="mt-3">
+            <a
+              href={`https://www.deepl.com/translator#en/ja/${encodeURIComponent(selectedText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1 rounded-full border border-[var(--border)] bg-[var(--background)] pl-3 pr-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+            >
+              「{selectedText}」を DeepL で翻訳する
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        )}
         <p className="mt-4 text-lg text-[var(--text)]">{phase.problem.japaneseSentence}</p>
       </div>
       <div className="">
