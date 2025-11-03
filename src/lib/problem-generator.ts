@@ -150,6 +150,7 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
   return `実写風の2コマ漫画を生成すること。
 上下に2コマです。
+上下のコマの高さは正確に同じであること。
 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現すること。
 
 【コマの高さ】
