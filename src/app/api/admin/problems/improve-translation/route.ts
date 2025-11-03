@@ -39,13 +39,13 @@ export async function POST(request: Request) {
 
     const prompt = `${scenePrompt ? `【文脈】${scenePrompt}` : ''}
 
-${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」を「${japaneseSentence}」と訳してみましたが、もっと自然で質の高い日本語訳を考えてください。
+${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」を日本語に翻訳してください。
 
-ただし、元の日本語訳と同程度の文字数で翻訳してください。少しくらいは短くても長くてもいいです。
+自然で質の高い日本語訳にしてください。
 
-カタカナ英語に訳すのは避けて下さい。
+単なるカタカナ英語にするような翻訳は避けて下さい。
 
-重要: 改善された日本語訳のテキストのみを出力してください。説明や解説は不要です。`;
+重要: 日本語訳のテキストのみを出力してください。説明や解説は不要です。`;
 
     const response = await openai.responses.create({
       model: 'gpt-4.1',
