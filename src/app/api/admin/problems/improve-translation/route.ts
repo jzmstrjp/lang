@@ -39,7 +39,9 @@ export async function POST(request: Request) {
 
     const prompt = `${scenePrompt ? `【文脈】${scenePrompt}` : ''}
 
-${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」を「${japaneseSentence}」と訳すのはイマイチなので、もっと良い日本語訳を考えてください。
+${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」を「${japaneseSentence}」と訳すのはイマイチなので、もっと自然で質の高い日本語訳を考えてください。
+
+元の日本語訳と同程度の文字数で翻訳してください。
 
 カタカナ英語に訳すのは避けて下さい。
 
