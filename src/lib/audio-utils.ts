@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 import { uploadAudioToR2 } from './r2-client';
 import {
   getVoiceFromGender,
-  getModelFromGender,
+  getModelFromGenderAndLanguage,
   TTS_CONFIG,
   type VoiceGender,
 } from '../config/voice';
@@ -37,13 +37,14 @@ function speakerToVoice(speaker: VoiceGender): string {
 export async function generateSpeech(
   input: string,
   speaker: VoiceGender,
+  language: 'en' | 'ja',
   instructions: string | null,
   role: string,
 ) {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
-  const model = getModelFromGender(speaker);
+  const model = getModelFromGenderAndLanguage(speaker, language);
 
   const result = await openai.audio.speech.create({
     model,
@@ -64,13 +65,14 @@ export async function generateSpeech(
 export async function generateSpeechBuffer(
   input: string,
   speaker: VoiceGender,
+  language: 'en' | 'ja',
   instructions: string | null,
   role: string,
 ): Promise<Buffer> {
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
-  const model = getModelFromGender(speaker);
+  const model = getModelFromGenderAndLanguage(speaker, language);
 
   const result = await openai.audio.speech.create({
     model,
@@ -95,6 +97,6 @@ export async function generateSpeechAndUploadToR2(
   instructions: string | null,
   role: string,
 ): Promise<string> {
-  const audioBuffer = await generateSpeechBuffer(input, speaker, instructions, role);
+  const audioBuffer = await generateSpeechBuffer(input, speaker, language, instructions, role);
   return uploadAudioToR2(audioBuffer, problemId, language, speaker);
 }

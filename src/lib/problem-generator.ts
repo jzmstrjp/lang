@@ -210,12 +210,14 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
     generateSpeech(
       problem.englishSentence,
       voiceTypeToVoiceGender(problem.senderVoice),
+      'en',
       problem.senderVoiceInstruction ?? null,
       problem.senderRole,
     ),
     generateSpeech(
       problem.japaneseReply,
       voiceTypeToVoiceGender(problem.receiverVoice),
+      'ja',
       problem.receiverVoiceInstruction ?? null,
       problem.receiverRole,
     ),
@@ -227,6 +229,7 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
       generateSpeech(
         problem.englishReply,
         voiceTypeToVoiceGender(problem.receiverVoice),
+        'en',
         problem.receiverVoiceInstruction ?? null,
         problem.receiverRole,
       ),
@@ -263,12 +266,14 @@ export async function generateAndUploadAudioAssets(
     generateSpeechBuffer(
       problem.englishSentence,
       voiceTypeToVoiceGender(problem.senderVoice),
+      'en',
       problem.senderVoiceInstruction ?? null,
       problem.senderRole,
     ),
     generateSpeechBuffer(
       problem.japaneseReply,
       voiceTypeToVoiceGender(problem.receiverVoice),
+      'ja',
       problem.receiverVoiceInstruction ?? null,
       problem.receiverRole,
     ),
@@ -280,6 +285,7 @@ export async function generateAndUploadAudioAssets(
       generateSpeechBuffer(
         problem.englishReply,
         voiceTypeToVoiceGender(problem.receiverVoice),
+        'en',
         problem.receiverVoiceInstruction ?? null,
         problem.receiverRole,
       ),

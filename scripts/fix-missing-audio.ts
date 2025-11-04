@@ -138,6 +138,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           const englishBuffer = await audioUtilsModule.generateSpeechBuffer(
             problem.englishSentence,
             senderVoiceGender,
+            'en',
             problem.senderVoiceInstruction ?? null,
             problem.senderRole,
           );
@@ -156,6 +157,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           const japaneseBuffer = await audioUtilsModule.generateSpeechBuffer(
             problem.japaneseReply,
             receiverVoiceGender,
+            'ja',
             problem.receiverVoiceInstruction ?? null,
             problem.receiverRole,
           );
@@ -176,6 +178,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           const englishReplyAudioBuffer = await audioUtilsModule.generateSpeechBuffer(
             problem.englishReply!,
             receiverVoiceGender,
+            'en',
             problem.receiverVoiceInstruction ?? null,
             problem.receiverRole,
           );

@@ -40,6 +40,15 @@ export function getVoiceFromGender(gender: VoiceGender): SpeechCreateParams['voi
   return VOICE_CONFIG[gender];
 }
 
-export function getModelFromGender(gender: VoiceGender): SpeechModel {
+/**
+ * 性別と言語からTTSモデルを取得
+ * 英語は高品質なtts-1-hdを使用、日本語は従来のgpt-4o-mini-ttsを使用
+ */
+export function getModelFromGenderAndLanguage(
+  gender: VoiceGender,
+  language: 'en' | 'ja',
+): SpeechModel {
+  // if (language === 'en') return 'tts-1-hd';
+
   return MODEL_CONFIG[gender];
 }
