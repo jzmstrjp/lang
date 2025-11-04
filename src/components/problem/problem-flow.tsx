@@ -752,6 +752,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           onStart={handleStart}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
+          scenePrompt={phase.problem.scenePrompt}
         />
       )}
       {phase.kind === 'scene-entry' && (
@@ -762,6 +763,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           onSceneReady={handleSceneImageLoad}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
+          scenePrompt={phase.problem.scenePrompt}
         />
       )}
       {phase.kind === 'scene-ready' && (
@@ -771,6 +773,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           isHidden={phase.setting.isImageHiddenMode}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
+          scenePrompt={phase.problem.scenePrompt}
         />
       )}
       {phase.kind === 'quiz' && (
@@ -906,6 +909,7 @@ type StartButtonClientViewProps = {
   onStart: () => void;
   sentence1?: string;
   sentence2?: string;
+  scenePrompt?: string | null;
 };
 
 function StartButtonClientView({
@@ -917,6 +921,7 @@ function StartButtonClientView({
   onStart,
   sentence1,
   sentence2,
+  scenePrompt,
 }: StartButtonClientViewProps) {
   return (
     <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
@@ -927,6 +932,7 @@ function StartButtonClientView({
         opacity="medium"
         sentence1={sentence1}
         sentence2={sentence2}
+        scenePrompt={scenePrompt}
         isBlurred
       />
       <div className="absolute inset-0 flex items-center justify-center">
@@ -945,6 +951,7 @@ type SceneEntryViewProps = {
   onSceneReady: () => void;
   sentence1?: string;
   sentence2?: string;
+  scenePrompt?: string | null;
 };
 
 function SceneEntryView({
@@ -954,6 +961,7 @@ function SceneEntryView({
   onSceneReady,
   sentence1,
   sentence2,
+  scenePrompt,
 }: SceneEntryViewProps) {
   return (
     <SceneDisplay
@@ -964,6 +972,7 @@ function SceneEntryView({
       onImageLoad={onSceneReady}
       sentence1={sentence1}
       sentence2={sentence2}
+      scenePrompt={scenePrompt}
     />
   );
 }
@@ -974,6 +983,7 @@ type SceneReadyViewProps = {
   isHidden: boolean;
   sentence1?: string;
   sentence2?: string;
+  scenePrompt?: string | null;
 };
 
 function SceneReadyView({
@@ -982,6 +992,7 @@ function SceneReadyView({
   isHidden,
   sentence1,
   sentence2,
+  scenePrompt,
 }: SceneReadyViewProps) {
   return (
     <SceneDisplay
@@ -991,6 +1002,7 @@ function SceneReadyView({
       opacity="full"
       sentence1={sentence1}
       sentence2={sentence2}
+      scenePrompt={scenePrompt}
     />
   );
 }
@@ -1534,6 +1546,7 @@ function SceneDisplay({
   onImageLoad,
   sentence1,
   sentence2,
+  scenePrompt,
   isBlurred = false,
 }: {
   imageUrl: string | null;
@@ -1543,6 +1556,7 @@ function SceneDisplay({
   onImageLoad?: () => void;
   sentence1?: string;
   sentence2?: string;
+  scenePrompt?: string | null;
   isBlurred?: boolean;
 }) {
   if (imageUrl && !isHidden) {
@@ -1551,7 +1565,7 @@ function SceneDisplay({
         <figure className="flex w-full justify-center">
           <SceneImage
             src={imageUrl}
-            alt="英語と日本語のセリフを並べた2コマシーン"
+            alt={scenePrompt ?? '英語と日本語のセリフを並べた2コマシーン'}
             opacity={opacity}
             onLoad={onImageLoad}
             sentence1={sentence1}
