@@ -1112,14 +1112,14 @@ function CorrectPhaseView({
           )}
         </div>
         <p
-          className="mt-4 text-2xl font-semibold text-[var(--text)] select-text cursor-text"
+          className="p-4 text-2xl font-semibold text-[var(--text)] select-text cursor-text"
           onMouseUp={handleTextSelection}
           onTouchEnd={handleTextSelection}
         >
           {phase.problem.englishSentence}
         </p>
         {selectedText && (
-          <div className="mt-3">
+          <div className="mb-4">
             <a
               href={`https://www.deepl.com/translator#en/ja/${encodeURIComponent(selectedText)}`}
               target="_blank"
@@ -1131,7 +1131,7 @@ function CorrectPhaseView({
             </a>
           </div>
         )}
-        <p className="mt-4 text-lg text-[var(--text)]">{phase.problem.japaneseSentence}</p>
+        <p className="text-lg text-[var(--text)]">{phase.problem.japaneseSentence}</p>
       </div>
       <div className="">
         <button
