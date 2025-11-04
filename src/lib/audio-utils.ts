@@ -24,6 +24,10 @@ function ensureApiKey() {
   }
 }
 
+function buildInstructions(instructions: string | null, role: string): string {
+  return `${instructions ? instructions + '。' : ''}この人は${role}です。${role}らしい口調で話してください。`;
+}
+
 // 音声設定は src/config/voice.ts で一元管理されるようになりました
 // この関数は後方互換性のために残していますが、新しいコードでは getVoiceFromGender を使用してください
 function speakerToVoice(speaker: VoiceGender): string {
@@ -46,9 +50,7 @@ export async function generateSpeech(
     voice,
     input,
     speed: TTS_CONFIG.speed,
-    ...(instructions
-      ? { instructions: `${instructions}。${role}っぽく話してください。` }
-      : { instructions: `${role}っぽく話してください。` }),
+    instructions: buildInstructions(instructions, role),
   });
 
   const arrayBuffer = await result.arrayBuffer();
@@ -75,9 +77,7 @@ export async function generateSpeechBuffer(
     voice,
     input,
     speed: TTS_CONFIG.speed,
-    ...(instructions
-      ? { instructions: `${instructions}。${role}っぽく話してください。` }
-      : { instructions: `${role}っぽく話してください。` }),
+    instructions: buildInstructions(instructions, role),
   });
 
   const arrayBuffer = await result.arrayBuffer();
