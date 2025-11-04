@@ -58,6 +58,9 @@ export default function RootLayout({
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        {/* 動的更新用: メディアクエリなし（ThemeColorUpdaterで更新） */}
+        <meta name="theme-color" content="#ffffff" />
+        {/* システム設定フォールバック用: メディアクエリ付き */}
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a3d5a" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
