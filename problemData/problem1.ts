@@ -56,7 +56,7 @@ const problemData: SeedProblemData[] = [
     englishReply: 'Then I’ll try running while using it!',
     japaneseReply: 'ほな、走りスマホにするわ！',
     scenePrompt:
-      '【1コマ目】道で妻が真剣な顔で夫に注意している【2コマ目】夫が笑顔でスマホを見ながら走っている。',
+      '【1コマ目】道で妻が真剣な顔で夫に注意している【2コマ目】夫が笑顔でスマホを見ながら勢いよく走り出す。',
     senderVoiceInstruction: 'やや呆れたトーンで注意する様子。',
     receiverVoiceInstruction: '軽い冗談を言うように楽しげな声。',
     incorrectOptions: [
