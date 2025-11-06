@@ -138,6 +138,12 @@ const receiverNameMap: Record<VoiceType, string> = {
   female: 'アカリ',
 };
 
+const senderFaceDirectionMap = [
+  ['真正面', '真正面'],
+  ['右側', '左側'],
+  ['左側', '右側'],
+];
+
 /**
  * 画像プロンプトを生成
  */
@@ -147,6 +153,9 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
   const senderName = senderNameMap[problem.senderVoice];
   const receiverName = receiverNameMap[problem.receiverVoice];
+
+  const [senderFaceDirection, receiverFaceDirection] =
+    senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
 
   return `実写風の2コマ漫画を生成すること。
 上下に2コマです。
@@ -169,11 +178,11 @@ ${problem.place}
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）が「${problem.japaneseSentence}」と言っている
+- ${senderName}（${senderGenderText}）が${senderFaceDirection}を向いて「${problem.japaneseSentence}」と言っている
 - まだ${receiverName}（${receiverGenderText}）は描かないこと
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）が「${problem.japaneseReply}」と返答している
+- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}を向いて「${problem.japaneseReply}」と返答している
 - もう${senderName}（${senderGenderText}）は描かないこと
 
 【備考】
