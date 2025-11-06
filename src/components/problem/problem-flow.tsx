@@ -10,6 +10,7 @@ import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 import { ExternalLink } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
 
@@ -71,24 +72,20 @@ type EditableIncorrectOptionResult = { ok: true } | { ok: false; message: string
 
 type RemovableField = 'imageUrl' | 'audioEnUrl' | 'audioEnReplyUrl' | 'audioJaUrl';
 
-const getCurrentSetting = (length: ProblemLength): Setting => {
-  if (typeof window === 'undefined')
-    return {
-      isEnglishMode: false,
-      isImageHiddenMode: false,
-      correctStreak: 0,
-    };
-
-  const correctStreakCount = localStorage.getItem(`correctStreak-${length}`);
-
-  return {
-    isEnglishMode: localStorage.getItem('englishMode') === 'true',
-    isImageHiddenMode: localStorage.getItem('noImageMode') === 'true',
-    correctStreak: Number(correctStreakCount) ?? 0,
-  };
-};
-
 export default function ProblemFlow({ length, initialProblem, isAdminPromise }: ProblemFlowProps) {
+  // useLocalStorageフックで設定を管理（自動的にタブ間同期される）
+  const [isEnglishMode] = useLocalStorage('englishMode', false);
+  const [isImageHiddenMode] = useLocalStorage('noImageMode', false);
+  const [correctStreak, setCorrectStreak] = useLocalStorage(`correctStreak-${length}`, 0);
+
+  // Setting型を動的に構築
+  const getCurrentSetting = useCallback((): Setting => {
+    return {
+      isEnglishMode,
+      isImageHiddenMode,
+      correctStreak,
+    };
+  }, [isEnglishMode, isImageHiddenMode, correctStreak]);
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.trim() ?? '';
   const withSubtitle = searchParams.get('subtitle')?.trim() || undefined;
@@ -123,26 +120,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     audioEnReplyUrl: false,
     audioJaUrl: false,
   });
-
-  const persistSetting = useCallback(
-    (prevSetting: Setting, nextSetting: Setting) => {
-      if (typeof window === 'undefined') return;
-
-      const keys = {
-        isEnglishMode: 'englishMode',
-        isImageHiddenMode: 'noImageMode',
-        correctStreak: `correctStreak-${length}`,
-      } as const satisfies Record<keyof Setting, string>;
-
-      (Object.keys(keys) as Array<keyof Setting>).forEach((key) => {
-        if (prevSetting[key] !== nextSetting[key]) {
-          const storageKey = keys[key];
-          localStorage.setItem(storageKey, nextSetting[key].toString());
-        }
-      });
-    },
-    [length],
-  );
 
   // ProblemLength を直接使用
   const playAudio = useCallback((audio: HTMLAudioElement | null, duration: number) => {
@@ -208,7 +185,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           kind: 'start-button-client',
           error: null,
           problem: phase.problem,
-          setting: getCurrentSetting(length),
+          setting: getCurrentSetting(),
         });
         break;
       }
@@ -218,7 +195,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           setPhase({
             kind: 'scene-ready',
             problem: phase.problem,
-            setting: getCurrentSetting(length),
+            setting: getCurrentSetting(),
           });
         }
 
@@ -228,14 +205,14 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         break;
       }
     }
-  }, [length, phase, refillQueueIfNeeded, sceneImage]);
+  }, [getCurrentSetting, length, phase, refillQueueIfNeeded, sceneImage]);
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
 
     setPhase({
       kind: 'scene-entry',
       problem: phase.problem,
-      setting: getCurrentSetting(length),
+      setting: getCurrentSetting(),
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -245,7 +222,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       setPhase({
         kind: 'scene-entry',
         problem: phase.problem,
-        setting: getCurrentSetting(length),
+        setting: getCurrentSetting(),
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
     }
@@ -266,7 +243,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         problem: phase.problem,
         shuffledOptions,
         correctIndex: shuffledCorrectIndex,
-        setting: getCurrentSetting(length),
+        setting: getCurrentSetting(),
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
     }
@@ -294,7 +271,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         kind: 'start-button-client',
         error: '次の問題がありません',
         problem: currentProblem,
-        setting: getCurrentSetting(length),
+        setting: getCurrentSetting(),
       });
       return;
     }
@@ -306,7 +283,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     setPhase({
       kind: 'scene-entry',
       problem: nextProblemData,
-      setting: getCurrentSetting(length),
+      setting: getCurrentSetting(),
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -460,7 +437,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           kind: 'start-button-client',
           error: nextProblemData ? null : '次の問題がありません',
           problem: nextProblemData ?? phase.problem,
-          setting: getCurrentSetting(length),
+          setting: getCurrentSetting(),
         });
         return;
       }
@@ -671,11 +648,13 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     const isCorrect = selectedIndex === phase.correctIndex;
 
     if (isCorrect) {
+      const newCorrectStreak = prevSetting.correctStreak + 1;
+      setCorrectStreak(newCorrectStreak);
+
       const newSetting: Setting = {
         ...prevSetting,
-        correctStreak: prevSetting.correctStreak + 1,
+        correctStreak: newCorrectStreak,
       };
-      persistSetting(prevSetting, newSetting);
 
       setPhase({
         kind: 'correct',
@@ -686,11 +665,12 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       return;
     }
 
+    setCorrectStreak(0);
+
     const newSetting: Setting = {
       ...prevSetting,
       correctStreak: 0,
     };
-    persistSetting(prevSetting, newSetting);
 
     setPhase({
       kind: 'incorrect',
@@ -698,26 +678,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       setting: newSetting,
     });
   };
-
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleSettingChange = () => {
-      setPhase((prev) => {
-        if (prev.kind !== 'start-button-client') return prev;
-        const refreshedSetting = getCurrentSetting(length);
-        return {
-          ...prev,
-          setting: refreshedSetting,
-        };
-      });
-    };
-
-    window.addEventListener('problem-setting-change', handleSettingChange);
-
-    return () => {
-      window.removeEventListener('problem-setting-change', handleSettingChange);
-    };
-  }, [length]);
 
   const isOnStreak =
     phaseSetting !== null &&
@@ -732,10 +692,10 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
       return {
         kind: 'scene-ready',
         problem: prev.problem,
-        setting: getCurrentSetting(length),
+        setting: getCurrentSetting(),
       };
     });
-  }, [length]);
+  }, [getCurrentSetting]);
 
   return (
     <div className="max-w-full">
@@ -746,7 +706,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         <StartButtonClientView
           sceneImage={sceneImage}
           place={phase.problem.place}
-          isHidden={phase.setting.isImageHiddenMode}
+          isHidden={isImageHiddenMode}
           error={phase.error}
           disabled={isAudioBusy}
           onStart={handleStart}

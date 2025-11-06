@@ -1,52 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 type ModeSwitchesProps = {
   className?: string;
 };
 
-const STORAGE_KEYS = {
-  english: 'englishMode',
-  noImage: 'noImageMode',
-} as const;
-
 export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
-  const [isEnglishMode, setIsEnglishMode] = useState(false);
-  const [isNoImageMode, setIsNoImageMode] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  // useLocalStorageフックで設定を管理（自動的にタブ間同期される）
+  const [isEnglishMode, setIsEnglishMode] = useLocalStorage('englishMode', false);
+  const [isNoImageMode, setIsNoImageMode] = useLocalStorage('noImageMode', false);
+
   const [hasEnglishInteraction, setHasEnglishInteraction] = useState(false);
   const [hasNoImageInteraction, setHasNoImageInteraction] = useState(false);
   const [hasDarkModeInteraction, setHasDarkModeInteraction] = useState(false);
 
   const { resolvedTheme, setTheme } = useTheme();
   const isDarkMode = resolvedTheme === 'dark';
-
-  useEffect(() => {
-    const syncModes = () => {
-      const savedEnglishMode = localStorage.getItem(STORAGE_KEYS.english);
-      const savedNoImageMode = localStorage.getItem(STORAGE_KEYS.noImage);
-
-      setIsEnglishMode(savedEnglishMode === 'true');
-      setIsNoImageMode(savedNoImageMode === 'true');
-    };
-
-    syncModes();
-    setIsReady(true);
-
-    const handleStorageChange = () => {
-      syncModes();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    const interval = window.setInterval(syncModes, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.clearInterval(interval);
-    };
-  }, []);
 
   const containerClassName = ['flex w-full flex-col items-start gap-4', className]
     .filter(Boolean)
@@ -58,45 +30,22 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
   const imageModeLabel = `画像${isImageEnabled ? 'あり' : 'なし'}`;
   const darkModeLabel = `ダークテーマ${isDarkMode ? 'ON' : 'OFF'}`;
 
-  const emitSettingChange = () => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('problem-setting-change'));
-  };
-
   const toggleEnglishMode = () => {
     const next = !isEnglishMode;
-    setIsEnglishMode(next);
     setHasEnglishInteraction(true);
-    localStorage.setItem(STORAGE_KEYS.english, next.toString());
-    emitSettingChange();
+    setIsEnglishMode(next);
   };
 
   const toggleNoImageMode = () => {
     const next = !isNoImageMode;
-    setIsNoImageMode(next);
     setHasNoImageInteraction(true);
-    localStorage.setItem(STORAGE_KEYS.noImage, next.toString());
-    emitSettingChange();
+    setIsNoImageMode(next);
   };
 
   const toggleDarkMode = () => {
     setHasDarkModeInteraction(true);
     setTheme(isDarkMode ? 'light' : 'dark');
-    emitSettingChange();
   };
-
-  if (!isReady) {
-    return (
-      <div
-        className={`${containerClassName} opacity-0 pointer-events-none select-none`}
-        aria-hidden="true"
-      >
-        <div className="h-6 w-11 rounded-full bg-[var(--border)]" />
-        <div className="h-6 w-11 rounded-full bg-[var(--border)]" />
-        <div className="h-6 w-11 rounded-full bg-[var(--border)]" />
-      </div>
-    );
-  }
 
   return (
     <div className={containerClassName}>
