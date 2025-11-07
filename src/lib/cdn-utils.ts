@@ -3,45 +3,10 @@
  */
 
 /**
- * URLのホスト名をNEXT_PUBLIC_R2_PUBLIC_DOMAINに置換
- */
-export function replaceUrlHost(url: string | null): string {
-  if (!url) return '';
-
-  const NEXT_PUBLIC_R2_PUBLIC_DOMAIN = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
-  if (!NEXT_PUBLIC_R2_PUBLIC_DOMAIN) {
-    console.warn('[CDN] NEXT_PUBLIC_R2_PUBLIC_DOMAIN not set, returning original URL');
-    return url;
-  }
-
-  try {
-    const urlObj = new URL(url);
-    // パス部分のみを取得（先頭の "/" を削除）
-    const path = urlObj.pathname.startsWith('/') ? urlObj.pathname.slice(1) : urlObj.pathname;
-
-    // NEXT_PUBLIC_R2_PUBLIC_DOMAINがスラッシュで終わっていたら削除
-    const domain = NEXT_PUBLIC_R2_PUBLIC_DOMAIN.endsWith('/')
-      ? NEXT_PUBLIC_R2_PUBLIC_DOMAIN.slice(0, -1)
-      : NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
-
-    return `${domain}/${path}`;
-  } catch (error) {
-    console.error('[CDN] Invalid URL format:', url, error);
-    return url;
-  }
-}
-
-/**
  * CDNへのウォームアップリクエストを送信
  * R2にアップロードした後、CDNキャッシュにファイルを配置するために使用
  */
-export async function warmupCDN(url: string): Promise<boolean> {
-  const cdnUrl = replaceUrlHost(url);
-  if (!cdnUrl) {
-    console.warn('[CDN] URLが空のためウォームアップをスキップ');
-    return false;
-  }
-
+export async function warmupCDN(cdnUrl: string): Promise<boolean> {
   console.log(`   🔥 CDNウォームアップ中: ${cdnUrl}`);
 
   // Node.jsのfetchがHTTP/2で問題を起こす可能性があるため、

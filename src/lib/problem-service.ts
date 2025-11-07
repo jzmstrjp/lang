@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { Problem } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
-import { replaceUrlHost } from '@/lib/cdn-utils';
 import { PROBLEM_FETCH_LIMIT } from '@/const';
 
 export type ProblemWithAudio = Omit<
@@ -25,7 +24,7 @@ export type FetchProblemsResult = {
   count: number;
 };
 
-function formatProblem(problem: Problem): ProblemWithAudio {
+function formatProblem(problem: ProblemWithAudio): ProblemWithAudio {
   let incorrectOptions: string[] = [];
   try {
     if (typeof problem.incorrectOptions === 'string') {
@@ -41,10 +40,10 @@ function formatProblem(problem: Problem): ProblemWithAudio {
   return {
     ...problem,
     incorrectOptions,
-    audioEnUrl: replaceUrlHost(problem.audioEnUrl),
-    audioJaUrl: replaceUrlHost(problem.audioJaUrl),
-    audioEnReplyUrl: replaceUrlHost(problem.audioEnReplyUrl),
-    imageUrl: problem.imageUrl ? replaceUrlHost(problem.imageUrl) : problem.imageUrl,
+    audioEnUrl: problem.audioEnUrl,
+    audioJaUrl: problem.audioJaUrl,
+    audioEnReplyUrl: problem.audioEnReplyUrl,
+    imageUrl: problem.imageUrl,
   };
 }
 
@@ -86,7 +85,7 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   const whereClause = conditions.join(' AND ');
 
   // PostgreSQLのRANDOM()を使って複数件をランダムに取得
-  const problems = await prisma.$queryRawUnsafe<Problem[]>(
+  const problems = await prisma.$queryRawUnsafe<ProblemWithAudio[]>(
     `SELECT * FROM "problems" WHERE ${whereClause} ORDER BY RANDOM() LIMIT ${sanitizedLimit}`,
   );
 
