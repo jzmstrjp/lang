@@ -11,10 +11,10 @@ export type VoiceGender = 'male' | 'female' | 'neutral';
  * 音声設定のマッピング
  */
 export const VOICE_CONFIG = {
-  male: 'echo',
-  female: 'nova',
-  neutral: 'alloy',
-} as const satisfies Record<VoiceGender, SpeechCreateParams['voice']>;
+  male: ['echo', 'fable', 'onyx', 'ash', 'ballad'],
+  female: ['nova', 'shimmer', 'sage', 'coral'],
+  neutral: ['alloy', 'verse'],
+} as const satisfies Record<VoiceGender, SpeechCreateParams['voice'][]>;
 
 /**
  * TTS共通設定
@@ -34,10 +34,10 @@ export const MODEL_CONFIG = {
 } as const satisfies Record<VoiceGender, SpeechModel>;
 
 /**
- * 性別から音声設定を取得
+ * 性別から音声設定をランダムに取得
  */
 export function getVoiceFromGender(gender: VoiceGender): SpeechCreateParams['voice'] {
-  return VOICE_CONFIG[gender];
+  return VOICE_CONFIG[gender][Math.floor(Math.random() * VOICE_CONFIG[gender].length)];
 }
 
 /**
