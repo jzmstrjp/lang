@@ -39,10 +39,10 @@ export async function POST(request: Request) {
 
     const prompt = `${scenePrompt ? `【文脈】${scenePrompt}` : ''}
 
-${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」という英文を「${japaneseSentence}」と日本語訳してみましたが、さらに自然で質の高い日本語訳にしたいです。
+${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」という英文を、自然で質の高い日本語訳にしたいです。
 
-新しい日本語訳を生成してください。
-文脈に合った翻訳をお願いします。ただし、英文の中にない内容を文脈から過剰に推測して補うような翻訳は禁止します。
+日本語訳を生成してください。
+文脈に沿った翻訳をしてください。ただし、文脈に引っ張られ過ぎないでください。英文中にない意味を勝手に足さないでください。
 できるだけカタカナ英語は避けて、ちゃんと日本語に翻訳してください。
 日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。
 正しさと自然さを兼ね備えた翻訳をすること。
@@ -57,7 +57,7 @@ ${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」という英�
           content: prompt,
         },
       ],
-      temperature: 1,
+      temperature: 0.7,
     });
 
     if (response.status === 'incomplete') {
