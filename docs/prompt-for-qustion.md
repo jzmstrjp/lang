@@ -76,11 +76,13 @@ type SeedProblemData = {
    * japaneseSentence
    *
    * englishSentenceの自然な日本語訳。
+   * 正しさと自然さを兼ね備えた翻訳をすること。
    *
    * この文が、UI上で正解として表示される。
    *
    * ただカタカナ英語にするような翻訳は避けてください。
    * 悪い例: 「Due diligence」を「デューディリジェンス」と訳す。
+   * ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。
    */
   japaneseSentence: string
   /**
