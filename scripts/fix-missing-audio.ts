@@ -321,6 +321,7 @@ if (require.main === module) {
 
   (async () => {
     await main(batchSize, checkOnly);
+    process.exit(0); // 成功時も明示的に終了
   })().catch((error) => {
     console.error('スクリプト実行エラー:', error);
     process.exit(1);
