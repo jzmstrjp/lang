@@ -9,7 +9,7 @@ TOEICの問題によく出てくるような単語や熟語を使って問題を
 
 sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。
 ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。
-japaneseReplyの内容も解答するためのヒントになる。
+englishReply, japaneseReplyの内容も解答するためのヒントになる。
 
 以下の形式で問題データを出力してくれ。
 TypeScriptのオブジェクトとして、コードブロックでください。
@@ -90,6 +90,8 @@ type SeedProblemData = {
    *
    * englishSentenceに対するreceiverの自然な返答。役割や場面にあったもの。
    * 熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
+   *
+   * englishSentenceの内容に少し言及し、クイズのヒントとなるような内容にすること。
    */
   englishReply: string
   /**
