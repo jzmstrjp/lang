@@ -139,7 +139,7 @@ const receiverNameMap: Record<VoiceType, string> = {
 };
 
 const senderFaceDirectionMap = [
-  ['真正面', '真正面'],
+  // ['真正面', '真正面'],
   ['右側', '左側'],
   ['左側', '右側'],
 ];

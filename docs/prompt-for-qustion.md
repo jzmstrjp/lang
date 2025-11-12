@@ -18,7 +18,7 @@ TypeScriptのオブジェクトとして、コードブロックでください�
 
 - englishSentence と englishReply が自然な会話になるべき。
 - englishSentence
-  - 正確に、8語以内の文章のみを生成すること。
+  - 正確に、6語以内の文章のみを生成すること。
   - 複数問を生成する場合、以下の割合で生成すること。
     - 20%: 英単語の意味が分かれば直訳で理解できる「直訳系」
     - 80%: 日本人が苦手そうな「熟語・慣用句系」
@@ -68,7 +68,7 @@ type SeedProblemData = {
    * englishSentence
    *
    * senderのセリフ。
-   * 役割や場面にあった自然なもの。
+   * 役割や場面にあった自然な自然なセリフであること。。
    * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
    */
   englishSentence: string
@@ -91,13 +91,15 @@ type SeedProblemData = {
    * englishSentenceに対するreceiverの自然な返答。役割や場面にあったもの。
    * 熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
-   * englishSentenceの内容に少し言及し、クイズのヒントとなるような内容にすること。
+   * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
    */
   englishReply: string
   /**
    * japaneseReply
    *
    * englishReplyの自然な日本語訳。
+   *
+   * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
    */
   japaneseReply: string
   /**
