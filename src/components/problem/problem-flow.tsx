@@ -136,14 +136,11 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     }, 100 + duration);
   }, []);
 
-  console.log(`[ProblemFlow] キュー${problemQueue.length}件`);
-
   // キューに次の問題がなければ追加で問題を取得（常に検索なし）
   const refillQueueIfNeeded = useCallback(async () => {
     // 次の問題（problemQueue[0]）がある、または既に補充中なら何もしない
     if (problemQueue.length > 0 || isPrefetchingNextRef.current) return;
 
-    console.log('[ProblemFlow] キュー補充チェック: 補充開始');
     isPrefetchingNextRef.current = true;
 
     try {
@@ -156,7 +153,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
 
         // 新しい問題が取得できなかった場合は、これ以上補充しない
         if (data.problems.length === 0) {
-          console.log('[ProblemFlow] 問題キュー補充: 新しい問題がありません');
           return;
         }
 
@@ -165,7 +161,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           lastQueueLengthRef.current = newQueue.length;
           return newQueue;
         });
-        console.log('[ProblemFlow] 問題キュー補充完了:', data.count, '件追加');
       }
     } catch (err) {
       console.warn('[ProblemFlow] 問題キュー補充失敗:', err);
@@ -686,7 +681,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     );
 
   const handleSceneImageLoad = useCallback(() => {
-    console.log('[ProblemFlow] 画像読み込み完了');
     setPhase((prev) => {
       if (prev.kind !== 'scene-entry') return prev;
       return {
