@@ -1036,15 +1036,74 @@ function CorrectPhaseView({
   const [selectedText, setSelectedText] = useState('');
   const isAdmin = use(isAdminPromise);
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
+  const englishSentenceRef = useRef<HTMLParagraphElement>(null);
+  const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleTextSelection = () =>
-    setTimeout(() => {
-      const selection = window.getSelection();
-      const text = selection?.toString().trim() || '';
-      if (text) {
-        setSelectedText(text);
+  // selectionchangeイベントリスナーを追加
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      // 既存のタイマーをクリア
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+        selectionTimeoutRef.current = null;
       }
-    }, 300);
+
+      selectionTimeoutRef.current = setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) {
+          return;
+        }
+
+        if (!englishSentenceRef.current) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const selectedTextContent = range.toString().trim();
+
+        // 選択範囲が空の場合は何もしない
+        if (!selectedTextContent) {
+          return;
+        }
+
+        // 選択範囲の開始位置が<p>要素内にあることを確認
+        const startContainer = range.startContainer;
+
+        // テキストノードの場合は親要素を確認
+        const startElement =
+          startContainer.nodeType === Node.TEXT_NODE
+            ? startContainer.parentElement
+            : (startContainer as Element);
+
+        const isStartInParagraph =
+          startElement &&
+          (englishSentenceRef.current.contains(startElement) ||
+            startElement === englishSentenceRef.current);
+
+        // 開始位置が<p>要素内でない場合は無視
+        if (!isStartInParagraph) {
+          return;
+        }
+
+        // 選択範囲のテキストが<p>要素のテキストと一致するか確認
+        const paragraphText = englishSentenceRef.current.textContent?.trim() || '';
+
+        // 選択範囲のテキストが<p>要素のテキストと一致する、または選択範囲のテキストが<p>要素のテキストに含まれる場合
+        if (selectedTextContent === paragraphText || paragraphText.includes(selectedTextContent)) {
+          setSelectedText(selectedTextContent);
+        }
+      }, 300);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <section className="grid text-center w-[500px] max-w-full mx-auto">
@@ -1084,9 +1143,8 @@ function CorrectPhaseView({
           )}
         </div>
         <p
+          ref={englishSentenceRef}
           className="p-4 text-2xl font-semibold text-[var(--text)] select-text cursor-text"
-          onMouseUp={handleTextSelection}
-          onTouchEnd={handleTextSelection}
         >
           {phase.problem.englishSentence}
         </p>
