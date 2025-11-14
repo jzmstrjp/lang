@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { Problem } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { PROBLEM_FETCH_LIMIT } from '@/const';
 
@@ -65,29 +66,21 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     );
   }
 
-  // WHERE条件を構築
-  const conditions: string[] = [
-    '"audioReady" = true',
-    `"wordCount" >= ${rules.min}`,
-    `"wordCount" <= ${rules.max}`,
-  ];
-
-  if (search) {
-    const trimmedSearch = search.trim();
-    if (trimmedSearch) {
-      const escapedSearch = trimmedSearch.replace(/'/g, "''");
-      conditions.push(
-        `("englishSentence" ILIKE '%${escapedSearch}%' OR "japaneseSentence" ILIKE '%${escapedSearch}%')`,
-      );
-    }
-  }
-
-  const whereClause = conditions.join(' AND ');
+  // 検索文字列の前処理
+  const trimmedSearch = search?.trim();
+  const hasSearch = trimmedSearch && trimmedSearch.length > 0;
 
   // PostgreSQLのRANDOM()を使って複数件をランダムに取得
-  const problems = await prisma.$queryRawUnsafe<ProblemWithAudio[]>(
-    `SELECT * FROM "problems" WHERE ${whereClause} ORDER BY RANDOM() LIMIT ${sanitizedLimit}`,
-  );
+  // $queryRawを使用してパラメータ化クエリでSQLインジェクションを防止
+  const problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+    SELECT * FROM "problems"
+    WHERE "audioReady" = true
+      AND "wordCount" >= ${rules.min}
+      AND "wordCount" <= ${rules.max}
+      ${hasSearch ? Prisma.sql`AND ("englishSentence" ILIKE ${`%${trimmedSearch}%`} OR "japaneseSentence" ILIKE ${`%${trimmedSearch}%`})` : Prisma.empty}
+    ORDER BY RANDOM()
+    LIMIT ${sanitizedLimit}
+  `;
 
   if (!problems || problems.length === 0) {
     return { problems: [], count: 0 };
