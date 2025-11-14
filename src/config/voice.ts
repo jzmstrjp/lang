@@ -46,9 +46,9 @@ export function getVoiceFromGender(gender: VoiceGender): SpeechCreateParams['voi
  */
 export function getModelFromGenderAndLanguage(
   gender: VoiceGender,
-  language: 'en' | 'ja',
+  _language: 'en' | 'ja',
 ): SpeechModel {
-  // if (language === 'en') return 'tts-1-hd';
+  // if (_language === 'en') return 'tts-1-hd';
 
   return MODEL_CONFIG[gender];
 }

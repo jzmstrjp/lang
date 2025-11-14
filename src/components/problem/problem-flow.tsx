@@ -114,7 +114,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
   const englishReplyAudioRef = useRef<HTMLAudioElement | null>(null);
   const isPrefetchingNextRef = useRef(false);
   const lastQueueLengthRef = useRef(0);
-  const removingAssetRef = useRef<Record<RemovableField, boolean>>({
+  const regeneratingAssetRef = useRef<Record<RemovableField, boolean>>({
     imageUrl: false,
     audioEnUrl: false,
     audioEnReplyUrl: false,
@@ -283,7 +283,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
-  const handleRemoveAsset = async (
+  const handleRegenerateAsset = async (
     field: RemovableField,
     {
       confirmMessage,
@@ -303,17 +303,15 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) return;
 
     const targetProblemId = currentProblem?.id;
-    const currentAssetValue =
-      currentProblem && (currentProblem as Record<RemovableField, string | null>)[field];
 
-    if (!targetProblemId || !currentAssetValue || removingAssetRef.current[field]) {
+    if (!targetProblemId || regeneratingAssetRef.current[field]) {
       return;
     }
 
-    removingAssetRef.current[field] = true;
+    regeneratingAssetRef.current[field] = true;
 
     try {
-      const response = await fetch('/api/admin/problems/remove-image', {
+      const response = await fetch('/api/admin/problems/regenerate-asset', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -326,55 +324,82 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
         throw new Error(data?.error ?? errorMessage);
       }
 
-      setPhase((prevPhase) => {
-        const updatedProblem: ProblemWithStaticFlag = {
-          ...prevPhase.problem,
-          [field]: null,
-          ...(field === 'imageUrl' ? {} : { audioReady: false }),
-        };
-        return { ...prevPhase, problem: updatedProblem } as Phase;
-      });
+      const responseData = await response.json();
 
-      setProblemQueue((prevQueue) =>
-        prevQueue.map((problem) =>
-          problem.id === targetProblemId
-            ? ({
-                ...problem,
-                [field]: null,
-                ...(field === 'imageUrl' ? {} : { audioReady: false }),
-              } as ProblemWithStaticFlag)
-            : problem,
-        ),
-      );
+      // 画像の場合は非同期処理（バックグラウンドで生成）
+      if (field === 'imageUrl' && responseData.async) {
+        if (typeof window !== 'undefined') {
+          window.alert(
+            responseData.message || '画像の再生成を依頼しました。完了まで数十秒かかります。',
+          );
+        }
+        return;
+      }
+
+      // 音声の場合は同期処理（新しいURLを状態に反映）
+      const newUrl = responseData[field];
+      if (newUrl) {
+        const updatedProblem: ProblemWithStaticFlag = {
+          ...currentProblem,
+          [field]: newUrl,
+          audioReady: false,
+        };
+
+        setProblemQueue((prevQueue) =>
+          prevQueue.map((problem) =>
+            problem.id === targetProblemId
+              ? ({
+                  ...problem,
+                  [field]: newUrl,
+                  audioReady: false,
+                } as ProblemWithStaticFlag)
+              : problem,
+          ),
+        );
+
+        // 管理者モーダルを閉じる
+        setAdminModalOpen(false);
+
+        // scene-entryフェーズに移って、新しい音声を再生
+        setPhase({
+          kind: 'scene-entry',
+          problem: updatedProblem,
+          setting: getCurrentSetting(),
+        });
+        void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
+      }
     } catch (error) {
-      console.error(`[ProblemFlow] ${field}削除エラー:`, error);
+      console.error(`[ProblemFlow] ${field}再生成エラー:`, error);
+      if (typeof window !== 'undefined') {
+        window.alert(errorMessage);
+      }
     } finally {
-      removingAssetRef.current[field] = false;
+      regeneratingAssetRef.current[field] = false;
     }
   };
 
-  const handleRemoveImage = () =>
-    handleRemoveAsset('imageUrl', {
-      confirmMessage: '本当にこの問題の画像を削除しますか？',
-      errorMessage: '画像の削除に失敗しました。',
+  const handleRegenerateImage = () =>
+    handleRegenerateAsset('imageUrl', {
+      confirmMessage: 'この問題の画像を再生成しますか？（数十秒かかります）',
+      errorMessage: '画像の再生成に失敗しました。',
     });
 
-  const handleRemoveAudioEn = () =>
-    handleRemoveAsset('audioEnUrl', {
-      confirmMessage: '本当に英語音声を削除しますか？',
-      errorMessage: '英語音声の削除に失敗しました。',
+  const handleRegenerateAudioEn = () =>
+    handleRegenerateAsset('audioEnUrl', {
+      confirmMessage: '英語音声を再生成しますか？',
+      errorMessage: '英語音声の再生成に失敗しました。',
     });
 
-  const handleRemoveAudioEnReply = () =>
-    handleRemoveAsset('audioEnReplyUrl', {
-      confirmMessage: '本当に英語返答音声を削除しますか？',
-      errorMessage: '英語返答音声の削除に失敗しました。',
+  const handleRegenerateAudioEnReply = () =>
+    handleRegenerateAsset('audioEnReplyUrl', {
+      confirmMessage: '英語返答音声を再生成しますか？',
+      errorMessage: '英語返答音声の再生成に失敗しました。',
     });
 
-  const handleRemoveAudioJa = () =>
-    handleRemoveAsset('audioJaUrl', {
-      confirmMessage: '本当に日本語返答音声を削除しますか？',
-      errorMessage: '日本語返答音声の削除に失敗しました。',
+  const handleRegenerateAudioJa = () =>
+    handleRegenerateAsset('audioJaUrl', {
+      confirmMessage: '日本語返答音声を再生成しますか？',
+      errorMessage: '日本語返答音声の再生成に失敗しました。',
     });
 
   const handleDeleteProblem = async () => {
@@ -818,14 +843,13 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           <AdminProblemActions
             isAdminPromise={isAdminPromise}
             isStaticProblem={currentProblem.isStatic ?? false}
-            sceneImage={sceneImage}
-            currentProblem={currentProblem}
             isDeletingProblem={isDeletingProblem}
             isImprovingTranslation={isImprovingTranslation}
-            onRemoveImage={handleRemoveImage}
-            onRemoveAudioEn={handleRemoveAudioEn}
-            onRemoveAudioEnReply={handleRemoveAudioEnReply}
-            onRemoveAudioJa={handleRemoveAudioJa}
+            regeneratingAssetRef={regeneratingAssetRef}
+            onRegenerateImage={handleRegenerateImage}
+            onRegenerateAudioEn={handleRegenerateAudioEn}
+            onRegenerateAudioEnReply={handleRegenerateAudioEnReply}
+            onRegenerateAudioJa={handleRegenerateAudioJa}
             onDeleteProblem={handleDeleteProblem}
             onImproveTranslation={handleImproveTranslation}
             isModalOpen={isAdminModalOpen}
@@ -1351,14 +1375,13 @@ function QuizOptionsSection({
 type AdminProblemActionsProps = {
   isAdminPromise: Promise<boolean>;
   isStaticProblem: boolean;
-  sceneImage: string | null;
-  currentProblem: ProblemWithStaticFlag;
   isDeletingProblem: boolean;
   isImprovingTranslation: boolean;
-  onRemoveImage: () => void;
-  onRemoveAudioEn: () => void;
-  onRemoveAudioEnReply: () => void;
-  onRemoveAudioJa: () => void;
+  regeneratingAssetRef: React.MutableRefObject<Record<RemovableField, boolean>>;
+  onRegenerateImage: () => void;
+  onRegenerateAudioEn: () => void;
+  onRegenerateAudioEnReply: () => void;
+  onRegenerateAudioJa: () => void;
   onDeleteProblem: () => void;
   onImproveTranslation: () => void;
   isModalOpen: boolean;
@@ -1368,14 +1391,13 @@ type AdminProblemActionsProps = {
 function AdminProblemActions({
   isAdminPromise,
   isStaticProblem,
-  sceneImage,
-  currentProblem,
   isDeletingProblem,
   isImprovingTranslation,
-  onRemoveImage,
-  onRemoveAudioEn,
-  onRemoveAudioEnReply,
-  onRemoveAudioJa,
+  regeneratingAssetRef,
+  onRegenerateImage,
+  onRegenerateAudioEn,
+  onRegenerateAudioEnReply,
+  onRegenerateAudioJa,
   onDeleteProblem,
   onImproveTranslation,
   isModalOpen,
@@ -1383,6 +1405,18 @@ function AdminProblemActions({
 }: AdminProblemActionsProps) {
   const isAdmin = use(isAdminPromise);
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
+  const [, forceUpdate] = useState({});
+
+  // refの変更を検知するために定期的にチェック
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isModalOpen]);
 
   if (!canEditCurrentProblem || !isModalOpen) return null;
 
@@ -1399,15 +1433,13 @@ function AdminProblemActions({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="space-y-6">
-          {sceneImage && (
-            <button
-              type="button"
-              onClick={onRemoveImage}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              画像を削除する
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onRegenerateImage}
+            className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            画像を再生成する
+          </button>
           <button
             type="button"
             onClick={onImproveTranslation}
@@ -1419,27 +1451,31 @@ function AdminProblemActions({
           <div className="space-y-3">
             <button
               type="button"
-              onClick={onRemoveAudioEn}
-              disabled={!currentProblem.audioEnUrl}
+              onClick={onRegenerateAudioEn}
+              disabled={regeneratingAssetRef.current.audioEnUrl}
               className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              英語音声を削除する
+              {regeneratingAssetRef.current.audioEnUrl ? '再生成中...' : '英語音声を再生成する'}
             </button>
             <button
               type="button"
-              onClick={onRemoveAudioEnReply}
-              disabled={!currentProblem.audioEnReplyUrl}
+              onClick={onRegenerateAudioEnReply}
+              disabled={regeneratingAssetRef.current.audioEnReplyUrl}
               className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en-reply)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en-reply)]/30 transition enabled:hover:bg-[var(--admin-audio-en-reply-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              英語返答音声を削除する
+              {regeneratingAssetRef.current.audioEnReplyUrl
+                ? '再生成中...'
+                : '英語返答音声を再生成する'}
             </button>
             <button
               type="button"
-              onClick={onRemoveAudioJa}
-              disabled={!currentProblem.audioJaUrl}
+              onClick={onRegenerateAudioJa}
+              disabled={regeneratingAssetRef.current.audioJaUrl}
               className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-ja)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-ja)]/30 transition enabled:hover:bg-[var(--admin-audio-ja-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              日本語返答音声を削除する
+              {regeneratingAssetRef.current.audioJaUrl
+                ? '再生成中...'
+                : '日本語返答音声を再生成する'}
             </button>
           </div>
           <button
