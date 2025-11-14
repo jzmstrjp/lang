@@ -73,9 +73,7 @@ export async function POST(request: Request) {
     const receiverVoiceGender = problem.receiverVoice as VoiceGender;
 
     let newUrl: string;
-    const updateData: Prisma.ProblemUpdateInput = {
-      audioReady: false,
-    };
+    const updateData: Prisma.ProblemUpdateInput = {};
 
     switch (field) {
       case 'audioEnUrl': {
