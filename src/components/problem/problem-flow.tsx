@@ -1125,7 +1125,7 @@ function CorrectPhaseView({
 
   return (
     <section className="grid text-center w-[500px] max-w-full mx-auto">
-      <div className="px-6 mb-6 text-[var(--success)]">
+      <div className="mb-6 text-[var(--success)]">
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
           <div className="flex flex-row items-center justify-center gap-2 flex-wrap">
@@ -1162,7 +1162,7 @@ function CorrectPhaseView({
         </div>
         <p
           ref={englishSentenceRef}
-          className="p-4 text-2xl font-semibold text-[var(--text)] select-text cursor-text"
+          className="py-4 text-2xl font-semibold text-[var(--text)] select-text cursor-text"
         >
           {phase.problem.englishSentence}
         </p>
