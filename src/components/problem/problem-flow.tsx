@@ -1134,7 +1134,7 @@ function CorrectPhaseView({
           </div>
           <div>🎉</div>
         </h2>
-        <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto relative">
+        <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto relative">
           <Image
             src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct${imageVariant}.webp`}
             alt="ガッツポーズ"
@@ -1219,7 +1219,7 @@ function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
     <section className="grid gap-2 text-center">
       <div className="px-6 py-6 text-[var(--error-dark)]">
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
-        <div className="mt-6 flex justify-center max-w-[40%] sm:max-w-[160px] mx-auto">
+        <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto">
           <Image
             src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect${imageVariant}.webp`}
             alt="ショックな様子"
