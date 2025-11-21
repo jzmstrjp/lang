@@ -162,6 +162,11 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 上下のコマの高さは正確に同じであること。
 漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現すること。
 
+【重要】
+- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
+- 1コマ目、2コマ目を通して、2人の登場人物が向かい合って見えるようなカメラアングルで描写すること。
+- 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
+
 【コマの高さ】
 上下のコマの高さは正確に同じであること。
 上下のコマの間に空白は不要です。
@@ -176,18 +181,21 @@ ${problem.place}
 【ストーリー】
 - 二人が向かい合って会話をしている。
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
+これを2コマに分けて描いてください。
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）が${senderFaceDirection}を向いて「${problem.japaneseSentence}」と言っている
-- まだ${receiverName}（${receiverGenderText}）は描かないこと
+- ${senderName}（${senderGenderText}）がカメラに向かって${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている
+- まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}を向いて「${problem.japaneseReply}」と返答している
-- もう${senderName}（${senderGenderText}）は描かないこと
+- ${receiverName}（${receiverGenderText}）がカメラに向かって${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している
+- もう${senderName}（${senderGenderText}）は描かないこと。
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
 - 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
+- 1コマ目、2コマ目を通して、2人の登場人物が向かい合って見えるようなカメラアングルで描写すること。
+- 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
 - 重要: セリフに対して不自然な画像はNG
   - 例1
     - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
@@ -203,7 +211,7 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 - 上下のコマの高さは正確に同じであること。
 
 【禁止事項】
-- 同じコマの中で同じ人物を2回描画してはならない。
+- 1つのコマの中に同じ人物を2回描画してはならない。
 `;
 }
 
