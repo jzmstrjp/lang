@@ -18,10 +18,7 @@ TypeScriptのオブジェクトとして、コードブロックでください�
 
 - englishSentence と englishReply が自然な会話になるべき。
 - englishSentence
-  - 正確に、6語以内の文章のみを生成すること。
-  - 複数問を生成する場合、以下の割合で生成すること。
-    - 20%: 英単語の意味が分かれば直訳で理解できる「直訳系」
-    - 80%: 日本人が苦手そうな「熟語・慣用句系」
+  - 正確に、10語以内の文章のみを生成すること。
   - 質問や疑問文だけでなく、感謝・謝罪・賞賛・提案・助言・依頼・指示・許可・禁止・報告・意見・説明・誘い・慰め・励まし・冗談・雑談のセリフも必要です。
 - englishReply, japaneseReply
   - 必要に応じて自然な相槌や感動詞も使用すること
@@ -92,6 +89,10 @@ type SeedProblemData = {
    * 熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
    * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
+   * 良い例: 「Could you pass me the salt?」という　englishSentence　に対して「Here you are, the salt.」
+   * → 少し　englishSentence　を想像するヒントになる
+   * 悪い例: 「Could you pass me the salt?」という　englishSentence　に対して「Okay, got it.」
+   * → 全く englishSentence　を想像するヒントにならない
    */
   englishReply: string
   /**
@@ -100,6 +101,10 @@ type SeedProblemData = {
    * englishReplyの自然な日本語訳。
    *
    * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
+   * 良い例: 「Could you pass me the salt?」という　englishSentence　に対して「はい、お塩どうぞ」
+   * → 少し　englishSentence　を想像するヒントになる
+   * 悪い例: 「Could you pass me the salt?」という　englishSentence　に対して「うん、わかった」
+   * → 全く englishSentence　を想像するヒントにならない
    */
   japaneseReply: string
   /**
