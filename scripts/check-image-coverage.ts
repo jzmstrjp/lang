@@ -61,7 +61,7 @@ async function main() {
     lengths.forEach((length, index) => {
       const stats = results[index];
       console.log(
-        `  - ${String(length).padEnd(7)}: ${stats.total}件 （画像あり: ${stats.withImage}件）`,
+        `  - ${String(length).padEnd(7)}: ${stats.total}件 （画像あり: ${stats.withImage}件、画像なし: ${stats.withoutImage}件）`,
       );
     });
 
@@ -76,7 +76,9 @@ async function main() {
     );
 
     console.log('--------------------------------');
-    console.log(`  - 全体　: ${totals.total}件 （画像あり: ${totals.withImage}件）`);
+    console.log(
+      `  - 全体　: ${totals.total}件 （画像あり: ${totals.withImage}件、画像なし: ${totals.withoutImage}件）`,
+    );
   } catch (error) {
     console.error('❌ 集計処理でエラーが発生しました:', error);
     process.exitCode = 1;
