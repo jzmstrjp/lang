@@ -18,7 +18,7 @@ TypeScriptのオブジェクトとして、コードブロックでください�
 
 - englishSentence と englishReply が自然な会話になるべき。
 - englishSentence
-  - 正確に、10語以内の文章のみを生成すること。
+  - 正確に、11語以上30語以内の文章のみを生成すること。
   - 質問や疑問文だけでなく、感謝・謝罪・賞賛・提案・助言・依頼・指示・許可・禁止・報告・意見・説明・誘い・慰め・励まし・冗談・雑談のセリフも必要です。
 - englishReply, japaneseReply
   - 必要に応じて自然な相槌や感動詞も使用すること
@@ -132,11 +132,8 @@ type SeedProblemData = {
   /**
    * incorrectOptions
    *
-   * japaneseSentenceと同じ文字数の日本語のセリフ3つ。
-   * プラスマイナス2文字程度までは許容する。
-   * どの問題もjapaneseSentencより長い文ばかりなのは禁止。
-   * どの問題もjapaneseSentencより短い文ばかりなのは禁止。
-   * ばらけさせろ。ランダム性が大事。
+   * japaneseSentenceより長い文字数の日本語のセリフ3つ。
+   * 3文とも、確実に文字数が多くなること。
    *
    * この文たちは、UI上で誤回答として表示される。
    *
@@ -163,6 +160,7 @@ type SeedProblemData = {
 
 - 多様な問題を作りたい。
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
+- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより文字数が多くなること。3文とも確実に文字数が多くなること。
 - 以下のプロパティには「コメントで書かれたルールを守れている根拠」をTypeScriptコメントとして書いてください。
   - englishSentence
   - japaneseSentence
