@@ -1124,7 +1124,7 @@ function CorrectPhaseView({
   }, []);
 
   return (
-    <section className="grid text-center w-[500px] max-w-full mx-auto">
+    <section className="grid text-center w-[500px] max-w-full mx-auto pt-4">
       <div className="mb-6 text-[var(--success)]">
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
@@ -1181,7 +1181,16 @@ function CorrectPhaseView({
         )}
         <p className="text-lg text-[var(--text)]">{phase.problem.japaneseSentence}</p>
       </div>
-      <div className="">
+      <div className="flex justify-center gap-4">
+        {canEditCurrentProblem && (
+          <button
+            type="button"
+            onClick={onOpenAdminModal}
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+          >
+            管理機能
+          </button>
+        )}
         <button
           type="button"
           onClick={onNextProblem}
@@ -1191,17 +1200,6 @@ function CorrectPhaseView({
           次の問題へ
         </button>
       </div>
-      {canEditCurrentProblem && (
-        <div className="flex justify-center mt-10">
-          <button
-            type="button"
-            onClick={onOpenAdminModal}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-          >
-            管理者向け機能
-          </button>
-        </div>
-      )}
     </section>
   );
 }
@@ -1275,7 +1273,7 @@ function QuizOptionsSection({
   const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
   return (
-    <section className="grid w-[500px] max-w-full max-w-full mx-auto">
+    <section className="grid w-[500px] max-w-full max-w-full mx-auto pt-3">
       <div>
         <p className="text-center text-xl font-semibold text-[var(--text)] sm:text-2xl">
           この英文の意味は？
@@ -1347,7 +1345,16 @@ function QuizOptionsSection({
           );
         })}
       </ul>
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center mt-6 gap-4">
+        {canEditCurrentProblem && (
+          <button
+            type="button"
+            onClick={onOpenAdminModal}
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+          >
+            管理機能
+          </button>
+        )}
         <button
           type="button"
           onClick={onReplayAudio}
@@ -1357,17 +1364,6 @@ function QuizOptionsSection({
           もう一度聞く
         </button>
       </div>
-      {canEditCurrentProblem && (
-        <div className="flex justify-center mt-10">
-          <button
-            type="button"
-            onClick={onOpenAdminModal}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-          >
-            管理者向け機能
-          </button>
-        </div>
-      )}
     </section>
   );
 }
@@ -1425,7 +1421,7 @@ function AdminProblemActions({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
       role="dialog"
       aria-modal="true"
-      aria-label="管理者向け機能"
+      aria-label="管理機能"
       onClick={onClose}
     >
       <div
