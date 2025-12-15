@@ -213,7 +213,14 @@ body {
 }
 
 [data-theme='dark'] body {
-  background: linear-gradient(180deg, #1a3d5a 0%, #2a5d7a 50%, #1a4d6a 100%);
+  background: linear-gradient(
+    180deg,
+    #1a3d5a 0%,
+    #1a4d6a 25%,
+    #2a5d7a 50%,
+    #1a4d6a 75%,
+    #1a3d5a 100%
+  );
   background-attachment: fixed;
 }
 
