@@ -3,7 +3,7 @@
 ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答えるクイズです。
 
 TOEICの問題によく出てくるような単語や熟語を使って問題を作ってください。
-日本人には馴染みがないけれど実際にはよく使われるような単語や熟語を使ってほしい。
+englishSentenceには、日本人には馴染みがないけれど実際にはよく使われるような単語や熟語を使ってほしい。
 
 # 問題文の作り方
 
@@ -18,7 +18,7 @@ TypeScriptのオブジェクトとして、コードブロックでください�
 
 - englishSentence と englishReply が自然な会話になるべき。
 - englishSentence
-  - 正確に、11語以上30語以内の文章のみを生成すること。
+  - 正確に、10語以下の文章のみを生成すること。3語とか4語でもOKです。
   - 質問や疑問文だけでなく、感謝・謝罪・賞賛・提案・助言・依頼・指示・許可・禁止・報告・意見・説明・誘い・慰め・励まし・冗談・雑談のセリフも必要です。
 - englishReply, japaneseReply
   - 必要に応じて自然な相槌や感動詞も使用すること
@@ -86,7 +86,7 @@ type SeedProblemData = {
    * englishReply
    *
    * englishSentenceに対するreceiverの自然な返答。役割や場面にあったもの。
-   * 熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
+   * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
    * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
    * 良い例: 「Could you pass me the salt?」という　englishSentence　に対して「Here you are, the salt.」
@@ -132,8 +132,8 @@ type SeedProblemData = {
   /**
    * incorrectOptions
    *
-   * japaneseSentenceより長い文字数の日本語のセリフ3つ。
-   * 3文とも、確実に文字数が多くなること。
+   * japaneseSentenceと同じ文字数の日本語のセリフ3つ。
+   * 3文とも、確実に文字数が同じになること。
    *
    * この文たちは、UI上で誤回答として表示される。
    *
@@ -160,7 +160,7 @@ type SeedProblemData = {
 
 - 多様な問題を作りたい。
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより文字数が多くなること。3文とも確実に文字数が多くなること。
+- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。3文とも確実に文字数が同じであること。
 - 以下のプロパティには「コメントで書かれたルールを守れている根拠」をTypeScriptコメントとして書いてください。
   - englishSentence
   - japaneseSentence
