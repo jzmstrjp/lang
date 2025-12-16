@@ -9,7 +9,7 @@ import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Wrench } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
@@ -767,7 +767,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           onReplayAudio={() => {
             playAudio(englishSentenceAudioRef.current, 0);
           }}
-          onOpenAdminModal={() => setAdminModalOpen(true)}
         />
       )}
       {phase.kind === 'correct' && (
@@ -780,7 +779,6 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
             onNextProblem={handleNextProblem}
             isAdminPromise={isAdminPromise}
             isStaticProblem={currentProblem.isStatic ?? false}
-            onOpenAdminModal={() => setAdminModalOpen(true)}
           />
         </Suspense>
       )}
@@ -856,6 +854,14 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
             onClose={() => setAdminModalOpen(false)}
           />
         ) : null}
+      </Suspense>
+
+      <Suspense>
+        <FixedAdminButton
+          isAdminPromise={isAdminPromise}
+          isStaticProblem={currentProblem.isStatic ?? false}
+          onOpenAdminModal={() => setAdminModalOpen(true)}
+        />
       </Suspense>
     </div>
   );
@@ -997,7 +1003,6 @@ type QuizPhaseViewProps = {
   ) => Promise<EditableIncorrectOptionResult>;
   onSelectOption: (selectedIndex: number) => void;
   onReplayAudio: () => void;
-  onOpenAdminModal: () => void;
 };
 
 function QuizPhaseView({
@@ -1009,7 +1014,6 @@ function QuizPhaseView({
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
-  onOpenAdminModal,
 }: QuizPhaseViewProps) {
   return (
     <Suspense>
@@ -1023,7 +1027,6 @@ function QuizPhaseView({
         updateIncorrectOption={updateIncorrectOption}
         onSelectOption={onSelectOption}
         onReplayAudio={onReplayAudio}
-        onOpenAdminModal={onOpenAdminModal}
       />
     </Suspense>
   );
@@ -1037,7 +1040,6 @@ type CorrectPhaseViewProps = {
   onNextProblem: () => void;
   isAdminPromise: Promise<boolean>;
   isStaticProblem: boolean;
-  onOpenAdminModal: () => void;
 };
 
 function CorrectPhaseView({
@@ -1046,14 +1048,9 @@ function CorrectPhaseView({
   length,
   isAudioBusy,
   onNextProblem,
-  isAdminPromise,
-  isStaticProblem,
-  onOpenAdminModal,
 }: CorrectPhaseViewProps) {
   const [imageVariant] = useState(() => Math.floor(Math.random() * 2) + 1);
   const [selectedText, setSelectedText] = useState('');
-  const isAdmin = use(isAdminPromise);
-  const canEditCurrentProblem = isAdmin && !isStaticProblem;
   const englishSentenceRef = useRef<HTMLParagraphElement>(null);
   const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -1182,15 +1179,6 @@ function CorrectPhaseView({
         <p className="text-lg text-[var(--text)]">{phase.problem.japaneseSentence}</p>
       </div>
       <div className="flex justify-center gap-4">
-        {canEditCurrentProblem && (
-          <button
-            type="button"
-            onClick={onOpenAdminModal}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-          >
-            管理機能
-          </button>
-        )}
         <button
           type="button"
           onClick={onNextProblem}
@@ -1254,7 +1242,6 @@ type QuizOptionsSectionProps = {
   ) => Promise<EditableIncorrectOptionResult>;
   onSelectOption: (selectedIndex: number) => void;
   onReplayAudio: () => void;
-  onOpenAdminModal: () => void;
 };
 
 function QuizOptionsSection({
@@ -1266,7 +1253,6 @@ function QuizOptionsSection({
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
-  onOpenAdminModal,
 }: QuizOptionsSectionProps) {
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const isAdmin = use(isAdminPromise);
@@ -1346,15 +1332,6 @@ function QuizOptionsSection({
         })}
       </ul>
       <div className="flex justify-center mt-6 gap-4">
-        {canEditCurrentProblem && (
-          <button
-            type="button"
-            onClick={onOpenAdminModal}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-          >
-            管理機能
-          </button>
-        )}
         <button
           type="button"
           onClick={onReplayAudio}
@@ -1421,7 +1398,7 @@ function AdminProblemActions({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
       role="dialog"
       aria-modal="true"
-      aria-label="管理機能"
+      aria-label="管理者向け機能"
       onClick={onClose}
     >
       <div
@@ -1495,6 +1472,34 @@ function AdminProblemActions({
         </div>
       </div>
     </div>
+  );
+}
+
+type FixedAdminButtonProps = {
+  isAdminPromise: Promise<boolean>;
+  isStaticProblem: boolean;
+  onOpenAdminModal: () => void;
+};
+
+function FixedAdminButton({
+  isAdminPromise,
+  isStaticProblem,
+  onOpenAdminModal,
+}: FixedAdminButtonProps) {
+  const isAdmin = use(isAdminPromise);
+  const canEditCurrentProblem = isAdmin && !isStaticProblem;
+
+  if (!canEditCurrentProblem) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpenAdminModal}
+      className="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] h-13 w-13 text-base font-semibold text-[var(--text)] shadow-lg shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+      aria-label="管理機能を開く"
+    >
+      <Wrench className="w-5 h-5" />
+    </button>
   );
 }
 
