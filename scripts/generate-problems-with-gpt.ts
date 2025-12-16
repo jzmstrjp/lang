@@ -19,7 +19,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const PROBLEMS_PER_ROUND = 3;
+const PROBLEMS_PER_ROUND = 1;
 const DEFAULT_TOTAL_PROBLEMS = 30;
 const MAX_CODE_ATTEMPTS = 3;
 
@@ -32,12 +32,6 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 \`\`\`ts
 {
   // 1問目
-},
-{
-  // 2問目
-},
-{
-  // 3問目
 },
 \`\`\`
 `;
@@ -205,7 +199,7 @@ async function generateMultipleProblems(
       throw new Error('語彙割り当てが不足しています');
     }
 
-    console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の3問を生成中...' : 'さらに3問を生成中...'}`);
+    console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の1問を生成中...' : 'さらに1問を生成中...'}`);
     console.log('🗂️ 今回指定する語彙:');
     roundWords.forEach((word, index) => {
       console.log(`  ${roundStartIndex + index + 1}問目: ${word}`);
@@ -566,7 +560,7 @@ async function main() {
     const totalProblems = rounds * PROBLEMS_PER_ROUND;
 
     console.log('🚀 問題生成スクリプト開始\n');
-    console.log(`📌 ${totalProblems}問（${PROBLEMS_PER_ROUND}問×${rounds}回）を生成します\n`);
+    console.log(`📌 ${totalProblems}問（1問×${rounds}回）を生成します\n`);
 
     // OpenAI API Keyの確認
     if (!process.env.OPENAI_API_KEY) {
@@ -591,7 +585,7 @@ async function main() {
     console.log('✅ プロンプト読み込み完了\n');
     console.log('📍 place設定方針:');
     console.log('');
-    console.log('🧠 最初の3問で使用する語彙:');
+    console.log('🧠 最初の1問で使用する語彙:');
     wordAssignments.slice(0, PROBLEMS_PER_ROUND).forEach((word, index) => {
       console.log(`  ${index + 1}問目: ${word}`);
     });
@@ -625,7 +619,7 @@ async function main() {
     console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
     console.log('\n💡 ヒント:');
     console.log('  - 生成回数を変更: npm run generate:problems <回数>');
-    console.log('  - 例: npm run generate:problems 10 (50問生成)');
+    console.log('  - 例: npm run generate:problems 10 (10問生成)');
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);
     process.exit(1);

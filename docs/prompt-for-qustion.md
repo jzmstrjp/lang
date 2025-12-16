@@ -86,6 +86,7 @@ type SeedProblemData = {
    * englishReply
    *
    * englishSentenceに対するreceiverの自然な返答。役割や場面にあったもの。
+   * 文脈的に自然な返答であることが重要です。
    * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
    * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
@@ -99,12 +100,7 @@ type SeedProblemData = {
    * japaneseReply
    *
    * englishReplyの自然な日本語訳。
-   *
-   * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
-   * 良い例: 「Could you pass me the salt?」という　englishSentence　に対して「はい、お塩どうぞ」
-   * → 少し　englishSentence　を想像するヒントになる
-   * 悪い例: 「Could you pass me the salt?」という　englishSentence　に対して「うん、わかった」
-   * → 全く englishSentence　を想像するヒントにならない
+   * englishReplyの内容をもれなく含んでいること。
    */
   japaneseReply: string
   /**
