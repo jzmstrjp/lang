@@ -1308,6 +1308,7 @@ function QuizOptionsSection({
                       <button
                         type="button"
                         onClick={() => setEditingIncorrectOptionKey(optionKey)}
+                        tabIndex={-1}
                         className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[var(--primary)] bg-[var(--background)] p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         編集
@@ -1320,6 +1321,7 @@ function QuizOptionsSection({
                             window.alert('これは正解です');
                           }
                         }}
+                        tabIndex={-1}
                         className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-xl rounded-br-xl h-[100%] border border-[var(--primary)] bg-[var(--background)] p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         編集
@@ -1495,6 +1497,7 @@ function FixedAdminButton({
     <button
       type="button"
       onClick={onOpenAdminModal}
+      tabIndex={-1}
       className="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] h-13 w-13 text-base font-semibold text-[var(--text)] shadow-lg shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
       aria-label="管理機能を開く"
     >
