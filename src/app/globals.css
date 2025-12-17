@@ -247,3 +247,8 @@ button:disabled {
     -webkit-transform: translateZ(0);
   }
 }
+
+button:focus {
+  outline: 2px solid #00d0ff;
+  outline-offset: 2px;
+}
