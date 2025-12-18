@@ -920,7 +920,7 @@ function StartButtonClientView({
         isBlurred
       />
       <div className="absolute inset-0 flex items-center justify-center">
-        <StartButton error={error} handleStart={onStart} disabled={disabled}>
+        <StartButton error={error} handleStart={onStart} disabled={disabled} autoFocus>
           英語学習を始める
         </StartButton>
       </div>
@@ -1180,6 +1180,8 @@ function CorrectPhaseView({
       </div>
       <div className="flex justify-center gap-4">
         <button
+          key={isAudioBusy ? 'disabled' : 'enabled'}
+          autoFocus
           type="button"
           onClick={onNextProblem}
           className="inline-flex items-center justify-center rounded-full bg-[var(--secondary)] px-6 py-3 text-base font-semibold text-[var(--secondary-text)] shadow-lg shadow-[var(--secondary)]/40 enabled:hover:bg-[var(--secondary-hover)] disabled:opacity-30"
@@ -1218,6 +1220,8 @@ function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
       </div>
       <div className="flex flex-row gap-3 items-center justify-center">
         <button
+          key={isAudioBusy ? 'disabled' : 'enabled'}
+          autoFocus
           type="button"
           onClick={onRetry}
           className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
@@ -1296,6 +1300,8 @@ function QuizOptionsSection({
               ) : (
                 <div className="relative">
                   <button
+                    key={`${optionKey}-${index}-${isAudioBusy ? 'disabled' : 'enabled'}`}
+                    autoFocus={index === 0}
                     type="button"
                     onClick={() => onSelectOption(index)}
                     className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40`}
