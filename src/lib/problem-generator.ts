@@ -175,8 +175,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 ${problem.place}
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。端正な顔立ちをしている。
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。端正な顔立ちをしている。
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
 【ストーリー】
 - 二人が向かい合って会話をしている。
