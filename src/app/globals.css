@@ -248,7 +248,7 @@ button:disabled {
   }
 }
 
-button:focus {
+button:focus-visible {
   outline: 2px solid #00d0ff;
   outline-offset: 2px;
 }
