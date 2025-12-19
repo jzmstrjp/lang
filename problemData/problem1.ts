@@ -25,6 +25,49 @@ const problemData: SeedProblemData[] = [
       'じゃあ、スマホを犬に持たせるわ！',
     ],
   },
+  {
+    place: '家の書斎',
+    senderRole: '父親',
+    senderVoice: 'male',
+    receiverRole: '娘',
+    receiverVoice: 'female',
+
+    englishSentence:
+      // 5語。10語以下を厳守。
+      // 「incident」を使い、indentation との聞き間違いを狙った自然な独り言。
+      'Incident four seems about right.',
+
+    japaneseSentence:
+      // 元ネタそのまま。UI上の正解文。
+      'やっぱ、インシデントは4くらいがいいよな',
+
+    englishReply:
+      // 娘のツッコミとして自然。
+      // 「indentation」「four」を明示し、意味推測のヒントになる。
+      'You mean indentation. Four accidents make no sense.',
+
+    japaneseReply:
+      // 【変更禁止】ユーザー指定の娘セリフを完全に保持。
+      'インデントでしょ。事故を4回も起こしてどうすんの・・・',
+
+    scenePrompt:
+      // 親子でコーディング中という文脈を補足。
+      '家の書斎で親子が並んでコードを見ている。父親がエディタ設定について独り言を言い、用語を言い間違えたため、娘が即座にツッコミを入れる。',
+
+    senderVoiceInstruction: '設定の話をしているつもりで、確信ありげに話す口調。',
+    receiverVoiceInstruction: '呆れて力が抜けた口調。',
+
+    incorrectOptions: [
+      // ▼ japaneseSentence と同じ文字数（20文字）
+      // ▼ 文頭はすべて異なる／「やっぱ」禁止を遵守
+      // ▼ sender（父親）の独り言として成立
+      // ▼ 1つは馬鹿馬鹿しい／1つは真逆の意味
+
+      'ポリデ〇トを買ってこないとなあ。', // 馬鹿馬鹿しい
+      'ぶっちゃけインデントなんて要らんねん。', // 真逆の意味
+      'インデントは32くらいがいいよなぁ。', // それっぽい誤答
+    ],
+  },
 ];
 
 export default problemData;
