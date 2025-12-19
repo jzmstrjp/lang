@@ -11,8 +11,8 @@ const problemData: SeedProblemData[] = [
     senderVoice: 'female',
     receiverRole: '父親',
     receiverVoice: 'male',
-    englishSentence: 'Hey Dad, you shouldn’t use your phone while walking.',
-    japaneseSentence: 'ねえパパ、歩きスマホはダメだよ？',
+    englishSentence: 'Hey Dad, you shouldn’t use your phone while walking!',
+    japaneseSentence: 'ねえパパ、歩きスマホはダメだよ！',
     englishReply: 'Then I’ll try running while using it!',
     japaneseReply: 'ほな、走りスマホにするわ！',
     scenePrompt:
