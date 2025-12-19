@@ -6,8 +6,14 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
-import { generateAndUploadImageAsset, type GeneratedProblem } from '../src/lib/problem-generator';
+import {
+  generateAndUploadImageAsset,
+  generateAndUploadImageAssetWithCharacters,
+  type GeneratedProblem,
+} from '../src/lib/problem-generator';
 import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   if (Array.isArray(value)) {
@@ -26,13 +32,22 @@ function normalizeIncorrectOptions(value: Prisma.JsonValue): string[] {
   return [];
 }
 
-async function main(batchSize: number = 10, checkOnly: boolean = false) {
+async function main(
+  batchSize: number = 10,
+  checkOnly: boolean = false,
+  useCharacterImages: boolean = false,
+) {
   try {
     if (checkOnly) {
       console.log('🔍 画像URLチェックモードで実行中...');
     } else {
       console.log('🚀 画像URL修復スクリプトを開始します...');
       console.log(`📊 処理件数上限: ${batchSize}件`);
+      if (useCharacterImages) {
+        console.log('🎨 キャラクター画像を使用した生成モード');
+      } else {
+        console.log('🖼️ 通常の画像生成モード');
+      }
     }
 
     // 環境変数のチェック（チェックのみモードでは画像生成用環境変数は不要）
@@ -111,6 +126,27 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
     console.log('\n📸 フェーズ1: 画像生成・アップロード');
     const updates: Array<{ id: string; imageUrl: string }> = [];
 
+    // キャラクター画像を使用する場合は事前に読み込み
+    let characterImages: Buffer[] | undefined;
+    if (useCharacterImages) {
+      console.log('🎨 キャラクター画像を読み込み中...');
+      try {
+        const takashiPath = join(process.cwd(), 'images', 'takashi.png');
+        const akariPath = join(process.cwd(), 'images', 'akari.png');
+
+        const takashiBuffer = await readFile(takashiPath);
+        const akariBuffer = await readFile(akariPath);
+
+        characterImages = [takashiBuffer, akariBuffer];
+        console.log('✅ キャラクター画像の読み込み完了');
+      } catch (error) {
+        console.error('❌ キャラクター画像の読み込みに失敗しました:', error);
+        throw new Error(
+          'キャラクター画像が見つかりません。images/takashi.png と images/akari.png を配置してください。',
+        );
+      }
+    }
+
     for (const [index, problem] of problemsWithMissingImage.entries()) {
       const startTime = Date.now();
       try {
@@ -138,7 +174,15 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
         };
 
-        const imageUrl = await generateAndUploadImageAsset(generatedProblem, problem.id);
+        // キャラクター画像を使うか通常生成かで分岐
+        const imageUrl =
+          useCharacterImages && characterImages
+            ? await generateAndUploadImageAssetWithCharacters(
+                generatedProblem,
+                problem.id,
+                characterImages,
+              )
+            : await generateAndUploadImageAsset(generatedProblem, problem.id);
 
         console.log(`   ✅ 画像アップロード完了: ${imageUrl}`);
 
@@ -217,12 +261,20 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   let batchSize = 10; // デフォルト値
   let checkOnly = false;
+  let useCharacterImages = false;
 
   // --check-only フラグの確認
   if (args.includes('--check-only')) {
     checkOnly = true;
     const checkIndex = args.indexOf('--check-only');
     args.splice(checkIndex, 1); // フラグを配列から削除
+  }
+
+  // --use-character-images フラグの確認
+  if (args.includes('--use-character-images')) {
+    useCharacterImages = true;
+    const charIndex = args.indexOf('--use-character-images');
+    args.splice(charIndex, 1); // フラグを配列から削除
   }
 
   // 件数の取得（残った引数の最初）
@@ -232,6 +284,9 @@ if (require.main === module) {
     if (isNaN(parsed) || parsed <= 0) {
       console.error('❌ 処理件数は正の整数で指定してください');
       console.error('   使用例: npm run fix-missing-image 3');
+      console.error(
+        '   キャラ画像使用: npx tsx scripts/fix-missing-image.ts 3 --use-character-images',
+      );
       console.error('   チェックのみ: npx tsx scripts/fix-missing-image.ts --check-only');
       process.exit(1);
     }
@@ -239,7 +294,7 @@ if (require.main === module) {
   }
 
   (async () => {
-    await main(batchSize, checkOnly);
+    await main(batchSize, checkOnly, useCharacterImages);
   })().catch((error) => {
     console.error('スクリプト実行エラー:', error);
     process.exit(1);

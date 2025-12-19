@@ -3,12 +3,15 @@ import {
   generateProblem,
   generateAudioAssets,
   generateImagePrompt,
+  generateImagePromptWithCharacters,
   type GenerateRequest,
 } from '@/lib/problem-generator';
 import OpenAI from 'openai';
 import { MODEL_SETTING } from '@/const';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
+import fs from 'fs/promises';
+import path from 'path';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -36,6 +39,44 @@ async function generateImage(prompt: string) {
   throw new Error('Failed to generate image');
 }
 
+async function generateImageWithCharacters(prompt: string) {
+  // キャラクター画像を読み込み
+  const takashiPath = path.join(process.cwd(), 'images', 'takashi.png');
+  const akariPath = path.join(process.cwd(), 'images', 'akari.png');
+
+  const takashiBuffer = await fs.readFile(takashiPath);
+  const akariBuffer = await fs.readFile(akariPath);
+
+  // BufferをUint8Arrayに変換してからFileオブジェクトに変換
+  const imageFiles = [
+    new File([new Uint8Array(takashiBuffer)], 'takashi.png', { type: 'image/png' }),
+    new File([new Uint8Array(akariBuffer)], 'akari.png', { type: 'image/png' }),
+  ];
+
+  const image = await openai.images.edit({
+    model: 'gpt-image-1.5',
+    image: imageFiles,
+    prompt: prompt,
+    size: '1024x1536',
+    quality: 'medium',
+  });
+
+  const first = image.data?.[0];
+  if (!first) {
+    throw new Error('Failed to generate image with characters');
+  }
+
+  if (first.b64_json) {
+    return `data:image/png;base64,${first.b64_json}`;
+  }
+
+  if (first.url) {
+    return first.url;
+  }
+
+  throw new Error('Failed to generate image with characters');
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerAuthSession();
@@ -45,7 +86,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '権限がありません。' }, { status: 403 });
     }
 
-    const body: GenerateRequest = await req.json().catch(() => ({}));
+    const body: GenerateRequest & { useCharacterImages?: boolean } = await req
+      .json()
+      .catch(() => ({}));
 
     console.log('[test-generate] 問題生成開始');
 
@@ -57,12 +100,18 @@ export async function POST(req: Request) {
     // アセットを並列生成
     const assetPromises: Promise<unknown>[] = [generateAudioAssets(problem)];
 
-    // 画像プロンプト生成
-    const imagePrompt = generateImagePrompt(problem);
+    // 画像プロンプト生成（キャラクター画像使用時は専用プロンプト）
+    const imagePrompt = body.useCharacterImages
+      ? generateImagePromptWithCharacters(problem)
+      : generateImagePrompt(problem);
 
     // 画像が必要な場合は生成
     if (!body.withoutPicture) {
-      assetPromises.push(generateImage(imagePrompt));
+      if (body.useCharacterImages) {
+        assetPromises.push(generateImageWithCharacters(imagePrompt));
+      } else {
+        assetPromises.push(generateImage(imagePrompt));
+      }
     }
 
     const results = await Promise.all(assetPromises);

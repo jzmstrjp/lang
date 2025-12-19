@@ -23,7 +23,7 @@ type GenerateProblemResponse = {
   assets: AssetsData;
 };
 
-type GenerateMode = 'withImage' | 'withoutImage';
+type GenerateMode = 'withImage' | 'withoutImage' | 'withCharacterImages';
 
 export default function PromptTestClient() {
   const [problem, setProblem] = useState<GeneratedProblem | null>(null);
@@ -45,7 +45,11 @@ export default function PromptTestClient() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type, withoutPicture: mode === 'withoutImage' }),
+        body: JSON.stringify({
+          type,
+          withoutPicture: mode === 'withoutImage',
+          useCharacterImages: mode === 'withCharacterImages',
+        }),
       });
 
       if (!response.ok) {
@@ -132,6 +136,13 @@ export default function PromptTestClient() {
               className="px-6 py-2 bg-[var(--secondary)] text-[var(--secondary-text)] rounded-lg hover:bg-[var(--secondary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               画像ありで生成
+            </button>
+            <button
+              onClick={() => generateProblem(DEFAULT_TYPE, 'withCharacterImages')}
+              disabled={loading}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              キャラ画像で生成
             </button>
           </div>
 

@@ -106,3 +106,51 @@ export async function uploadBase64ImageToR2(
 
   return uploadImageToR2(imageBuffer, problemId, 'composite');
 }
+
+/**
+ * キャラクター設定画像を使用してシーン画像を生成（Bufferを返す）
+ */
+export async function generateImageWithCharactersBuffer(
+  characterImages: Buffer[],
+  scenePrompt: string,
+): Promise<Buffer> {
+  ensureApiKey();
+
+  if (characterImages.length === 0) {
+    throw new Error('At least one character image is required');
+  }
+
+  // BufferをUint8Arrayに変換してからFileオブジェクトに変換
+  const imageFiles = characterImages.map((buffer, index) => {
+    return new File([new Uint8Array(buffer)], `character-${index}.png`, { type: 'image/png' });
+  });
+
+  const image = await openai.images.edit({
+    ...MODEL_SETTING,
+    image: imageFiles,
+    prompt: scenePrompt,
+    quality: 'medium',
+  });
+
+  const first = image.data?.[0];
+  if (!first) {
+    console.error('[image-utils] image edit failed', image);
+    throw new Error('Failed to edit image with characters');
+  }
+
+  if (first.b64_json) {
+    // Base64形式の場合
+    return Buffer.from(first.b64_json, 'base64');
+  } else if (first.url) {
+    // URL形式の場合、ダウンロードしてBufferに変換
+    const response = await fetch(first.url);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } else {
+    console.error('[image-utils] image edit missing url/b64_json', first);
+    throw new Error('Failed to edit image with characters');
+  }
+}

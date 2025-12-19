@@ -2,7 +2,7 @@ import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
-import { generateImageBuffer } from '@/lib/image-utils';
+import { generateImageBuffer, generateImageWithCharactersBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
 import { countWords, type ProblemLength } from '@/config/problem';
@@ -358,4 +358,102 @@ export async function generateAndUploadImageAsset(
   const imagePrompt = generateImagePrompt(problem);
   const imageBuffer = await generateImageBuffer(imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
+}
+
+/**
+ * キャラクター設定画像を使って画像アセットを生成してR2にアップロード
+ */
+export async function generateAndUploadImageAssetWithCharacters(
+  problem: GeneratedProblem,
+  problemId: string,
+  characterImages: Buffer[],
+): Promise<string> {
+  const imagePrompt = generateImagePromptWithCharacters(problem);
+  const imageBuffer = await generateImageWithCharactersBuffer(characterImages, imagePrompt);
+  return await uploadImageToR2(imageBuffer, problemId, 'composite');
+}
+
+/**
+ * キャラクター設定画像を使った画像生成用のプロンプトを生成
+ */
+export function generateImagePromptWithCharacters(problem: GeneratedProblem): string {
+  const senderGenderText = getGenderInJapanese(problem.senderVoice);
+  const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
+
+  // キャラクター画像を使う場合は male=タカシ、female=アカリ で統一
+  const senderName = problem.senderVoice === 'male' ? 'タカシ（42歳）' : 'アカリ（20歳）';
+  const receiverName = problem.receiverVoice === 'male' ? 'タカシ（42歳）' : 'アカリ（20歳）';
+
+  const [senderFaceDirection, receiverFaceDirection] =
+    senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
+
+  // 画像の対応関係は常に固定（1枚目=タカシ(male)、2枚目=アカリ(female)）
+  const imageMapping = `入力画像の対応は次の通りです。
+- 1枚目の画像は「タカシ（男性・42歳・身長173cm）」です。
+- 2枚目の画像は「アカリ（女性・20歳・身長140cm）」です。`;
+
+  return `${imageMapping}
+
+両者の「顔立ち・髪型・目の形・肌の色・服の配色・全体の絵柄」を、それぞれの画像の設定に忠実に維持してください。
+新しいキャラクターに変形したり、別人化したりしないでください。
+
+【生成したいシーン】
+荘厳な油絵風の2コマ漫画を生成すること。
+上下に2コマです。
+上下のコマの高さは正確に同じであること。
+漫画ですが、吹き出し・台詞・枠線は描かないこと。油絵のみで表現すること。
+
+【重要】
+- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
+- 1コマ目、2コマ目を通して、2人の登場人物が向かい合って見えるようなカメラアングルで描写すること。
+- 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
+
+【コマの高さ】
+上下のコマの高さは正確に同じであること。
+上下のコマの間に空白は不要です。
+枠線も不要です。
+
+【場所】
+${problem.place}
+
+【登場人物】
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
+
+【ストーリー】
+- 二人が向かい合って会話をしている。
+${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
+これを2コマに分けて描いてください。
+
+【1コマ目】
+- ${senderName}（${senderGenderText}）がカメラに向かって${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている
+- まだ${receiverName}（${receiverGenderText}）は描かないこと。
+
+【2コマ目】
+- ${receiverName}（${receiverGenderText}）がカメラに向かって${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している
+- もう${senderName}（${senderGenderText}）は描かないこと。
+
+【備考】
+- 場所や場面に合わせた表情やジェスチャーを描写すること。
+- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
+- 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
+- 重要: セリフに対して不自然な画像はNG
+  - 例1
+    - Bad: 「コーヒーをお願いします」というセリフなのに、もう手元にコーヒーがある
+    - Good: 「コーヒーをお願いします」というセリフなので、まだ手元にコーヒーがない
+  - 例2
+    - Bad: 「ATMはどこですか？」というセリフなのに、すでにATMの前に立っている
+    - Good: 「ATMはどこですか？」というセリフなので、まだATMの前に立っていない
+- 画像を見ただけで【ストーリー】を完全に想起できるように正確に描写すること。
+- 漫画ですが、吹き出し・台詞・枠線は描かないこと。油絵のみで表現すること。
+- 生成AIっぽくない、自然な本物の油絵を生成すること。
+
+## 重要
+- 上下のコマの高さは正確に同じであること。
+- 入力されたキャラクター画像の特徴を忠実に再現すること。
+
+【禁止事項】
+- 1つのコマの中に同じ人物を2回描画してはならない。
+- キャラクター画像と異なる顔や服装にしてはならない。
+`;
 }
