@@ -19,6 +19,7 @@
     "db:seed": "tsx scripts/seed-problems.ts",
     "fix-missing-audio": "tsx scripts/fix-missing-audio.ts",
     "fix-missing-image": "tsx scripts/fix-missing-image.ts",
+    "fix-missing-image:with-characters": "tsx scripts/fix-missing-image.ts --use-character-images",
     "check:image-coverage": "tsx scripts/check-image-coverage.ts",
     "check:incorrect-options-length": "tsx scripts/check-incorrect-options-length.ts",
     "generate:problems": "tsx scripts/generate-problems-with-gpt.ts"
