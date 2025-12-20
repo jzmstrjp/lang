@@ -31,64 +31,35 @@ const problemData: SeedProblemData[] = [
   //     senderVoice: 'male',
   //     receiverRole: '娘',
   //     receiverVoice: 'female',
-
   //     englishSentence:
   //       // 5語。10語以下を厳守。
   //       // 「incident」を使い、indentation との聞き間違いを狙った自然な独り言。
   //       'Incident four seems about right.',
-
   //     japaneseSentence:
   //       // 元ネタそのまま。UI上の正解文。
   //       'やっぱ、インシデントは4くらいがいいよなぁ。',
-
   //     englishReply:
   //       // 娘のツッコミとして自然。
   //       // 「indentation」「four」を明示し、意味推測のヒントになる。
   //       'You mean indentation. Four accidents make no sense.',
-
   //     japaneseReply:
   //       // 【変更禁止】ユーザー指定の娘セリフを完全に保持。
   //       'インデントでしょ。事故を4回も起こしてどうすんの・・・',
-
   //     scenePrompt:
   //       // 親子でコーディング中という文脈を補足。
   //       '【1コマ目】父親がノートPCに向かいながらエディタ設定について独り言を言い、用語を言い間違える【2コマ目】娘が呆れながらツッコミを入れる。',
-
   //     senderVoiceInstruction: '設定の話をしているつもりで、確信ありげに話す口調。',
   //     receiverVoiceInstruction: '呆れて力が抜けた口調。',
-
   //     incorrectOptions: [
   //       // ▼ japaneseSentence と同じ文字数（20文字）
   //       // ▼ 文頭はすべて異なる／「やっぱ」禁止を遵守
   //       // ▼ sender（父親）の独り言として成立
   //       // ▼ 1つは馬鹿馬鹿しい／1つは真逆の意味
-
   //       'ポリデ〇トを買ってこないとなあ。', // 馬鹿馬鹿しい
   //       'ぶっちゃけインデントなんて要らんねん。', // 真逆の意味
   //       'インデントは32くらいがいいよなぁ。', // それっぽい誤答
   //     ],
   //   },
-  {
-    place: '家電量販店',
-    senderRole: '父親',
-    senderVoice: 'male',
-    receiverRole: '娘',
-    receiverVoice: 'female',
-    englishSentence:
-      'A new laptop costs 250,000 yen… but if I use it every day for five years, right?',
-    japaneseSentence: '新しいノートPC、250000円もするのかぁ。でも5年間毎日使えば・・・？',
-    englishReply: 'That’s 137 yen a day, so it’s basically free.',
-    japaneseReply: '1日137円だから・・・実質無料だね！',
-    scenePrompt:
-      '【1コマ目】家電量販店で父親がノートPCの値札を見て腕を組み、真剣に考え込んでいる。【2コマ目】娘が暗算して即答し、「実質無料」と言い切っている。',
-    senderVoiceInstruction: '値段に驚きつつ、何とか自分を納得させようとする関西弁の独り言。',
-    receiverVoiceInstruction: '計算が早く、軽いノリで結論を出す口調。',
-    incorrectOptions: [
-      'この高級車、1億円もするんやなあ。でも10年乗ればタダみたいなもんやな。',
-      'ヴィンテージギターって高いけど、売るときも高く売れるからな。買ってまお！',
-      '分割で買えば月100円くらいで買えるな！',
-    ],
-  },
 ];
 
 export default problemData;
