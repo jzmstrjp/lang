@@ -76,6 +76,7 @@ type SeedProblemData = {
    *
    * englishSentenceの自然な日本語訳。
    * 正しさと自然さを兼ね備えた翻訳をすること。
+   * englishSentence の内容を一切省略せずに正確に翻訳してください。
    *
    * この文が、UI上で正解として表示される。
    *
