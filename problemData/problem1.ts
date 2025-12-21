@@ -24,7 +24,7 @@ const problemData: SeedProblemData[] = [
       // englishReplyの内容を完全に含む自然な日本語訳
       '分かりました！node_modulesもコミットすれば余裕です！',
     scenePrompt:
-      '【1コマ目】会議室で女性上司が立ち上がって力強く無茶な指令を出している様子【2コマ目】男性エンジニアが笑顔で親指を立ててnode_modulesのコミットで目標達成できると答えている',
+      '【1コマ目】会議室で女性上司が椅子に座ったまま腕を組み、どっしりと偉そうに無茶な指令を出している様子【2コマ目】男性エンジニアが笑顔で親指を立ててnode_modulesのコミットで目標達成できると答えている',
     senderVoiceInstruction: '力強く命令するような口調。自信満々に',
     receiverVoiceInstruction: '明るく元気な口調で、笑顔で前向きに答えているが皮肉が込められている',
     incorrectOptions: [
