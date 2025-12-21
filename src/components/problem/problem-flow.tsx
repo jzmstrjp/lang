@@ -554,6 +554,18 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
           ...prevPhase.problem,
           japaneseSentence: newJapaneseSentence,
         };
+
+        // quizフェーズの場合、shuffledOptionsの正解選択肢も更新
+        if (prevPhase.kind === 'quiz') {
+          return {
+            ...prevPhase,
+            problem: updatedProblem,
+            shuffledOptions: prevPhase.shuffledOptions.map((option) =>
+              option.kind === 'correct' ? { ...option, text: newJapaneseSentence } : option,
+            ),
+          };
+        }
+
         return { ...prevPhase, problem: updatedProblem } as Phase;
       });
 
