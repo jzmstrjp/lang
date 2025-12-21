@@ -6,35 +6,95 @@ import { SeedProblemData } from '../src/types/problem';
  */
 const problemData: SeedProblemData[] = [
   {
-    place: 'オフィスの休憩室',
-    senderRole: '男性同僚',
-    senderVoice: 'male',
-    receiverRole: '女性同僚',
-    receiverVoice: 'female',
+    place: '会社の会議室',
+    senderRole: '上司',
+    senderVoice: 'female',
+    receiverRole: 'エンジニア',
+    receiverVoice: 'male',
     englishSentence:
-      // 同僚女性のカバンについて失礼なコメントをする自然な口語表現
-      "Your bag looks cheap and fake, doesn't it?",
+      // エンジニアに無茶な数値目標を課す上司の発言
+      'Engineers, commit over 1000 lines of code every day!',
     japaneseSentence:
-      // englishSentenceの内容を正確に自然な日本語で表現。UI上の正解文。
-      '君のカバン、なんだか安っぽくて偽物みたいだね。',
+      // englishSentenceの内容を正確に表現。UI上の正解文。
+      'エンジニア諸君、毎日コードを1000行以上コミットすること！',
     englishReply:
-      // 男性の失礼な発言に対する皮肉な返し。"just like you"で相手を偽物扱い。
-      "You're right, just like you.",
+      // 無茶な指示に対して、node_modulesをコミットすれば簡単だと笑顔で答える皮肉
+      "Got it! I'll commit node_modules and it'll be easy!",
     japaneseReply:
       // englishReplyの内容を完全に含む自然な日本語訳
-      '本当だね、まるであなたみたい。',
+      '分かりました！node_modulesもコミットすれば余裕です！',
     scenePrompt:
-      '【1コマ目】オフィスの休憩室で、男性同僚がニヤつきながら女性同僚のカバンを指差して小馬鹿にした嫌味を言っている様子【2コマ目】女性同僚が明るい笑顔で皮肉な返しをしている',
-    senderVoiceInstruction: 'ニヤつきながら小馬鹿にした口調で、嫌味っぽく',
-    receiverVoiceInstruction: '明るく笑顔で、親しみやすく話すが皮肉が効いた口調',
+      '【1コマ目】会議室で女性上司が立ち上がって力強く無茶な指令を出している様子【2コマ目】男性エンジニアが笑顔で親指を立ててnode_modulesのコミットで目標達成できると答えている',
+    senderVoiceInstruction: '力強く命令するような口調。自信満々に',
+    receiverVoiceInstruction: '明るく元気な口調で、笑顔で前向きに答えているが皮肉が込められている',
     incorrectOptions: [
-      // japaneseSentence（24文字）と同じ文字数
-      // すべて異なる語で始まり、senderRole（男性同僚）の言いそうなセリフ
-      '新しいカバン買ったの？とても似合ってるよ。', // 真逆の意味（褒めている）
-      'そのカバン、実はカメラが仕込んである秘密道具さ。', // 馬鹿馬鹿しい
-      'カバンの中身、見せてもらってもいいかな？', // それっぽい誤答
+      // japaneseSentence（28文字）と同じ文字数
+      // すべて異なる語で始まり、senderRole（上司）の言いそうなセリフ
+      '諸君の自由な発想を尊重します。好きに書いてください！', // 真逆の意味（自由にさせる）
+      'コードは書かずに、毎日お茶を1000杯飲むこと！', // 馬鹿馬鹿しい
+      '今月の目標は、バグを1000個修正することです！', // それっぽい誤答
     ],
   },
+  // {
+  //   place: 'オフィスの休憩室',
+  //   senderRole: '男性同僚',
+  //   senderVoice: 'male',
+  //   receiverRole: '女性同僚',
+  //   receiverVoice: 'female',
+  //   englishSentence:
+  //     // 同僚女性のカバンについて失礼なコメントをする自然な口語表現
+  //     "Your bag looks cheap and fake, doesn't it?",
+  //   japaneseSentence:
+  //     // englishSentenceの内容を正確に自然な日本語で表現。UI上の正解文。
+  //     '君のカバン、なんだか安っぽくて偽物みたいだね。',
+  //   englishReply:
+  //     // 男性の失礼な発言に対する皮肉な返し。"just like you"で相手を偽物扱い。
+  //     "You're right, just like you.",
+  //   japaneseReply:
+  //     // englishReplyの内容を完全に含む自然な日本語訳
+  //     '本当だね、まるであなたみたい。',
+  //   scenePrompt:
+  //     '【1コマ目】オフィスの休憩室で、男性同僚がニヤつきながら女性同僚のカバンを指差して小馬鹿にした嫌味を言っている様子【2コマ目】女性同僚が明るい笑顔で皮肉な返しをしている',
+  //   senderVoiceInstruction: 'ニヤつきながら小馬鹿にした口調で、嫌味っぽく',
+  //   receiverVoiceInstruction: '明るく笑顔で、親しみやすく話すが皮肉が効いた口調',
+  //   incorrectOptions: [
+  //     // japaneseSentence（24文字）と同じ文字数
+  //     // すべて異なる語で始まり、senderRole（男性同僚）の言いそうなセリフ
+  //     '新しいカバン買ったの？とても似合ってるよ。', // 真逆の意味（褒めている）
+  //     'そのカバン、実はカメラが仕込んである秘密道具さ。', // 馬鹿馬鹿しい
+  //     'カバンの中身、見せてもらってもいいかな？', // それっぽい誤答
+  //   ],
+  // },
+  // {
+  //   place: 'ファミレス',
+  //   senderRole: '店員',
+  //   senderVoice: 'female',
+  //   receiverRole: '客',
+  //   receiverVoice: 'male',
+  //   englishSentence:
+  //     // 子供向けアイスの代わりに激辛チキンを提案する不条理な接客
+  //     "We're out of kids' ice cream. How about spicy chicken instead?",
+  //   japaneseSentence:
+  //     // englishSentenceの内容を正確に表現。UI上の正解文。
+  //     'お子様アイスは品切れです。代わりに激辛チキンはいかがでしょうか？',
+  //   englishReply:
+  //     // 男の子が無邪気に激辛チキンを受け入れる返答
+  //     "Okay, I'll try that!",
+  //   japaneseReply:
+  //     // englishReplyの内容を完全に含む自然な日本語訳
+  //     'じゃあ、それにしてみる！',
+  //   scenePrompt:
+  //     '【1コマ目】ファミレスで女性店員が子供客に真顔で激辛チキンを提案している【2コマ目】男の子が無邪気な笑顔で激辛チキンを注文しようとしている。テーブルにはまだ水しかない。',
+  //   senderVoiceInstruction: '丁寧で親切な接客口調だが、とんでもない提案をしている',
+  //   receiverVoiceInstruction: '元気で無邪気な子供の声。楽しそうに',
+  //   incorrectOptions: [
+  //     // japaneseSentence（30文字）と同じ文字数
+  //     // すべて異なる語で始まり、senderRole（女性店員）の言いそうなセリフ
+  //     'ただ今、お子様アイスを特別にご用意しております。いかがですか？', // 真逆の意味（在庫がある）
+  //     '実は今日、お子様アイス全品に毒が入っておりますがいかがですか？', // 馬鹿馬鹿しい
+  //     '申し訳ございません、デザート類は全て売り切れとなっております。', // それっぽい誤答
+  //   ],
+  // },
   //   {
   //     place: '道',
   //     senderRole: '娘',
