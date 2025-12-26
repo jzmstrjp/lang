@@ -54,10 +54,9 @@ async function generateImageWithCharacters(prompt: string) {
   ];
 
   const image = await openai.images.edit({
-    model: 'gpt-image-1.5',
+    ...MODEL_SETTING,
     image: imageFiles,
     prompt: prompt,
-    size: '1024x1536',
     quality: 'medium',
   });
 
