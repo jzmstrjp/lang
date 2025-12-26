@@ -157,10 +157,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
   const [senderFaceDirection, receiverFaceDirection] =
     senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
 
-  return `実写風の2コマ漫画を生成すること。
-上下に2コマです。
+  return `上下2コマに分割された写真を生成すること。
 上下のコマの高さは正確に同じであること。
-漫画ですが、吹き出し・台詞は描かないこと。写真のみで表現すること。
 
 【重要】
 - 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
@@ -185,10 +183,12 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）がカメラに向かって${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている
+- ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
 - まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）がカメラに向かって${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している
+- ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
 - もう${senderName}（${senderGenderText}）は描かないこと。
 
 【備考】
@@ -204,7 +204,6 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
     - Bad: 「ATMはどこですか？」というセリフなのに、すでにATMの前に立っている
     - Good: 「ATMはどこですか？」というセリフなので、まだATMの前に立っていない
 - 画像を見ただけで【ストーリー】を完全に想起できるように正確に描写すること。
-- 漫画だが、吹き出し・台詞は描かないこと。写真のみで表現すること。
 - 生成AIっぽくない、自然な本物の写真を生成すること。
 
 ## 重要
@@ -398,10 +397,8 @@ export function generateImagePromptWithCharacters(problem: GeneratedProblem): st
 新しいキャラクターに変形したり、別人化したりしないでください。
 
 【生成したいシーン】
-荘厳な油絵風の2コマ漫画を生成すること。
-上下に2コマです。
+上下2コマに分割された荘厳な油絵を生成すること。
 上下のコマの高さは正確に同じであること。
-漫画ですが、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 
 【重要】
 - 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
@@ -427,10 +424,12 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）がカメラに向かって${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている
+- ただし、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 - まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
 - ${receiverName}（${receiverGenderText}）がカメラに向かって${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している
+- ただし、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 - もう${senderName}（${senderGenderText}）は描かないこと。
 
 【備考】
@@ -450,12 +449,9 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 ## 重要
 - 上下のコマの高さは正確に同じであること。
 - 入力されたキャラクター画像の特徴を忠実に再現すること。
-- 漫画ですが、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 
 【禁止事項】
 - 1つのコマの中に同じ人物を2回描画してはならない。
 - キャラクター画像と異なる顔や服装にしてはならない。
-- セリフや吹き出しを描くことは禁止します。
-- 画像の中に字幕を描くことも禁止します。
 `;
 }
