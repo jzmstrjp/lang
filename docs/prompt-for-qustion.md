@@ -1,27 +1,7 @@
-私は英語リスニングのクイズアプリを作っています。TOEIC対策のWebアプリです。
+## やってほしいこと
 
-エンドユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。そんなクイズです。
-
-あなたはクイズ用の問題文を作ってください。
-
-# 問題文の作り方
-
-sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。
-ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。
-englishReply, japaneseReplyの内容も解答するためのヒントになる。
-
-以下の形式で問題データを出力してくれ。
-TypeScriptのオブジェクトとして、コードブロックでください。
-
-## 条件
-
-- englishSentence と englishReply が自然な会話になるべき。
-- englishSentence
-  - 正確に、10語以下の文章のみを生成すること。
-  - 質問や疑問文だけでなく、感謝・謝罪・賞賛・提案・助言・依頼・指示・許可・禁止・報告・意見・説明・誘い・慰め・励まし・冗談・雑談のセリフも必要です。
-- englishReply, japaneseReply
-  - 必要に応じて自然な相槌や感動詞も使用すること
-  - 例: 「ああ」「うん」「そうだね」「いいね」「いや」「へえ」
+英語リスニングアプリの問題オブジェクトを作ってほしい。
+具体的には、以下の形式のオブジェクトを作ってほしい。
 
 ```TypeScript
 type SeedProblemData = {
@@ -66,7 +46,8 @@ type SeedProblemData = {
    * englishSentence
    *
    * senderのセリフ。
-   * 役割や場面にあった自然な自然なセリフであること。。
+   * 正確に、10語以下の文章のみを生成すること。
+   * 役割や場面にあった自然な自然なセリフであること。
    * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
    */
   englishSentence: string
@@ -89,13 +70,23 @@ type SeedProblemData = {
    *
    * englishSentenceに対するreceiverの自然な返答。役割や場面にあったもの。
    * 文脈的に自然な返答であることが重要です。
+   * 必ずしも肯定的である必要はなく、質問だったり否定的な内容でもいい。
    * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
+   * 必要に応じて自然な相槌や感動詞も使用すること
+   * 例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
+   *
    * この文章を読んでユーザーが englishSentence の内容を少し推測できるようにしたい
-   * 良い例: 「Could you pass me the salt?」という　englishSentence　に対して「Here you are, the salt.」
-   * → 少し　englishSentence　を想像するヒントになる
-   * 悪い例: 「Could you pass me the salt?」という　englishSentence　に対して「Okay, got it.」
-   * → 全く englishSentence　を想像するヒントにならない
+   * 良い例1: 「Could you pass me the salt?」という　englishSentence　に対して「Here you are.」
+   * → englishReply　が を読むことで 　englishSentence　の内容は「何かを要求する文章」であることをユーザーが推測できるから良い
+   * 良い例2: 「You really contributed a lot.」という　englishSentence　に対して「Thank you, I’m glad I could help.」
+   * → englishReply　が を読むことで 　englishSentence　の内容は「ポジティブな内容」であることをユーザーが推測できるから良い
+   * 良い例3: 「If you have any questions after your visit, please feel free to get in touch with us by phone or email anytime.」という　englishSentence　に対して「Thank you for your kind offer. I will reach out if anything comes up.」
+   * → englishReply　が を読むことで 　englishSentence　の内容は「親切な内容・連絡を促すような内容」であることをユーザーが推測できるから良い
+   * 悪い例1: 「Could you pass me the salt?」という　englishSentence　に対して「Okay, got it.」
+   * → englishReply　が 　englishSentence　の内容を想像するヒントにならないからダメ
+   * 悪い例2: 「Several managers expressed concerns about the long-term impact of remote hiring on team cohesion.」という　englishSentence　に対して「I see. We should discuss possible solutions at our next meeting.」
+   * → englishReply　が可もなく不可もない内容で 　englishSentence　の内容を想像するヒントにならないからダメ
    */
   englishReply: string
   /**
@@ -130,8 +121,8 @@ type SeedProblemData = {
   /**
    * incorrectOptions
    *
-   * japaneseSentenceと同じ文字数の日本語のセリフ3つ。
-   * 3文とも、確実に文字数が同じになること。
+   * japaneseSentenceより長い文字数の日本語のセリフ3つ。
+   * 3文とも、確実に文字数が長くなること。
    *
    * この文たちは、UI上で誤回答として表示される。
    *
@@ -153,10 +144,24 @@ type SeedProblemData = {
 }
 ```
 
+## 背景・目的
+
+私は英語リスニングのクイズアプリを作っています。TOEIC対策のWebアプリです。
+
+エンドユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。そんなクイズです。
+
+あなたはクイズ用の問題文を作ってください。
+
+# 問題文の作り方
+
+sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。
+ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。
+englishReply, japaneseReplyの内容も解答するためのヒントになる。
+
 ## 重要
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。3文とも確実に文字数が同じであること。
+- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより文字数が長いこと。3文とも確実に文字数が長いこと。
 - 以下のプロパティには「コメントで書かれたルールを守れている根拠」をTypeScriptコメントとして書いてください。
   - englishSentence
   - japaneseSentence
