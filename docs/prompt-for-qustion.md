@@ -82,8 +82,8 @@ type SeedProblemData = {
    * 少しでも不自然な返答は禁止する。
    * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
-   * 必要に応じて自然な相槌や感動詞も使用すること
-   * 例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
+   * 必要に応じて、自然な相槌や感動詞を使ってもよい。
+   * 相槌や感動詞の例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
    *
    * englishReply を読んだユーザーが englishSentence の内容を少しだけ推測できるようにしたい
    * だから「はい、わかりました」や「ああ、私もそれに気づきました。」というような可もなく不可もないようなセリフは禁止する。 englishSentence の主題を見つけ、具体的に言及すべし。ただし丸ごとオウム返しは避けるべし。
