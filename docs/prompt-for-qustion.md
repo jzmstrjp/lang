@@ -1,6 +1,21 @@
 ## やってほしいこと
 
 英語リスニングアプリの問題オブジェクトを作ってほしい。
+
+## 背景・目的
+
+私は英語リスニングのクイズアプリを作っています。TOEIC対策のWebアプリです。
+
+エンドユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。そんなクイズです。
+
+あなたはクイズ用の問題文を作ってください。
+
+# 問題文の作り方
+
+sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。
+ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。
+englishReply, japaneseReplyの内容も解答するためのヒントになる。
+
 具体的には、以下の形式のオブジェクトを作ってほしい。
 
 ```TypeScript
@@ -113,8 +128,8 @@ type SeedProblemData = {
   /**
    * incorrectOptions
    *
-   * japaneseSentenceと同じ文字数の日本語のセリフ3つ。
-   * 3文とも、確実に文字数が同じであること。
+   * japaneseSentenceより少し長い文字数の日本語のセリフ3つ。
+   * 3文とも、確実に文字数が少し長いこと。
    *
    * この文たちは、UI上で誤回答として表示される。
    *
@@ -136,24 +151,10 @@ type SeedProblemData = {
 }
 ```
 
-## 背景・目的
-
-私は英語リスニングのクイズアプリを作っています。TOEIC対策のWebアプリです。
-
-エンドユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。そんなクイズです。
-
-あなたはクイズ用の問題文を作ってください。
-
-# 問題文の作り方
-
-sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。
-ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。
-englishReply, japaneseReplyの内容も解答するためのヒントになる。
-
 ## 重要
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。3文とも確実に文字数が同じであること。
+- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより少し長いであること。3文とも確実に少し長い文字数であること。
 - 以下のプロパティには「コメントで書かれたルールを守れている根拠」をTypeScriptコメントとして書いてください。
   - englishSentence
   - japaneseSentence
