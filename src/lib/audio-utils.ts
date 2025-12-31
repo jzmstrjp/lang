@@ -44,7 +44,7 @@ export async function generateSpeech(
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
-  const model = getModelFromGenderAndLanguage(speaker, language);
+  const model = getModelFromGenderAndLanguage(speaker);
 
   const result = await openai.audio.speech.create({
     model,
@@ -72,7 +72,7 @@ export async function generateSpeechBuffer(
   ensureApiKey();
 
   const voice = speakerToVoice(speaker);
-  const model = getModelFromGenderAndLanguage(speaker, language);
+  const model = getModelFromGenderAndLanguage(speaker);
 
   const result = await openai.audio.speech.create({
     model,

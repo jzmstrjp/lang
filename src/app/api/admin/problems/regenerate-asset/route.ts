@@ -169,6 +169,7 @@ async function regenerateImageInBackground(problem: {
   scenePrompt: string | null;
   senderVoiceInstruction: string | null;
   receiverVoiceInstruction: string | null;
+  difficultyLevel: number | null;
 }): Promise<void> {
   try {
     console.log(`[regenerate-asset] 画像を再生成中: ${problem.id}`);
@@ -187,6 +188,7 @@ async function regenerateImageInBackground(problem: {
       place: problem.place,
       scenePrompt: problem.scenePrompt,
       senderVoiceInstruction: problem.senderVoiceInstruction,
+      difficultyLevel: problem.difficultyLevel ?? null,
       receiverVoiceInstruction: problem.receiverVoiceInstruction,
     };
 

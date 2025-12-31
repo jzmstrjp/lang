@@ -21,8 +21,10 @@
     "fix-missing-image": "tsx scripts/fix-missing-image.ts",
     "fix-missing-image:with-characters": "tsx scripts/fix-missing-image.ts --use-character-images",
     "check:image-coverage": "tsx scripts/check-image-coverage.ts",
+    "check:difficulty-distribution": "tsx scripts/check-difficulty-distribution.ts",
     "check:incorrect-options-length": "tsx scripts/check-incorrect-options-length.ts",
-    "generate:problems": "tsx scripts/generate-problems-with-gpt.ts"
+    "generate:problems": "tsx scripts/generate-problems-with-gpt.ts",
+    "update-difficulty": "tsx scripts/update-difficulty-level.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",

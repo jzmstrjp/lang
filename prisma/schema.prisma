@@ -29,12 +29,14 @@ model Problem {
   scenePrompt      String?
   senderVoiceInstruction String?
   receiverVoiceInstruction String?
+  difficultyLevel  Int?
   
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   @@unique([englishSentence])
   @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
+  @@index([audioReady, difficultyLevel], map: "idx_problems_audio_ready_difficulty")
   @@map("problems")
 }
 

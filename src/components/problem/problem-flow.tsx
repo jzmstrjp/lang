@@ -50,9 +50,11 @@ type ClientPhase = {
 type Phase = ServerPhase | ClientPhase;
 
 export type ProblemLength = 'short' | 'medium' | 'long';
+export type DifficultyLevel = 'kids' | 'easy' | 'normal' | 'hard' | 'expert';
 
 type ProblemFlowProps = {
-  length: ProblemLength;
+  length?: ProblemLength;
+  difficultyLevel?: DifficultyLevel;
   initialProblem: ProblemWithStaticFlag;
   isAdminPromise: Promise<boolean>;
 };
@@ -72,11 +74,19 @@ type EditableIncorrectOptionResult = { ok: true } | { ok: false; message: string
 
 type RemovableField = 'imageUrl' | 'audioEnUrl' | 'audioEnReplyUrl' | 'audioJaUrl';
 
-export default function ProblemFlow({ length, initialProblem, isAdminPromise }: ProblemFlowProps) {
+export default function ProblemFlow({
+  length,
+  difficultyLevel,
+  initialProblem,
+  isAdminPromise,
+}: ProblemFlowProps) {
+  // ストレージキー用の識別子（lengthまたはdifficultyLevel）
+  const storageKey = length || difficultyLevel || 'default';
+
   // useLocalStorageフックで設定を管理（自動的にタブ間同期される）
   const [isEnglishMode] = useLocalStorage('englishMode', false);
   const [isImageHiddenMode] = useLocalStorage('noImageMode', false);
-  const [correctStreak, setCorrectStreak] = useLocalStorage(`correctStreak-${length}`, 0);
+  const [correctStreak, setCorrectStreak] = useLocalStorage(`correctStreak-${storageKey}`, 0);
 
   // Setting型を動的に構築
   const getCurrentSetting = useCallback((): Setting => {
@@ -145,7 +155,13 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
 
     try {
       // 補充時は常に検索なしで取得
-      const params = new URLSearchParams({ type: length });
+      const params = new URLSearchParams();
+      if (length) {
+        params.set('type', length);
+      }
+      if (difficultyLevel) {
+        params.set('difficultyLevel', difficultyLevel);
+      }
       const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
 
       if (response.ok) {
@@ -167,7 +183,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [length, problemQueue.length]);
+  }, [difficultyLevel, length, problemQueue.length]);
 
   // phaseごとの処理
   useLayoutEffect(() => {
@@ -787,6 +803,7 @@ export default function ProblemFlow({ length, initialProblem, isAdminPromise }: 
             phase={phase}
             isOnStreak={isOnStreak}
             length={length}
+            difficultyLevel={difficultyLevel}
             isAudioBusy={isAudioBusy}
             onNextProblem={handleNextProblem}
             isAdminPromise={isAdminPromise}
@@ -1047,7 +1064,8 @@ function QuizPhaseView({
 type CorrectPhaseViewProps = {
   phase: Extract<ClientPhase, { kind: 'correct' }>;
   isOnStreak: boolean;
-  length: ProblemLength;
+  length?: ProblemLength;
+  difficultyLevel?: DifficultyLevel;
   isAudioBusy: boolean;
   onNextProblem: () => void;
   isAdminPromise: Promise<boolean>;
@@ -1058,6 +1076,7 @@ function CorrectPhaseView({
   phase,
   isOnStreak,
   length,
+  difficultyLevel,
   isAudioBusy,
   onNextProblem,
 }: CorrectPhaseViewProps) {
@@ -1157,7 +1176,9 @@ function CorrectPhaseView({
             <button
               type="button"
               onClick={() => {
-                const courseName = length.charAt(0).toUpperCase() + length.slice(1);
+                const courseIdentifier = length || difficultyLevel || 'default';
+                const courseName =
+                  courseIdentifier.charAt(0).toUpperCase() + courseIdentifier.slice(1);
                 const shareUrl = `${window.location.origin}?streak=${phase.setting.correctStreak}`;
                 const tweetText = `【英語きわめ太郎】${courseName}コースで${phase.setting.correctStreak}問連続正解しました！`;
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;

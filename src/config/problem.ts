@@ -6,6 +6,19 @@ export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number 
   long: { min: 11, max: 30 },
 };
 
+export type DifficultyLevel = 'kids' | 'easy' | 'normal' | 'hard' | 'expert';
+
+export const DIFFICULTY_LEVEL_RULES: Record<
+  DifficultyLevel,
+  { min: number; max: number; displayName: string }
+> = {
+  kids: { min: 1, max: 2, displayName: 'Kids' },
+  easy: { min: 3, max: 4, displayName: 'Easy' },
+  normal: { min: 5, max: 6, displayName: 'Normal' },
+  hard: { min: 7, max: 8, displayName: 'Hard' },
+  expert: { min: 9, max: 10, displayName: 'Expert' },
+};
+
 /**
  * WORD_COUNT_RULESから指定されたタイプの単語数配列を動的に生成
  * 例: short タイプの場合 [2, 3, 4, 5, 6] を返す

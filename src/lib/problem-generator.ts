@@ -118,6 +118,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
     scenePrompt: selectedProblem.scenePrompt || null,
     senderVoiceInstruction: selectedProblem.senderVoiceInstruction ?? null,
     receiverVoiceInstruction: selectedProblem.receiverVoiceInstruction ?? null,
+    difficultyLevel: null,
   };
 }
 

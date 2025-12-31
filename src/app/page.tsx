@@ -3,21 +3,51 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
-const links = [
+const links: { href: string; level?: number; label: string; description: string }[] = [
+  // {
+  //   href: '/problems/short',
+  //   label: 'short',
+  //   description: `短い文`,
+  // },
+  // {
+  //   href: '/problems/medium',
+  //   label: 'medium',
+  //   description: `中くらいの文`,
+  // },
+  // {
+  //   href: '/problems/long',
+  //   label: 'long',
+  //   description: `少し長い文`,
+  // },
   {
-    href: '/problems/short',
-    label: 'short',
-    description: `短い文`,
+    href: '/level/kids',
+    level: 1,
+    label: 'Kids',
+    description: `子ども向け`,
   },
   {
-    href: '/problems/medium',
-    label: 'medium',
-    description: `中くらいの文`,
+    href: '/level/easy',
+    label: 'Easy',
+    level: 2,
+    description: `かんたん`,
   },
   {
-    href: '/problems/long',
-    label: 'long',
-    description: `少し長い文`,
+    href: '/level/normal',
+    label: 'Normal',
+    level: 3,
+    description: `ふつう`,
+  },
+  {
+    href: '/level/hard',
+    label: 'Hard',
+    level: 4,
+    description: `むずかしい`,
+  },
+  {
+    href: '/level/expert',
+    label: 'Expert',
+    level: 5,
+    description: `げきむず`,
   },
 ];
 
@@ -87,13 +117,18 @@ export default function Home() {
         />
       </div>
       <nav className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:gap-6">
-        {links.map(({ href, label, description }) => (
+        {links.map(({ href, level, label, description }) => (
           <Link
             key={href}
             href={href}
             className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--course-link-border)] bg-[var(--course-link-bg)] px-5 py-4 text-[var(--course-link-text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--course-link-hover-border)] hover:bg-[var(--course-link-hover-bg)] hover:text-[var(--course-link-hover-text)] sm:flex-1"
           >
             <span className="text-2xl sm:text-xl font-semibold capitalize">{label}</span>
+            {level && (
+              <span className="text-sm font-medium text-[var(--course-link-secondary-text)]">
+                {'★'.repeat(level)}
+              </span>
+            )}
             <span className="text-sm font-medium text-[var(--course-link-secondary-text)]">
               {description}
             </span>

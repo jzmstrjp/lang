@@ -103,6 +103,7 @@ async function main(
         scenePrompt: true,
         senderVoiceInstruction: true,
         receiverVoiceInstruction: true,
+        difficultyLevel: true,
       },
       take: batchSize,
       orderBy: {
@@ -172,6 +173,7 @@ async function main(
           scenePrompt: problem.scenePrompt ?? null,
           senderVoiceInstruction: problem.senderVoiceInstruction ?? null,
           receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
+          difficultyLevel: problem.difficultyLevel ?? null,
         };
 
         // キャラクター画像を使うか通常生成かで分岐

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { type ProblemLength } from '@/config/problem';
+import { type ProblemLength, type DifficultyLevel } from '@/config/problem';
 import { fetchProblems } from '@/lib/problem-service';
 
 // 型を再エクスポート（既存のインポートを壊さないため）
@@ -8,14 +8,19 @@ export type { ProblemWithAudio } from '@/lib/problem-service';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const type = (searchParams.get('type') || 'short') as ProblemLength;
+    const typeParam = searchParams.get('type');
+    const difficultyLevelParam = searchParams.get('difficultyLevel');
+    const type = typeParam ? (typeParam as ProblemLength) : undefined;
+    const difficultyLevel = difficultyLevelParam
+      ? (difficultyLevelParam as DifficultyLevel)
+      : undefined;
     const rawSearch = searchParams.get('search');
     const search = rawSearch?.trim();
     const limitParam = searchParams.get('limit');
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
     // 共通のサービス関数を使用
-    const result = await fetchProblems({ type, search, limit });
+    const result = await fetchProblems({ type, difficultyLevel, search, limit });
 
     return NextResponse.json(result);
   } catch (error) {
