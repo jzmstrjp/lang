@@ -154,8 +154,8 @@ type SeedProblemData = {
   /**
    * incorrectOptions
    *
-   * japaneseSentenceより少し長い文字数の日本語のセリフ3つ。
-   * 3文とも、確実に文字数が少し長いこと。
+   * japaneseSentenceと同じ文字数の日本語のセリフ3つ。
+   * 3文とも、確実にjapaneseSentenceと同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
    *
    * この文たちは、UI上で誤回答として表示される。
    * したがって、japaneseSentenceの回答として意味が合わない文を生成すること。
@@ -181,6 +181,6 @@ type SeedProblemData = {
 ## 重要
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより少し長いであること。3文とも確実に少し長い文字数であること。
+- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。確実にjapaneseSentenceと同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
 - scenePromptはユーザーからは見えないので、englishSentenceとenglishReplyだけ聞けばストーリーが分かるように作ってほしい。
