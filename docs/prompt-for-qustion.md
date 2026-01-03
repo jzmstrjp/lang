@@ -101,9 +101,13 @@ type SeedProblemData = {
    * englishSentence
    *
    * senderのセリフ。
-   * 正確に、12語以下の文章のみを生成すること。
+   * 正確に、12語以上の文章のみを生成すること。
    * 役割や場面にあった自然な自然なセリフであること。
    * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
+   *
+   * 不自然な例:
+   * - Are we on schedule according to the schedule?
+   *   - 冗長。「Are we on schedule?」で伝わる。
    */
   englishSentence: string
   /**
