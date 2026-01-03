@@ -100,7 +100,7 @@ type SeedProblemData = {
   /**
    * japaneseSentence
    *
-   * englishSentenceの日本語訳。日本語として自然な言い回しにすべし。
+   * englishSentenceの日本語訳。完全な直訳ではなく、日本人の口語として自然な言い回しにすべし。
    * englishSentenceの内容をもれなく含んでいること。
    *
    * この文が、UI上で正解として表示される。
@@ -130,7 +130,7 @@ type SeedProblemData = {
   /**
    * japaneseReply
    *
-   * englishReplyの日本語訳。日本語として自然な言い回しにすべし。
+   * englishReplyの日本語訳。完全な直訳ではなく、日本人の口語として自然な言い回しにすべし。
    * englishReplyの内容をもれなく含んでいること。
    */
   japaneseReply: string
