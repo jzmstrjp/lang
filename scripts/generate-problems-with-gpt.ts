@@ -38,7 +38,7 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 `;
 
 const BRUSHUP_PROMPT =
-  '今の回答は35点です。批判的に自己レビューを行って、100点の回答を生成してください。englishSentenceとenglishReplyの自然な繋がりを重視してください。incorrectOptions周りのルールもしっかりと守ってください。';
+  'さっきの回答は35点です。批判的に自己レビューを行って、100点の完璧な回答を生成し直してください。';
 
 type TokenUsage = {
   input_tokens?: number;
