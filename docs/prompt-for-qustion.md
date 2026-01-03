@@ -46,6 +46,8 @@ type SeedProblemData = {
    * 大まかな会話のストーリーと場所の様子を言語化してください。
    * 電話での会話なのか対面での会話なのかビデオ会議なのかも明記すること。
    *
+   * scenePromptはユーザーからは見えないので、ここにだけ秘密の事情を書くのは避けてください。
+   *
    */
   scenePrompt: string
   /**
@@ -180,3 +182,4 @@ type SeedProblemData = {
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより少し長いであること。3文とも確実に少し長い文字数であること。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
+- scenePromptはユーザーからは見えないので、englishSentenceとenglishReplyだけ聞けばストーリーが分かるように作ってほしい。
