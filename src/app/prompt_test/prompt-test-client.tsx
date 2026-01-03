@@ -223,6 +223,7 @@ export default function PromptTestClient() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
                 <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
+                <p className="text-xl text-blue-900 font-medium">（{problem.japaneseSentence}）</p>
                 <p className="mt-2 text-sm text-blue-500">{problem.senderVoiceInstruction}</p>
               </div>
 
