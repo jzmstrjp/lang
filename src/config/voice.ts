@@ -28,9 +28,9 @@ export const TTS_CONFIG = {
  * 性別ごとのTTSモデル設定
  */
 export const MODEL_CONFIG = {
-  male: 'gpt-4o-mini-tts-2025-12-15',
-  female: 'gpt-4o-mini-tts-2025-12-15',
-  neutral: 'gpt-4o-mini-tts-2025-12-15',
+  male: 'gpt-4o-mini-tts',
+  female: 'gpt-4o-mini-tts',
+  neutral: 'gpt-4o-mini-tts',
 } as const satisfies Record<VoiceGender, SpeechModel>;
 
 /**
