@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
+import { TEXT_MODEL } from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -50,7 +51,7 @@ ${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」という英�
 重要: 日本語訳のテキストのみを出力してください。説明や解説は不要です。`;
 
     const response = await openai.responses.create({
-      model: 'gpt-4.1',
+      model: TEXT_MODEL,
       input: [
         {
           role: 'user',

@@ -1,6 +1,9 @@
 import type { ImageGenerateParams } from 'openai/resources/images';
+import type { ChatModel } from 'openai/resources/shared';
 
-export const MODEL_SETTING = {
+export const TEXT_MODEL: ChatModel = 'gpt-5.2';
+
+export const IMAGE_MODEL_SETTING = {
   model: 'gpt-image-1.5',
   size: '1024x1536',
   quality: 'low',

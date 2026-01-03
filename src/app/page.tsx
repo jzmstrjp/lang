@@ -4,51 +4,51 @@ import { Metadata } from 'next';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
 const links: { href: string; level?: number; label: string; description: string }[] = [
+  {
+    href: '/problems/short',
+    label: 'short',
+    description: `短い文`,
+  },
+  {
+    href: '/problems/medium',
+    label: 'medium',
+    description: `中くらいの文`,
+  },
+  {
+    href: '/problems/long',
+    label: 'long',
+    description: `少し長い文`,
+  },
   // {
-  //   href: '/problems/short',
-  //   label: 'short',
-  //   description: `短い文`,
+  //   href: '/level/kids',
+  //   level: 1,
+  //   label: 'Kids',
+  //   description: `子ども向け`,
   // },
   // {
-  //   href: '/problems/medium',
-  //   label: 'medium',
-  //   description: `中くらいの文`,
+  //   href: '/level/easy',
+  //   label: 'Easy',
+  //   level: 2,
+  //   description: `かんたん`,
   // },
   // {
-  //   href: '/problems/long',
-  //   label: 'long',
-  //   description: `少し長い文`,
+  //   href: '/level/normal',
+  //   label: 'Normal',
+  //   level: 3,
+  //   description: `ふつう`,
   // },
-  {
-    href: '/level/kids',
-    level: 1,
-    label: 'Kids',
-    description: `子ども向け`,
-  },
-  {
-    href: '/level/easy',
-    label: 'Easy',
-    level: 2,
-    description: `かんたん`,
-  },
-  {
-    href: '/level/normal',
-    label: 'Normal',
-    level: 3,
-    description: `ふつう`,
-  },
-  {
-    href: '/level/hard',
-    label: 'Hard',
-    level: 4,
-    description: `むずかしい`,
-  },
-  {
-    href: '/level/expert',
-    label: 'Expert',
-    level: 5,
-    description: `げきむず`,
-  },
+  // {
+  //   href: '/level/hard',
+  //   label: 'Hard',
+  //   level: 4,
+  //   description: `むずかしい`,
+  // },
+  // {
+  //   href: '/level/expert',
+  //   label: 'Expert',
+  //   level: 5,
+  //   description: `げきむず`,
+  // },
 ];
 
 type HomePageProps = {

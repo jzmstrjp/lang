@@ -1,1 +1,1 @@
-export const words = [];
+export const words = ['unless', 'therefore', 'otherwise'];

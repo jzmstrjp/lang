@@ -7,7 +7,7 @@ import {
   type GenerateRequest,
 } from '@/lib/problem-generator';
 import OpenAI from 'openai';
-import { MODEL_SETTING } from '@/const';
+import { IMAGE_MODEL_SETTING } from '@/const';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import fs from 'fs/promises';
@@ -19,7 +19,7 @@ const openai = new OpenAI({
 
 async function generateImage(prompt: string) {
   const image = await openai.images.generate({
-    ...MODEL_SETTING,
+    ...IMAGE_MODEL_SETTING,
     prompt,
   });
 
@@ -54,7 +54,7 @@ async function generateImageWithCharacters(prompt: string) {
   ];
 
   const image = await openai.images.edit({
-    ...MODEL_SETTING,
+    ...IMAGE_MODEL_SETTING,
     image: imageFiles,
     prompt: prompt,
     quality: 'medium',

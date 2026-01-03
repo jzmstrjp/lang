@@ -12,8 +12,26 @@
 
 # 問題文の作り方
 
-sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。
-ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。
+sender（話しかける人）とreceriver（返答する人）の、口語として自然な会話文をたくさん作りたい。実際に英語圏の人たちが普段交わすような会話がいい。何の話をしているのか意味不明な会話は絶対に避けてほしい。
+
+## 自然な会話の例
+
+1. 「Could you lend me a stapler for a moment?」に対して「Sure, here you go.」
+2. 「Let’s at least decide on a presentation theme by the end of this week, otherwise we won’t make it in time for next month’s presentation.」に対して「You’re right. I’ll start by coming up with a few theme ideas.」
+3. 「He’s always so positive, isn’t he?」に対して「Yeah, I’d like to learn from him too.」
+4. 「Even though the deadline was short, Emma’s team delivered an excellent product, didn’t they?」に対して「It really is impressive. I wonder what their secret is.」
+
+## 不自然な会話の例
+
+1. 「The gate changed, therefore please follow the signs.」に対して「Okay, which gate number should we go to now?」
+
+- 「follow the signs.」と言われているのに「which gate number」と質問していて不自然。「Okay, I’ll follow the signs.」の方が自然。
+
+上記のような、自然に話しかける内容と、自然な返答を生成してほしい。
+
+# ユーザー体験について
+
+ユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を4択から答える。
 englishReply, japaneseReplyの内容も解答するためのヒントになる。
 
 具体的には、以下の形式のオブジェクトを作ってほしい。
@@ -23,7 +41,7 @@ type SeedProblemData = {
   /**
    * scenePrompt
    *
-   * どのような場面なのか具体的に説明した文章。
+   * どのような場面なのか日本語で具体的に説明した文章。
    * englishSentenceやjapaneseSentenceに書かれていない文脈・背景・場所の様子・登場人物の動機を言語化すること。
    * AIによる画像生成に使用する。
    */
@@ -77,13 +95,12 @@ type SeedProblemData = {
   /**
    * japaneseSentence
    *
-   * englishSentenceの自然な日本語訳。
-   * 正しさと自然さを兼ね備えた翻訳をすること。
-   * englishSentence の内容を一切省略せずに正確に翻訳してください。
+   * englishSentenceの日本語訳。日本語として自然な言い回しにすべし。
+   * englishSentenceの内容をもれなく含んでいること。
    *
    * この文が、UI上で正解として表示される。
    *
-   * ただカタカナ英語にするような翻訳は避けてください。
+   * カタカナ英語にするような翻訳は避けてください。
    * 悪い例: 「Due diligence」を「デューディリジェンス」と訳す。
    * ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。
    */
@@ -95,9 +112,10 @@ type SeedProblemData = {
    * 文脈的に自然な返答であることが重要です。
    * 驚きだったり、同意だったり、質問だったり、質問に対する回答だったり、場面に応じた自然な返答のセリフ。
    * 少しでも不自然な返答は禁止する。
+   * 新しい話題を始めることも禁止する。
    * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
-   * 必要に応じて、自然な相槌や感動詞を使ってもよい。
+   * 必要に応じて、自然な相槌や感動詞を使ってもよい。相槌がなくても文章が自然に成り立つなら無理に使わなくてもいい。
    * 相槌や感動詞の例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
    *
    * englishReply を読んだユーザーが englishSentence の内容を少しだけ推測できるようにしたい
@@ -107,7 +125,7 @@ type SeedProblemData = {
   /**
    * japaneseReply
    *
-   * englishReplyの自然な日本語訳。
+   * englishReplyの日本語訳。日本語として自然な言い回しにすべし。
    * englishReplyの内容をもれなく含んでいること。
    */
   japaneseReply: string
@@ -132,6 +150,7 @@ type SeedProblemData = {
    * 3文とも、確実に文字数が少し長いこと。
    *
    * この文たちは、UI上で誤回答として表示される。
+   * したがって、japaneseSentenceの回答として意味が合わない文を生成すること。
    *
    * senderRoleの言いそうなセリフであること。receiverRoleのセリフではない。
    *
@@ -155,10 +174,3 @@ type SeedProblemData = {
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより少し長いであること。3文とも確実に少し長い文字数であること。
-- 以下のプロパティには「コメントで書かれたルールを守れている根拠」をTypeScriptコメントとして書いてください。
-  - englishSentence
-  - japaneseSentence
-  - englishReply
-  - japaneseReply
-  - scenePrompt
-  - incorrectOptions

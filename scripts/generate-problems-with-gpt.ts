@@ -10,6 +10,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 import { words } from '../docs/words';
+import { TEXT_MODEL } from '@/const';
 
 // 環境変数を読み込み
 dotenv.config();
@@ -111,7 +112,7 @@ async function generateProblemsWithHistory(
     }));
 
     const response = await openai.responses.create({
-      model: 'gpt-4.1',
+      model: TEXT_MODEL,
       input: formattedMessages,
       temperature: 0.7,
     });
@@ -581,7 +582,7 @@ async function main() {
     }
 
     const wordAssignments = words.slice(0, totalProblems);
-    const initialPrompt = `${prompt}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
+    const initialPrompt = `${prompt}\n\n${prompt}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
     console.log('✅ プロンプト読み込み完了\n');
     console.log('📍 place設定方針:');
     console.log('');

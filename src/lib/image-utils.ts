@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { config } from 'dotenv';
 import { uploadImageToR2 } from './r2-client';
-import { MODEL_SETTING } from '@/const';
+import { IMAGE_MODEL_SETTING } from '@/const';
 
 // 環境変数を読み込み
 if (typeof window === 'undefined') {
@@ -26,7 +26,7 @@ export async function generateImage(prompt: string): Promise<string> {
   ensureApiKey();
 
   const image = await openai.images.generate({
-    ...MODEL_SETTING,
+    ...IMAGE_MODEL_SETTING,
     prompt,
   });
 
@@ -55,7 +55,7 @@ export async function generateImageBuffer(prompt: string): Promise<Buffer> {
   ensureApiKey();
 
   const image = await openai.images.generate({
-    ...MODEL_SETTING,
+    ...IMAGE_MODEL_SETTING,
     prompt,
   });
 
@@ -126,7 +126,7 @@ export async function generateImageWithCharactersBuffer(
   });
 
   const image = await openai.images.edit({
-    ...MODEL_SETTING,
+    ...IMAGE_MODEL_SETTING,
     image: imageFiles,
     prompt: scenePrompt,
     quality: 'medium',

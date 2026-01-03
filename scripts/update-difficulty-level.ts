@@ -9,6 +9,7 @@ import { OpenAI } from 'openai';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { TEXT_MODEL } from '@/const';
 
 // 環境変数を読み込み
 dotenv.config();
@@ -80,7 +81,7 @@ async function judgeDifficultyLevel(
 
   try {
     const response = await openai.responses.create({
-      model: 'gpt-4.1',
+      model: TEXT_MODEL,
       input: [
         {
           role: 'user',
