@@ -26,7 +26,7 @@ sender（話しかける人）とreceriver（返答する人）の、口語と�
 - 「The gate changed, therefore please follow the signs.」に対して「Okay, which gate number should we go to now?」
   - 理由: 「follow the signs.」と言われているのに「which gate number」と質問していて不自然。「Okay, I’ll follow the signs.」の方が自然。
 - 「I'm running late due to the security line.」に対して「No worries. Just tap your badge, and you're good to go.」
-  - 理由: 状況がよく分からない。意味不明。最悪。
+  - 理由: 状況がよく分からない。会話のつながりとして意味不明。最悪。
 
 上記のような、自然に話しかける内容と、自然な返答を生成してほしい。
 
