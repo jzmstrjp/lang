@@ -200,6 +200,21 @@ export default function PromptTestClient() {
                 </div>
               )}
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-purple-50 border border-purple-200 rounded p-3">
+                  <span className="font-semibold text-purple-800">シーン:</span>
+                  <p className="text-purple-700">{problem.place}</p>
+                </div>
+                {(problem.senderRole || problem.receiverRole) && (
+                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3">
+                    <span className="font-semibold text-cyan-800">キャラクター:</span>
+                    <p className="text-cyan-700">
+                      {problem.senderRole} → {problem.receiverRole}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
                 <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
@@ -234,29 +249,11 @@ export default function PromptTestClient() {
                         >
                           {index + 1}
                         </span>
-                        {index === CORRECT_INDEX && (
-                          <span className="text-green-600 font-semibold text-sm">✓ 正解</span>
-                        )}
                         <span className="text-base">{option}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="bg-purple-50 border border-purple-200 rounded p-3">
-                  <span className="font-semibold text-purple-800">シーン:</span>
-                  <p className="text-purple-700">{problem.place}</p>
-                </div>
-                {(problem.senderRole || problem.receiverRole) && (
-                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3">
-                    <span className="font-semibold text-cyan-800">キャラクター:</span>
-                    <p className="text-cyan-700">
-                      {problem.senderRole} → {problem.receiverRole}
-                    </p>
-                  </div>
-                )}
               </div>
 
               {assets?.imagePrompt && (
