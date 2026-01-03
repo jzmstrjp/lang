@@ -200,8 +200,6 @@ export default function PromptTestClient() {
                 </div>
               )}
 
-             
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-purple-50 border border-purple-200 rounded p-3">
                   <span className="font-semibold text-purple-800">シーン:</span>
@@ -218,9 +216,9 @@ export default function PromptTestClient() {
               </div>
 
               <div className="bg-orange-50 border border-orange-200 rounded p-3">
-                  <span className="font-semibold text-orange-800">ストーリー:</span>
-                  <p className="text-orange-700">{problem.scenePrompt}</p>
-                </div>
+                <span className="font-semibold text-orange-800">ストーリー:</span>
+                <p className="text-orange-700">{problem.scenePrompt}</p>
+              </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>

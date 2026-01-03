@@ -37,7 +37,8 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 \`\`\`
 `;
 
-const BRUSHUP_PROMPT = '今の回答が30点だとして、100点の回答をお願いします。';
+const BRUSHUP_PROMPT =
+  '今の回答が30点だとして、120点の回答をお願いします。自然な会話を何よりも重視してください。';
 
 type TokenUsage = {
   input_tokens?: number;
