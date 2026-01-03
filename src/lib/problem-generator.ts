@@ -162,8 +162,6 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 上下のコマの高さは正確に同じであること。
 
 【重要】
-- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
-- 1コマ目、2コマ目を通して、2人の登場人物が向かい合って見えるようなカメラアングルで描写すること。
 - 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
 
 【コマの高さ】
@@ -175,10 +173,11 @@ ${problem.place}
 
 【登場人物】
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+  - 話しかける人（sender）
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
+  - 話しかけられて応答する人（receiver）
 
 【ストーリー】
-- 二人が向かい合って会話をしている。
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
@@ -194,8 +193,6 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
-- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
-- 1コマ目、2コマ目を通して、2人の登場人物が向かい合って見えるようなカメラアングルで描写すること。
 - 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
 - 重要: セリフに対して不自然な画像はNG
   - 例1

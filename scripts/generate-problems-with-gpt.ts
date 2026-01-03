@@ -37,6 +37,8 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 \`\`\`
 `;
 
+const BRUSHUP_PROMPT = '今の回答が30点だとして、100点の回答をお願いします。';
+
 type TokenUsage = {
   input_tokens?: number;
   output_tokens?: number;
@@ -265,7 +267,53 @@ async function generateMultipleProblems(
       throw lastValidationError ?? new Error('コード生成に失敗しました');
     }
 
-    allCodes.push(generatedCodeForRound);
+    // ブラッシュアップ処理
+    console.log(`🎨 ${i}回目の回答をブラッシュアップ中...`);
+    let brushedUpCode = generatedCodeForRound;
+    let brushupMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      ...baseMessages,
+      {
+        role: 'assistant',
+        content: `\`\`\`ts\n${generatedCodeForRound}\n\`\`\``,
+      },
+      {
+        role: 'user',
+        content: BRUSHUP_PROMPT,
+      },
+    ];
+
+    for (let brushupAttempt = 1; brushupAttempt <= MAX_CODE_ATTEMPTS; brushupAttempt++) {
+      const brushupLabel = `${i}回目のブラッシュアップ${brushupAttempt === 1 ? '' : ` (再試行${brushupAttempt - 1})`}`;
+
+      try {
+        const brushupResult = await generateProblemsWithHistory(brushupMessages, brushupLabel);
+        const brushedUpCandidate = extractTypeScriptCode(brushupResult.content);
+
+        validateGeneratedCode(brushedUpCandidate);
+        brushedUpCode = brushedUpCandidate;
+        console.log(`✨ ${i}回目のブラッシュアップ完了`);
+        break;
+      } catch (error) {
+        const brushupError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`⚠️ ${brushupLabel}でエラー: ${brushupError.message}`);
+
+        if (brushupAttempt === MAX_CODE_ATTEMPTS) {
+          console.log(`ℹ️ ブラッシュアップに失敗したため、元の回答を使用します`);
+          break;
+        }
+
+        // エラーがあった場合は修正を依頼
+        brushupMessages = [
+          ...brushupMessages,
+          {
+            role: 'user',
+            content: createFormatRetryInstruction(brushupError.message),
+          },
+        ];
+      }
+    }
+
+    allCodes.push(brushedUpCode);
 
     console.log(`✅ ${i}回目完了 (累計${totalGenerated}問)\n`);
 
@@ -582,7 +630,7 @@ async function main() {
     }
 
     const wordAssignments = words.slice(0, totalProblems);
-    const initialPrompt = `${prompt}\n\n${prompt}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
+    const initialPrompt = `${prompt}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
     console.log('✅ プロンプト読み込み完了\n');
     console.log('📍 place設定方針:');
     console.log('');
