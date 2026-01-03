@@ -42,7 +42,7 @@ type SeedProblemData = {
    * scenePrompt
    *
    * どのような場面なのか日本語で具体的に説明した文章。
-   * 電話なのか対面なのかビデオ会議なのかも明記すること。
+   * 電話での会話なのか対面での会話なのかビデオ会議なのかも明記すること。
    * englishSentenceやjapaneseSentenceに書かれていない文脈・背景・場所の様子・登場人物の動機を言語化すること。
    * AIによる画像生成に使用する。
    */
@@ -178,3 +178,5 @@ type SeedProblemData = {
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより少し長いであること。3文とも確実に少し長い文字数であること。
+- ユーザーは scenePrompt を見ることが出来ないので、englishSentenceとjapaneseSentenceでしっかりと言語化をすること。
+- 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
