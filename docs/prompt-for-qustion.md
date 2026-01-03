@@ -43,7 +43,7 @@ type SeedProblemData = {
    *
    * どのような場面なのか日本語で具体的に説明した文章。
    * 電話での会話なのか対面での会話なのかビデオ会議なのかも明記すること。
-   * englishSentenceやjapaneseSentenceに書かれていない文脈・背景・場所の様子・登場人物の動機を言語化すること。
+   * englishSentenceやenglishReplyに書かれていない文脈・背景・場所の様子・登場人物の動機を言語化すること。
    * AIによる画像生成に使用する。
    */
   scenePrompt: string
@@ -156,7 +156,7 @@ type SeedProblemData = {
    * この文たちは、UI上で誤回答として表示される。
    * したがって、japaneseSentenceの回答として意味が合わない文を生成すること。
    *
-   * senderRoleの言いそうなセリフであること。receiverRoleのセリフではない。
+   * 3文とも、senderRoleの立場でのセリフであること。receiverRoleのセリフではない。
    *
    * japaneseSentenceが疑問文だった場合には、incorrectOptionsの各文も全て疑問文にすること。
    *
@@ -178,5 +178,5 @@ type SeedProblemData = {
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceより少し長いであること。3文とも確実に少し長い文字数であること。
-- ユーザーは scenePrompt を見ることが出来ないので、englishSentenceとjapaneseSentenceでしっかりと言語化をすること。
+- ユーザーは scenePrompt を見ることが出来ないので、englishSentenceとenglishReplyだけ読めば状況がわかるように、englishSentenceとenglishReplyでしっかりと言語化をすること。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
