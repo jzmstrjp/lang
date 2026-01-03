@@ -254,7 +254,7 @@ export default function PromptTestClient() {
                               : 'bg-gray-200 text-gray-600'
                           }`}
                         >
-                          {index + 1}
+                          {index === CORRECT_INDEX ? '正' : '誤'}
                         </span>
                         <span className="text-base">{option}</span>
                       </div>
