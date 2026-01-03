@@ -38,7 +38,7 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 `;
 
 const BRUSHUP_PROMPT =
-  '今の回答が30点だとして、120点の回答をお願いします。自然な会話を何よりも重視してください。';
+  '今の回答が30点だとして、120点の回答をお願いします。englishSentenceとenglishReplyの自然な繋がりを何よりも重視してください。';
 
 type TokenUsage = {
   input_tokens?: number;
