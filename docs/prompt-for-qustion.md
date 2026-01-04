@@ -43,8 +43,9 @@ type SeedProblemData = {
    * englishSentence
    *
    * senderのセリフ。
-   * 役割や場面にあった自然な自然なセリフであること。
+   * このセリフだけ読めば、どんな状況なのか分かるようなセリフであること。
    * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
+   * 現実にあり得るような、自然なセリフであること。
    *
    * 不自然な例:
    * - Are we on schedule according to the schedule?
@@ -69,17 +70,12 @@ type SeedProblemData = {
    *
    * englishSentenceに対するreceiverのごく自然な返答。役割や場面にあったもの。
    * 無駄に長くないセリフが好ましいです。
-   * 文脈的に自然な返答であることが重要です。
-   * 驚きだったり、同意だったり、質問だったり、質問に対する回答だったり、場面に応じた自然な返答のセリフ。
-   * 少しでも不自然な返答は禁止する。
-   * englishSentenceで言及されていない話題について言及することも禁止する。
-   * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
    *
-   * 必要に応じて、自然な相槌や感動詞を使ってもよい。相槌がなくても文章が自然に成り立つなら無理に使わなくてもいい。
-   * 相槌や感動詞の例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
+   * 必要に応じて、自然な相槌や感動詞を使ってもよい。無理に使わなくてもいい。
    *
    * englishReply を読んだユーザーが englishSentence の内容を少しだけ推測できるようにしたい
    * だから「はい、わかりました」や「ああ、私もそれに気づきました。」というような可もなく不可もないようなセリフは禁止する。 englishSentence の主題を見つけ、具体的に言及すべし。ただし丸ごとオウム返しは避けるべし。
+   * 余計な内容も要らないです。
    */
   englishReply: string
   /**
@@ -194,4 +190,4 @@ type SeedProblemData = {
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。確実にjapaneseSentenceと同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
-- scenePrompt はユーザーからは見えないので、englishSentenceとenglishReplyだけ読めばストーリーが分かるように作ってほしい。
+- scenePrompt はユーザーからは見えないので、englishSentenceとenglishReplyだけ読めばどんな状況なのか分かるように作ってほしい。
