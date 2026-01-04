@@ -182,12 +182,12 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）がカメラに向かって${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている
+- ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている
 - ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
 - まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）がカメラに向かって${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している
+- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}に向かって「${problem.englishReply}」と返答している
 - ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
 - もう${senderName}（${senderGenderText}）は描かないこと。
 
@@ -421,12 +421,12 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）がカメラに向かって${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている
+- ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている
 - ただし、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 - まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）がカメラに向かって${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している
+- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}に向かって「${problem.englishReply}」と返答している
 - ただし、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 - もう${senderName}（${senderGenderText}）は描かないこと。
 
