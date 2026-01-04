@@ -246,7 +246,7 @@ function createWordInstruction(
   const assignments = wordsForRound
     .map((word, index) => {
       const genre = genres[index];
-      return `${globalOffset + index + 1}問目: ${word} (${genre}の会話を生成してください)`;
+      return `${globalOffset + index + 1}問目: ${word} (できれば${genre}の会話を生成してください。難しければ、ワードに合わせた場面の会話でいいです。)`;
     })
     .join('\n');
 
