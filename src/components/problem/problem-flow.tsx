@@ -9,7 +9,7 @@ import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
-import { ArrowLeft, ExternalLink, RotateCw, Wrench } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
@@ -1368,7 +1368,7 @@ function QuizOptionsSection({
                         tabIndex={-1}
                         className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
-                        <Wrench size={16} />
+                        <Pencil size={16} />
                       </button>
                     ) : (
                       <button
@@ -1381,7 +1381,7 @@ function QuizOptionsSection({
                         tabIndex={-1}
                         className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
-                        <Wrench size={16} />
+                        <Pencil size={16} />
                       </button>
                     ))}
                 </div>
