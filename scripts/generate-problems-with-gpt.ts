@@ -8,9 +8,11 @@ import { OpenAI } from 'openai';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import * as readline from 'readline';
 
 import { words } from '../docs/words';
 import { TEXT_MODEL } from '@/const';
+import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
 // 環境変数を読み込み
 dotenv.config();
@@ -21,7 +23,7 @@ const openai = new OpenAI({
 });
 
 const PROBLEMS_PER_ROUND = 1;
-const DEFAULT_TOTAL_PROBLEMS = 30;
+const DEFAULT_PROBLEM_COUNT = 30;
 const MAX_CODE_ATTEMPTS = 3;
 
 const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
@@ -61,6 +63,66 @@ function logTokenUsage(usage: TokenUsage | undefined, context: string) {
   console.log(
     `📊 ${context} トークン使用量: 入力 ${inputTokens ?? '-'} / 出力 ${outputTokens ?? '-'} / 合計 ${totalTokens ?? '-'}`,
   );
+}
+
+/**
+ * ユーザーに問題タイプと問題数を選択させる
+ */
+async function promptProblemSettings(): Promise<{ type: ProblemLength; count: number }> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    console.log('\n問題の英文の語数タイプを選択してください:');
+    console.log(`  1. short  (${WORD_COUNT_RULES.short.min}-${WORD_COUNT_RULES.short.max}単語)`);
+    console.log(`  2. medium (${WORD_COUNT_RULES.medium.min}-${WORD_COUNT_RULES.medium.max}単語)`);
+    console.log(`  3. long   (${WORD_COUNT_RULES.long.min}-${WORD_COUNT_RULES.long.max}単語)`);
+    console.log('');
+
+    rl.question('選択してください [1/2/3]: ', (typeAnswer) => {
+      const trimmed = typeAnswer.trim();
+      let selectedType: ProblemLength;
+
+      if (trimmed === '1' || trimmed.toLowerCase() === 'short') {
+        selectedType = 'short';
+      } else if (trimmed === '2' || trimmed.toLowerCase() === 'medium') {
+        selectedType = 'medium';
+      } else if (trimmed === '3' || trimmed.toLowerCase() === 'long') {
+        selectedType = 'long';
+      } else {
+        console.log('無効な選択です。デフォルトの medium を使用します。\n');
+        selectedType = 'medium';
+      }
+
+      rl.question(
+        `\n何問生成しますか？ [デフォルト: ${DEFAULT_PROBLEM_COUNT}]: `,
+        (countAnswer) => {
+          rl.close();
+
+          const countTrimmed = countAnswer.trim();
+          let count: number;
+
+          if (countTrimmed === '') {
+            count = DEFAULT_PROBLEM_COUNT;
+          } else {
+            const parsed = parseInt(countTrimmed, 10);
+            if (isNaN(parsed) || parsed < 1) {
+              console.log(
+                `無効な入力です。デフォルトの ${DEFAULT_PROBLEM_COUNT} 問を使用します。\n`,
+              );
+              count = DEFAULT_PROBLEM_COUNT;
+            } else {
+              count = parsed;
+            }
+          }
+
+          resolve({ type: selectedType, count });
+        },
+      );
+    });
+  });
 }
 
 /**
@@ -157,6 +219,7 @@ function createWordInstruction(
   wordsForRound: readonly string[],
   globalOffset: number,
   isFirstRound: boolean,
+  wordCountRange: { min: number; max: number },
 ): string {
   const problemCount = wordsForRound.length;
 
@@ -168,11 +231,13 @@ function createWordInstruction(
     ? `${problemCount}問を生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceに自然に組み込んでください。`
     : `さらに${problemCount}問生成してください。以下の語彙を、それぞれ対応する問題のenglishSentenceに自然に組み込んでください。`;
 
+  const wordCountInstruction = `\n\n【重要】各問題のenglishSentenceは${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成してください。`;
+
   const assignments = wordsForRound
     .map((word, index) => `${globalOffset + index + 1}問目: ${word}`)
     .join('\n');
 
-  return `${header}\n${assignments}`;
+  return `${header}${wordCountInstruction}\n\n${assignments}`;
 }
 
 function createFormatRetryInstruction(errorMessage: string): string {
@@ -184,12 +249,13 @@ function createFormatRetryInstruction(errorMessage: string): string {
 }
 
 /**
- * 複数回のAPI呼び出しで問題を生成（3問ずつ）
+ * 複数回のAPI呼び出しで問題を生成（1問ずつ）
  */
 async function generateMultipleProblems(
   initialPrompt: string,
   rounds: number,
   wordAssignments: readonly string[],
+  wordCountRange: { min: number; max: number },
 ): Promise<string[]> {
   const allCodes: string[] = [];
 
@@ -218,7 +284,7 @@ async function generateMultipleProblems(
       },
       {
         role: 'user',
-        content: createWordInstruction(roundWords, roundStartIndex, isFirstRound),
+        content: createWordInstruction(roundWords, roundStartIndex, isFirstRound, wordCountRange),
       },
     ];
     let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [...baseMessages];
@@ -596,21 +662,20 @@ function removeUsedWordsFromWordList(wordsToRemove: readonly string[]): void {
  */
 async function main() {
   try {
-    // コマンドライン引数から生成回数を取得（デフォルト: 約30問分を確保する回数）
-    const roundsArg = process.argv[2];
-    const rounds = roundsArg
-      ? parseInt(roundsArg, 10)
-      : Math.ceil(DEFAULT_TOTAL_PROBLEMS / PROBLEMS_PER_ROUND);
+    console.log('🚀 問題生成スクリプト開始');
 
-    // バリデーション
-    if (isNaN(rounds) || rounds < 1) {
-      throw new Error('生成回数は1以上の整数を指定してください');
-    }
+    // 常にインタラクティブモード
+    const settings = await promptProblemSettings();
+    const { type: problemType, count: totalProblems } = settings;
 
-    const totalProblems = rounds * PROBLEMS_PER_ROUND;
+    const wordRange = WORD_COUNT_RULES[problemType];
+    console.log(
+      `\n📌 ${problemType} モード (${wordRange.min}-${wordRange.max}単語): ${totalProblems}問を生成します\n`,
+    );
 
-    console.log('🚀 問題生成スクリプト開始\n');
-    console.log(`📌 ${totalProblems}問（1問×${rounds}回）を生成します\n`);
+    const rounds = Math.ceil(totalProblems / PROBLEMS_PER_ROUND);
+
+    console.log(`🔢 生成ラウンド数: ${rounds}回（1問×${rounds}回）\n`);
 
     // OpenAI API Keyの確認
     if (!process.env.OPENAI_API_KEY) {
@@ -647,7 +712,12 @@ async function main() {
 
     // 複数回APIを呼び出して問題を生成
     console.log('🔄 生成処理開始...\n');
-    const allCodes = await generateMultipleProblems(initialPrompt, rounds, wordAssignments);
+    const allCodes = await generateMultipleProblems(
+      initialPrompt,
+      rounds,
+      wordAssignments,
+      wordRange,
+    );
 
     console.log('✅ すべてのコード生成完了\n');
 
@@ -667,9 +737,6 @@ async function main() {
     console.log('\n次のステップ:');
     console.log('  1. 生成されたファイルを確認してください');
     console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
-    console.log('\n💡 ヒント:');
-    console.log('  - 生成回数を変更: npm run generate:problems <回数>');
-    console.log('  - 例: npm run generate:problems 10 (10問生成)');
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);
     process.exit(1);

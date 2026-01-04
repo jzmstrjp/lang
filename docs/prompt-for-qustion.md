@@ -39,6 +39,67 @@ englishReply, japaneseReplyの内容も解答するためのヒントになる�
 
 ```TypeScript
 type SeedProblemData = {
+   /**
+   * englishSentence
+   *
+   * senderのセリフ。
+   * 役割や場面にあった自然な自然なセリフであること。
+   * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
+   *
+   * 不自然な例:
+   * - Are we on schedule according to the schedule?
+   *   - 冗長。「Are we on schedule?」で伝わる。
+   */
+  englishSentence: string
+  /**
+   * japaneseSentence
+   *
+   * englishSentenceの日本語訳。完全な直訳ではなく、日本人の口語として自然な言い回しにすべし。
+   * englishSentenceの内容をもれなく含んでいること。
+   *
+   * この文が、UI上で正解として表示される。
+   *
+   * カタカナ英語にするような翻訳は避けてください。
+   * 悪い例: 「Due diligence」を「デューディリジェンス」と訳す。
+   * ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。
+   */
+  japaneseSentence: string
+  /**
+   * englishReply
+   *
+   * englishSentenceに対するreceiverのごく自然な返答。役割や場面にあったもの。
+   * 無駄に長くないセリフが好ましいです。
+   * 文脈的に自然な返答であることが重要です。
+   * 驚きだったり、同意だったり、質問だったり、質問に対する回答だったり、場面に応じた自然な返答のセリフ。
+   * 少しでも不自然な返答は禁止する。
+   * englishSentenceで言及されていない話題について言及することも禁止する。
+   * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
+   *
+   * 必要に応じて、自然な相槌や感動詞を使ってもよい。相槌がなくても文章が自然に成り立つなら無理に使わなくてもいい。
+   * 相槌や感動詞の例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
+   *
+   * englishReply を読んだユーザーが englishSentence の内容を少しだけ推測できるようにしたい
+   * だから「はい、わかりました」や「ああ、私もそれに気づきました。」というような可もなく不可もないようなセリフは禁止する。 englishSentence の主題を見つけ、具体的に言及すべし。ただし丸ごとオウム返しは避けるべし。
+   */
+  englishReply: string
+  /**
+   * place
+   *
+   * その会話が行われる具体的な場所
+   * できればいろんな場所をランダムに。
+   * 例：オフィスの会議室、病院の受付、映画館のチケット売り場、学校の職員室、図書館の閲覧室、ホテルのフロント、銀行の窓口、市役所の住民課、空港の搭乗ゲート、駅の改札口、デパートの総合案内所、レストランのレジ、カフェのカウンター、スーパーのサービスカウンター、郵便局の窓口、警察署の相談窓口、スポーツジムの受付、美術館の展示室、コンサートホールのロビー、会社のエントランスホール
+   *
+   * senderとreceiverが別の場所にいる場合は、以下の形式で書くこと
+   * 1コマ目: 電車の改札前、2コマ目: 空港のロビー
+   */
+  place: string
+  /**
+   * japaneseReply
+   *
+   * englishReplyの日本語訳。完全な直訳ではなく、日本人の口語として自然な言い回しにすべし。
+   * englishReplyの内容をもれなく含んでいること。
+   */
+  japaneseReply: string
   /**
    * scenePrompt
    *
@@ -57,17 +118,6 @@ type SeedProblemData = {
    *
    */
   scenePrompt: string
-  /**
-   * place
-   *
-   * その会話が行われる具体的な場所
-   * できればいろんな場所をランダムに。
-   * 例：オフィスの会議室、病院の受付、映画館のチケット売り場、学校の職員室、図書館の閲覧室、ホテルのフロント、銀行の窓口、市役所の住民課、空港の搭乗ゲート、駅の改札口、デパートの総合案内所、レストランのレジ、カフェのカウンター、スーパーのサービスカウンター、郵便局の窓口、警察署の相談窓口、スポーツジムの受付、美術館の展示室、コンサートホールのロビー、会社のエントランスホール
-   *
-   * senderとreceiverが別の場所にいる場合は、以下の形式で書くこと
-   * 1コマ目: 電車の改札前、2コマ目: 空港のロビー
-   */
-  place: string
   /**
    * senderRole
    *
@@ -97,57 +147,7 @@ type SeedProblemData = {
    * senderとは逆のタイプであること。
    */
   receiverVoice: 'male' | 'female'
-  /**
-   * englishSentence
-   *
-   * senderのセリフ。
-   * 正確に、12語以上の文章のみを生成すること。
-   * 役割や場面にあった自然な自然なセリフであること。
-   * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
-   *
-   * 不自然な例:
-   * - Are we on schedule according to the schedule?
-   *   - 冗長。「Are we on schedule?」で伝わる。
-   */
-  englishSentence: string
-  /**
-   * japaneseSentence
-   *
-   * englishSentenceの日本語訳。完全な直訳ではなく、日本人の口語として自然な言い回しにすべし。
-   * englishSentenceの内容をもれなく含んでいること。
-   *
-   * この文が、UI上で正解として表示される。
-   *
-   * カタカナ英語にするような翻訳は避けてください。
-   * 悪い例: 「Due diligence」を「デューディリジェンス」と訳す。
-   * ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。
-   */
-  japaneseSentence: string
-  /**
-   * englishReply
-   *
-   * englishSentenceに対するreceiverのごく自然な返答。役割や場面にあったもの。
-   * できれば10語以内。
-   * 文脈的に自然な返答であることが重要です。
-   * 驚きだったり、同意だったり、質問だったり、質問に対する回答だったり、場面に応じた自然な返答のセリフ。
-   * 少しでも不自然な返答は禁止する。
-   * englishSentenceで言及されていない話題について言及することも禁止する。
-   * englishSentenceとは対照的に、熟語・慣用句を使わず、英単語の意味が分かれば日本人でも理解できる簡潔な文章であること。
-   *
-   * 必要に応じて、自然な相槌や感動詞を使ってもよい。相槌がなくても文章が自然に成り立つなら無理に使わなくてもいい。
-   * 相槌や感動詞の例: Oh, Ah, Yeah, Yep, Mm-hmm, That’s right, Yeah, that’s true, I agree, Nice, Sounds good, That’s great, No, Nah, Well, no…, Oh, really?, Huh, Interesting
-   *
-   * englishReply を読んだユーザーが englishSentence の内容を少しだけ推測できるようにしたい
-   * だから「はい、わかりました」や「ああ、私もそれに気づきました。」というような可もなく不可もないようなセリフは禁止する。 englishSentence の主題を見つけ、具体的に言及すべし。ただし丸ごとオウム返しは避けるべし。
-   */
-  englishReply: string
-  /**
-   * japaneseReply
-   *
-   * englishReplyの日本語訳。完全な直訳ではなく、日本人の口語として自然な言い回しにすべし。
-   * englishReplyの内容をもれなく含んでいること。
-   */
-  japaneseReply: string
+
   /**
    * senderVoiceInstruction
    *
