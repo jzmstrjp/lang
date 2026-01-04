@@ -1,9 +1,9 @@
 export type ProblemLength = 'short' | 'medium' | 'long';
 
 export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number }> = {
-  short: { min: 2, max: 6 },
-  medium: { min: 7, max: 10 },
-  long: { min: 11, max: 30 },
+  short: { min: 2, max: 9 },
+  medium: { min: 10, max: 15 },
+  long: { min: 16, max: 30 },
 };
 
 export type DifficultyLevel = 'kids' | 'easy' | 'normal' | 'hard' | 'expert';

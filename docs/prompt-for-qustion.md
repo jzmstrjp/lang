@@ -165,7 +165,7 @@ type SeedProblemData = {
    * 3文とも、確実にjapaneseSentenceとほぼ同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
    *
    * この文たちは、UI上で誤回答として表示される。
-   * したがって、japaneseSentenceの回答として意味が合わない文を生成すること。
+   * したがって、japaneseSentenceとは明確に意味が違う文を生成すること。似たような意味の文は禁止する。
    *
    * 3文とも、senderRoleの立場でのセリフであること。receiverRoleのセリフではない。
    *
