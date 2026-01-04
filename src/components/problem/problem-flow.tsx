@@ -1366,7 +1366,7 @@ function QuizOptionsSection({
                         type="button"
                         onClick={() => setEditingIncorrectOptionKey(optionKey)}
                         tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         <Pencil size={16} />
                       </button>
@@ -1379,7 +1379,7 @@ function QuizOptionsSection({
                           }
                         }}
                         tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         <Pencil size={16} />
                       </button>
@@ -1623,7 +1623,7 @@ function EditableIncorrectOption({
           {...register('text')}
           autoFocus
           disabled={isSubmitting}
-          className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-base text-[var(--text)] shadow-sm resize-none"
+          className="rounded-xl border border-[var(--border)] -mx-1 px-3 py-2 text-base text-[var(--text)] shadow-sm resize-none w-[102%]"
           style={{ fieldSizing: 'content' } as React.CSSProperties}
         />
         <div className="flex gap-2 justify-end">
