@@ -9,7 +9,7 @@ import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
-import { ExternalLink, Wrench } from 'lucide-react';
+import { ArrowLeft, ExternalLink, RotateCw, Wrench } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
@@ -229,14 +229,12 @@ export default function ProblemFlow({
   };
 
   const handleRetryQuiz = () => {
-    if (phase.kind === 'incorrect') {
-      setPhase({
-        kind: 'scene-entry',
-        problem: phase.problem,
-        setting: getCurrentSetting(),
-      });
-      void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
-    }
+    setPhase({
+      kind: 'scene-entry',
+      problem: phase.problem,
+      setting: getCurrentSetting(),
+    });
+    void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
 
   const handleReplyAudioEnded = () => {
@@ -795,6 +793,7 @@ export default function ProblemFlow({
           onReplayAudio={() => {
             playAudio(englishSentenceAudioRef.current, 0);
           }}
+          onRetry={handleRetryQuiz}
         />
       )}
       {phase.kind === 'correct' && (
@@ -806,6 +805,9 @@ export default function ProblemFlow({
             difficultyLevel={difficultyLevel}
             isAudioBusy={isAudioBusy}
             onNextProblem={handleNextProblem}
+            onReplayAudio={() => {
+              playAudio(englishSentenceAudioRef.current, 0);
+            }}
             isAdminPromise={isAdminPromise}
             isStaticProblem={currentProblem.isStatic ?? false}
           />
@@ -1032,6 +1034,7 @@ type QuizPhaseViewProps = {
   ) => Promise<EditableIncorrectOptionResult>;
   onSelectOption: (selectedIndex: number) => void;
   onReplayAudio: () => void;
+  onRetry: () => void;
 };
 
 function QuizPhaseView({
@@ -1043,6 +1046,7 @@ function QuizPhaseView({
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
+  onRetry,
 }: QuizPhaseViewProps) {
   return (
     <Suspense>
@@ -1056,6 +1060,7 @@ function QuizPhaseView({
         updateIncorrectOption={updateIncorrectOption}
         onSelectOption={onSelectOption}
         onReplayAudio={onReplayAudio}
+        onRetry={onRetry}
       />
     </Suspense>
   );
@@ -1068,6 +1073,7 @@ type CorrectPhaseViewProps = {
   difficultyLevel?: DifficultyLevel;
   isAudioBusy: boolean;
   onNextProblem: () => void;
+  onReplayAudio: () => void;
   isAdminPromise: Promise<boolean>;
   isStaticProblem: boolean;
 };
@@ -1079,6 +1085,7 @@ function CorrectPhaseView({
   difficultyLevel,
   isAudioBusy,
   onNextProblem,
+  onReplayAudio,
 }: CorrectPhaseViewProps) {
   const [imageVariant] = useState(() => Math.floor(Math.random() * 2) + 1);
   const [selectedText, setSelectedText] = useState('');
@@ -1213,6 +1220,15 @@ function CorrectPhaseView({
       </div>
       <div className="flex justify-center gap-4">
         <button
+          type="button"
+          onClick={onReplayAudio}
+          className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] p-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
+          disabled={isAudioBusy}
+          aria-label="もう一度聞く"
+        >
+          <RotateCw className="w-5 h-5" />
+        </button>
+        <button
           key={isAudioBusy ? 'disabled' : 'enabled'}
           autoFocus
           type="button"
@@ -1279,6 +1295,7 @@ type QuizOptionsSectionProps = {
   ) => Promise<EditableIncorrectOptionResult>;
   onSelectOption: (selectedIndex: number) => void;
   onReplayAudio: () => void;
+  onRetry: () => void;
 };
 
 function QuizOptionsSection({
@@ -1290,6 +1307,7 @@ function QuizOptionsSection({
   updateIncorrectOption,
   onSelectOption,
   onReplayAudio,
+  onRetry,
 }: QuizOptionsSectionProps) {
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
   const isAdmin = use(isAdminPromise);
@@ -1373,6 +1391,15 @@ function QuizOptionsSection({
         })}
       </ul>
       <div className="flex justify-center mt-6 gap-4">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] p-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
+          disabled={isAudioBusy}
+          aria-label="戻る"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
         <button
           type="button"
           onClick={onReplayAudio}
