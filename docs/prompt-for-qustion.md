@@ -47,9 +47,9 @@ type SeedProblemData = {
    * 役割に応じたトーン（カジュアル・フォーマル・丁寧・砕けた）であること。
    * 現実にあり得るような、自然なセリフであること。
    *
-   * 不自然な例:
+   * 悪い例:
    * - Are we on schedule according to the schedule?
-   *   - 冗長。「Are we on schedule?」で伝わる。
+   *   - 冗長で不自然。「Are we on schedule?」で伝わる。こういった文は避けてくれ。
    */
   englishSentence: string
   /**
