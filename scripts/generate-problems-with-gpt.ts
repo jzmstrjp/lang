@@ -40,7 +40,7 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 `;
 
 const BRUSHUP_PROMPT =
-  'さっきの回答は35点です。批判的に自己レビューを行って、100点の完璧な回答を生成し直してください。';
+  'さっきの回答は35点です。全ての項目に矛盾やルール違反がないか、批判的に自己レビューを行って、100点の完璧な回答を生成し直してください。';
 
 type TokenUsage = {
   input_tokens?: number;
