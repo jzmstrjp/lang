@@ -17,15 +17,6 @@ import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 // 環境変数を読み込み
 dotenv.config();
 
-const GENRES = ['ビジネス系', '私生活系'] as const;
-
-/**
- * ジャンルをランダムに選択
- */
-function selectRandomGenre(): string {
-  return GENRES[Math.floor(Math.random() * GENRES.length)];
-}
-
 // OpenAIクライアントを初期化
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -229,7 +220,6 @@ function createWordInstruction(
   globalOffset: number,
   isFirstRound: boolean,
   wordCountRange: { min: number; max: number },
-  genres: readonly string[],
 ): string {
   const problemCount = wordsForRound.length;
 
@@ -245,8 +235,7 @@ function createWordInstruction(
 
   const assignments = wordsForRound
     .map((word, index) => {
-      const genre = genres[index];
-      return `${globalOffset + index + 1}問目: ${word} (できれば${genre}の会話を生成してください。難しければ、ワードに合わせた場面の会話でいいです。)`;
+      return `${globalOffset + index + 1}問目: ${word}`;
     })
     .join('\n');
 
@@ -282,13 +271,10 @@ async function generateMultipleProblems(
       throw new Error('語彙割り当てが不足しています');
     }
 
-    // 各問題にランダムなジャンルを割り当て
-    const roundGenres = roundWords.map(() => selectRandomGenre());
-
     console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の1問を生成中...' : 'さらに1問を生成中...'}`);
     console.log('🗂️ 今回指定する語彙:');
     roundWords.forEach((word, index) => {
-      console.log(`  ${roundStartIndex + index + 1}問目: ${word} (${roundGenres[index]})`);
+      console.log(`  ${roundStartIndex + index + 1}問目: ${word}`);
     });
 
     let generatedCodeForRound: string | null = null;
@@ -300,13 +286,7 @@ async function generateMultipleProblems(
       },
       {
         role: 'user',
-        content: createWordInstruction(
-          roundWords,
-          roundStartIndex,
-          isFirstRound,
-          wordCountRange,
-          roundGenres,
-        ),
+        content: createWordInstruction(roundWords, roundStartIndex, isFirstRound, wordCountRange),
       },
     ];
     let messages: Array<{ role: 'user' | 'assistant'; content: string }> = [...baseMessages];
