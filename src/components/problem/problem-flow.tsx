@@ -1366,7 +1366,7 @@ function QuizOptionsSection({
                         type="button"
                         onClick={() => setEditingIncorrectOptionKey(optionKey)}
                         tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         <Pencil size={16} />
                       </button>
@@ -1379,7 +1379,7 @@ function QuizOptionsSection({
                           }
                         }}
                         tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
                         <Pencil size={16} />
                       </button>
@@ -1618,21 +1618,15 @@ function EditableIncorrectOption({
       onSubmit={submit}
       className="w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left shadow-sm shadow-[var(--border)]/40"
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input
+      <div className="flex flex-col gap-3">
+        <textarea
           {...register('text')}
           autoFocus
           disabled={isSubmitting}
-          className="flex-1 rounded-xl border border-[var(--border)] px-4 py-2 text-base text-[var(--text)] shadow-sm"
+          className="w-full rounded-xl border border-[var(--border)] px-4 py-2 text-base text-[var(--text)] shadow-sm resize-none"
+          style={{ fieldSizing: 'content' } as React.CSSProperties}
         />
-        <div className="flex gap-2 sm:justify-end">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-text)] shadow enabled:hover:bg-[var(--primary-hover)] disabled:opacity-30"
-          >
-            {isSubmitting ? '更新中…' : '更新'}
-          </button>
+        <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={() => {
@@ -1643,6 +1637,13 @@ function EditableIncorrectOption({
             className="inline-flex items-center justify-center rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
           >
             キャンセル
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--primary-text)] shadow enabled:hover:bg-[var(--primary-hover)] disabled:opacity-30"
+          >
+            {isSubmitting ? '更新中…' : '更新'}
           </button>
         </div>
       </div>
