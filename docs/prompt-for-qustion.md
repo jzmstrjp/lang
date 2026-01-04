@@ -161,8 +161,8 @@ type SeedProblemData = {
   /**
    * incorrectOptions
    *
-   * japaneseSentenceと同じ文字数の日本語のセリフ3つ。
-   * 3文とも、確実にjapaneseSentenceと同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
+   * japaneseSentenceとほぼ同じ文字数の日本語のセリフ3つ。
+   * 3文とも、確実にjapaneseSentenceとほぼ同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
    *
    * この文たちは、UI上で誤回答として表示される。
    * したがって、japaneseSentenceの回答として意味が合わない文を生成すること。
@@ -178,7 +178,7 @@ type SeedProblemData = {
    * 1つはjapaneseSentenceと真逆の意味の文章にすること。
    */
   incorrectOptions: [
-    string,
+    string, // japaneseSentenceとは違う単語で始まること。
     string, // 1つ目とは違う単語で始まること。
     string, // 1つ目、2つ目とは違う単語で始まること。
   ]
@@ -188,6 +188,6 @@ type SeedProblemData = {
 ## 重要
 
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。確実にjapaneseSentenceと同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
+- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceとほぼ同じ文字数であること。確実にjapaneseSentenceとほぼ同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
 - scenePrompt はユーザーからは見えないので、englishSentenceとenglishReplyだけ読めばどんな状況なのか分かるように作ってほしい。
