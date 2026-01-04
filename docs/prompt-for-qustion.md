@@ -1,6 +1,6 @@
 ## やってほしいこと
 
-英語リスニングアプリの問題オブジェクトを作ってほしい。
+英語クイズの問題をJSON形式で作ってほしい。
 
 ## 背景・目的
 
@@ -194,4 +194,4 @@ type SeedProblemData = {
 - incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
 - 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceと同じ文字数であること。確実にjapaneseSentenceと同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
-- scenePromptはユーザーからは見えないので、englishSentenceとenglishReplyだけ聞けばストーリーが分かるように作ってほしい。
+- scenePrompt はユーザーからは見えないので、englishSentenceとenglishReplyだけ読めばストーリーが分かるように作ってほしい。
