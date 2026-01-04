@@ -1355,7 +1355,7 @@ function QuizOptionsSection({
                     autoFocus={index === 0}
                     type="button"
                     onClick={() => onSelectOption(index)}
-                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 ${canEditCurrentProblem ? 'pr-20' : 'pr-5'} text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40`}
+                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40`}
                     disabled={isAudioBusy}
                   >
                     {option.text}
@@ -1366,9 +1366,9 @@ function QuizOptionsSection({
                         type="button"
                         onClick={() => setEditingIncorrectOptionKey(optionKey)}
                         tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)] p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
-                        編集
+                        <Wrench size={16} />
                       </button>
                     ) : (
                       <button
@@ -1379,9 +1379,9 @@ function QuizOptionsSection({
                           }
                         }}
                         tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-center justify-center rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)] p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)] bg-[var(--background)]/40 p-2 text-sm min-w-[4rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
                       >
-                        編集
+                        <Wrench size={16} />
                       </button>
                     ))}
                 </div>
