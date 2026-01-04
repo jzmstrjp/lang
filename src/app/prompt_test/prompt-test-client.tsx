@@ -200,19 +200,11 @@ export default function PromptTestClient() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm">
                 <div className="bg-purple-50 border border-purple-200 rounded p-3">
                   <span className="font-semibold text-purple-800">シーン:</span>
                   <p className="text-purple-700">{problem.place}</p>
                 </div>
-                {(problem.senderRole || problem.receiverRole) && (
-                  <div className="bg-cyan-50 border border-cyan-200 rounded p-3">
-                    <span className="font-semibold text-cyan-800">キャラクター:</span>
-                    <p className="text-cyan-700">
-                      {problem.senderRole} → {problem.receiverRole}
-                    </p>
-                  </div>
-                )}
               </div>
 
               <div className="bg-orange-50 border border-orange-200 rounded p-3">
@@ -222,15 +214,19 @@ export default function PromptTestClient() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
+                <p className="text-xl text-blue-900 font-medium">
+                  {problem.senderRole}「{problem.japaneseSentence}」
+                </p>
                 <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
-                <p className="text-xl text-blue-900 font-medium">（{problem.japaneseSentence}）</p>
                 <p className="mt-2 text-sm text-blue-500">{problem.senderVoiceInstruction}</p>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-green-800 mb-2">日本語返答</h3>
+                <p className="text-xl text-green-900 font-medium">
+                  {problem.receiverRole}「{problem.japaneseReply}」
+                </p>
                 <p className="text-xl text-green-900 font-medium">{problem.englishReply}</p>
-                <p className="text-xl text-green-900 font-medium">（{problem.japaneseReply}）</p>
                 <p className="mt-2 text-sm text-green-500">{problem.receiverVoiceInstruction}</p>
               </div>
 
