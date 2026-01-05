@@ -5,7 +5,8 @@ import { SceneImage } from '@/components/ui/scene-image';
 import type { GeneratedProblem } from '@/types/generated-problem';
 
 const CORRECT_INDEX = 0;
-const DEFAULT_TYPE = 'short';
+
+type ProblemType = 'all' | 'short' | 'medium' | 'long';
 
 type AssetsData = {
   audio: {
@@ -33,8 +34,9 @@ export default function PromptTestClient() {
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedType, setSelectedType] = useState<ProblemType>('all');
 
-  const generateProblem = async (type: 'short' | 'medium' | 'long', mode: GenerateMode) => {
+  const generateProblem = async (type: ProblemType, mode: GenerateMode) => {
     setLoading(true);
     setError(null);
     setCopied(false);
@@ -46,7 +48,7 @@ export default function PromptTestClient() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type,
+          type: type === 'all' ? undefined : type,
           withoutPicture: mode === 'withoutImage',
           useCharacterImages: mode === 'withCharacterImages',
         }),
@@ -68,6 +70,10 @@ export default function PromptTestClient() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
+      // エラー時は表示をクリア
+      setProblem(null);
+      setAssets(null);
+      setOptions([]);
     } finally {
       setLoading(false);
     }
@@ -122,28 +128,49 @@ export default function PromptTestClient() {
         </p>
 
         <div className="bg-[var(--background)] rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-wrap gap-4 justify-center mb-6">
-            <button
-              onClick={() => generateProblem(DEFAULT_TYPE, 'withoutImage')}
-              disabled={loading}
-              className="px-6 py-2 bg-[var(--primary)] text-[var(--primary-text)] rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              画像なしで生成
-            </button>
-            <button
-              onClick={() => generateProblem(DEFAULT_TYPE, 'withImage')}
-              disabled={loading}
-              className="px-6 py-2 bg-[var(--secondary)] text-[var(--secondary-text)] rounded-lg hover:bg-[var(--secondary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              画像ありで生成
-            </button>
-            <button
-              onClick={() => generateProblem(DEFAULT_TYPE, 'withCharacterImages')}
-              disabled={loading}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              キャラ画像で生成
-            </button>
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex justify-center">
+              <div className="flex items-center gap-3">
+                <label htmlFor="problem-type" className="text-[var(--text)] font-medium">
+                  問題の長さ:
+                </label>
+                <select
+                  id="problem-type"
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value as ProblemType)}
+                  className="min-w-[200px] px-4 py-2 border-2 border-[var(--border)] rounded-xl bg-[var(--background)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer shadow-sm"
+                >
+                  <option value="all">全て</option>
+                  <option value="short">shortのみ (2-9語)</option>
+                  <option value="medium">mediumのみ (10-15語)</option>
+                  <option value="long">longのみ (16-30語)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 justify-center">
+              <button
+                onClick={() => generateProblem(selectedType, 'withoutImage')}
+                disabled={loading}
+                className="px-6 py-2 bg-[var(--primary)] text-[var(--primary-text)] rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                画像なしで生成
+              </button>
+              <button
+                onClick={() => generateProblem(selectedType, 'withImage')}
+                disabled={loading}
+                className="px-6 py-2 bg-[var(--secondary)] text-[var(--secondary-text)] rounded-lg hover:bg-[var(--secondary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                画像ありで生成
+              </button>
+              <button
+                onClick={() => generateProblem(selectedType, 'withCharacterImages')}
+                disabled={loading}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                キャラ画像で生成
+              </button>
+            </div>
           </div>
 
           {loading && (

@@ -40,7 +40,7 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 `;
 
 const BRUSHUP_PROMPT =
-  'さっきの回答は35点です。全ての項目に矛盾やルール違反がないか、批判的に自己レビューを行って、100点の完璧な回答を生成し直してください。';
+  'この回答は35点です。セリフの流れや内容が不自然で、状況が分かりにくいからです。100点の完璧な回答を生成し直してください。';
 
 type TokenUsage = {
   input_tokens?: number;
@@ -219,7 +219,7 @@ function createWordInstruction(
   wordsForRound: readonly string[],
   globalOffset: number,
   isFirstRound: boolean,
-  wordCountRange: { min: number; max: number },
+  wordCountRange: { min: number; max: number; note?: string },
 ): string {
   const problemCount = wordsForRound.length;
 
@@ -233,13 +233,15 @@ function createWordInstruction(
 
   const wordCountInstruction = `\n\n【重要】各問題のenglishSentenceは${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成してください。`;
 
+  const noteInstruction = wordCountRange.note ? `\n【注意】${wordCountRange.note}` : '';
+
   const assignments = wordsForRound
     .map((word, index) => {
       return `${globalOffset + index + 1}問目: ${word}`;
     })
     .join('\n');
 
-  return `${header}${wordCountInstruction}\n\n${assignments}`;
+  return `${header}${wordCountInstruction}${noteInstruction}\n\n${assignments}`;
 }
 
 function createFormatRetryInstruction(errorMessage: string): string {
@@ -257,7 +259,7 @@ async function generateMultipleProblems(
   initialPrompt: string,
   rounds: number,
   wordAssignments: readonly string[],
-  wordCountRange: { min: number; max: number },
+  wordCountRange: { min: number; max: number; note?: string },
 ): Promise<string[]> {
   const allCodes: string[] = [];
 

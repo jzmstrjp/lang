@@ -11,8 +11,8 @@ import {
  */
 async function generateSceneWithCharacterImages() {
   try {
-    // 問題データを取得
-    const problem = await generateProblem('short');
+    // 問題データを取得（全問題からランダムに選択）
+    const problem = await generateProblem();
     console.log('Generated problem:', {
       englishSentence: problem.englishSentence,
       englishReply: problem.englishReply,

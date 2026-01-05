@@ -92,7 +92,8 @@ export async function POST(req: Request) {
     console.log('[test-generate] 問題生成開始');
 
     // 問題を生成（問題タイプを渡す）
-    const problem = await generateProblem(body.type || 'short');
+    // body.typeがundefinedの場合はそのまま渡す（全問題から選択）
+    const problem = await generateProblem(body.type);
 
     console.log('[test-generate] 問題生成完了、アセット生成開始');
 

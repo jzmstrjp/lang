@@ -1,10 +1,19 @@
 export type ProblemLength = 'short' | 'medium' | 'long';
 
-export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number }> = {
-  short: { min: 2, max: 9 },
-  medium: { min: 10, max: 15 },
-  long: { min: 16, max: 30 },
-};
+export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number; note?: string }> =
+  {
+    short: {
+      min: 2,
+      max: 9,
+      note: '指定された語彙以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
+    },
+    medium: { min: 10, max: 15 },
+    long: {
+      min: 16,
+      max: 30,
+      note: 'incorrectOptionsがjapaneseSentenceよりも長めの文になるようにしてください。',
+    },
+  };
 
 export type DifficultyLevel = 'kids' | 'easy' | 'normal' | 'hard' | 'expert';
 

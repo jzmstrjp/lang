@@ -5,7 +5,7 @@ import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
 import { generateImageBuffer, generateImageWithCharactersBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
-import { countWords, type ProblemLength } from '@/config/problem';
+import { countWords, WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
@@ -86,9 +86,15 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
 /**
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
-async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
+async function getRandomProblemFromSeed(type?: ProblemLength): Promise<GeneratedProblem> {
   const seedProblems = await loadSeedProblems();
-  const filteredProblems = seedProblems;
+  const filteredProblems = type
+    ? seedProblems.filter((p) => {
+        const wordCount = countWords(p.englishSentence);
+        const rule = WORD_COUNT_RULES[type];
+        return wordCount >= rule.min && wordCount <= rule.max;
+      })
+    : seedProblems;
 
   if (filteredProblems.length === 0) {
     throw new Error(
@@ -125,7 +131,7 @@ async function getRandomProblemFromSeed(type: ProblemLength = 'short'): Promise<
 /**
  * 問題生成のメイン関数
  */
-export async function generateProblem(type: ProblemLength = 'short'): Promise<GeneratedProblem> {
+export async function generateProblem(type?: ProblemLength): Promise<GeneratedProblem> {
   // 問題タイプに応じて適切なファイルからランダムに1件取得
   return await getRandomProblemFromSeed(type);
 }
@@ -170,6 +176,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
 【場所】
 ${problem.place}
+senderとreceiverが離れた場所にいる場合は、電話かビデオ会議をしている画像になるはずです。
+同じ家の中など、近くにいる場合は、対面での会話の画像になるはずです。
 
 【登場人物】
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
@@ -399,8 +407,6 @@ export function generateImagePromptWithCharacters(problem: GeneratedProblem): st
 上下のコマの高さは正確に同じであること。
 
 【重要】
-- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
-- 1コマ目、2コマ目を通して、2人の登場人物が向かい合って見えるようなカメラアングルで描写すること。
 - 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
 
 【コマの高さ】
@@ -416,7 +422,6 @@ ${problem.place}
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
 【ストーリー】
-- 二人が向かい合って会話をしている。
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
@@ -432,7 +437,6 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【備考】
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
-- 二人の登場人物は向かい合っているので、1コマ目と2コマ目のカメラアングルや背景は異なるべきです。
 - 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
 - 重要: セリフに対して不自然な画像はNG
   - 例1
