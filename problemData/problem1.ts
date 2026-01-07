@@ -150,6 +150,22 @@ const problemData: SeedProblemData[] = [
   //     'インデントは32くらいがいいよなぁ。', // それっぽい誤答
   //   ],
   // },
+  // {
+  //   place: '家の書斎',
+  //   senderRole: '娘',
+  //   senderVoice: 'female',
+  //   receiverRole: '父親',
+  //   receiverVoice: 'male',
+  //   englishSentence: 'Dad, could you switch it to physical deletion instead of logical deletion?',
+  //   japaneseSentence: 'パパ、論理削除じゃなくて物理削除にしてくれない？',
+  //   englishReply: "Alright! I'm gonna physically delete it!",
+  //   japaneseReply: '了解！物理削除するでぇ！',
+  //   scenePrompt:
+  //     '【1コマ目】娘がノートPCに向かいながら論理削除の説明をしている【2コマ目】父親が巨大なハンマーでDBサーバを叩き壊している',
+  //   senderVoiceInstruction: '冷静な口調',
+  //   receiverVoiceInstruction: '力んだ口調',
+  //   incorrectOptions: ['なんで？', '嫌やで！', 'タコを食べます！'],
+  // },
 ];
 
 export default problemData;
