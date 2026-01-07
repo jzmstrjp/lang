@@ -39,14 +39,18 @@ const OUTPUT_FORMAT_INSTRUCTION = `出力形式に関する厳守ルール:
 \`\`\`
 `;
 
-const BRUSHUP_PROMPT =
-  'この回答は35点です。セリフの流れや内容が不自然で、状況が分かりにくいからです。100点の完璧な回答を生成し直してください。';
+const BRUSHUP_PROMPT = 'この回答は35点です。100点の完璧な回答を生成し直してください。';
 
 type TokenUsage = {
   input_tokens?: number;
   output_tokens?: number;
   total_tokens?: number;
 };
+
+// トークン使用量の累積
+let totalInputTokens = 0;
+let totalOutputTokens = 0;
+let apiCallCount = 0;
 
 function logTokenUsage(usage: TokenUsage | undefined, context: string) {
   if (!usage) {
@@ -59,6 +63,11 @@ function logTokenUsage(usage: TokenUsage | undefined, context: string) {
     output_tokens: outputTokens,
     total_tokens: totalTokens,
   } = usage;
+
+  // 累積
+  if (inputTokens) totalInputTokens += inputTokens;
+  if (outputTokens) totalOutputTokens += outputTokens;
+  apiCallCount++;
 
   console.log(
     `📊 ${context} トークン使用量: 入力 ${inputTokens ?? '-'} / 出力 ${outputTokens ?? '-'} / 合計 ${totalTokens ?? '-'}`,
@@ -133,6 +142,19 @@ function loadPrompt(): string {
 
   if (!fs.existsSync(promptPath)) {
     throw new Error(`プロンプトファイルが見つかりません: ${promptPath}`);
+  }
+
+  return fs.readFileSync(promptPath, 'utf-8');
+}
+
+/**
+ * incorrectOptions生成用のプロンプトファイルを読み込む
+ */
+function loadIncorrectOptionsPrompt(): string {
+  const promptPath = path.join(process.cwd(), 'docs', 'prompt-for-incorrect-options.md');
+
+  if (!fs.existsSync(promptPath)) {
+    throw new Error(`incorrectOptions用プロンプトファイルが見つかりません: ${promptPath}`);
   }
 
   return fs.readFileSync(promptPath, 'utf-8');
@@ -414,8 +436,10 @@ function extractTypeScriptCode(response: string): string {
 
 /**
  * 生成されたコードを検証
+ * @param code 検証対象のコード
+ * @param requireIncorrectOptions incorrectOptionsフィールドが必須かどうか（デフォルト: false）
  */
-function validateGeneratedCode(code: string): void {
+function validateGeneratedCode(code: string, requireIncorrectOptions = false): void {
   const trimmed = code.trim();
 
   if (!trimmed) {
@@ -463,14 +487,180 @@ function validateGeneratedCode(code: string): void {
     'japaneseSentence',
     'englishReply',
     'japaneseReply',
-    'incorrectOptions',
   ];
+
+  if (requireIncorrectOptions) {
+    requiredFields.push('incorrectOptions');
+  }
 
   for (const field of requiredFields) {
     if (!trimmed.includes(field)) {
       throw new Error(`生成されたコードに必須フィールド "${field}" が見つかりません`);
     }
   }
+}
+
+/**
+ * incorrectOptionsを生成する
+ */
+async function generateIncorrectOptions(
+  japaneseSentence: string,
+  senderRole: string,
+  incorrectOptionsPrompt: string,
+  problemIndex: number,
+): Promise<string[]> {
+  const MAX_ATTEMPTS = 3;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      console.log(
+        `  🎯 ${problemIndex}問目のincorrectOptionsを生成中${attempt > 1 ? ` (再試行${attempt - 1})` : ''}...`,
+      );
+
+      const userPrompt = `${incorrectOptionsPrompt}
+
+## 入力データ
+
+- japaneseSentence: "${japaneseSentence}"
+- senderRole: "${senderRole}"
+
+上記の情報をもとに、incorrectOptions（誤回答選択肢3つ）を生成してください。
+
+【重要】3文とも、japaneseSentence（${japaneseSentence.length}文字）とほぼ同じ文字数にしてください。文字数が全然足りないのだけは禁止します。冗長な言い回しにしてでも確実に文字数を稼いでください。`;
+
+      const response = await openai.responses.create({
+        model: TEXT_MODEL,
+        input: [{ role: 'user', content: userPrompt }],
+        temperature: 0.7,
+      });
+
+      if (response.status === 'incomplete') {
+        throw new Error('GPTからのレスポンスが完了しませんでした');
+      }
+
+      const content = response.output_text;
+      if (!content) {
+        throw new Error('GPTからのレスポンスが空です');
+      }
+
+      logTokenUsage(response.usage, `${problemIndex}問目のincorrectOptions生成`);
+
+      // JSONを抽出
+      const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
+      if (!jsonMatch || !jsonMatch[1]) {
+        throw new Error('JSON形式のレスポンスが見つかりませんでした');
+      }
+
+      const options = JSON.parse(jsonMatch[1]);
+
+      if (!Array.isArray(options) || options.length !== 3) {
+        throw new Error('incorrectOptionsは3つの文字列の配列である必要があります');
+      }
+
+      // 文字列であることを検証
+      if (!options.every((opt) => typeof opt === 'string' && opt.trim().length > 0)) {
+        throw new Error('incorrectOptionsの各要素は空でない文字列である必要があります');
+      }
+
+      console.log(`  ✅ ${problemIndex}問目のincorrectOptions生成完了`);
+      return options;
+    } catch (error) {
+      console.warn(
+        `  ⚠️ ${problemIndex}問目のincorrectOptions生成に失敗 (試行${attempt}/${MAX_ATTEMPTS}): ${error instanceof Error ? error.message : error}`,
+      );
+
+      if (attempt === MAX_ATTEMPTS) {
+        throw new Error(
+          `${problemIndex}問目のincorrectOptions生成に失敗しました: ${error instanceof Error ? error.message : error}`,
+        );
+      }
+
+      // 少し待機してから再試行
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  throw new Error('予期しないエラー: incorrectOptions生成に失敗しました');
+}
+
+/**
+ * 短い文を指定された文字数に伸ばす（1回だけ試行）
+ */
+async function extendShortOption(
+  originalText: string,
+  targetLength: number,
+  problemIndex: number,
+): Promise<string> {
+  const additionalChars = targetLength - originalText.length;
+
+  if (additionalChars <= 0) {
+    return originalText;
+  }
+
+  try {
+    const userPrompt = `${originalText}
+
+上記の文章を冗長な言い回しに変えることで、確実に${additionalChars}文字だけ長い文章にしてください。そしてその文章だけを返してください。`;
+
+    const response = await openai.responses.create({
+      model: TEXT_MODEL,
+      input: [{ role: 'user', content: userPrompt }],
+      temperature: 0.7,
+    });
+
+    if (response.status === 'incomplete') {
+      throw new Error('GPTからのレスポンスが完了しませんでした');
+    }
+
+    const content = response.output_text;
+    if (!content) {
+      throw new Error('GPTからのレスポンスが空です');
+    }
+
+    logTokenUsage(response.usage, `${problemIndex}問目の選択肢伸ばし`);
+
+    const extendedText = content.trim();
+
+    if (extendedText.length > originalText.length) {
+      return extendedText;
+    } else {
+      return originalText;
+    }
+  } catch {
+    return originalText;
+  }
+}
+
+/**
+ * incorrectOptionsの長さをチェックし、必要に応じて調整する
+ */
+async function adjustIncorrectOptionsLength(
+  incorrectOptions: string[],
+  japaneseSentence: string,
+  problemIndex: number,
+): Promise<string[]> {
+  const japaneseSentenceLength = japaneseSentence.length;
+
+  // 3つ全てがjapaneseSentenceより短いかチェック
+  const allShorter = incorrectOptions.every((opt) => opt.length < japaneseSentenceLength);
+
+  if (!allShorter) {
+    return incorrectOptions;
+  }
+
+  console.log(
+    `  ⚠️ ${problemIndex}問目: incorrectOptionsが全て短いため、調整します（基準: ${japaneseSentenceLength}文字）`,
+  );
+
+  // 短い順にソートして先頭を取り出す
+  incorrectOptions.sort((a, b) => a.length - b.length);
+  const shortest = incorrectOptions.shift()!;
+  console.log(`  📌 ${problemIndex}問目: 選択肢（${shortest.length}文字）を伸ばします`);
+
+  const targetLength = japaneseSentenceLength + 10;
+  const extended = await extendShortOption(shortest, targetLength, problemIndex);
+
+  return [...incorrectOptions, extended];
 }
 
 /**
@@ -576,6 +766,53 @@ async function analyzeAndDisplayWordCountDistribution(filePath: string): Promise
 }
 
 /**
+ * 生成されたコードから問題データをパースする（incorrectOptionsなし）
+ */
+function parseGeneratedCode(code: string): Array<{
+  japaneseSentence: string;
+  senderRole: string;
+  [key: string]: unknown;
+}> {
+  // コードを配列形式に変換してevalで評価
+  const arrayCode = `[${code}]`;
+
+  try {
+    const problems = eval(arrayCode);
+
+    if (!Array.isArray(problems)) {
+      throw new Error('生成されたコードが配列として評価できませんでした');
+    }
+
+    return problems;
+  } catch (error) {
+    throw new Error(
+      `生成されたコードのパースに失敗しました: ${error instanceof Error ? error.message : error}`,
+    );
+  }
+}
+
+/**
+ * incorrectOptionsを含めた完全な問題コードを生成
+ */
+function createProblemCodeWithIncorrectOptions(
+  problem: { [key: string]: unknown },
+  incorrectOptions: string[],
+): string {
+  const problemWithOptions = {
+    ...problem,
+    incorrectOptions,
+  };
+
+  // オブジェクトをTypeScriptコードとして整形
+  return JSON.stringify(problemWithOptions, null, 2)
+    .replace(/"([^"]+)":/g, '$1:') // キーのクォートを削除
+    .replace(/: "([^"]*)"/g, (match, value) => {
+      // 値のクォートをシングルクォートに変更
+      return `: '${value.replace(/'/g, "\\'")}'`;
+    });
+}
+
+/**
  * 複数のコードブロックを結合
  */
 function mergeProblemCodes(codes: string[]): string {
@@ -666,6 +903,11 @@ function removeUsedWordsFromWordList(wordsToRemove: readonly string[]): void {
  */
 async function main() {
   try {
+    // トークン使用量をリセット
+    totalInputTokens = 0;
+    totalOutputTokens = 0;
+    apiCallCount = 0;
+
     console.log('🚀 問題生成スクリプト開始');
 
     // 常にインタラクティブモード
@@ -692,6 +934,7 @@ async function main() {
     // プロンプトを読み込み
     console.log('📖 プロンプトを読み込み中...');
     const prompt = loadPrompt();
+    const incorrectOptionsPrompt = loadIncorrectOptionsPrompt();
 
     if (words.length < totalProblems) {
       throw new Error(
@@ -714,8 +957,8 @@ async function main() {
     const fileNumber = getNextProblemNumber();
     console.log(`📝 生成ファイル: problem${fileNumber}.ts\n`);
 
-    // 複数回APIを呼び出して問題を生成
-    console.log('🔄 生成処理開始...\n');
+    // 【ステップ1】incorrectOptionsなしで問題を生成
+    console.log('🔄 【ステップ1】問題データ生成開始（incorrectOptionsは後で生成）...\n');
     const allCodes = await generateMultipleProblems(
       initialPrompt,
       rounds,
@@ -723,11 +966,55 @@ async function main() {
       wordRange,
     );
 
-    console.log('✅ すべてのコード生成完了\n');
+    console.log('✅ 問題データ生成完了\n');
+
+    // 【ステップ2】各問題のincorrectOptionsを生成
+    console.log('🔄 【ステップ2】incorrectOptions生成開始...\n');
+    const completeProblemCodes: string[] = [];
+
+    for (let i = 0; i < allCodes.length; i++) {
+      const code = allCodes[i];
+      const problemIndex = i + 1;
+
+      // コードをパースして問題データを取得
+      const problems = parseGeneratedCode(code);
+
+      if (problems.length !== PROBLEMS_PER_ROUND) {
+        throw new Error(`${problemIndex}番目のコードに${PROBLEMS_PER_ROUND}問が含まれていません`);
+      }
+
+      const problem = problems[0];
+
+      // incorrectOptionsを生成
+      let incorrectOptions = await generateIncorrectOptions(
+        problem.japaneseSentence,
+        problem.senderRole,
+        incorrectOptionsPrompt,
+        problemIndex,
+      );
+
+      // incorrectOptionsの長さを調整（必要に応じて）
+      incorrectOptions = await adjustIncorrectOptionsLength(
+        incorrectOptions,
+        problem.japaneseSentence,
+        problemIndex,
+      );
+
+      // incorrectOptionsを追加した完全なコードを生成
+      const completeCode = createProblemCodeWithIncorrectOptions(problem, incorrectOptions);
+      completeProblemCodes.push(completeCode);
+
+      // API制限を考慮して少し待機
+      if (i < allCodes.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    console.log('\n✅ すべてのincorrectOptions生成完了\n');
 
     // ファイルを保存
     console.log('💾 ファイルを保存中...');
-    const savedPath = saveProblemFile(allCodes, fileNumber, totalProblems);
+    const savedPath = saveProblemFile(completeProblemCodes, fileNumber, totalProblems);
     console.log(`✅ 保存完了: ${savedPath}\n`);
     console.log('🧹 使用済み語彙をwords.tsから削除中...');
     removeUsedWordsFromWordList(wordAssignments);
@@ -737,6 +1024,15 @@ async function main() {
 
     // 単語数分布を表示
     await analyzeAndDisplayWordCountDistribution(savedPath);
+
+    // トークン使用量の平均を表示
+    if (apiCallCount > 0) {
+      const avgInputTokens = Math.round(totalInputTokens / totalProblems);
+      const avgOutputTokens = Math.round(totalOutputTokens / totalProblems);
+      console.log('\n📊 トークン使用量の平均（1問あたり）:');
+      console.log(`  入力トークン: ${avgInputTokens}`);
+      console.log(`  出力トークン: ${avgOutputTokens}`);
+    }
 
     console.log('\n次のステップ:');
     console.log('  1. 生成されたファイルを確認してください');

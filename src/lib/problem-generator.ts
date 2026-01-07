@@ -176,14 +176,12 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
 【場所】
 ${problem.place}
-senderとreceiverが離れた場所にいる場合は、電話かビデオ会議をしている画像になるはずです。
-同じ家の中など、近くにいる場合は、対面での会話の画像になるはずです。
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
-  - 話しかける人（sender）
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
-  - 話しかけられて応答する人（receiver）
+- 話しかける人（sender）
+  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+- 話しかけられて応答する人（receiver）
+  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}

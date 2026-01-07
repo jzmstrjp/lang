@@ -11,7 +11,6 @@ export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number;
     long: {
       min: 16,
       max: 30,
-      note: 'incorrectOptionsがjapaneseSentenceよりも長めの文になるようにしてください。',
     },
   };
 

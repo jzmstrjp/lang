@@ -8,6 +8,12 @@
 
 エンドユーザーは、AI音声で再生されるenglishSentenceを聴いて、正しい意味を答える。そんなクイズです。
 
+### ユーザー体験
+
+- エンドユーザーは、1枚の画像（1コマ目と2コマ目に分割されている）を見ながら englishSentence と japaneseReply（またはenglishReply） を聴きます。
+- その2コマ画像と音声をヒントに、4択クイズの中からenglishSentenceの正しい日本語訳を選択し解答します。
+- 1コマ目はenglishSentenceと対応しています。2コマ目はjapaneseReply, englishReplyと対応しています
+
 あなたはクイズ用の問題文を作ってください。
 
 # 問題文の作り方
@@ -60,8 +66,8 @@ type SeedProblemData = {
   /**
    * japaneseSentence
    *
-   * englishSentenceの日本語訳。日本語として自然で分かりやすい言い回しにすべきです。日本語として自然な語順にすべきです。
-   * englishSentenceの内容をもれなく含んでいること。
+   * englishSentenceの日本語訳。完全な直訳ではなく、日本語として自然で分かりやすい言い回しにすべきです。日本語として自然な語順にすべきです。
+   * ただしenglishSentenceの内容を省略しないこと。
    *
    * この文が、UI上で正解として表示される。
    *
@@ -89,16 +95,15 @@ type SeedProblemData = {
    * その会話が行われる場所。できるだけ具体的に。
    * englishSentenceとenglishReplyの内容から、適切な場所を考えてください。
    *
-   * senderとreceiverが別の場所にいる場合は、以下の形式でセリフごとの場所を明記すること
-   * 【例】
-   * sender: 電車の改札前、receiver: 空港のロビー
+   * 電話やビデオ通話などでsenderとreceiverが離れた場所にいる場合は、以下の形式でセリフごとの場所を明記すること
+   * 例: 【1コマ目】電車の改札前、【2コマ目】空港のロビー
    */
   place: string
   /**
    * japaneseReply
    *
-   * englishReplyの日本語訳。日本語として自然で分かりやすい言い回しにすべきです。日本語として自然な語順にすべきです。
-   * englishReplyの内容をもれなく含んでいること。
+   * englishReplyの日本語訳。完全な直訳ではなく、日本語として自然で分かりやすい言い回しにすべきです。日本語として自然な語順にすべきです。
+   * ただしenglishReplyの内容を省略しないこと。
    */
   japaneseReply: string
   /**
@@ -107,8 +112,8 @@ type SeedProblemData = {
    * どのような場面なのか日本語で具体的に説明した文章。
    * この文は、AIによる画像生成に使用する。
    * 大まかな会話のストーリーと場所の様子を言語化してください。
-   * 対面でなく電話やビデオ会議での会話である場合は、その旨を明記してください。対面の場合は特に書かなくていいです。音声で読み上げるので「メール」とか「チャット」という場面は禁止します。
-   * senderとreceiverが離れた場所にいる場合は、電話かビデオ会議の場面になるはずです。
+   * 対面でなく電話やビデオ通話での会話である場合は、その旨を明記してください。対面の場合は特に書かなくていいです。音声で読み上げるので「メール」とか「チャット」という場面は禁止します。
+   * senderとreceiverが離れた場所にいる場合は、電話かビデオ通話の場面になるはずです。
    * 各登場人物たちの目的や動機も言語化してください。
    * 各登場人物が「まだやっていないこと」も明記してほしい。（例: receiverはまだ何も注文していない）
    * 1コマ目（englishSentence）で何が起こって何が起こらないか、2コマ目（englishReply）で何が起こって何が起こらないか、も明記してくれ。
@@ -161,36 +166,10 @@ type SeedProblemData = {
    * 例: 「親切で落ち着いた丁寧な話し方」「カジュアルで親しみやすく、元気そうに」
    */
   receiverVoiceInstruction: string
-  /**
-   * incorrectOptions
-   *
-   * japaneseSentenceとほぼ同じ文字数の日本語のセリフ3つ。
-   * 3文とも、確実にjapaneseSentenceとほぼ同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
-   *
-   * この文たちは、UI上で誤回答として表示される。
-   * したがって、japaneseSentenceとは明確に意味が違う文を生成すること。似たような意味の文は禁止する。
-   *
-   * 3文とも、senderRoleの立場でのセリフにしてください。receiverRoleのセリフではない。
-   *
-   * japaneseSentenceが疑問文だった場合には、incorrectOptionsの各文も全て疑問文にすること。
-   *
-   * incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-   * ただし「まずは」「ちなみに」「ところで」などを文頭に加えて誤魔化すような卑怯な生成はしないでください。
-   *
-   * 1つは馬鹿馬鹿しい文章にすること。例:「当店で一番不人気な、とても苦いパフェはいかがですか？」「全て期限切れの食材で作ったパフェはいかがですか？本日限定ですよ！」
-   * 1つはjapaneseSentenceと真逆の意味の文章にすること。
-   */
-  incorrectOptions: [
-    string, // japaneseSentenceとは違う単語で始まること。
-    string, // 1つ目とは違う単語で始まること。
-    string, // 1つ目、2つ目とは違う単語で始まること。
-  ]
 }
 ```
 
 ## 重要
 
-- incorrectOptions3つの文は、必ず違う語で始まること。同じ語で始まるのは禁止。japaneseSentenceと同じ語で始まることも禁止します。
-- 【重要】incorrectOptions3つの文は、すべてjapaneseSentenceとほぼ同じ文字数であること。確実にjapaneseSentenceとほぼ同じ文字数にしてほしいが、無理ならjapaneseSentenceより少しだけ長くしてくれ。
 - 全てのセリフはAI音声で読み上げるので、カッコ書きなどは含めず、AIが読み上げ可能な文字列にすること。
 - scenePrompt はユーザーからは見えないので、englishSentenceとenglishReplyだけ読めばどんな状況なのか分かるように作ってほしい。
