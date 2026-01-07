@@ -298,7 +298,7 @@ async function generateMultipleProblems(
     console.log(`🤖 ${i}回目: ${isFirstRound ? '最初の1問を生成中...' : 'さらに1問を生成中...'}`);
     console.log('🗂️ 今回指定する語彙:');
     roundWords.forEach((word, index) => {
-      console.log(`  ${roundStartIndex + index + 1}問目: ${word}`);
+      console.log(`  ${roundStartIndex + index + 1}問目: ${word.value} / ジャンル: ${word.genre}`);
     });
 
     let generatedCodeForRound: string | null = null;
@@ -1040,7 +1040,8 @@ async function main() {
     const savedPath = saveProblemFile(completeProblemCodes, fileNumber, totalProblems);
     console.log(`✅ 保存完了: ${savedPath}\n`);
     console.log('🧹 使用済み語彙をwords.tsから削除中...');
-    removeUsedWordsFromWordList(wordAssignments.map((w) => w.value));
+    const usedWords = words.slice(0, totalProblems);
+    removeUsedWordsFromWordList(usedWords);
     console.log('✅ 語彙リストを更新しました\n');
 
     console.log(`🎉 問題生成完了！${totalProblems}問を生成しました`);

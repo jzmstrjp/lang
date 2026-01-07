@@ -1,4 +1,4 @@
-export const words = [
+export const words: `${string}|${string}`[] = [
   'as soon as possible|仕事-メール依頼',
   'on schedule|仕事-進捗管理',
   'be in charge of|仕事-役割分担',
