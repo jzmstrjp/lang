@@ -238,7 +238,7 @@ async function generateProblemsWithHistory(
 }
 
 function createWordInstruction(
-  wordsForRound: readonly string[],
+  wordsForRound: ReadonlyArray<{ value: string; genre: string }>,
   globalOffset: number,
   isFirstRound: boolean,
   wordCountRange: { min: number; max: number; note?: string },
@@ -259,7 +259,7 @@ function createWordInstruction(
 
   const assignments = wordsForRound
     .map((word, index) => {
-      return `${globalOffset + index + 1}問目: ${word}`;
+      return `${globalOffset + index + 1}問目: ${word.value} / ジャンル: ${word.genre}`;
     })
     .join('\n');
 
@@ -280,7 +280,7 @@ function createFormatRetryInstruction(errorMessage: string): string {
 async function generateMultipleProblems(
   initialPrompt: string,
   rounds: number,
-  wordAssignments: readonly string[],
+  wordAssignments: ReadonlyArray<{ value: string; genre: string }>,
   wordCountRange: { min: number; max: number; note?: string },
 ): Promise<string[]> {
   const allCodes: string[] = [];
@@ -942,14 +942,37 @@ async function main() {
       );
     }
 
-    const wordAssignments = words.slice(0, totalProblems);
+    // 語彙を分割してジャンルを取得
+    const wordsWithGenres = words.map((word) => {
+      const parts = word.split('|');
+      return {
+        value: parts[0],
+        genre: parts[1] || '',
+      };
+    });
+
+    // 分類結果をログ出力
+    const businessCount = wordsWithGenres.filter((w) => w.genre.startsWith('仕事')).length;
+    const privateCount = wordsWithGenres.filter(
+      (w) => w.genre && !w.genre.startsWith('仕事'),
+    ).length;
+    const noGenreCount = wordsWithGenres.filter((w) => !w.genre).length;
+
+    if (businessCount > 0 || privateCount > 0) {
+      console.log(
+        `📊 ジャンル分布: ビジネス系 ${businessCount}個 / 私生活系 ${privateCount}個${noGenreCount > 0 ? ` / 未指定 ${noGenreCount}個` : ''}\n`,
+      );
+    }
+
+    // 必要な数だけ取得
+    const wordAssignments = wordsWithGenres.slice(0, totalProblems);
     const initialPrompt = `${prompt}\n\n${OUTPUT_FORMAT_INSTRUCTION}`;
     console.log('✅ プロンプト読み込み完了\n');
     console.log('📍 place設定方針:');
     console.log('');
     console.log('🧠 最初の1問で使用する語彙:');
     wordAssignments.slice(0, PROBLEMS_PER_ROUND).forEach((word, index) => {
-      console.log(`  ${index + 1}問目: ${word}`);
+      console.log(`  ${index + 1}問目: ${word.value} / ジャンル: ${word.genre}`);
     });
     console.log('');
 
@@ -1017,7 +1040,7 @@ async function main() {
     const savedPath = saveProblemFile(completeProblemCodes, fileNumber, totalProblems);
     console.log(`✅ 保存完了: ${savedPath}\n`);
     console.log('🧹 使用済み語彙をwords.tsから削除中...');
-    removeUsedWordsFromWordList(wordAssignments);
+    removeUsedWordsFromWordList(wordAssignments.map((w) => w.value));
     console.log('✅ 語彙リストを更新しました\n');
 
     console.log(`🎉 問題生成完了！${totalProblems}問を生成しました`);
