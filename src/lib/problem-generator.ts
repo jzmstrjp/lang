@@ -183,17 +183,19 @@ ${problem.place}
 - 話しかけられて応答する人（receiver）
   - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
+※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。
+
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている
+- ${senderName}（${senderGenderText}）は画像の${receiverFaceDirection}にいて、${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている。
 - ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
 - まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}に向かって「${problem.englishReply}」と返答している
+- ${receiverName}（${receiverGenderText}）は画像の${senderFaceDirection}にいて、${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している。つまり1コマ目とは左右逆のアングルで描画すること。
 - ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
 - もう${senderName}（${senderGenderText}）は描かないこと。
 
@@ -420,17 +422,19 @@ ${problem.place}
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
+※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。
+
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている
+- ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている。
 - ただし、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 - まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}に向かって「${problem.englishReply}」と返答している
+- ${receiverName}（${receiverGenderText}）が${receiverFaceDirection}に向かって「${problem.englishReply}」と返答している。1コマ目とは左右逆のアングルで描画すること。
 - ただし、吹き出しは不要です。台詞も不要です。枠線も不要です。字幕も不要です。油絵だけで表現してください。
 - もう${senderName}（${senderGenderText}）は描かないこと。
 
@@ -454,5 +458,6 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 【禁止事項】
 - 1つのコマの中に同じ人物を2回描画してはならない。
 - キャラクター画像と異なる顔や服装にしてはならない。
+- ビデオ通話のシーンの場合は、必ず登場人物たちにイヤフォンなどを着用させてください。
 `;
 }

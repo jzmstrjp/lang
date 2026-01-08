@@ -23,7 +23,7 @@
     "check:image-coverage": "tsx scripts/check-image-coverage.ts",
     "check:difficulty-distribution": "tsx scripts/check-difficulty-distribution.ts",
     "check:incorrect-options-length": "tsx scripts/check-incorrect-options-length.ts",
-    "generate:problems": "tsx scripts/generate-problems-with-gpt.ts",
+    "create:problems": "tsx scripts/create-problems.ts",
     "update-difficulty": "tsx scripts/update-difficulty-level.ts"
   },
   "dependencies": {
