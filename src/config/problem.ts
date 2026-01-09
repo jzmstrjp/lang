@@ -4,12 +4,12 @@ export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number;
   {
     short: {
       min: 2,
-      max: 9,
+      max: 6,
       note: '指定された語彙以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
     },
-    medium: { min: 10, max: 15 },
+    medium: { min: 7, max: 13 },
     long: {
-      min: 16,
+      min: 14,
       max: 30,
     },
   };
