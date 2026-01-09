@@ -29,6 +29,22 @@ type SceneDraft = {
   word: string;
   sender: {
     role: string;
+    where: string;
+    why: string;
+  };
+  receiver: {
+    role: string;
+    where: string;
+    why: string;
+  };
+};
+
+type SceneDraftWithVoice = {
+  when: string;
+  how: string;
+  word: string;
+  sender: {
+    role: string;
     voice: 'male' | 'female';
     where: string;
     why: string;
@@ -45,7 +61,7 @@ type SceneDraft = {
  * OpenAI APIを使って英文の会話を生成
  */
 async function createEnglishConversation(
-  sceneDraft: SceneDraft,
+  sceneDraft: SceneDraftWithVoice,
   wordCountRange: { min: number; max: number; note?: string },
 ): Promise<{
   result: {
@@ -58,7 +74,7 @@ async function createEnglishConversation(
 
   const noteInstruction = wordCountRange.note ? `\n   - **注意: ${wordCountRange.note}**` : '';
 
-  const prompt = `以下のシーン設定に基づいて、自然な英語の会話を作成してください。
+  const prompt = `以下のシーン設定に基づいて、自然な英語の会話を作成してください。TOEICのリスニング問題に出てきそうな会話にしてください。
 
 【シーン設定】
 - いつ: ${sceneDraft.when}
@@ -607,43 +623,36 @@ async function createSceneDraft({
 }> {
   console.log(`  🎬 「${value}」のシーン生成中...`);
 
-  const prompt = `「${value}」というワード・フレーズを使って、${genre}系の会話シーンを作成してください。
+  const prompt = `「${value}」というワード・フレーズを使って、${genre}系の会話シーンを作成してください。TOEICのリスニング問題に出てきそうなシーンにしてください。
 
 【要件】
-- when: いつ会話するか（例: 金曜の午後、平日の夕方、深夜、平日の昼）
-- how: どのように会話するか（音声会話のみ。例: 対面、電話、ビデオ通話）**チャット、メール、LINEなどの文字ベースは禁止**
-- word: 使用する単語・フレーズ（必ず「${value}」を設定）
 - sender: 送信者の情報（こちらが「${value}」というワードを使用する人物）
+  - why: なぜこの発言をするのか（20文字程度）「${value}」という表現から必然的に導かれる動機を設定してください。
   - role: 役割（例: 上司、同僚、友人、家族）
-  - voice: 性別（"male" または "female"）
-  - where: どこにいるか（例: オフィス、自宅、カフェ）
-  - why: なぜこの発言をするのか（20文字程度）
+  - where: どこにいるか具体的に（例: オフィスの自席、駅の券売機前、病院の受付）（対面での会話の場合は、receiverと同じ場所または近い場所にすること）
 - receiver: 受信者の情報
   - role: 役割
-  - voice: 性別（senderと逆の性別であること）
-  - where: どこにいるか
-
-【ジャンル: ${genre}】
-${genre === 'ビジネス' ? '- ビジネスシーン: 仕事、会議、オフィス、取引先とのやり取りなど' : '- 日常生活シーン: 友人、家族、恋人、プライベートな場面など'}
+  - where: どこにいるか具体的に（例: オフィスの自席、駅の券売機前、病院の受付）（対面での会話の場合は、senderと同じ場所または近い場所にすること）
+- when: いつ会話するか（例: 金曜の午後、平日の夕方、深夜、平日の昼）
+- how: どのように会話するか（例: 対面、電話、ビデオ通話。基本的には対面を想定しているが、シーンにあった手段を設定してください）**音声会話のみ想定。チャット、メール、LINEなどの文字ベースは禁止**
+- word: 使用する単語・フレーズ（必ず「${value}」を設定）
 
 【重要】以下のJSON形式で必ず回答してください:
 
 \`\`\`json
 {
-  "when": "月曜の午後",
-  "how": "電話",
-  "word": "${value}",
+  "word": "remote work",
   "sender": {
+    "why": "リモートワークが可能だということを部下に伝えたい"
     "role": "上司",
-    "voice": "male",
-    "where": "本社オフィス",
-    "why": "部下に指示を明確に伝えたい"
+    "where": "オフィスの自席",
   },
   "receiver": {
     "role": "部下",
-    "voice": "female",
-    "where": "支社オフィス"
-  }
+    "where": "上司の自席の近く"
+  },
+  "when": "月曜の午後",
+  "how": "対面"
 }
 \`\`\``;
 
@@ -677,11 +686,9 @@ ${genre === 'ビジネス' ? '- ビジネスシーン: 仕事、会議、オフ�
       !result.how ||
       !result.word ||
       !result.sender?.role ||
-      !result.sender?.voice ||
       !result.sender?.where ||
       !result.sender?.why ||
       !result.receiver?.role ||
-      !result.receiver?.voice ||
       !result.receiver?.where
     ) {
       throw new Error('レスポンスの形式が正しくありません');
@@ -707,13 +714,11 @@ ${genre === 'ビジネス' ? '- ビジネスシーン: 仕事、会議、オフ�
         word: value,
         sender: {
           role: genre === 'ビジネス' ? '上司' : '友人',
-          voice: 'male',
           where: genre === 'ビジネス' ? 'オフィス' : '自宅',
           why: '相手に情報を伝えたい',
         },
         receiver: {
           role: genre === 'ビジネス' ? '同僚' : '友人',
-          voice: 'female',
           where: genre === 'ビジネス' ? 'オフィス' : '自宅',
           why: '相手の言葉を受け取って、簡潔に適切な応答を返したい',
         },
@@ -1074,11 +1079,34 @@ async function main() {
 
     // シーンドラフトを生成
     console.log('🎬 シーンドラフト生成開始...\n');
-    const sceneDraftResults = [];
+    const sceneDraftResults: {
+      result: SceneDraftWithVoice;
+      tokenUsage: TokenUsage;
+    }[] = [];
     for (const wordWithGenre of wordsWithGenres) {
       const sceneDraftResult = await createSceneDraft(wordWithGenre);
-      console.log(JSON.stringify(sceneDraftResult, null, 2));
-      sceneDraftResults.push(sceneDraftResult);
+
+      // voiceをランダムに設定
+      const senderVoice: 'male' | 'female' = Math.random() < 0.5 ? 'male' : 'female';
+      const receiverVoice: 'male' | 'female' = senderVoice === 'male' ? 'female' : 'male';
+
+      const sceneDraftWithVoice = {
+        ...sceneDraftResult,
+        result: {
+          ...sceneDraftResult.result,
+          sender: {
+            ...sceneDraftResult.result.sender,
+            voice: senderVoice,
+          },
+          receiver: {
+            ...sceneDraftResult.result.receiver,
+            voice: receiverVoice,
+          },
+        },
+      };
+
+      console.log(JSON.stringify(sceneDraftWithVoice, null, 2));
+      sceneDraftResults.push(sceneDraftWithVoice);
     }
 
     // 英会話を生成してマージ

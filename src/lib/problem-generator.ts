@@ -183,7 +183,7 @@ ${problem.place}
 - 話しかけられて応答する人（receiver）
   - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
-※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。
+※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
@@ -422,7 +422,7 @@ ${problem.place}
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
-※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。
+※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
@@ -458,6 +458,6 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 【禁止事項】
 - 1つのコマの中に同じ人物を2回描画してはならない。
 - キャラクター画像と異なる顔や服装にしてはならない。
-- ビデオ通話のシーンの場合は、必ず登場人物たちにイヤフォンなどを着用させてください。
+- ビデオ通話のシーンの場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 `;
 }
