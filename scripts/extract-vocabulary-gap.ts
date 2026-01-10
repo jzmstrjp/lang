@@ -15,6 +15,7 @@ import OpenAI from 'openai';
 import * as readline from 'readline/promises';
 import * as fs from 'fs';
 import * as path from 'path';
+import { words as existingWords } from '../docs/words';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -64,34 +65,6 @@ async function promptChoice(
 
   rl.close();
   return answer;
-}
-
-/**
- * docs/words.ts から既存の語彙配列を読み込む
- */
-function loadExistingWords(): string[] {
-  const wordsFilePath = path.join(process.cwd(), 'docs', 'words.ts');
-
-  if (!fs.existsSync(wordsFilePath)) {
-    return [];
-  }
-
-  const content = fs.readFileSync(wordsFilePath, 'utf-8');
-
-  // export const words: string[] = [...]; の配列部分を抽出
-  const match = content.match(/export const words: string\[\] = (\[[\s\S]*?\]);/);
-  if (!match) {
-    return [];
-  }
-
-  try {
-    // JSON.parseで配列を取得
-    const arrayStr = match[1];
-    return JSON.parse(arrayStr) as string[];
-  } catch (error) {
-    console.warn('⚠️  既存のwords.tsの読み込みに失敗しました。空の配列として扱います。');
-    return [];
-  }
 }
 
 /**
@@ -373,8 +346,6 @@ async function main() {
 
     // docs/words.ts に保存
     console.log('\n💾 docs/words.ts への保存を準備中...');
-
-    const existingWords = loadExistingWords();
     console.log(`📂 既存の語彙数: ${existingWords.length}個`);
 
     // 既存の語彙と新規の語彙を統合（重複排除、末尾に追加）
