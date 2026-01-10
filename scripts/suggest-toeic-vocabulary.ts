@@ -46,14 +46,15 @@ async function suggestToeicVocabulary(
 
   const prompt = `以下の英会話問題を分析してください。
 
-これらの問題を見て、TOEICリスニングセクション（Part 1-4）に頻出するが、これらの問題群には含まれていない単語・イディオムを提案してください。
+これらの問題を見て、TOEICリスニングセクション（Part 1-4）に頻出するが、これらの問題群にはまだ十分にカバーされていない単語・イディオムを提案してください。
 
 【提案すべき語彙の条件】
-- TOEICリスニング問題（オフィス、会議、旅行、ショッピング、レストランなどの場面）で頻出する語彙
+- TOEICリスニング問題（オフィス、会議、旅行、ショッピング、レストラン、病院、銀行などの場面）で頻出する語彙
 - 日本の中学2年生レベルを超える（高校生以上で学ぶ）単語・イディオム
-- 以下の問題群には登場していない、または使用頻度が低い語彙
+- ビジネスシーンや日常生活で実用性が高い語彙
 - 実際のTOEIC試験対策として学習価値が高いもの
 - 実際に出現する形で提案（be動詞の場合は is, are, was, were など）
+- 以下の問題群で既に扱われている語彙は避けること
 
 【問題リスト】
 ${problemTexts.join('\n\n')}
@@ -225,8 +226,27 @@ async function main() {
       }
     }
 
+    // long問題に既に登場している語彙を除外
+    console.log('\n🔍 long問題に既に登場している語彙をチェック中...\n');
+
+    // longの全テキストを結合（検索用）
+    const longTexts = longProblems
+      .map((p) => `${p.englishSentence} ${p.englishReply}`)
+      .join(' ')
+      .toLowerCase();
+
+    // longに登場していない語彙のみをフィルタリング
+    const notInLong = Array.from(allVocabulary).filter((vocab) => {
+      const pattern = vocab.toLowerCase();
+      return !longTexts.includes(pattern);
+    });
+
+    console.log(`📊 提案された語彙: ${allVocabulary.size}個`);
+    console.log(`❌ long問題に既に存在: ${allVocabulary.size - notInLong.length}個`);
+    console.log(`✅ 本当に不足している語彙: ${notInLong.length}個\n`);
+
     // 結果をソート
-    const sortedVocabulary = Array.from(allVocabulary).sort((a, b) => {
+    const sortedVocabulary = notInLong.sort((a, b) => {
       // 単語数でソート（単語→フレーズの順）
       const aWordCount = a.split(' ').length;
       const bWordCount = b.split(' ').length;
@@ -236,8 +256,6 @@ async function main() {
       // アルファベット順
       return a.localeCompare(b);
     });
-
-    console.log(`\n✅ 提案されたTOEIC語彙: ${sortedVocabulary.length}個（重複排除済み）\n`);
 
     // トークン使用量の統計
     console.log('📊 トークン使用量統計:');
@@ -254,7 +272,7 @@ async function main() {
     );
 
     // 結果を出力
-    console.log('📋 提案されたTOEIC語彙一覧:\n');
+    console.log('📋 本当に不足しているTOEIC語彙一覧:\n');
     console.log(JSON.stringify(sortedVocabulary, null, 2));
 
     // カテゴリ別に集計
