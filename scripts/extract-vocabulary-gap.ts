@@ -377,18 +377,10 @@ async function main() {
     const existingWords = loadExistingWords();
     console.log(`📂 既存の語彙数: ${existingWords.length}個`);
 
-    // 既存の語彙と新規の語彙を統合（重複排除）
-    const allWordsSet = new Set([...existingWords, ...notInTarget]);
-    const allWords = Array.from(allWordsSet).sort((a, b) => {
-      // 単語数でソート（単語→フレーズの順）
-      const aWordCount = a.split(' ').length;
-      const bWordCount = b.split(' ').length;
-      if (aWordCount !== bWordCount) {
-        return aWordCount - bWordCount;
-      }
-      // アルファベット順
-      return a.localeCompare(b);
-    });
+    // 既存の語彙と新規の語彙を統合（重複排除、末尾に追加）
+    const existingWordsSet = new Set(existingWords);
+    const newWords = notInTarget.filter((word) => !existingWordsSet.has(word));
+    const allWords = [...existingWords, ...newWords];
 
     const newWordsCount = allWords.length - existingWords.length;
     console.log(`➕ 新規追加: ${newWordsCount}個`);
