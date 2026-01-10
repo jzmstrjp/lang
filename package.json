@@ -24,7 +24,8 @@
     "check:difficulty-distribution": "tsx scripts/check-difficulty-distribution.ts",
     "check:incorrect-options-length": "tsx scripts/check-incorrect-options-length.ts",
     "create:problems": "tsx scripts/create-problems.ts",
-    "update-difficulty": "tsx scripts/update-difficulty-level.ts"
+    "update-difficulty": "tsx scripts/update-difficulty-level.ts",
+    "extract:vocabulary-gap": "tsx scripts/extract-vocabulary-gap.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",
