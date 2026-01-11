@@ -1,13 +1,12 @@
 #!/usr/bin/env tsx
 
 /**
- * difficultyLevelがnullなProblemsレコードを取得してOpenAI APIで難易度を判定・更新するスクリプト
+ * 10語以下かつdifficultyLevelがnullなProblemsレコードを取得して
+ * レベル1の基準に合致するか判定し、合致する場合はdifficultyLevelを1に更新するスクリプト
  */
 
 import { prisma } from '../src/lib/prisma';
 import { OpenAI } from 'openai';
-import fs from 'fs';
-import path from 'path';
 import dotenv from 'dotenv';
 import { TEXT_MODEL } from '@/const';
 
@@ -43,39 +42,29 @@ function logTokenUsage(usage: TokenUsage | undefined, context: string) {
 }
 
 /**
- * 難易度基準ファイルを読み込む
+ * レベル1の定義
  */
-function loadDifficultyLevelGuide(): string {
-  const guidePath = path.join(process.cwd(), 'docs', 'difficulty-level.md');
+const LEVEL_ONE_DEFINITION = `# 英語問題 レベル1の定義
 
-  if (!fs.existsSync(guidePath)) {
-    throw new Error(`難易度基準ファイルが見つかりません: ${guidePath}`);
-  }
-
-  return fs.readFileSync(guidePath, 'utf-8');
-}
+- ビジネス用語が使用されておらず、小学生でも理解できそうなもの`;
 
 /**
- * OpenAI APIで難易度を判定
+ * OpenAI APIでレベル1の基準に合致するか判定
  */
-async function judgeDifficultyLevel(
-  englishSentence: string,
-  difficultyGuide: string,
-): Promise<{ difficultyLevel: number; reasoning: string }> {
-  const prompt = `${difficultyGuide}
+async function isLevelOne(englishSentence: string, place: string): Promise<boolean> {
+  const prompt = `${LEVEL_ONE_DEFINITION}
 
 ## 判定依頼
 
-以下の英文の難易度レベルを1〜10の10段階で判定してください。
-上記の基準に従い、文法的複雑さ、語彙の専門性、文の長さ、構文の複雑さ、イディオムの有無などを総合的に判断してください。
+以下の問題が上記の「レベル1の定義」に合致するか判定してください。
 
 **英文**: "${englishSentence}"
+**場所**: "${place}"
 
 **出力形式**: 必ずJSON形式で以下のように返してください。
 \`\`\`json
 {
-  "difficultyLevel": 数値（1〜10の整数）,
-  "reasoning": "判定理由（簡潔に日本語で）"
+  "isMatch": true または false
 }
 \`\`\``;
 
@@ -102,7 +91,7 @@ async function judgeDifficultyLevel(
       throw new Error('GPTからのレスポンスが空です');
     }
 
-    logTokenUsage(response.usage, '難易度判定');
+    logTokenUsage(response.usage, 'レベル1判定');
 
     // JSONブロックを抽出
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
@@ -111,23 +100,11 @@ async function judgeDifficultyLevel(
     const result = JSON.parse(jsonText.trim());
 
     // バリデーション
-    if (
-      typeof result.difficultyLevel !== 'number' ||
-      result.difficultyLevel < 1 ||
-      result.difficultyLevel > 10 ||
-      !Number.isInteger(result.difficultyLevel)
-    ) {
-      throw new Error(`無効な難易度レベル: ${result.difficultyLevel}（1〜10の整数が必要）`);
+    if (typeof result.isMatch !== 'boolean') {
+      throw new Error(`無効な判定結果: ${result.isMatch}（true/falseが必要）`);
     }
 
-    if (typeof result.reasoning !== 'string' || !result.reasoning.trim()) {
-      throw new Error('判定理由が空です');
-    }
-
-    return {
-      difficultyLevel: result.difficultyLevel,
-      reasoning: result.reasoning,
-    };
+    return result.isMatch;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`GPT API呼び出しエラー: ${error.message}`);
@@ -138,8 +115,8 @@ async function judgeDifficultyLevel(
 
 async function main(count: number = 1) {
   try {
-    console.log('🚀 難易度レベル更新スクリプトを開始します...');
-    console.log(`📊 処理件数: ${count}件\n`);
+    console.log('🚀 難易度レベル1判定スクリプトを開始します...');
+    console.log(`📊 処理件数: 最大${count}件\n`);
 
     // 環境変数のチェック
     const requiredEnvs = ['OPENAI_API_KEY', 'DATABASE_URL'];
@@ -151,21 +128,20 @@ async function main(count: number = 1) {
       process.exit(1);
     }
 
-    // 難易度基準を読み込み
-    console.log('📖 難易度基準ファイルを読み込み中...');
-    const difficultyGuide = loadDifficultyLevelGuide();
-    console.log('✅ 難易度基準ファイル読み込み完了\n');
-
-    // difficultyLevelがnullのレコードを取得
-    console.log('📋 difficultyLevelがnullなレコードを検索中...');
+    // 10語以下かつdifficultyLevelがnullのレコードを取得
+    console.log('📋 10語以下かつdifficultyLevelがnullなレコードを検索中...');
 
     const problemsWithoutDifficulty = await prisma.problem.findMany({
       where: {
         difficultyLevel: null,
+        wordCount: {
+          lte: 10,
+        },
       },
       select: {
         id: true,
         englishSentence: true,
+        place: true,
       },
       take: count,
       orderBy: {
@@ -174,7 +150,7 @@ async function main(count: number = 1) {
     });
 
     if (problemsWithoutDifficulty.length === 0) {
-      console.log('✅ difficultyLevelがnullなレコードは見つかりませんでした');
+      console.log('✅ 10語以下かつdifficultyLevelがnullなレコードは見つかりませんでした');
       return;
     }
 
@@ -182,7 +158,8 @@ async function main(count: number = 1) {
     console.log('🔄 処理を開始します...\n');
 
     const totalStartTime = Date.now();
-    let successCount = 0;
+    let level1Count = 0;
+    let level5Count = 0;
     let errorCount = 0;
 
     // 各レコードを処理
@@ -193,27 +170,29 @@ async function main(count: number = 1) {
           `\n🔄 [${index + 1}/${problemsWithoutDifficulty.length}] 処理開始: ${problem.id}`,
         );
         console.log(`   英文: "${problem.englishSentence}"`);
+        console.log(`   場所: "${problem.place}"`);
 
-        // OpenAI APIで難易度を判定
-        console.log('   🤖 難易度を判定中...');
-        const { difficultyLevel, reasoning } = await judgeDifficultyLevel(
-          problem.englishSentence,
-          difficultyGuide,
-        );
+        // OpenAI APIでレベル1に合致するか判定
+        console.log('   🤖 レベル1の基準に合致するか判定中...');
+        const isMatch = await isLevelOne(problem.englishSentence, problem.place ?? '');
 
-        console.log(`   📈 判定結果: レベル ${difficultyLevel}`);
-        console.log(`   💭 理由: ${reasoning}`);
+        console.log(`   📈 判定結果: ${isMatch ? '✅ レベル1に合致' : '❌ レベル1に非該当'}`);
 
         // データベースを更新
-        console.log('   💾 データベースを更新中...');
+        const newLevel = isMatch ? 1 : 5;
+        console.log(`   💾 difficultyLevelを${newLevel}に更新中...`);
         await prisma.problem.update({
           where: { id: problem.id },
-          data: { difficultyLevel },
+          data: { difficultyLevel: newLevel },
         });
 
         console.log('   ✅ データベース更新完了');
+        if (isMatch) {
+          level1Count++;
+        } else {
+          level5Count++;
+        }
 
-        successCount++;
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
         console.log(`   🎉 レコード ${problem.id} の処理が完了しました！ (${duration}秒)`);
 
@@ -236,7 +215,8 @@ async function main(count: number = 1) {
         '⚠️ 難易度レベル更新スクリプトが完了しました（一部エラーあり）',
         '💥 ===============================================',
         `📊 処理結果:`,
-        `   ✅ 成功: ${successCount}件`,
+        `   ✅ レベル1: ${level1Count}件`,
+        `   📊 レベル5: ${level5Count}件（レベル1に非該当）`,
         `   ❌ エラー: ${errorCount}件`,
         `   📝 合計: ${problemsWithoutDifficulty.length}件`,
         `   ⏱️ 合計時間: ${totalDuration}秒`,
@@ -248,7 +228,8 @@ async function main(count: number = 1) {
         '✅ 難易度レベル更新スクリプトが完了しました！',
         '🎊 ===============================================',
         `📊 処理結果:`,
-        `   ✅ 成功: ${successCount}件`,
+        `   ✅ レベル1: ${level1Count}件`,
+        `   📊 レベル5: ${level5Count}件（レベル1に非該当）`,
         `   ❌ エラー: ${errorCount}件`,
         `   📝 合計: ${problemsWithoutDifficulty.length}件`,
         `   ⏱️ 合計時間: ${totalDuration}秒`,
@@ -277,6 +258,9 @@ if (require.main === module) {
     if (isNaN(parsed) || parsed <= 0) {
       console.error('❌ 処理件数は正の整数で指定してください');
       console.error('   使用例: npm run update-difficulty 10');
+      console.error(
+        '   ※10語以下かつdifficultyLevelがnullな問題を対象に、レベル1の基準に合致するか判定します',
+      );
       process.exit(1);
     }
     count = parsed;
