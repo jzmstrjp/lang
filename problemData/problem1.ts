@@ -175,11 +175,11 @@ const problemData: SeedProblemData[] = [
     englishSentence: 'The printer is acting up again.',
     japaneseSentence: 'またプリンターの調子が悪いニャ。',
     englishReply: 'In that case, doing this should fix it!',
-    japaneseReply: 'そんな時は、こうすれば直るニャ！',
+    japaneseReply: 'そんな時は、こうすれば直るニャ。',
     scenePrompt:
       'オフィスのプリンターの調子が悪い場面。紙が詰まっているわけではない。【1コマ目】プリンターの調子が悪くて困っている。そのことを同僚に相談している【2コマ目】相談された同僚が、プリンターを直すために思い切りパンチしている。衝撃でプリンターは砕けている',
     senderVoiceInstruction: '困った子供のような口調',
-    receiverVoiceInstruction: '楽しそうに力んだ子供のような口調',
+    receiverVoiceInstruction: null,
     incorrectOptions: [
       'このプリンターはとても高性能だニャー。',
       'もう仕事やめたいニャー。',
@@ -195,11 +195,11 @@ const problemData: SeedProblemData[] = [
     englishSentence: 'I didn’t do anything, but my computer broke.',
     japaneseSentence: '何もしてないのにパソコンが壊れたニャ。',
     englishReply: 'Then let’s just spend the afternoon sniffing some catnip!',
-    japaneseReply: 'じゃあ、午後はマタタビでも吸って過ごすニャ！',
+    japaneseReply: 'じゃあ、午後はマタタビでも吸って過ごすニャ。',
     scenePrompt:
-      '【1コマ目】急に動かなくなったノートPCを見つめて困っている【2コマ目】猫用のマタタビを片手に、楽観的なアドバイスをしている。',
+      '【1コマ目】オフィスチェアに座って、デスクの上の動かなくなったノートPCを見つめて困っている。ノートPCの近くには、倒れた花瓶があり、PCにも水がかかっている【2コマ目】猫用のマタタビを片手に、楽観的なアドバイスをしている。',
     senderVoiceInstruction: '困った子供のような口調',
-    receiverVoiceInstruction: '楽観的な子供のような口調',
+    receiverVoiceInstruction: null,
     incorrectOptions: [
       '仕事は楽しいニャー。',
       'パソコンの修理なら自分でできるニャ！',
