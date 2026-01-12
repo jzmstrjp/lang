@@ -24,7 +24,7 @@ type GenerateProblemResponse = {
   assets: AssetsData;
 };
 
-type GenerateMode = 'withImage' | 'withoutImage' | 'withCharacterImages';
+type GenerateMode = 'withImage' | 'withoutImage' | 'withCharacterImages' | 'withAnimalImages';
 
 export default function PromptTestClient() {
   const [problem, setProblem] = useState<GeneratedProblem | null>(null);
@@ -51,6 +51,7 @@ export default function PromptTestClient() {
           type: type === 'all' ? undefined : type,
           withoutPicture: mode === 'withoutImage',
           useCharacterImages: mode === 'withCharacterImages',
+          useAnimalImages: mode === 'withAnimalImages',
         }),
       });
 
@@ -169,6 +170,13 @@ export default function PromptTestClient() {
                 className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 キャラ画像で生成
+              </button>
+              <button
+                onClick={() => generateProblem(selectedType, 'withAnimalImages')}
+                disabled={loading}
+                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                動物で生成
               </button>
             </div>
           </div>

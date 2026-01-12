@@ -4,6 +4,7 @@ import {
   generateAudioAssets,
   generateImagePrompt,
   generateImagePromptWithCharacters,
+  generateImagePromptWithAnimals,
   type GenerateRequest,
 } from '@/lib/problem-generator';
 import OpenAI from 'openai';
@@ -76,6 +77,37 @@ async function generateImageWithCharacters(prompt: string) {
   throw new Error('Failed to generate image with characters');
 }
 
+async function generateImageWithAnimals(prompt: string) {
+  // 動物画像を読み込み
+  const catPath = path.join(process.cwd(), 'images', 'cat.png');
+  const catBuffer = await fs.readFile(catPath);
+
+  // BufferをUint8Arrayに変換してからFileオブジェクトに変換
+  const imageFiles = [new File([new Uint8Array(catBuffer)], 'cat.png', { type: 'image/png' })];
+
+  const image = await openai.images.edit({
+    ...IMAGE_MODEL_SETTING,
+    image: imageFiles,
+    prompt: prompt,
+    quality: 'medium',
+  });
+
+  const first = image.data?.[0];
+  if (!first) {
+    throw new Error('Failed to generate image with animals');
+  }
+
+  if (first.b64_json) {
+    return `data:image/png;base64,${first.b64_json}`;
+  }
+
+  if (first.url) {
+    return first.url;
+  }
+
+  throw new Error('Failed to generate image with animals');
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerAuthSession();
@@ -85,9 +117,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '権限がありません。' }, { status: 403 });
     }
 
-    const body: GenerateRequest & { useCharacterImages?: boolean } = await req
-      .json()
-      .catch(() => ({}));
+    const body: GenerateRequest & { useCharacterImages?: boolean; useAnimalImages?: boolean } =
+      await req.json().catch(() => ({}));
 
     console.log('[test-generate] 問題生成開始');
 
@@ -100,14 +131,21 @@ export async function POST(req: Request) {
     // アセットを並列生成
     const assetPromises: Promise<unknown>[] = [generateAudioAssets(problem)];
 
-    // 画像プロンプト生成（キャラクター画像使用時は専用プロンプト）
-    const imagePrompt = body.useCharacterImages
-      ? generateImagePromptWithCharacters(problem)
-      : generateImagePrompt(problem);
+    // 画像プロンプト生成（使用するモードに応じて専用プロンプト）
+    let imagePrompt: string;
+    if (body.useAnimalImages) {
+      imagePrompt = generateImagePromptWithAnimals(problem);
+    } else if (body.useCharacterImages) {
+      imagePrompt = generateImagePromptWithCharacters(problem);
+    } else {
+      imagePrompt = generateImagePrompt(problem);
+    }
 
     // 画像が必要な場合は生成
     if (!body.withoutPicture) {
-      if (body.useCharacterImages) {
+      if (body.useAnimalImages) {
+        assetPromises.push(generateImageWithAnimals(imagePrompt));
+      } else if (body.useCharacterImages) {
         assetPromises.push(generateImageWithCharacters(imagePrompt));
       } else {
         assetPromises.push(generateImage(imagePrompt));

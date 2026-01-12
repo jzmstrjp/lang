@@ -9,6 +9,7 @@ import { prisma } from '../src/lib/prisma';
 import {
   generateAndUploadImageAsset,
   generateAndUploadImageAssetWithCharacters,
+  generateAndUploadImageAssetWithAnimals,
   type GeneratedProblem,
 } from '../src/lib/problem-generator';
 import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
@@ -36,6 +37,7 @@ async function main(
   batchSize: number = 10,
   checkOnly: boolean = false,
   useCharacterImages: boolean = false,
+  useAnimalImages: boolean = false,
 ) {
   try {
     if (checkOnly) {
@@ -43,7 +45,9 @@ async function main(
     } else {
       console.log('🚀 画像URL修復スクリプトを開始します...');
       console.log(`📊 処理件数上限: ${batchSize}件`);
-      if (useCharacterImages) {
+      if (useAnimalImages) {
+        console.log('🐱 動物キャラクター画像生成モード');
+      } else if (useCharacterImages) {
         console.log('🎨 キャラクター画像を使用した生成モード');
       } else {
         console.log('🖼️ 通常の画像生成モード');
@@ -148,6 +152,22 @@ async function main(
       }
     }
 
+    // 動物画像を使用する場合は事前に読み込み
+    let animalImages: Buffer[] | undefined;
+    if (useAnimalImages) {
+      console.log('🐱 動物画像を読み込み中...');
+      try {
+        const catPath = join(process.cwd(), 'images', 'cat.png');
+        const catBuffer = await readFile(catPath);
+
+        animalImages = [catBuffer];
+        console.log('✅ 動物画像の読み込み完了');
+      } catch (error) {
+        console.error('❌ 動物画像の読み込みに失敗しました:', error);
+        throw new Error('動物画像が見つかりません。images/cat.png を配置してください。');
+      }
+    }
+
     for (const [index, problem] of problemsWithMissingImage.entries()) {
       const startTime = Date.now();
       try {
@@ -176,15 +196,23 @@ async function main(
           difficultyLevel: problem.difficultyLevel ?? null,
         };
 
-        // キャラクター画像を使うか通常生成かで分岐
-        const imageUrl =
-          useCharacterImages && characterImages
-            ? await generateAndUploadImageAssetWithCharacters(
-                generatedProblem,
-                problem.id,
-                characterImages,
-              )
-            : await generateAndUploadImageAsset(generatedProblem, problem.id);
+        // 画像生成モードに応じて分岐
+        let imageUrl: string;
+        if (useAnimalImages && animalImages) {
+          imageUrl = await generateAndUploadImageAssetWithAnimals(
+            generatedProblem,
+            problem.id,
+            animalImages,
+          );
+        } else if (useCharacterImages && characterImages) {
+          imageUrl = await generateAndUploadImageAssetWithCharacters(
+            generatedProblem,
+            problem.id,
+            characterImages,
+          );
+        } else {
+          imageUrl = await generateAndUploadImageAsset(generatedProblem, problem.id);
+        }
 
         console.log(`   ✅ 画像アップロード完了: ${imageUrl}`);
 
@@ -264,6 +292,7 @@ if (require.main === module) {
   let batchSize = 10; // デフォルト値
   let checkOnly = false;
   let useCharacterImages = false;
+  let useAnimalImages = false;
 
   // --check-only フラグの確認
   if (args.includes('--check-only')) {
@@ -279,6 +308,13 @@ if (require.main === module) {
     args.splice(charIndex, 1); // フラグを配列から削除
   }
 
+  // --use-animal-images フラグの確認
+  if (args.includes('--use-animal-images')) {
+    useAnimalImages = true;
+    const animalIndex = args.indexOf('--use-animal-images');
+    args.splice(animalIndex, 1); // フラグを配列から削除
+  }
+
   // 件数の取得（残った引数の最初）
   const batchSizeArg = args[0];
   if (batchSizeArg) {
@@ -289,6 +325,9 @@ if (require.main === module) {
       console.error(
         '   キャラ画像使用: npx tsx scripts/fix-missing-image.ts 3 --use-character-images',
       );
+      console.error(
+        '   動物キャラ使用: npx tsx scripts/fix-missing-image.ts 3 --use-animal-images',
+      );
       console.error('   チェックのみ: npx tsx scripts/fix-missing-image.ts --check-only');
       process.exit(1);
     }
@@ -296,7 +335,7 @@ if (require.main === module) {
   }
 
   (async () => {
-    await main(batchSize, checkOnly, useCharacterImages);
+    await main(batchSize, checkOnly, useCharacterImages, useAnimalImages);
   })().catch((error) => {
     console.error('スクリプト実行エラー:', error);
     process.exit(1);
