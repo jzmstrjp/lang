@@ -483,7 +483,7 @@ export function generateImagePromptWithAnimals(problem: GeneratedProblem): strin
   const senderAnimal = problem.senderVoice === 'male' ? '黒猫' : '白猫';
   const receiverAnimal = problem.receiverVoice === 'male' ? '黒猫' : '白猫';
 
-  const senderName = problem.senderVoice === 'male' ? 'ブラック' : 'ホワイト';
+  const senderName = problem.senderVoice === 'male' ? 'クロ' : 'シロ';
   const receiverName = problem.receiverVoice === 'male' ? 'クロ' : 'シロ';
 
   const [senderFaceDirection, receiverFaceDirection] =
@@ -496,7 +496,7 @@ export function generateImagePromptWithAnimals(problem: GeneratedProblem): strin
 上下の画像の高さは正確に同じであること。
 
 【重要】
-- 入力画像と同じ画風・絵柄で描くこと。完全に模倣すること。表情は無表情で、口は描かないこと。
+- 入力画像と同じ画風・絵柄で描くこと。完全に模倣すること。表情は無表情。
 - 枠線を書くことは禁止する。
 - 登場人物はすべて猫です。
 - 上下の画像を通して、それぞれの猫の特徴（毛色、模様、体型）は変わらないこと。
@@ -509,13 +509,14 @@ export function generateImagePromptWithAnimals(problem: GeneratedProblem): strin
 【場所】
 ${problem.place}
 
-猫ちゃんたちは人間のように働いたりできます。
-
 【登場キャラクター】
 - 話しかける猫（sender）
   - ${senderName}（${senderAnimal}）・・・${problem.senderRole}として行動する猫。
 - 話しかけられて応答する猫（receiver）
   - ${receiverName}（${receiverAnimal}）・・・${problem.receiverRole}として行動する猫。
+
+猫ちゃんたちは人間のように働いたりできます。
+猫ちゃんたちはいついかなる時も真顔で無表情です。真剣に、愚かで拙い行動をします。
 
 【ストーリー】
 ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
@@ -532,7 +533,7 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 - もう${senderName}（${senderAnimal}）は描かないこと。
 
 【備考】
-- 入力画像と同じ画風で描くこと。完全に模倣すること。表情は無表情で、口は描かないこと。
+- 入力画像と同じ画風で描くこと。完全に模倣すること。表情は無表情。
 - 場所や場面に合わせた表情やジェスチャーを描写すること。
 - 動きのあるシーンは、残像を用いて大袈裟なほど動きを描写すること。
 - 上下の画像が同じ場所だとしても、背景のアングルは変えること。
