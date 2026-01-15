@@ -7,9 +7,6 @@ import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { fetchProblems } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
-import shortProblems from '@/app/staticProbremData/short';
-import mediumProblems from '@/app/staticProbremData/medium';
-import longProblems from '@/app/staticProbremData/long';
 
 const validTypes = ['short', 'medium', 'long'] as const;
 
@@ -18,26 +15,7 @@ type ProblemPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
-
-type ProblemData = ProblemWithStaticFlag | null;
-
-const STATIC_PROBLEM_DATA: Record<ProblemLength, ProblemWithAudio[]> = {
-  short: shortProblems,
-  medium: mediumProblems,
-  long: longProblems,
-};
-
-function getRandomStaticProblem(type: ProblemLength): ProblemWithStaticFlag | null {
-  const problems = STATIC_PROBLEM_DATA[type];
-  if (!problems?.length) {
-    return null;
-  }
-
-  const randomIndex = Math.floor(Math.random() * problems.length);
-  const problem = problems[randomIndex];
-  return problem ? { ...problem, isStatic: true } : null;
-}
+type ProblemData = ProblemWithAudio | null;
 
 function loadInitialProblem({
   type,
@@ -47,25 +25,14 @@ function loadInitialProblem({
   searchQuery?: string;
 }): Promise<ProblemData> {
   return (async () => {
-    let initialProblem: ProblemWithStaticFlag | null = null;
-
-    if (!searchQuery) {
-      initialProblem = getRandomStaticProblem(type);
-    }
-
-    if (!initialProblem) {
-      const { problems } = await fetchProblems({
-        type,
-        difficultyLevel: 'non_kids',
-        search: searchQuery,
-        limit: 1,
-        includeNullDifficulty: true,
-      });
-      const firstProblem = problems[0];
-      initialProblem = firstProblem ? { ...firstProblem } : null;
-    }
-
-    return initialProblem;
+    const { problems } = await fetchProblems({
+      type,
+      difficultyLevel: 'non_kids',
+      search: searchQuery,
+      limit: 1,
+      includeNullDifficulty: true,
+    });
+    return problems[0] ?? null;
   })();
 }
 

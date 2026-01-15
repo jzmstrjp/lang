@@ -14,9 +14,7 @@ type LevelPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
-
-type ProblemData = ProblemWithStaticFlag | null;
+type ProblemData = ProblemWithAudio | null;
 
 function loadInitialProblem({
   difficultyLevel,
@@ -32,8 +30,7 @@ function loadInitialProblem({
       limit: 1,
       includeNullDifficulty: false, // 難易度指定ページではnullを除外
     });
-    const firstProblem = problems[0];
-    return firstProblem ? { ...firstProblem } : null;
+    return problems[0] ?? null;
   })();
 }
 
