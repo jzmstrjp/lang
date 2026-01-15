@@ -100,7 +100,12 @@ function ProblemContent({
   }
 
   return (
-    <ProblemFlow length={type} initialProblem={initialProblem} isAdminPromise={isAdminPromise} />
+    <ProblemFlow
+      length={type}
+      difficultyLevel="non_kids"
+      initialProblem={initialProblem}
+      isAdminPromise={isAdminPromise}
+    />
   );
 }
 

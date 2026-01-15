@@ -11,6 +11,7 @@ import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/s
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { type ProblemLength, type DifficultyLevel } from '@/config/problem';
 
 type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
 
@@ -49,8 +50,7 @@ type ClientPhase = {
 
 type Phase = ServerPhase | ClientPhase;
 
-export type ProblemLength = 'short' | 'medium' | 'long';
-export type DifficultyLevel = 'kids' | 'easy' | 'normal' | 'hard' | 'expert';
+export type { ProblemLength, DifficultyLevel };
 
 type ProblemFlowProps = {
   length?: ProblemLength;

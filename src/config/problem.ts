@@ -14,13 +14,23 @@ export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number;
     },
   };
 
-export type DifficultyLevel = 'kids' | 'easy' | 'normal' | 'hard' | 'expert';
+export const VALID_DIFFICULTY_LEVELS = [
+  'kids',
+  'non_kids',
+  'easy',
+  'normal',
+  'hard',
+  'expert',
+] as const;
+
+export type DifficultyLevel = (typeof VALID_DIFFICULTY_LEVELS)[number];
 
 export const DIFFICULTY_LEVEL_RULES: Record<
   DifficultyLevel,
   { min: number; max: number; displayName: string }
 > = {
   kids: { min: 1, max: 2, displayName: 'Kids' },
+  non_kids: { min: 3, max: 10, displayName: 'Non-Kids' },
   easy: { min: 3, max: 4, displayName: 'Easy' },
   normal: { min: 5, max: 6, displayName: 'Normal' },
   hard: { min: 7, max: 8, displayName: 'Hard' },

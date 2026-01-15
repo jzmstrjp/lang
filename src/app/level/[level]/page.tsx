@@ -7,9 +7,7 @@ import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { fetchProblems } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
-import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
-
-const validLevels = ['kids', 'easy', 'normal', 'hard', 'expert'] as const;
+import { DIFFICULTY_LEVEL_RULES, VALID_DIFFICULTY_LEVELS } from '@/config/problem';
 
 type LevelPageProps = {
   params: Promise<{ level: string }>;
@@ -82,7 +80,7 @@ function ProblemContent({
 export default async function LevelPage({ params, searchParams }: LevelPageProps) {
   const { level } = await params;
 
-  if (!validLevels.includes(level as DifficultyLevel)) {
+  if (!VALID_DIFFICULTY_LEVELS.includes(level as DifficultyLevel)) {
     notFound();
   }
 

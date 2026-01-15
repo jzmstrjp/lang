@@ -37,6 +37,7 @@ model Problem {
   @@unique([englishSentence])
   @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
   @@index([audioReady, difficultyLevel], map: "idx_problems_audio_ready_difficulty")
+  @@index([audioReady, wordCount, difficultyLevel], map: "idx_problems_audio_wordcount_difficulty")
   @@map("problems")
 }
 
