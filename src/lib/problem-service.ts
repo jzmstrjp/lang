@@ -24,6 +24,7 @@ export type FetchProblemsOptions = {
   difficultyLevel?: DifficultyLevel;
   search?: string;
   limit?: number;
+  includeNullDifficulty?: boolean;
 };
 
 export type FetchProblemsResult = {
@@ -59,7 +60,13 @@ function formatProblem(problem: ProblemWithAudio): ProblemWithAudio {
  * サーバーコンポーネント・APIルートの両方から使用可能
  */
 export async function fetchProblems(options: FetchProblemsOptions): Promise<FetchProblemsResult> {
-  const { type, difficultyLevel, search, limit = PROBLEM_FETCH_LIMIT } = options;
+  const {
+    type,
+    difficultyLevel,
+    search,
+    limit = PROBLEM_FETCH_LIMIT,
+    includeNullDifficulty = false,
+  } = options;
 
   // limitの範囲チェック
   const sanitizedLimit = Math.min(Math.max(limit, 1), PROBLEM_FETCH_LIMIT);
@@ -96,8 +103,14 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
         `Invalid difficultyLevel: ${difficultyLevel}. Valid levels are: ${Object.keys(DIFFICULTY_LEVEL_RULES).join(', ')}`,
       );
     }
-    whereClauses.push(Prisma.sql`"difficultyLevel" >= ${rules.min}`);
-    whereClauses.push(Prisma.sql`"difficultyLevel" <= ${rules.max}`);
+    if (includeNullDifficulty) {
+      whereClauses.push(
+        Prisma.sql`("difficultyLevel" IS NULL OR ("difficultyLevel" >= ${rules.min} AND "difficultyLevel" <= ${rules.max}))`,
+      );
+    } else {
+      whereClauses.push(Prisma.sql`"difficultyLevel" >= ${rules.min}`);
+      whereClauses.push(Prisma.sql`"difficultyLevel" <= ${rules.max}`);
+    }
   }
 
   // 検索条件を追加

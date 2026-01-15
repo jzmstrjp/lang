@@ -57,6 +57,7 @@ type ProblemFlowProps = {
   difficultyLevel?: DifficultyLevel;
   initialProblem: ProblemWithStaticFlag;
   isAdminPromise: Promise<boolean>;
+  includeNullDifficulty?: boolean;
 };
 
 type ApiProblemsResponse = {
@@ -79,6 +80,7 @@ export default function ProblemFlow({
   difficultyLevel,
   initialProblem,
   isAdminPromise,
+  includeNullDifficulty = false,
 }: ProblemFlowProps) {
   // ストレージキー用の識別子（lengthまたはdifficultyLevel）
   const storageKey = length || difficultyLevel || 'default';
@@ -161,6 +163,9 @@ export default function ProblemFlow({
       }
       if (difficultyLevel) {
         params.set('difficultyLevel', difficultyLevel);
+        if (includeNullDifficulty) {
+          params.set('includeNullDifficulty', 'true');
+        }
       }
       const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
 
@@ -183,7 +188,7 @@ export default function ProblemFlow({
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [difficultyLevel, length, problemQueue.length]);
+  }, [difficultyLevel, length, problemQueue.length, includeNullDifficulty]);
 
   // phaseごとの処理
   useLayoutEffect(() => {

@@ -56,8 +56,10 @@ function loadInitialProblem({
     if (!initialProblem) {
       const { problems } = await fetchProblems({
         type,
+        difficultyLevel: 'non_kids',
         search: searchQuery,
         limit: 1,
+        includeNullDifficulty: true,
       });
       const firstProblem = problems[0];
       initialProblem = firstProblem ? { ...firstProblem } : null;
@@ -105,6 +107,7 @@ function ProblemContent({
       difficultyLevel="non_kids"
       initialProblem={initialProblem}
       isAdminPromise={isAdminPromise}
+      includeNullDifficulty={true}
     />
   );
 }

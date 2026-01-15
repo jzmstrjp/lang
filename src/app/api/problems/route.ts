@@ -18,9 +18,17 @@ export async function GET(request: Request) {
     const search = rawSearch?.trim();
     const limitParam = searchParams.get('limit');
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    const includeNullDifficultyParam = searchParams.get('includeNullDifficulty');
+    const includeNullDifficulty = includeNullDifficultyParam === 'true';
 
     // 共通のサービス関数を使用
-    const result = await fetchProblems({ type, difficultyLevel, search, limit });
+    const result = await fetchProblems({
+      type,
+      difficultyLevel,
+      search,
+      limit,
+      includeNullDifficulty,
+    });
 
     return NextResponse.json(result);
   } catch (error) {

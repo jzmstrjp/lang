@@ -30,6 +30,7 @@ function loadInitialProblem({
       difficultyLevel,
       search: searchQuery,
       limit: 1,
+      includeNullDifficulty: false, // 難易度指定ページではnullを除外
     });
     const firstProblem = problems[0];
     return firstProblem ? { ...firstProblem } : null;
@@ -73,6 +74,7 @@ function ProblemContent({
       difficultyLevel={difficultyLevel}
       initialProblem={initialProblem}
       isAdminPromise={isAdminPromise}
+      includeNullDifficulty={false}
     />
   );
 }
