@@ -818,9 +818,384 @@ ${words.map((word, index) => `${index + 1}. ${word}`).join('\n')}
 }
 
 /**
+ * シーンドラフトから完成した問題データを生成
+ */
+async function generateProblemFromSceneDraft(
+  sceneDraft: SceneDraftWithVoice,
+  wordRange: { min: number; max: number; note?: string },
+  problemIndex: number,
+): Promise<{
+  result: {
+    when: string;
+    how: string;
+    word: string;
+    scenePrompt: string;
+    sender: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishSentence: string;
+      japaneseSentence: string;
+    };
+    receiver: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishReply: string;
+      japaneseReply: string;
+    };
+    incorrectOptions: string[];
+  };
+  tokenUsage: TokenUsage;
+}> {
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+
+  // 1. 英会話生成
+  const conversationResult = await createEnglishConversation(sceneDraft, wordRange);
+  totalInputTokens += conversationResult.tokenUsage.input_tokens;
+  totalOutputTokens += conversationResult.tokenUsage.output_tokens;
+
+  const mergedData = {
+    when: sceneDraft.when,
+    how: sceneDraft.how,
+    word: sceneDraft.word,
+    sender: {
+      ...sceneDraft.sender,
+      englishSentence: conversationResult.result.englishSentence,
+    },
+    receiver: {
+      ...sceneDraft.receiver,
+      englishReply: conversationResult.result.englishReply,
+    },
+  };
+
+  // 2. 日本語会話生成
+  const japaneseResult = await createJapaneseConversation(mergedData);
+  totalInputTokens += japaneseResult.tokenUsage.input_tokens;
+  totalOutputTokens += japaneseResult.tokenUsage.output_tokens;
+
+  const dataWithJapanese = {
+    ...mergedData,
+    sender: {
+      ...mergedData.sender,
+      japaneseSentence: japaneseResult.result.japaneseSentence,
+    },
+    receiver: {
+      ...mergedData.receiver,
+      japaneseReply: japaneseResult.result.japaneseReply,
+    },
+  };
+
+  // 3. シーンプロンプト生成
+  const scenePromptResult = await createScenePrompt(dataWithJapanese);
+  totalInputTokens += scenePromptResult.tokenUsage.input_tokens;
+  totalOutputTokens += scenePromptResult.tokenUsage.output_tokens;
+
+  const dataWithScenePrompt = {
+    ...dataWithJapanese,
+    scenePrompt: scenePromptResult.result.scenePrompt,
+  };
+
+  // 4. 誤答選択肢生成
+  const incorrectOptionsResult = await createIncorrectOptions(
+    dataWithScenePrompt.sender.japaneseSentence,
+  );
+  totalInputTokens += incorrectOptionsResult.tokenUsage.input_tokens;
+  totalOutputTokens += incorrectOptionsResult.tokenUsage.output_tokens;
+
+  // 5. incorrectOptionsの長さを調整
+  const adjustedOptionsResult = await adjustIncorrectOptionsLength(
+    incorrectOptionsResult.result,
+    dataWithScenePrompt.sender.japaneseSentence,
+    problemIndex,
+  );
+  totalInputTokens += adjustedOptionsResult.tokenUsage.input_tokens;
+  totalOutputTokens += adjustedOptionsResult.tokenUsage.output_tokens;
+
+  return {
+    result: {
+      ...dataWithScenePrompt,
+      incorrectOptions: adjustedOptionsResult.result,
+    },
+    tokenUsage: {
+      input_tokens: totalInputTokens,
+      output_tokens: totalOutputTokens,
+    },
+  };
+}
+
+/**
+ * 単語リストからシーンドラフトを生成
+ */
+async function generateSceneDrafts(
+  wordsWithGenres: { value: string; genre: 'ビジネス' | '日常生活' }[],
+): Promise<{
+  sceneDrafts: SceneDraftWithVoice[];
+  tokenUsage: TokenUsage;
+}> {
+  console.log('🎬 シーンドラフト生成開始...\n');
+
+  const sceneDrafts: SceneDraftWithVoice[] = [];
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+
+  for (const wordWithGenre of wordsWithGenres) {
+    const sceneDraftResult = await createSceneDraft(wordWithGenre);
+
+    // voiceをランダムに設定
+    const senderVoice: 'male' | 'female' = Math.random() < 0.5 ? 'male' : 'female';
+    const receiverVoice: 'male' | 'female' = senderVoice === 'male' ? 'female' : 'male';
+
+    const sceneDraftWithVoice: SceneDraftWithVoice = {
+      ...sceneDraftResult.result,
+      sender: {
+        ...sceneDraftResult.result.sender,
+        voice: senderVoice,
+      },
+      receiver: {
+        ...sceneDraftResult.result.receiver,
+        voice: receiverVoice,
+      },
+    };
+
+    sceneDrafts.push(sceneDraftWithVoice);
+    totalInputTokens += sceneDraftResult.tokenUsage.input_tokens;
+    totalOutputTokens += sceneDraftResult.tokenUsage.output_tokens;
+  }
+
+  return {
+    sceneDrafts,
+    tokenUsage: {
+      input_tokens: totalInputTokens,
+      output_tokens: totalOutputTokens,
+    },
+  };
+}
+
+/**
+ * 従来モード: 各単語から1問生成
+ */
+async function generateProblemsInSingleMode(
+  sceneDrafts: SceneDraftWithVoice[],
+  problemType: ProblemLength,
+): Promise<{
+  problems: Array<{
+    when: string;
+    how: string;
+    word: string;
+    scenePrompt: string;
+    sender: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishSentence: string;
+      japaneseSentence: string;
+    };
+    receiver: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishReply: string;
+      japaneseReply: string;
+    };
+    incorrectOptions: string[];
+  }>;
+  tokenUsage: TokenUsage;
+}> {
+  const wordRange = WORD_COUNT_RULES[problemType];
+  console.log(`💬 ${problemType} モードで問題生成中...\n`);
+
+  const problems = [];
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+
+  for (const [index, sceneDraft] of sceneDrafts.entries()) {
+    const problemResult = await generateProblemFromSceneDraft(sceneDraft, wordRange, index + 1);
+    problems.push(problemResult.result);
+    totalInputTokens += problemResult.tokenUsage.input_tokens;
+    totalOutputTokens += problemResult.tokenUsage.output_tokens;
+  }
+
+  return {
+    problems,
+    tokenUsage: {
+      input_tokens: totalInputTokens,
+      output_tokens: totalOutputTokens,
+    },
+  };
+}
+
+/**
+ * ALLモード: 各単語から3問（short/medium/long）生成
+ */
+async function generateProblemsInAllMode(sceneDrafts: SceneDraftWithVoice[]): Promise<{
+  problems: Array<{
+    when: string;
+    how: string;
+    word: string;
+    scenePrompt: string;
+    sender: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishSentence: string;
+      japaneseSentence: string;
+    };
+    receiver: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishReply: string;
+      japaneseReply: string;
+    };
+    incorrectOptions: string[];
+  }>;
+  tokenUsage: TokenUsage;
+}> {
+  console.log('💬 ALL モードで問題生成中（各単語から3問）...\n');
+
+  const problems = [];
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let problemIndex = 1;
+
+  for (const [wordIndex, sceneDraft] of sceneDrafts.entries()) {
+    console.log(
+      `\n========== ${wordIndex + 1}/${sceneDrafts.length}: "${sceneDraft.word}" ==========`,
+    );
+
+    const types: ProblemLength[] = ['short', 'medium', 'long'];
+
+    for (const type of types) {
+      console.log(`  📝 [${type}] 問題生成中...`);
+      const wordRange = WORD_COUNT_RULES[type];
+
+      const problemResult = await generateProblemFromSceneDraft(
+        sceneDraft,
+        wordRange,
+        problemIndex,
+      );
+      problems.push(problemResult.result);
+      totalInputTokens += problemResult.tokenUsage.input_tokens;
+      totalOutputTokens += problemResult.tokenUsage.output_tokens;
+      problemIndex++;
+
+      console.log(`  ✅ [${type}] 完了`);
+    }
+  }
+
+  return {
+    problems,
+    tokenUsage: {
+      input_tokens: totalInputTokens,
+      output_tokens: totalOutputTokens,
+    },
+  };
+}
+
+/**
+ * 共通の後処理（統計・保存・クリーンアップ）
+ */
+async function finalizeAndSave(
+  problems: Array<{
+    when: string;
+    how: string;
+    word: string;
+    scenePrompt: string;
+    sender: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishSentence: string;
+      japaneseSentence: string;
+    };
+    receiver: {
+      role: string;
+      voice: 'male' | 'female';
+      where: string;
+      why: string;
+      englishReply: string;
+      japaneseReply: string;
+    };
+    incorrectOptions: string[];
+  }>,
+  selectedWords: readonly string[],
+  tokenUsage: TokenUsage,
+): Promise<void> {
+  const totalProblems = problems.length;
+
+  // incorrectOptionsの長さをチェック
+  let allLongerCount = 0;
+  let allShorterCount = 0;
+
+  for (const result of problems) {
+    const japaneseSentenceLength = result.sender.japaneseSentence.length;
+    const allLonger = result.incorrectOptions.every(
+      (option) => option.length > japaneseSentenceLength,
+    );
+    const allShorter = result.incorrectOptions.every(
+      (option) => option.length < japaneseSentenceLength,
+    );
+
+    if (allLonger) allLongerCount++;
+    if (allShorter) allShorterCount++;
+  }
+
+  // トークン使用量を表示
+  if (tokenUsage.input_tokens > 0 || tokenUsage.output_tokens > 0) {
+    console.log('\n📊 トークン使用量:');
+    console.log(`  入力トークン（合計）: ${tokenUsage.input_tokens}`);
+    console.log(`  出力トークン（合計）: ${tokenUsage.output_tokens}`);
+
+    // 1問あたりの平均トークン数
+    const avgInputTokens = Math.round(tokenUsage.input_tokens / totalProblems);
+    const avgOutputTokens = Math.round(tokenUsage.output_tokens / totalProblems);
+
+    console.log(`\n  📊 1問あたりの平均:`);
+    console.log(`    入力トークン: ${avgInputTokens}`);
+    console.log(`    出力トークン: ${avgOutputTokens}`);
+  }
+
+  // incorrectOptionsの統計を表示
+  console.log('\n📏 incorrectOptionsの長さチェック:');
+  console.log(`  長い選択肢ばっか！: ${allLongerCount}件`);
+  console.log(`  短い選択肢ばっか！: ${allShorterCount}件`);
+  console.log(`  適切な長さ: ${totalProblems - allLongerCount - allShorterCount}件`);
+
+  // SeedProblemDataに変換
+  console.log('\n📦 SeedProblemDataに変換中...');
+  const seedProblems = convertToSeedProblemData(problems);
+
+  // ファイルを保存
+  const fileNumber = getNextProblemNumber();
+  console.log(`💾 ファイルを保存中... (problem${fileNumber}.ts)`);
+  const savedPath = saveProblemFile(seedProblems, fileNumber);
+  console.log(`✅ 保存完了: ${savedPath}\n`);
+
+  console.log('🧹 使用済み語彙をwords.tsから削除中...');
+
+  // ファイルから削除
+  removeUsedWordsFromWordList(selectedWords);
+
+  console.log(`\n🎉 完了！${selectedWords.length}単語から${totalProblems}問を生成しました`);
+  console.log(`📚 残りの単語数: ${words.length - selectedWords.length}個`);
+  console.log(`\n次のステップ:`);
+  console.log(`  1. 生成されたファイルを確認してください`);
+  console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
+}
+
+/**
  * ユーザーに問題タイプと問題数を選択させる
  */
-async function promptProblemSettings(): Promise<{ type: ProblemLength; count: number }> {
+async function promptProblemSettings(): Promise<{ type: ProblemLength | 'all'; count: number }> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -831,11 +1206,12 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength; count: nu
     console.log(`  1. short  (${WORD_COUNT_RULES.short.min}-${WORD_COUNT_RULES.short.max}単語)`);
     console.log(`  2. medium (${WORD_COUNT_RULES.medium.min}-${WORD_COUNT_RULES.medium.max}単語)`);
     console.log(`  3. long   (${WORD_COUNT_RULES.long.min}-${WORD_COUNT_RULES.long.max}単語)`);
+    console.log(`  4. all    (short + medium + long を一度に生成)`);
     console.log('');
 
-    rl.question('選択してください [1/2/3]: ', (typeAnswer) => {
+    rl.question('選択してください [1/2/3/4]: ', (typeAnswer) => {
       const trimmed = typeAnswer.trim();
-      let selectedType: ProblemLength;
+      let selectedType: ProblemLength | 'all';
 
       if (trimmed === '1' || trimmed.toLowerCase() === 'short') {
         selectedType = 'short';
@@ -843,12 +1219,17 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength; count: nu
         selectedType = 'medium';
       } else if (trimmed === '3' || trimmed.toLowerCase() === 'long') {
         selectedType = 'long';
+      } else if (trimmed === '4' || trimmed.toLowerCase() === 'all') {
+        selectedType = 'all';
       } else {
         console.log('無効な選択です。デフォルトの medium を使用します。\n');
         selectedType = 'medium';
       }
 
-      rl.question(`\n何問生成しますか？ [最大: ${words.length}]: `, (countAnswer) => {
+      const maxCount = selectedType === 'all' ? Math.floor(words.length / 3) : words.length;
+      const unitLabel = selectedType === 'all' ? '単語' : '問';
+
+      rl.question(`\n何${unitLabel}生成しますか？ [最大: ${maxCount}]: `, (countAnswer) => {
         rl.close();
 
         const countTrimmed = countAnswer.trim();
@@ -859,11 +1240,11 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength; count: nu
         } else {
           const parsed = parseInt(countTrimmed, 10);
           if (isNaN(parsed) || parsed < 1) {
-            console.log('無効な入力です。1問を使用します。\n');
+            console.log(`無効な入力です。1${unitLabel}を使用します。\n`);
             count = 1;
-          } else if (parsed > words.length) {
-            console.log(`指定された数が多すぎます。最大値 ${words.length} を使用します。`);
-            count = words.length;
+          } else if (parsed > maxCount) {
+            console.log(`指定された数が多すぎます。最大値 ${maxCount} を使用します。`);
+            count = maxCount;
           } else {
             count = parsed;
           }
@@ -1066,310 +1447,59 @@ async function main() {
       );
     }
 
-    // ユーザーに問題タイプと問題数を聞く
+    // 1. 初期設定：ユーザーに問題タイプと問題数を聞く
     const { type: problemType, count } = await promptProblemSettings();
-    const wordRange = WORD_COUNT_RULES[problemType];
 
-    console.log(
-      `\n📌 ${problemType} モード (${wordRange.min}-${wordRange.max}単語): ${count}問を生成します\n`,
-    );
+    // モード表示
+    if (problemType === 'all') {
+      console.log(`\n📌 ALL モード: ${count}単語から ${count * 3}問を生成します\n`);
+    } else {
+      const wordRange = WORD_COUNT_RULES[problemType];
+      console.log(
+        `\n📌 ${problemType} モード (${wordRange.min}-${wordRange.max}単語): ${count}問を生成します\n`,
+      );
+    }
 
     // 指定された数の単語を取得
     const selectedWords = words.slice(0, count);
 
     // ジャンル分けを実行
-    const { result: wordsWithGenres, tokenUsage } = await wordsToGenres(selectedWords);
+    const { result: wordsWithGenres, tokenUsage: genreTokenUsage } =
+      await wordsToGenres(selectedWords);
 
     console.log(`\n📝 取得した${count}個の単語:\n`);
 
-    // シーンドラフトを生成
-    console.log('🎬 シーンドラフト生成開始...\n');
-    const sceneDraftResults: {
-      result: SceneDraftWithVoice;
-      tokenUsage: TokenUsage;
-    }[] = [];
-    for (const wordWithGenre of wordsWithGenres) {
-      const sceneDraftResult = await createSceneDraft(wordWithGenre);
+    // 2. シーンドラフト生成（共通）
+    const { sceneDrafts, tokenUsage: sceneDraftTokenUsage } =
+      await generateSceneDrafts(wordsWithGenres);
 
-      // voiceをランダムに設定
-      const senderVoice: 'male' | 'female' = Math.random() < 0.5 ? 'male' : 'female';
-      const receiverVoice: 'male' | 'female' = senderVoice === 'male' ? 'female' : 'male';
+    let totalInputTokens = genreTokenUsage.input_tokens + sceneDraftTokenUsage.input_tokens;
+    let totalOutputTokens = genreTokenUsage.output_tokens + sceneDraftTokenUsage.output_tokens;
 
-      const sceneDraftWithVoice = {
-        ...sceneDraftResult,
-        result: {
-          ...sceneDraftResult.result,
-          sender: {
-            ...sceneDraftResult.result.sender,
-            voice: senderVoice,
-          },
-          receiver: {
-            ...sceneDraftResult.result.receiver,
-            voice: receiverVoice,
-          },
-        },
-      };
+    // 3. モード別の問題生成
+    let allProblems;
+    let problemTokenUsage;
 
-      console.log(JSON.stringify(sceneDraftWithVoice, null, 2));
-      sceneDraftResults.push(sceneDraftWithVoice);
+    if (problemType === 'all') {
+      // ALLモード: 各単語から3問
+      const result = await generateProblemsInAllMode(sceneDrafts);
+      allProblems = result.problems;
+      problemTokenUsage = result.tokenUsage;
+    } else {
+      // 従来モード: 各単語から1問
+      const result = await generateProblemsInSingleMode(sceneDrafts, problemType);
+      allProblems = result.problems;
+      problemTokenUsage = result.tokenUsage;
     }
 
-    // 英会話を生成してマージ
-    console.log('💬 英会話生成開始...\n');
-    const mergedResults: {
-      when: string;
-      how: string;
-      word: string;
-      sender: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishSentence: string;
-      };
-      receiver: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishReply: string;
-      };
-    }[] = [];
-    let totalInputTokens = tokenUsage.input_tokens;
-    let totalOutputTokens = tokenUsage.output_tokens;
+    totalInputTokens += problemTokenUsage.input_tokens;
+    totalOutputTokens += problemTokenUsage.output_tokens;
 
-    for (const [, sceneDraftResult] of sceneDraftResults.entries()) {
-      const conversationResult = await createEnglishConversation(
-        sceneDraftResult.result,
-        wordRange,
-      );
-
-      // シーンドラフトと英会話をマージ
-      const merged = {
-        when: sceneDraftResult.result.when,
-        how: sceneDraftResult.result.how,
-        word: sceneDraftResult.result.word,
-        sender: {
-          ...sceneDraftResult.result.sender,
-          englishSentence: conversationResult.result.englishSentence,
-        },
-        receiver: {
-          ...sceneDraftResult.result.receiver,
-          englishReply: conversationResult.result.englishReply,
-        },
-      };
-
-      mergedResults.push(merged);
-
-      // トークン使用量を合算
-      totalInputTokens += sceneDraftResult.tokenUsage.input_tokens;
-      totalOutputTokens += sceneDraftResult.tokenUsage.output_tokens;
-      totalInputTokens += conversationResult.tokenUsage.input_tokens;
-      totalOutputTokens += conversationResult.tokenUsage.output_tokens;
-    }
-
-    // 日本語会話を生成してマージ
-    console.log('🇯🇵 日本語会話生成開始...\n');
-    const finalResults: {
-      when: string;
-      how: string;
-      word: string;
-      sender: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishSentence: string;
-        japaneseSentence: string;
-      };
-      receiver: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishReply: string;
-        japaneseReply: string;
-      };
-    }[] = [];
-
-    for (const [, mergedResult] of mergedResults.entries()) {
-      const japaneseResult = await createJapaneseConversation(mergedResult);
-
-      // 日本語会話をマージ
-      const final = {
-        when: mergedResult.when,
-        how: mergedResult.how,
-        word: mergedResult.word,
-        sender: {
-          ...mergedResult.sender,
-          japaneseSentence: japaneseResult.result.japaneseSentence,
-        },
-        receiver: {
-          ...mergedResult.receiver,
-          japaneseReply: japaneseResult.result.japaneseReply,
-        },
-      };
-
-      finalResults.push(final);
-
-      // トークン使用量を合算
-      totalInputTokens += japaneseResult.tokenUsage.input_tokens;
-      totalOutputTokens += japaneseResult.tokenUsage.output_tokens;
-    }
-
-    // シーンプロンプトを生成してマージ
-    console.log('🎨 シーンプロンプト生成開始...\n');
-    const completeResults: {
-      when: string;
-      how: string;
-      word: string;
-      scenePrompt: string;
-      sender: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishSentence: string;
-        japaneseSentence: string;
-      };
-      receiver: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishReply: string;
-        japaneseReply: string;
-      };
-    }[] = [];
-
-    for (const [, finalResult] of finalResults.entries()) {
-      const scenePromptResult = await createScenePrompt(finalResult);
-
-      // シーンプロンプトをマージ
-      const complete = {
-        ...finalResult,
-        scenePrompt: scenePromptResult.result.scenePrompt,
-      };
-
-      completeResults.push(complete);
-
-      // トークン使用量を合算
-      totalInputTokens += scenePromptResult.tokenUsage.input_tokens;
-      totalOutputTokens += scenePromptResult.tokenUsage.output_tokens;
-    }
-
-    // 誤答選択肢を生成してマージ
-    console.log('🎯 誤答選択肢生成開始...\n');
-    const finalResultsWithOptions: {
-      when: string;
-      how: string;
-      word: string;
-      scenePrompt: string;
-      sender: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishSentence: string;
-        japaneseSentence: string;
-      };
-      receiver: {
-        role: string;
-        voice: 'male' | 'female';
-        where: string;
-        why: string;
-        englishReply: string;
-        japaneseReply: string;
-      };
-      incorrectOptions: string[];
-    }[] = [];
-
-    for (const [index, completeResult] of completeResults.entries()) {
-      const problemIndex = index + 1;
-      const incorrectOptionsResult = await createIncorrectOptions(
-        completeResult.sender.japaneseSentence,
-      );
-
-      // incorrectOptionsの長さを調整（必要に応じて）
-      const adjustedOptionsResult = await adjustIncorrectOptionsLength(
-        incorrectOptionsResult.result,
-        completeResult.sender.japaneseSentence,
-        problemIndex,
-      );
-
-      // 誤答選択肢をマージ
-      const finalWithOptions = {
-        ...completeResult,
-        incorrectOptions: adjustedOptionsResult.result,
-      };
-
-      finalResultsWithOptions.push(finalWithOptions);
-
-      // トークン使用量を合算
-      totalInputTokens += incorrectOptionsResult.tokenUsage.input_tokens;
-      totalOutputTokens += incorrectOptionsResult.tokenUsage.output_tokens;
-      totalInputTokens += adjustedOptionsResult.tokenUsage.input_tokens;
-      totalOutputTokens += adjustedOptionsResult.tokenUsage.output_tokens;
-    }
-
-    // incorrectOptionsの長さをチェック
-    let allLongerCount = 0;
-    let allShorterCount = 0;
-
-    for (const result of finalResultsWithOptions) {
-      const japaneseSentenceLength = result.sender.japaneseSentence.length;
-      const allLonger = result.incorrectOptions.every(
-        (option) => option.length > japaneseSentenceLength,
-      );
-      const allShorter = result.incorrectOptions.every(
-        (option) => option.length < japaneseSentenceLength,
-      );
-
-      if (allLonger) allLongerCount++;
-      if (allShorter) allShorterCount++;
-    }
-
-    // トークン使用量を表示
-    if (totalInputTokens > 0 || totalOutputTokens > 0) {
-      console.log('\n📊 トークン使用量:');
-      console.log(`  入力トークン（合計）: ${totalInputTokens}`);
-      console.log(`  出力トークン（合計）: ${totalOutputTokens}`);
-
-      // 1問あたりの平均トークン数
-      const avgInputTokens = Math.round(totalInputTokens / count);
-      const avgOutputTokens = Math.round(totalOutputTokens / count);
-
-      console.log(`\n  📊 1問あたりの平均:`);
-      console.log(`    入力トークン: ${avgInputTokens}`);
-      console.log(`    出力トークン: ${avgOutputTokens}`);
-    }
-
-    // incorrectOptionsの統計を表示
-    console.log('\n📏 incorrectOptionsの長さチェック:');
-    console.log(`  長い選択肢ばっか！: ${allLongerCount}件`);
-    console.log(`  短い選択肢ばっか！: ${allShorterCount}件`);
-    console.log(`  適切な長さ: ${count - allLongerCount - allShorterCount}件`);
-
-    // SeedProblemDataに変換
-    console.log('\n📦 SeedProblemDataに変換中...');
-    const seedProblems = convertToSeedProblemData(finalResultsWithOptions);
-
-    // ファイルを保存
-    const fileNumber = getNextProblemNumber();
-    console.log(`💾 ファイルを保存中... (problem${fileNumber}.ts)`);
-    const savedPath = saveProblemFile(seedProblems, fileNumber);
-    console.log(`✅ 保存完了: ${savedPath}\n`);
-
-    console.log('🧹 使用済み語彙をwords.tsから削除中...');
-
-    // ファイルから削除
-    removeUsedWordsFromWordList(selectedWords);
-
-    console.log(`\n🎉 完了！${count}個の単語を処理しました`);
-    console.log(`📚 残りの単語数: ${words.length - count}個`);
-    console.log(`\n次のステップ:`);
-    console.log(`  1. 生成されたファイルを確認してください`);
-    console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
+    // 4. 共通の後処理（統計・保存・クリーンアップ）
+    await finalizeAndSave(allProblems, selectedWords, {
+      input_tokens: totalInputTokens,
+      output_tokens: totalOutputTokens,
+    });
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);
     process.exit(1);
