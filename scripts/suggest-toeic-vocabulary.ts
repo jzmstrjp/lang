@@ -14,6 +14,7 @@ import OpenAI from 'openai';
 import * as fs from 'fs';
 import * as path from 'path';
 import { words as existingWords } from '../docs/words';
+import { TEXT_MODEL } from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -69,7 +70,7 @@ JSON配列のみを出力し、説明文は不要です。`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: TEXT_MODEL,
       messages: [
         {
           role: 'user',
