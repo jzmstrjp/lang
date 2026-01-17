@@ -358,8 +358,18 @@ async function main() {
     console.log(`➕ 新規追加: ${newWordsCount}個`);
     console.log(`📊 合計: ${allWords.length}個`);
 
+    // 語数の少ない順でソート（単語→イディオム、同じ語数ならアルファベット順）
+    const sortedAllWords = allWords.sort((a, b) => {
+      const aWordCount = a.split(' ').length;
+      const bWordCount = b.split(' ').length;
+      if (aWordCount !== bWordCount) {
+        return aWordCount - bWordCount;
+      }
+      return a.localeCompare(b);
+    });
+
     // 保存
-    saveWords(allWords);
+    saveWords(sortedAllWords);
   } catch (error) {
     console.error('❌ 処理中にエラーが発生しました:', error);
     process.exitCode = 1;
