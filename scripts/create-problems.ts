@@ -1226,10 +1226,9 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength | 'all'; c
         selectedType = 'medium';
       }
 
-      const maxCount = selectedType === 'all' ? Math.floor(words.length / 3) : words.length;
-      const unitLabel = selectedType === 'all' ? '単語' : '問';
+      const maxCount = words.length;
 
-      rl.question(`\n何${unitLabel}生成しますか？ [最大: ${maxCount}]: `, (countAnswer) => {
+      rl.question(`\n何問生成しますか？ [最大: ${maxCount}]: `, (countAnswer) => {
         rl.close();
 
         const countTrimmed = countAnswer.trim();
@@ -1240,7 +1239,7 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength | 'all'; c
         } else {
           const parsed = parseInt(countTrimmed, 10);
           if (isNaN(parsed) || parsed < 1) {
-            console.log(`無効な入力です。1${unitLabel}を使用します。\n`);
+            console.log(`無効な入力です。1単語を使用します。\n`);
             count = 1;
           } else if (parsed > maxCount) {
             console.log(`指定された数が多すぎます。最大値 ${maxCount} を使用します。`);
