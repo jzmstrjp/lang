@@ -1,18 +1,17 @@
 export type ProblemLength = 'short' | 'medium' | 'long';
 
-export const WORD_COUNT_RULES: Record<ProblemLength, { min: number; max: number; note?: string }> =
-  {
-    short: {
-      min: 2,
-      max: 6,
-      note: '指定された語彙以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
-    },
-    medium: { min: 7, max: 13 },
-    long: {
-      min: 14,
-      max: 30,
-    },
-  };
+export const WORD_COUNT_RULES = {
+  short: {
+    min: 2,
+    max: 6,
+    note: '指定された語彙以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
+  },
+  medium: { min: 7, max: 13 },
+  long: {
+    min: 14,
+    max: 30,
+  },
+} as const satisfies Record<ProblemLength, { min: number; max: number; note?: string }>;
 
 export const VALID_DIFFICULTY_LEVELS = [
   'kids',
