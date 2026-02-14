@@ -1,7 +1,4 @@
 export const words: string[] = [
-  'solicit',
-  'state-of-the-art',
-  'subcontractor',
   'subsequent',
   'subsidiary',
   'subsidize',

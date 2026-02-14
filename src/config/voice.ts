@@ -11,8 +11,10 @@ export type VoiceGender = 'male' | 'female' | 'neutral';
  * 音声設定のマッピング
  */
 export const VOICE_CONFIG = {
-  male: ['echo', 'ash'],
-  female: ['nova', 'shimmer', 'coral'],
+  // male: ['echo', 'ash'],
+  // female: ['nova', 'shimmer', 'coral'],
+  male: ['cedar'],
+  female: ['marin'],
   neutral: ['alloy'],
 } as const satisfies Record<VoiceGender, SpeechCreateParams['voice'][]>;
 
