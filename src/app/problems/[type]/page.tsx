@@ -1,4 +1,4 @@
-import { Suspense, use } from 'react';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
@@ -45,7 +45,7 @@ const fetchIsAdmin = async () => {
   return isAdminEmail(email);
 };
 
-function ProblemContent({
+async function ProblemContent({
   type,
   searchQuery,
   initialProblemPromise,
@@ -56,7 +56,7 @@ function ProblemContent({
   initialProblemPromise: Promise<ProblemData>;
   isAdminPromise: Promise<boolean>;
 }) {
-  const initialProblem = use(initialProblemPromise);
+  const initialProblem = await initialProblemPromise;
 
   if (!initialProblem) {
     return (

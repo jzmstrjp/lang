@@ -2,17 +2,11 @@ import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { getServerAuthSession } from '@/lib/auth/session';
-import { use } from 'react';
 
-export default function AdminPage() {
-  const session = use(getServerAuthSession());
+export default async function AdminPage() {
+  const session = await getServerAuthSession();
   const email = session?.user?.email ?? null;
-  const isAdmin = use(
-    (async () => {
-      if (!email) return false;
-      return isAdminEmail(email);
-    })(),
-  );
+  const isAdmin = email ? await isAdminEmail(email) : false;
 
   return (
     <div className="text-center">

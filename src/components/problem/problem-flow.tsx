@@ -13,17 +13,15 @@ import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench } from 'lucide-react'
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type ProblemLength, type DifficultyLevel } from '@/config/problem';
 
-type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
-
 type ServerPhase = {
-  problem: ProblemWithStaticFlag;
+  problem: ProblemWithAudio;
 } & {
   kind: 'start-button-server';
 };
 
 type ClientPhase = {
   setting: Setting;
-  problem: ProblemWithStaticFlag;
+  problem: ProblemWithAudio;
 } & (
   | {
       kind: 'start-button-client';
@@ -55,7 +53,7 @@ export type { ProblemLength, DifficultyLevel };
 type ProblemFlowProps = {
   length?: ProblemLength;
   difficultyLevel?: DifficultyLevel;
-  initialProblem: ProblemWithStaticFlag;
+  initialProblem: ProblemWithAudio;
   isAdminPromise: Promise<boolean>;
   includeNullDifficulty?: boolean;
 };
@@ -111,7 +109,7 @@ export default function ProblemFlow({
   });
 
   // グローバル状態（全phase共通）
-  const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([]);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
   const [isImprovingTranslation, setImprovingTranslation] = useState(false);
@@ -192,8 +190,6 @@ export default function ProblemFlow({
 
   // phaseごとの処理
   useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-
     // --- phaseごとの副作用をここに統合 ---
     switch (phase.kind) {
       case 'start-button-server': {
@@ -312,13 +308,6 @@ export default function ProblemFlow({
       errorMessage: string;
     },
   ) => {
-    if (currentProblem?.isStatic) {
-      if (typeof window !== 'undefined') {
-        window.alert('静的な問題は変更できません。');
-      }
-      return;
-    }
-
     if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) return;
 
     const targetProblemId = currentProblem?.id;
@@ -358,7 +347,7 @@ export default function ProblemFlow({
       // 音声の場合は同期処理（新しいURLを状態に反映）
       const newUrl = responseData[field];
       if (newUrl) {
-        const updatedProblem: ProblemWithStaticFlag = {
+        const updatedProblem: ProblemWithAudio = {
           ...currentProblem,
           [field]: newUrl,
           audioReady: false,
@@ -371,7 +360,7 @@ export default function ProblemFlow({
                   ...problem,
                   [field]: newUrl,
                   audioReady: false,
-                } as ProblemWithStaticFlag)
+                } as ProblemWithAudio)
               : problem,
           ),
         );
@@ -423,13 +412,6 @@ export default function ProblemFlow({
 
   const handleDeleteProblem = async () => {
     if (isDeletingProblem) {
-      return;
-    }
-
-    if (currentProblem?.isStatic) {
-      if (typeof window !== 'undefined') {
-        window.alert('静的な問題は削除できません。');
-      }
       return;
     }
 
@@ -492,13 +474,6 @@ export default function ProblemFlow({
 
   const handleImproveTranslation = async () => {
     if (isImprovingTranslation) {
-      return;
-    }
-
-    if (currentProblem?.isStatic) {
-      if (typeof window !== 'undefined') {
-        window.alert('静的な問題は変更できません。');
-      }
       return;
     }
 
@@ -569,7 +544,7 @@ export default function ProblemFlow({
 
       // 成功したら状態を更新
       setPhase((prevPhase) => {
-        const updatedProblem: ProblemWithStaticFlag = {
+        const updatedProblem: ProblemWithAudio = {
           ...prevPhase.problem,
           japaneseSentence: newJapaneseSentence,
         };
@@ -591,7 +566,7 @@ export default function ProblemFlow({
       setProblemQueue((prevQueue) =>
         prevQueue.map((problem) =>
           problem.id === targetProblemId
-            ? ({ ...problem, japaneseSentence: newJapaneseSentence } as ProblemWithStaticFlag)
+            ? ({ ...problem, japaneseSentence: newJapaneseSentence } as ProblemWithAudio)
             : problem,
         ),
       );
@@ -612,10 +587,6 @@ export default function ProblemFlow({
     nextText: string,
   ): Promise<EditableIncorrectOptionResult> => {
     const problemId = currentProblem?.id;
-
-    if (currentProblem?.isStatic) {
-      return { ok: false, message: '静的な問題は編集できません。' };
-    }
 
     if (!problemId) {
       return { ok: false, message: '問題が存在しません。' };
@@ -791,7 +762,6 @@ export default function ProblemFlow({
           phase={phase}
           currentProblem={currentProblem}
           isAdminPromise={isAdminPromise}
-          isStaticProblem={currentProblem.isStatic ?? false}
           isAudioBusy={isAudioBusy}
           updateIncorrectOption={updateIncorrectOption}
           onSelectOption={handleOptionSelect}
@@ -802,21 +772,17 @@ export default function ProblemFlow({
         />
       )}
       {phase.kind === 'correct' && (
-        <Suspense>
-          <CorrectPhaseView
-            phase={phase}
-            isOnStreak={isOnStreak}
-            length={length}
-            difficultyLevel={difficultyLevel}
-            isAudioBusy={isAudioBusy}
-            onNextProblem={handleNextProblem}
-            onReplayAudio={() => {
-              playAudio(englishSentenceAudioRef.current, 0);
-            }}
-            isAdminPromise={isAdminPromise}
-            isStaticProblem={currentProblem.isStatic ?? false}
-          />
-        </Suspense>
+        <CorrectPhaseView
+          phase={phase}
+          isOnStreak={isOnStreak}
+          length={length}
+          difficultyLevel={difficultyLevel}
+          isAudioBusy={isAudioBusy}
+          onNextProblem={handleNextProblem}
+          onReplayAudio={() => {
+            playAudio(englishSentenceAudioRef.current, 0);
+          }}
+        />
       )}
       {phase.kind === 'incorrect' && (
         <IncorrectPhaseView phase={phase} isAudioBusy={isAudioBusy} onRetry={handleRetryQuiz} />
@@ -872,11 +838,10 @@ export default function ProblemFlow({
         </>
       )}
 
-      <Suspense>
+      <Suspense fallback={null}>
         {isAdminModalOpen ? (
           <AdminProblemActions
             isAdminPromise={isAdminPromise}
-            isStaticProblem={currentProblem.isStatic ?? false}
             isDeletingProblem={isDeletingProblem}
             isImprovingTranslation={isImprovingTranslation}
             regeneratingAssetRef={regeneratingAssetRef}
@@ -892,10 +857,9 @@ export default function ProblemFlow({
         ) : null}
       </Suspense>
 
-      <Suspense>
+      <Suspense fallback={null}>
         <FixedAdminButton
           isAdminPromise={isAdminPromise}
-          isStaticProblem={currentProblem.isStatic ?? false}
           onOpenAdminModal={() => setAdminModalOpen(true)}
         />
       </Suspense>
@@ -1029,9 +993,8 @@ function SceneReadyView({
 
 type QuizPhaseViewProps = {
   phase: Extract<ClientPhase, { kind: 'quiz' }>;
-  currentProblem: ProblemWithStaticFlag;
+  currentProblem: ProblemWithAudio;
   isAdminPromise: Promise<boolean>;
-  isStaticProblem: boolean;
   isAudioBusy: boolean;
   updateIncorrectOption: (
     incorrectIndex: number,
@@ -1046,7 +1009,6 @@ function QuizPhaseView({
   phase,
   currentProblem,
   isAdminPromise,
-  isStaticProblem,
   isAudioBusy,
   updateIncorrectOption,
   onSelectOption,
@@ -1054,20 +1016,17 @@ function QuizPhaseView({
   onRetry,
 }: QuizPhaseViewProps) {
   return (
-    <Suspense>
-      <QuizOptionsSection
-        key={phase.problem.id}
-        phase={phase}
-        currentProblem={currentProblem}
-        isAdminPromise={isAdminPromise}
-        isStaticProblem={isStaticProblem}
-        isAudioBusy={isAudioBusy}
-        updateIncorrectOption={updateIncorrectOption}
-        onSelectOption={onSelectOption}
-        onReplayAudio={onReplayAudio}
-        onRetry={onRetry}
-      />
-    </Suspense>
+    <QuizOptionsSection
+      key={phase.problem.id}
+      phase={phase}
+      currentProblem={currentProblem}
+      isAdminPromise={isAdminPromise}
+      isAudioBusy={isAudioBusy}
+      updateIncorrectOption={updateIncorrectOption}
+      onSelectOption={onSelectOption}
+      onReplayAudio={onReplayAudio}
+      onRetry={onRetry}
+    />
   );
 }
 
@@ -1079,8 +1038,6 @@ type CorrectPhaseViewProps = {
   isAudioBusy: boolean;
   onNextProblem: () => void;
   onReplayAudio: () => void;
-  isAdminPromise: Promise<boolean>;
-  isStaticProblem: boolean;
 };
 
 function CorrectPhaseView({
@@ -1290,9 +1247,8 @@ function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
 
 type QuizOptionsSectionProps = {
   phase: Extract<ClientPhase, { kind: 'quiz' }>;
-  currentProblem: ProblemWithStaticFlag;
+  currentProblem: ProblemWithAudio;
   isAdminPromise: Promise<boolean>;
-  isStaticProblem: boolean;
   isAudioBusy: boolean;
   updateIncorrectOption: (
     incorrectIndex: number,
@@ -1307,7 +1263,6 @@ function QuizOptionsSection({
   phase,
   currentProblem,
   isAdminPromise,
-  isStaticProblem,
   isAudioBusy,
   updateIncorrectOption,
   onSelectOption,
@@ -1315,8 +1270,6 @@ function QuizOptionsSection({
   onRetry,
 }: QuizOptionsSectionProps) {
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
-  const isAdmin = use(isAdminPromise);
-  const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
   return (
     <section className="grid w-[500px] max-w-full max-w-full mx-auto pt-3">
@@ -1365,30 +1318,13 @@ function QuizOptionsSection({
                   >
                     {option.text}
                   </button>
-                  {canEditCurrentProblem &&
-                    (option.kind === 'incorrect' ? (
-                      <button
-                        type="button"
-                        onClick={() => setEditingIncorrectOptionKey(optionKey)}
-                        tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof window !== 'undefined') {
-                            window.alert('これは正解です');
-                          }
-                        }}
-                        tabIndex={-1}
-                        className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                    ))}
+                  <Suspense fallback={null}>
+                    <AdminOptionEditButton
+                      isAdminPromise={isAdminPromise}
+                      option={option}
+                      onStartEdit={() => setEditingIncorrectOptionKey(optionKey)}
+                    />
+                  </Suspense>
                 </div>
               )}
             </li>
@@ -1418,9 +1354,48 @@ function QuizOptionsSection({
   );
 }
 
+type AdminOptionEditButtonProps = {
+  isAdminPromise: Promise<boolean>;
+  option: ShuffledQuizOption;
+  onStartEdit: () => void;
+};
+
+function AdminOptionEditButton({
+  isAdminPromise,
+  option,
+  onStartEdit,
+}: AdminOptionEditButtonProps) {
+  const isAdmin = use(isAdminPromise);
+
+  if (!isAdmin) return null;
+
+  return option.kind === 'incorrect' ? (
+    <button
+      type="button"
+      onClick={onStartEdit}
+      tabIndex={-1}
+      className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+    >
+      <Pencil size={16} />
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={() => {
+        if (typeof window !== 'undefined') {
+          window.alert('これは正解です');
+        }
+      }}
+      tabIndex={-1}
+      className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+    >
+      <Pencil size={16} />
+    </button>
+  );
+}
+
 type AdminProblemActionsProps = {
   isAdminPromise: Promise<boolean>;
-  isStaticProblem: boolean;
   isDeletingProblem: boolean;
   isImprovingTranslation: boolean;
   regeneratingAssetRef: React.MutableRefObject<Record<RemovableField, boolean>>;
@@ -1436,7 +1411,6 @@ type AdminProblemActionsProps = {
 
 function AdminProblemActions({
   isAdminPromise,
-  isStaticProblem,
   isDeletingProblem,
   isImprovingTranslation,
   regeneratingAssetRef,
@@ -1450,7 +1424,6 @@ function AdminProblemActions({
   onClose,
 }: AdminProblemActionsProps) {
   const isAdmin = use(isAdminPromise);
-  const canEditCurrentProblem = isAdmin && !isStaticProblem;
   const [, forceUpdate] = useState({});
 
   // refの変更を検知するために定期的にチェック
@@ -1464,7 +1437,7 @@ function AdminProblemActions({
     return () => clearInterval(interval);
   }, [isModalOpen]);
 
-  if (!canEditCurrentProblem || !isModalOpen) return null;
+  if (!isAdmin || !isModalOpen) return null;
 
   return (
     <div
@@ -1550,19 +1523,13 @@ function AdminProblemActions({
 
 type FixedAdminButtonProps = {
   isAdminPromise: Promise<boolean>;
-  isStaticProblem: boolean;
   onOpenAdminModal: () => void;
 };
 
-function FixedAdminButton({
-  isAdminPromise,
-  isStaticProblem,
-  onOpenAdminModal,
-}: FixedAdminButtonProps) {
+function FixedAdminButton({ isAdminPromise, onOpenAdminModal }: FixedAdminButtonProps) {
   const isAdmin = use(isAdminPromise);
-  const canEditCurrentProblem = isAdmin && !isStaticProblem;
 
-  if (!canEditCurrentProblem) return null;
+  if (!isAdmin) return null;
 
   return (
     <button

@@ -9,26 +9,24 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 import { StartButton } from '@/components/ui/start-button';
 
-type ProblemWithStaticFlag = ProblemWithAudio & { isStatic?: boolean };
-
 type Phase =
   | {
       kind: 'start';
-      problem: ProblemWithStaticFlag;
+      problem: ProblemWithAudio;
     }
   | {
       kind: 'quiz';
-      problem: ProblemWithStaticFlag;
+      problem: ProblemWithAudio;
       blankProblem: BlankProblemData;
     }
   | {
       kind: 'correct';
-      problem: ProblemWithStaticFlag;
+      problem: ProblemWithAudio;
       blankProblem: BlankProblemData;
     }
   | {
       kind: 'incorrect';
-      problem: ProblemWithStaticFlag;
+      problem: ProblemWithAudio;
       blankProblem: BlankProblemData;
     };
 
@@ -38,7 +36,7 @@ type ApiProblemsResponse = {
 };
 
 type FillBlankFlowProps = {
-  initialProblem: ProblemWithStaticFlag;
+  initialProblem: ProblemWithAudio;
 };
 
 export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
@@ -54,7 +52,7 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
     problem: initialProblem,
   });
 
-  const [problemQueue, setProblemQueue] = useState<ProblemWithStaticFlag[]>([]);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
   const isPrefetchingRef = useRef(false);
 
   // キューに問題を補充（残り5問以下になったら10問取得）
@@ -233,7 +231,7 @@ function QuizView({ blankProblem, onSelectOption }: QuizViewProps) {
 
 type CorrectViewProps = {
   blankProblem: BlankProblemData;
-  problem: ProblemWithStaticFlag;
+  problem: ProblemWithAudio;
   correctStreak: number;
   isOnStreak: boolean;
   onNextProblem: () => void;

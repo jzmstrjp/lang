@@ -1,4 +1,4 @@
-import { Suspense, use } from 'react';
+import { Suspense } from 'react';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import FillBlankFlow from '@/components/fill-blank/fill-blank-flow';
 import type { ProblemWithAudio } from '@/lib/problem-service';
@@ -22,14 +22,14 @@ function loadInitialProblem({ searchQuery }: { searchQuery?: string }): Promise<
   })();
 }
 
-function FillBlankContent({
+async function FillBlankContent({
   searchQuery,
   initialProblemPromise,
 }: {
   searchQuery?: string;
   initialProblemPromise: Promise<ProblemData>;
 }) {
-  const initialProblem = use(initialProblemPromise);
+  const initialProblem = await initialProblemPromise;
 
   if (!initialProblem) {
     return (
