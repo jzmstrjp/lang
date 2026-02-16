@@ -24,6 +24,11 @@ const links: { href: string; level?: number; label: string; description: string 
     label: 'long',
     description: `少し長い文`,
   },
+  {
+    href: '/ana-ume',
+    label: 'ana-ume',
+    description: `単語穴埋め`,
+  },
 ];
 
 type HomePageProps = {
@@ -91,12 +96,12 @@ export default function Home() {
           height={630}
         />
       </div>
-      <nav className="flex w-full flex-col items-stretch gap-4 sm:flex-row sm:gap-6">
+      <nav className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {links.map(({ href, level, label, description }) => (
           <Link
             key={href}
             href={href}
-            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--course-link-border)] bg-[var(--course-link-bg)] px-5 py-4 text-[var(--course-link-text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--course-link-hover-border)] hover:bg-[var(--course-link-hover-bg)] hover:text-[var(--course-link-hover-text)] sm:flex-1"
+            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--course-link-border)] bg-[var(--course-link-bg)] px-5 py-4 text-[var(--course-link-text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--course-link-hover-border)] hover:bg-[var(--course-link-hover-bg)] hover:text-[var(--course-link-hover-text)]"
           >
             <span className="text-2xl sm:text-xl font-semibold capitalize">{label}</span>
             {level && (

@@ -5,6 +5,7 @@ type StartButtonProps = {
   disabled?: boolean;
   handleStart?: () => void;
   autoFocus?: boolean;
+  showAudioWarning?: boolean;
 };
 
 export const StartButton = ({
@@ -12,6 +13,7 @@ export const StartButton = ({
   disabled = false,
   handleStart,
   autoFocus = false,
+  showAudioWarning = true,
   children,
 }: PropsWithChildren<StartButtonProps>) => {
   return (
@@ -27,11 +29,13 @@ export const StartButton = ({
       >
         {children}
       </button>
-      <p
-        className={`text-base text-[var(--text-muted)] mt-2 ${disabled ? 'invisible' : 'visible'}`}
-      >
-        ※音が出ます
-      </p>
+      {showAudioWarning && (
+        <p
+          className={`text-base text-[var(--text-muted)] mt-2 ${disabled ? 'invisible' : 'visible'}`}
+        >
+          ※音が出ます
+        </p>
+      )}
     </div>
   );
 };

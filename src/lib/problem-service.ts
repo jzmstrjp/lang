@@ -71,11 +71,6 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   // limitの範囲チェック
   const sanitizedLimit = Math.min(Math.max(limit, 1), PROBLEM_FETCH_LIMIT);
 
-  // typeとdifficultyLevelのどちらか一方は必須
-  if (!type && !difficultyLevel) {
-    throw new Error('Either type or difficultyLevel must be specified');
-  }
-
   // 検索文字列の前処理
   const trimmedSearch = search?.trim();
   const hasSearch = trimmedSearch && trimmedSearch.length > 0;
