@@ -7,6 +7,8 @@ export type BlankProblemData = {
   options: string[]; // シャッフルされた4択
   correctIndex: number; // 正解のインデックス
   originalSentence: string; // 元の英文
+  blankStartIndex: number; // 空白の開始位置
+  blankEndIndex: number; // 空白の終了位置
 };
 
 /**
@@ -91,10 +93,17 @@ export function generateBlankProblem(problem: ProblemWithAudio): BlankProblemDat
   // 3. 選んだ単語を空白化した文を生成
   // 大文字小文字を区別せずに置換（ただし最初に見つかった箇所のみ）
   const escapedAnswer = escapeRegExp(correctAnswer);
-  const sentenceWithBlank = englishSentence.replace(
-    new RegExp(`\\b${escapedAnswer}\\b`, 'i'),
-    '___',
-  );
+  const regex = new RegExp(`\\b${escapedAnswer}\\b`, 'i');
+  const match = englishSentence.match(regex);
+
+  if (!match || match.index === undefined) {
+    throw new Error('正解の単語が文章内に見つかりませんでした');
+  }
+
+  const blankStartIndex = match.index;
+  const blankEndIndex = match.index + match[0].length;
+
+  const sentenceWithBlank = englishSentence.replace(regex, '___');
 
   // 4. englishReplyから誤答候補を抽出
   const replyWords = extractWords(englishReply);
@@ -290,5 +299,7 @@ export function generateBlankProblem(problem: ProblemWithAudio): BlankProblemDat
     options: shuffledOptions,
     correctIndex,
     originalSentence: englishSentence,
+    blankStartIndex,
+    blankEndIndex,
   };
 }

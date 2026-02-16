@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useRef, useState } from 'react';
 import type { ProblemWithAudio } from '@/lib/problem-service';
 import { generateBlankProblem, type BlankProblemData } from '@/lib/fill-blank-utils';
@@ -43,6 +44,11 @@ type FillBlankFlowProps = {
 export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-fill-blank', 0);
 
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search')?.trim() ?? '';
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [phase, setPhase] = useState<Phase>({
     kind: 'start',
     problem: initialProblem,
@@ -58,6 +64,7 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
     isPrefetchingRef.current = true;
 
     try {
+      // 補充時は常に検索なしで取得
       const response = await fetch('/api/problems?limit=10', { cache: 'no-store' });
 
       if (response.ok) {
@@ -121,6 +128,11 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
 
   const handleNextProblem = () => {
     if (phase.kind !== 'correct') return;
+
+    // searchパラメータがある場合のみURLをクリア
+    if (searchQuery) {
+      router.push(pathname);
+    }
 
     const nextProblem = problemQueue[0];
 
@@ -238,20 +250,19 @@ function CorrectView({
 
   // 正解の単語をハイライトした文を生成
   const highlightedSentence = () => {
-    // 正規表現の特殊文字をエスケープ
-    const escapedAnswer = blankProblem.correctAnswer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const parts = blankProblem.originalSentence.split(new RegExp(`(\\b${escapedAnswer}\\b)`, 'i'));
+    const { originalSentence, blankStartIndex, blankEndIndex } = blankProblem;
 
-    return parts.map((part, index) => {
-      if (part.toLowerCase() === blankProblem.correctAnswer.toLowerCase()) {
-        return (
-          <span key={index} className="underline decoration-2 underline-offset-4 font-bold">
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
+    const before = originalSentence.slice(0, blankStartIndex);
+    const highlighted = originalSentence.slice(blankStartIndex, blankEndIndex);
+    const after = originalSentence.slice(blankEndIndex);
+
+    return (
+      <>
+        {before}
+        <span className="underline decoration-2 underline-offset-4 font-bold">{highlighted}</span>
+        {after}
+      </>
+    );
   };
 
   return (
