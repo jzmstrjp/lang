@@ -2,7 +2,8 @@ import type { ProblemWithAudio } from '@/lib/problem-service';
 
 export type BlankProblemData = {
   problemId: string;
-  sentenceWithBlank: string; // "I ___ to the store"
+  beforeBlank: string; // 空白より前の部分
+  afterBlank: string; // 空白より後の部分
   correctAnswer: string; // "went"
   options: string[]; // シャッフルされた4択
   correctIndex: number; // 正解のインデックス
@@ -103,7 +104,8 @@ export function generateBlankProblem(problem: ProblemWithAudio): BlankProblemDat
   const blankStartIndex = match.index;
   const blankEndIndex = match.index + match[0].length;
 
-  const sentenceWithBlank = englishSentence.replace(regex, '___');
+  const beforeBlank = englishSentence.slice(0, blankStartIndex);
+  const afterBlank = englishSentence.slice(blankEndIndex);
 
   // 4. englishReplyから誤答候補を抽出
   const replyWords = extractWords(englishReply);
@@ -294,7 +296,8 @@ export function generateBlankProblem(problem: ProblemWithAudio): BlankProblemDat
 
   return {
     problemId: id,
-    sentenceWithBlank,
+    beforeBlank,
+    afterBlank,
     correctAnswer,
     options: shuffledOptions,
     correctIndex,

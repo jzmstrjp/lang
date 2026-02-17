@@ -208,7 +208,11 @@ function QuizView({ blankProblem, onSelectOption }: QuizViewProps) {
     <section className="grid w-[500px] max-w-full mx-auto pt-3">
       <div className="mb-8">
         <p className="text-center text-2xl font-semibold text-[var(--text)] leading-relaxed">
-          {blankProblem.sentenceWithBlank}
+          {blankProblem.beforeBlank}
+          <span className="text-transparent underline decoration-2 underline-offset-4 decoration-[var(--text)]">
+            ____
+          </span>
+          {blankProblem.afterBlank}
         </p>
       </div>
       <ul className="grid gap-3">
