@@ -12,7 +12,7 @@ export type VoiceGender = 'male' | 'female' | 'neutral';
  */
 export const VOICE_CONFIG = {
   // male: ['echo', 'ash'],
-  // female: ['nova', 'shimmer', 'coral'],
+  // female: ['nova', 'shimmer'],
   male: ['cedar'],
   female: ['marin'],
   neutral: ['alloy'],
