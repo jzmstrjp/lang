@@ -1,8 +1,9 @@
 'use client';
 
 import Image from 'next/image';
+import { ExternalLink } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProblemWithAudio } from '@/lib/problem-service';
 import { generateBlankProblem, type BlankProblemData } from '@/lib/fill-blank-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -249,6 +250,66 @@ function CorrectView({
   onNextProblem,
 }: CorrectViewProps) {
   const [imageVariant] = useState(() => Math.floor(Math.random() * 2) + 1);
+  const [selectedText, setSelectedText] = useState('');
+  const englishSentenceRef = useRef<HTMLParagraphElement>(null);
+  const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+        selectionTimeoutRef.current = null;
+      }
+
+      selectionTimeoutRef.current = setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) {
+          return;
+        }
+
+        if (!englishSentenceRef.current) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+        const selectedTextContent = range.toString().trim();
+
+        if (!selectedTextContent) {
+          return;
+        }
+
+        const startContainer = range.startContainer;
+        const startElement =
+          startContainer.nodeType === Node.TEXT_NODE
+            ? startContainer.parentElement
+            : (startContainer as Element);
+
+        const isStartInParagraph =
+          startElement &&
+          (englishSentenceRef.current.contains(startElement) ||
+            startElement === englishSentenceRef.current);
+
+        if (!isStartInParagraph) {
+          return;
+        }
+
+        const paragraphText = englishSentenceRef.current.textContent?.trim() || '';
+
+        if (selectedTextContent === paragraphText || paragraphText.includes(selectedTextContent)) {
+          setSelectedText(selectedTextContent);
+        }
+      }, 300);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 正解の単語をハイライトした文を生成
   const highlightedSentence = () => {
@@ -303,9 +364,25 @@ function CorrectView({
             </button>
           )}
         </div>
-        <p className="py-4 text-2xl font-semibold text-[var(--text)] leading-relaxed">
+        <p
+          ref={englishSentenceRef}
+          className="py-4 text-2xl font-semibold text-[var(--text)] leading-relaxed select-text cursor-text"
+        >
           {highlightedSentence()}
         </p>
+        {selectedText && (
+          <div className="mb-4">
+            <a
+              href={`https://www.deepl.com/translator#en/ja/${encodeURIComponent(selectedText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1 rounded-full border border-[var(--border)] bg-[var(--background)] pl-3 pr-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 hover:border-[var(--secondary)] hover:text-[var(--secondary)]"
+            >
+              「{selectedText}」を DeepL で翻訳する
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        )}
         <p className="text-lg text-[var(--text)]">{problem.japaneseSentence}</p>
       </div>
       <div className="flex justify-center gap-4">
