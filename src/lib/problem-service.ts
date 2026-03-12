@@ -21,6 +21,7 @@ export type ProblemWithAudio = Omit<
 
 export type FetchProblemsOptions = {
   type?: ProblemLength;
+  maxWordCount?: number;
   difficultyLevel?: DifficultyLevel;
   search?: string;
   limit?: number;
@@ -62,6 +63,7 @@ function formatProblem(problem: ProblemWithAudio): ProblemWithAudio {
 export async function fetchProblems(options: FetchProblemsOptions): Promise<FetchProblemsResult> {
   const {
     type,
+    maxWordCount,
     difficultyLevel,
     search,
     limit = PROBLEM_FETCH_LIMIT,
@@ -88,6 +90,11 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     }
     whereClauses.push(Prisma.sql`"wordCount" >= ${rules.min}`);
     whereClauses.push(Prisma.sql`"wordCount" <= ${rules.max}`);
+  }
+
+  // maxWordCountが指定されている場合は上限でフィルタ（typeより優先）
+  if (maxWordCount !== undefined) {
+    whereClauses.push(Prisma.sql`"wordCount" <= ${maxWordCount}`);
   }
 
   // difficultyLevelが指定されている場合は難易度でフィルタ

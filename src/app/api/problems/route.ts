@@ -20,10 +20,13 @@ export async function GET(request: Request) {
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
     const includeNullDifficultyParam = searchParams.get('includeNullDifficulty');
     const includeNullDifficulty = includeNullDifficultyParam === 'true';
+    const maxWordCountParam = searchParams.get('maxWordCount');
+    const maxWordCount = maxWordCountParam ? parseInt(maxWordCountParam, 10) : undefined;
 
     // 共通のサービス関数を使用
     const result = await fetchProblems({
       type,
+      maxWordCount,
       difficultyLevel,
       search,
       limit,

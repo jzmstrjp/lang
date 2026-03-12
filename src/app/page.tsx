@@ -29,6 +29,11 @@ const links: { href: string; level?: number; label: string; description: string 
     label: 'ana-ume',
     description: `単語穴埋め`,
   },
+  {
+    href: '/narabi-kae',
+    label: 'narabi-kae',
+    description: `単語並び替え`,
+  },
 ];
 
 type HomePageProps = {
