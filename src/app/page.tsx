@@ -3,7 +3,15 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
 
-const links: { href: string; level?: number; label: string; description: string }[] = [
+type LinkItem = {
+  href: string;
+  level?: number;
+  label: string;
+  description: string;
+  variant?: 'outlined';
+};
+
+const links: LinkItem[] = [
   {
     href: '/level/kids',
     label: 'kids',
@@ -28,11 +36,13 @@ const links: { href: string; level?: number; label: string; description: string 
     href: '/ana-ume',
     label: 'ana-ume',
     description: `単語穴埋め`,
+    variant: 'outlined',
   },
   {
     href: '/narabi-kae',
     label: 'narabi-kae',
     description: `単語並び替え`,
+    variant: 'outlined',
   },
 ];
 
@@ -102,23 +112,34 @@ export default function Home() {
         />
       </div>
       <nav className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {links.map(({ href, level, label, description }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex w-full flex-col gap-2 items-center rounded-2xl border border-[var(--course-link-border)] bg-[var(--course-link-bg)] px-5 py-4 text-[var(--course-link-text)] shadow-sm shadow-[var(--border)]/40 transition hover:border-[var(--course-link-hover-border)] hover:bg-[var(--course-link-hover-bg)] hover:text-[var(--course-link-hover-text)]"
-          >
-            <span className="text-2xl sm:text-xl font-semibold capitalize">{label}</span>
-            {level && (
-              <span className="text-sm font-medium text-[var(--course-link-secondary-text)]">
-                {'★'.repeat(level)}
+        {links.map(({ href, level, label, description, variant }) => {
+          const isOutlined = variant === 'outlined';
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex w-full flex-col gap-2 items-center rounded-2xl border px-5 py-4 shadow-sm shadow-[var(--border)]/40 transition ${
+                isOutlined
+                  ? 'border-[var(--course-link-outlined-border)] bg-[var(--course-link-outlined-bg)] text-[var(--course-link-outlined-text)] hover:border-[var(--course-link-outlined-hover-border)] hover:bg-[var(--course-link-outlined-hover-bg)] hover:text-[var(--course-link-outlined-hover-text)]'
+                  : 'border-[var(--course-link-border)] bg-[var(--course-link-bg)] text-[var(--course-link-text)] hover:border-[var(--course-link-hover-border)] hover:bg-[var(--course-link-hover-bg)] hover:text-[var(--course-link-hover-text)]'
+              }`}
+            >
+              <span className="text-2xl sm:text-xl font-semibold capitalize">{label}</span>
+              {level && (
+                <span
+                  className={`text-sm font-medium ${isOutlined ? 'text-[var(--course-link-outlined-secondary-text)]' : 'text-[var(--course-link-secondary-text)]'}`}
+                >
+                  {'★'.repeat(level)}
+                </span>
+              )}
+              <span
+                className={`text-sm font-medium ${isOutlined ? 'text-[var(--course-link-outlined-secondary-text)]' : 'text-[var(--course-link-secondary-text)]'}`}
+              >
+                {description}
               </span>
-            )}
-            <span className="text-sm font-medium text-[var(--course-link-secondary-text)]">
-              {description}
-            </span>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );

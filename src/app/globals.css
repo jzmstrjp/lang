@@ -80,6 +80,15 @@
   --course-link-hover-border: #2f8f9d;
   --course-link-hover-bg: #ffffff;
   --course-link-hover-text: #2f8f9d;
+
+  /* コースリンク（反転） */
+  --course-link-outlined-border: #2f8f9d;
+  --course-link-outlined-bg: #2f8f9d;
+  --course-link-outlined-text: #f4f1ea;
+  --course-link-outlined-secondary-text: #d8e8ea;
+  --course-link-outlined-hover-border: #257682;
+  --course-link-outlined-hover-bg: #257682;
+  --course-link-outlined-hover-text: #ffffff;
 }
 
 @theme inline {
@@ -187,6 +196,15 @@
   --course-link-hover-border: transparent;
   --course-link-hover-bg: rgba(255, 255, 255, 1);
   --course-link-hover-text: #000000;
+
+  /* コースリンク（アウトライン） */
+  --course-link-outlined-border: rgba(255, 255, 255, 0.5);
+  --course-link-outlined-bg: transparent;
+  --course-link-outlined-text: #ffffff;
+  --course-link-outlined-secondary-text: rgba(255, 255, 255, 0.7);
+  --course-link-outlined-hover-border: rgba(255, 255, 255, 0.8);
+  --course-link-outlined-hover-bg: rgba(255, 255, 255, 0.1);
+  --course-link-outlined-hover-text: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
