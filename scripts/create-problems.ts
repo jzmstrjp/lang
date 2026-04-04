@@ -97,6 +97,7 @@ async function createEnglishConversation(
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
 2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
   - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
+  - 例: "Is this your bag?" に対して "No, I think it might belong to Mr. Yamada."
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
 
