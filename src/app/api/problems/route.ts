@@ -22,8 +22,12 @@ export async function GET(request: Request) {
     const includeNullDifficulty = includeNullDifficultyParam === 'true';
     const maxWordCountParam = searchParams.get('maxWordCount');
     const maxWordCount = maxWordCountParam ? parseInt(maxWordCountParam, 10) : undefined;
+    const latestParam = searchParams.get('latest');
+    const latestDays =
+      latestParam !== null && Number.isFinite(Number(latestParam))
+        ? parseInt(latestParam, 10)
+        : undefined;
 
-    // 共通のサービス関数を使用
     const result = await fetchProblems({
       type,
       maxWordCount,
@@ -31,6 +35,7 @@ export async function GET(request: Request) {
       search,
       limit,
       includeNullDifficulty,
+      latestDays,
     });
 
     return NextResponse.json(result);

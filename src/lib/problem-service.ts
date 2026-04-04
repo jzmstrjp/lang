@@ -26,6 +26,7 @@ export type FetchProblemsOptions = {
   search?: string;
   limit?: number;
   includeNullDifficulty?: boolean;
+  latestDays?: number;
 };
 
 export type FetchProblemsResult = {
@@ -68,6 +69,7 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     search,
     limit = PROBLEM_FETCH_LIMIT,
     includeNullDifficulty = false,
+    latestDays,
   } = options;
 
   // limitの範囲チェック
@@ -113,6 +115,14 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
       whereClauses.push(Prisma.sql`"difficultyLevel" >= ${rules.min}`);
       whereClauses.push(Prisma.sql`"difficultyLevel" <= ${rules.max}`);
     }
+  }
+
+  // latestDaysが指定されている場合は作成日でフィルタ
+  if (latestDays !== undefined) {
+    const sanitizedDays = Math.min(Math.max(Math.floor(latestDays), 1), 365);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - sanitizedDays);
+    whereClauses.push(Prisma.sql`"createdAt" >= ${cutoff}`);
   }
 
   // 検索条件を追加

@@ -12,7 +12,7 @@ const validTypes = ['short', 'medium', 'long'] as const;
 
 type ProblemPageProps = {
   params: Promise<{ type: string }>;
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; latest?: string }>;
 };
 
 type ProblemData = ProblemWithAudio | null;
@@ -20,9 +20,11 @@ type ProblemData = ProblemWithAudio | null;
 function loadInitialProblem({
   type,
   searchQuery,
+  latestDays,
 }: {
   type: ProblemLength;
   searchQuery?: string;
+  latestDays?: number;
 }): Promise<ProblemData> {
   return (async () => {
     const { problems } = await fetchProblems({
@@ -31,6 +33,7 @@ function loadInitialProblem({
       search: searchQuery,
       limit: 1,
       includeNullDifficulty: true,
+      latestDays,
     });
     return problems[0] ?? null;
   })();
@@ -48,11 +51,13 @@ const fetchIsAdmin = async () => {
 async function ProblemContent({
   type,
   searchQuery,
+  latestDays,
   initialProblemPromise,
   isAdminPromise,
 }: {
   type: ProblemLength;
   searchQuery?: string;
+  latestDays?: number;
   initialProblemPromise: Promise<ProblemData>;
   isAdminPromise: Promise<boolean>;
 }) {
@@ -75,6 +80,7 @@ async function ProblemContent({
       initialProblem={initialProblem}
       isAdminPromise={isAdminPromise}
       includeNullDifficulty={true}
+      latestDays={latestDays}
     />
   );
 }
@@ -86,9 +92,19 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
     notFound();
   }
 
-  const searchQuery = (await searchParams).search?.trim();
+  const resolvedSearchParams = await searchParams;
+  const searchQuery = resolvedSearchParams.search?.trim();
+  const latestParam = resolvedSearchParams.latest;
+  const latestDays =
+    latestParam !== undefined && Number.isFinite(Number(latestParam))
+      ? parseInt(latestParam, 10)
+      : undefined;
   const displayName = type;
-  const initialProblemPromise = loadInitialProblem({ type: type as ProblemLength, searchQuery });
+  const initialProblemPromise = loadInitialProblem({
+    type: type as ProblemLength,
+    searchQuery,
+    latestDays,
+  });
   const isAdminPromise = fetchIsAdmin();
 
   return (
@@ -98,6 +114,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
         <ProblemContent
           type={type as ProblemLength}
           searchQuery={searchQuery}
+          latestDays={latestDays}
           initialProblemPromise={initialProblemPromise}
           isAdminPromise={isAdminPromise}
         />
