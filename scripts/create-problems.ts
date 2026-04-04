@@ -95,11 +95,11 @@ async function createEnglishConversation(
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
-2. englishReply: 受信者の返答。簡潔で適切な応答（12語以内が望ましい）。無駄に話題を広げないこと。ただし「へぇ、そうなんだ。なんか面白そうだね。」といった当たり障りのない内容は禁止です。具体的にenglishSentenceの内容に言及してください。
+2. englishReply: 受信者の返答。簡潔で適切な応答（12語以内が望ましい）。無駄に話題を広げないこと。ただし「へぇ、そうなんだ。なんか面白そうだね。」といった当たり障りのない内容は禁止です。何かしら具体的にenglishSentenceの内容に言及し、englishSentenceの内容を少し推測できるような文にすること。
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
 
-【重要】以下のJSON形式で必ず回答してください:
+【重要】以下のJSON形式で必ず回答してください（文章は例です。実際の文章は適宜変更してください）:
 
 \`\`\`json
 {
@@ -317,33 +317,37 @@ async function createScenePrompt(problemData: {
 }> {
   console.log(`  🎨 「${problemData.word}」のシーンプロンプト生成中...`);
 
-  const prompt = `以下の会話シーンについて、画像生成AIに渡すための場面説明を200文字程度の日本語で作成してください。
+  const prompt = `以下の会話シーンについて、画像生成AIを使用して実写の2コマ漫画を生成します。画像生成AIに渡すための場面説明を200文字程度の日本語で作成してください。
 
 【シーン情報】
 - いつ: ${problemData.when}
 - どのように: ${problemData.how}
 
-【話しかける人（${problemData.sender.voice === 'male' ? '男性' : '女性'}・${problemData.sender.role}）】
+【1コマ目: 話しかける人（${problemData.sender.voice === 'male' ? '男性' : '女性'}・${problemData.sender.role}）】
 - 場所: ${problemData.sender.where}
 - 目的: ${problemData.sender.why}
 - 最初のセリフ: 「${problemData.sender.japaneseSentence}」
 
-【返答する人（${problemData.receiver.voice === 'male' ? '男性' : '女性'}・${problemData.receiver.role}）】
+【2コマ目: 返答する人（${problemData.receiver.voice === 'male' ? '男性' : '女性'}・${problemData.receiver.role}）】
 - 場所: ${problemData.receiver.where}
 - 返答のセリフ: 「${problemData.receiver.japaneseReply}」
 
 【要件】
 1. **200文字程度**で簡潔に
 2. ストーリーと場所の様子を説明。まず対面なのか電話なのかビデオ通話なのか書くこと。ストーリーにはセリフそのものは含めず、画像の生成に必要な背景の情報などを描くこと。
-3. 「まだ〜していない」など、やっていないことも明記(例: まだコーヒーは届いていない、まだテーブルには何もない)
-4. 1コマ目と2コマ目で何が起こるかを簡潔に
+3. 1コマ目と2コマ目で何が起こるかを簡潔に。画像生成AIが1コマ目に何を描くべきか、2コマ目に何を描くべきか迷わないように明確に言語化すること。
+4. 1コマ目と2コマ目で「何が起こらないか」も簡潔に書くこと。(例: まだ男性は塩を持っていない、まだコーヒーは席に届いていない、まだテーブルには何もない)
 5. プロパティ名（sender/receiver/englishSentence等）は使わず、自然な日本語で
+
+【例】
+- ビデオ通話での会話。火曜の夕方、1コマ目では女性の同僚が自宅のリビングでパソコンの前に座り、ビデオ通話で男性の同僚に納期の注意を真剣な表情で伝えている。2コマ目では男性がオフィスの会議室でPCのモニタを見ながら自信ありげに返答している。
+- 対面での会話。水曜の昼、カフェで女性が男性と向かい合って話している。テーブル上には食べ終わった料理の皿がある。1コマ目で女性はデザートを食べようと提案している。2コマ目では男性が嬉しそうにその提案に賛成している。まだデザートは注文されていない。
 
 【重要】以下のJSON形式で必ず回答してください:
 
 \`\`\`json
 {
-  "scenePrompt": "ビデオ通話での会話。火曜の夕方、女性の同僚が自宅のリビングでパソコンの前に座り、ビデオ通話で男性の同僚に納期の注意を伝えている。1コマ目は女性が真剣な表情で話している。2コマ目では男性がオフィスの会議室でPCのモニタを見ながら自信ありげに返答している。まだ資料は完成していない。"
+  "scenePrompt": "ここに場面説明の文が入る。"
 }
 \`\`\``;
 
@@ -747,14 +751,14 @@ async function wordsToGenres(words: string[]): Promise<{
 
   console.log('🤖 OpenAI APIで単語のジャンル分けを実行中...');
 
-  const prompt = `以下の英語の単語・フレーズが「ビジネス」シーンで使われるか「日常生活」シーンで使われるかを判定してください。できれば均等に。でも明らかなビジネス用語を「日常生活」に分類しないこと。
+  const prompt = `以下の英語の単語・フレーズが「ビジネス」シーンでよく使われる単語か「日常生活」シーンでよく使われる単語かを判定してください。できれば半々くらいの割合で分類してください。迷ったら「日常生活」に分類してください。
 
 単語リスト:
 ${words.map((word, index) => `${index + 1}. ${word}`).join('\n')}
 
 【判定基準】
 - ビジネス: 仕事、会議、オフィス、ビジネスメールなどで主に使われる
-- 日常生活: 友人や家族との会話、プライベートな場面で主に使われる
+- 日常生活: 友人や家族との会話、食事、旅行、趣味、プライベートな場面で主に使われる
 
 【重要】以下のJSON形式で必ず回答してください:
 
@@ -1313,18 +1317,8 @@ function convertToSeedProblemData(
   }>,
 ): SeedProblemData[] {
   return completeResults.map((result) => {
-    // placeを生成
-    let place: string;
-    if (result.sender.where === result.receiver.where) {
-      // 同じ場所の場合
-      place = result.sender.where;
-    } else {
-      // 異なる場所の場合（電話やビデオ通話）
-      place = `【1コマ目】${result.sender.where}、【2コマ目】${result.receiver.where}`;
-    }
-
     return {
-      place,
+      place: result.sender.where,
       senderRole: result.sender.role,
       senderVoice: result.sender.voice,
       receiverRole: result.receiver.role,

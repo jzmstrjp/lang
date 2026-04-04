@@ -30,7 +30,7 @@ function buildInstructions(instructions: string | null, role: string): string {
 
 // 音声設定は src/config/voice.ts で一元管理されるようになりました
 // この関数は後方互換性のために残していますが、新しいコードでは getVoiceFromGender を使用してください
-function speakerToVoice(speaker: VoiceGender): string {
+function speakerToVoice(speaker: VoiceGender) {
   return getVoiceFromGender(speaker);
 }
 
