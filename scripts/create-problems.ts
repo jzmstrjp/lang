@@ -93,18 +93,19 @@ async function createEnglishConversation(
 - 場所: ${sceneDraft.receiver.where}
 
 【重要な要件】
-1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。
+1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
-2. englishReply: 受信者の返答。自然で簡潔で適切な応答（8語以内が望ましい）。無駄に話題を広げないこと。ただし「へぇ、そうなんだ。なんか面白そうだね。」といった当たり障りのない内容は禁止です。何かしら具体的にenglishSentenceの内容に言及し、englishSentenceの内容を少し推測できるような文にすること。
+2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
+  - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
 
-【重要】以下のJSON形式で必ず回答してください（文章は例です。実際の文章は適宜変更してください）:
+【重要】以下のJSON形式で必ず回答してください
 
 \`\`\`json
 {
-  "englishSentence": "The meeting has been postponed until next week.",
-  "englishReply": "Got it. I'll update my calendar."
+  "englishSentence": "ここに英文が入る。",
+  "englishReply": "ここに返答の英文が入る。"
 }
 \`\`\``;
 
@@ -196,6 +197,7 @@ async function createJapaneseConversation(problemData: {
   console.log(`  🇯🇵 「${problemData.word}」の日本語会話生成中...`);
 
   const prompt = `以下の英会話を自然な日本語に翻訳してください。
+  機械音声で読み上げるための日本語文なので、括弧書きは含めないでください。
 
 【シーン情報】
 - いつ: ${problemData.when}
@@ -221,6 +223,7 @@ async function createJapaneseConversation(problemData: {
 2. japaneseReply: 受信者の英文を自然な日本語に翻訳
 3. シーンや役割に合った適切な日本語表現にすること
 4. 口語的で自然な会話になるようにすること
+5. 英文に含まれていない情報は日本語にも含めないこと。
 
 【重要】以下のJSON形式で必ず回答してください:
 
@@ -524,7 +527,7 @@ async function createIncorrectOptions(japaneseSentence: string): Promise<{
 }> {
   console.log(`  🎯 誤答選択肢を生成中...`);
 
-  const prompt = `以下の日本語文に対して、誤答選択肢を3つ生成してください。
+  const prompt = `以下の「正解の日本語文」に対して、誤答選択肢を3つ生成してください。クイズ用に使用します。
 
 【正解の日本語文】
 ${japaneseSentence}
@@ -532,11 +535,11 @@ ${japaneseSentence}
 【誤答選択肢の構成（必須）】
 1つ目: **馬鹿馬鹿しい選択肢**
   - 笑ってしまうような、ありえない内容
-  - 正解とは全く関係ない、面白おかしい文（例: たい焼きは本当に鯛を焼いて作っていることはご存知ですか？）
+  - 正解とは全く関係ない、面白おかしい文（例: たい焼きは本当に鯛を焼いて作っているらしいですが、ご存知でしたか？）
   - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
 
 2つ目: **明らかな間違い**
-  - 正解とは逆のことを言っている
+  - 正解とはズレた逆のことを言っている
   - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
 
 3つ目: **明らかな間違い**
@@ -544,9 +547,10 @@ ${japaneseSentence}
   - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
 
 【重要ルール】
-- 文字数が全然足りないのは禁止。冗長な言い回しにしてでも文字数を稼ぐこと
+- 文字数が全然足りないのは禁止。少し冗長な言い回しにしてでも（${japaneseSentence.length}文字）とほぼ同じ文字数にすること。
 - 正解の日本語文が疑問文の場合、3つとも全て疑問文を生成すること
-- 全て「明らかに正解ではない」とわかる内容にすること
+- 正解の文と似たような意味に取れる文は作らないこと。（それではクイズにならないため）
+- 3つとも、バラバラの単語から始まる文であること。ただし頭に「まずは」「実は」「ちなみに」「ところで」などを加えて誤魔化すのは禁止。自然に別の単語から始まる文を作ること。
 
 【重要】以下のJSON形式で必ず回答してください:
 

@@ -1,9 +1,4 @@
 export const words: string[] = [
-  'red tape',
-  'remit payment',
-  'run by',
-  'set aside',
-  'severance package',
   'solicit feedback',
   'take effect',
   'take over',
