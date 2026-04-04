@@ -95,7 +95,7 @@ async function createEnglishConversation(
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
-2. englishReply: 受信者の返答。簡潔で適切な応答（12語以内が望ましい）。無駄に話題を広げないこと。ただし「へぇ、そうなんだ。なんか面白そうだね。」といった当たり障りのない内容は禁止です。何かしら具体的にenglishSentenceの内容に言及し、englishSentenceの内容を少し推測できるような文にすること。
+2. englishReply: 受信者の返答。自然で簡潔で適切な応答（8語以内が望ましい）。無駄に話題を広げないこと。ただし「へぇ、そうなんだ。なんか面白そうだね。」といった当たり障りのない内容は禁止です。何かしら具体的にenglishSentenceの内容に言及し、englishSentenceの内容を少し推測できるような文にすること。
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
 
