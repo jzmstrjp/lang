@@ -349,37 +349,9 @@ export default function ProblemFlow({
         return;
       }
 
-      // 音声の場合は同期処理（新しいURLを状態に反映）
-      const newUrl = responseData[field];
-      if (newUrl) {
-        const updatedProblem: ProblemWithAudio = {
-          ...currentProblem,
-          [field]: newUrl,
-          audioReady: false,
-        };
-
-        setProblemQueue((prevQueue) =>
-          prevQueue.map((problem) =>
-            problem.id === targetProblemId
-              ? ({
-                  ...problem,
-                  [field]: newUrl,
-                  audioReady: false,
-                } as ProblemWithAudio)
-              : problem,
-          ),
-        );
-
-        // 管理者モーダルを閉じる
-        setAdminModalOpen(false);
-
-        // scene-entryフェーズに移って、新しい音声を再生
-        setPhase({
-          kind: 'scene-entry',
-          problem: updatedProblem,
-          setting: getCurrentSetting(),
-        });
-        void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
+      if (responseData[field]) {
+        const sentence = currentProblem.englishSentence;
+        window.location.href = `${pathname}?search=${encodeURIComponent(sentence)}`;
       }
     } catch (error) {
       console.error(`[ProblemFlow] ${field}再生成エラー:`, error);
