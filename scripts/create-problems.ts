@@ -74,12 +74,11 @@ async function createEnglishConversation(
 
   const noteInstruction = wordCountRange.note ? `\n   - **注意: ${wordCountRange.note}**` : '';
 
-  const prompt = `以下のシーン設定に基づいて、自然な英語の会話を作成してください。TOEICのリスニング問題に出てきそうな会話にしてください。
+  const prompt = `以下のシーン設定に基づいて、自然な英語の会話を作成してください。
 
 【シーン設定】
 - いつ: ${sceneDraft.when}
 - どのように: ${sceneDraft.how}
-- 使用する単語: ${sceneDraft.word}
 
 【送信者（英文を話す人）】
 - 役割: ${sceneDraft.sender.role}
@@ -93,19 +92,17 @@ async function createEnglishConversation(
 - 場所: ${sceneDraft.receiver.where}
 
 【重要な要件】
-1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
-   - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
-2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
-  - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
-  - 例: "Is this your bag?" に対して "No, I think it might belong to Mr. Yamada."
-3. 両方とも自然な口語表現で、実際の会話らしくすること。
+1. englishSentence: ${sceneDraft.word}
+2. englishReply: 受信者の返答。短い文であること。目安は7単語以内。
+  - 例: 「I can play the guitar.」に対して「いいなあ、私も弾けるようになりたいな」という意味の英文はOK。
+  - englishReplyを読めばenglishSentenceを予測できるような文にしてください。englishSentenceを誤解させるようなjapaneseReplyは作らないでください。 例えば I,m tired. に対して「うん、早く寝ようね」という意味の英文はNGです。sleepy的なenglishSentenceを想起してしまうからです。「そっか、たくさん運動したもんね」と言った意味の英文のほうが適切でしょう。 ただしオウム返しは禁止します。 「I like baseball.」に対して「へえ、野球好きなんだ」的な英文はは禁止。「へえ、どの野球チームが好きなの？」的な英文はOK
 4. 文脈に合った適切な内容にすること。
 
 【重要】以下のJSON形式で必ず回答してください
 
 \`\`\`json
 {
-  "englishSentence": "ここに英文が入る。",
+  "englishSentence": "${sceneDraft.word}",
   "englishReply": "ここに返答の英文が入る。"
 }
 \`\`\``;
@@ -898,13 +895,13 @@ async function generateProblemFromSceneDraft(
   };
 
   // 3. シーンプロンプト生成
-  const scenePromptResult = await createScenePrompt(dataWithJapanese);
-  totalInputTokens += scenePromptResult.tokenUsage.input_tokens;
-  totalOutputTokens += scenePromptResult.tokenUsage.output_tokens;
+  // const scenePromptResult = await createScenePrompt(dataWithJapanese);
+  // totalInputTokens += scenePromptResult.tokenUsage.input_tokens;
+  // totalOutputTokens += scenePromptResult.tokenUsage.output_tokens;
 
   const dataWithScenePrompt = {
     ...dataWithJapanese,
-    scenePrompt: scenePromptResult.result.scenePrompt,
+    scenePrompt: '', //scenePromptResult.result.scenePrompt,
   };
 
   // 4. 誤答選択肢生成
