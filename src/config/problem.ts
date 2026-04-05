@@ -1,6 +1,11 @@
-export type ProblemLength = 'short' | 'medium' | 'long';
+export type ProblemLength = 'kids' | 'short' | 'medium' | 'long';
 
 export const WORD_COUNT_RULES = {
+  kids: {
+    min: 2,
+    max: 5,
+    note: '中学1年生でも分かる単語・表現だけを使うこと。be動詞、一般動詞の現在形・過去形、can、do you〜? などの基本構文のみ使用可。関係代名詞、仮定法、完了形、受動態は使わないこと。難しい単語は絶対に使わないこと。',
+  },
   short: {
     min: 2,
     max: 6,

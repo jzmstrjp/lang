@@ -8,7 +8,7 @@ import { isAdminEmail } from '@/lib/auth/admin';
 import { fetchProblems } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 
-const validTypes = ['short', 'medium', 'long'] as const;
+const validTypes = ['kids', 'short', 'medium', 'long'] as const;
 
 type ProblemPageProps = {
   params: Promise<{ type: string }>;

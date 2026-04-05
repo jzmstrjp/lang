@@ -63,6 +63,7 @@ type SceneDraftWithVoice = {
 async function createEnglishConversation(
   sceneDraft: SceneDraftWithVoice,
   wordCountRange: { min: number; max: number; note?: string },
+  isKids = false,
 ): Promise<{
   result: {
     englishSentence: string;
@@ -74,7 +75,46 @@ async function createEnglishConversation(
 
   const noteInstruction = wordCountRange.note ? `\n   - **注意: ${wordCountRange.note}**` : '';
 
-  const prompt = `以下のシーン設定に基づいて、自然な英語の会話を作成してください。TOEICのリスニング問題に出てきそうな会話にしてください。
+  const prompt = isKids
+    ? `以下のシーン設定に基づいて、中学1年生の英語の教科書に出てきそうな、とても短くて簡単な英語の会話を作成してください。
+
+【シーン設定】
+- いつ: ${sceneDraft.when}
+- どのように: ${sceneDraft.how}
+- 使用する単語: ${sceneDraft.word}
+
+【送信者（英文を話す人）】
+- 役割: ${sceneDraft.sender.role}
+- 性別: ${sceneDraft.sender.voice === 'male' ? '男性' : '女性'}
+- 場所: ${sceneDraft.sender.where}
+- 意図: ${sceneDraft.sender.why}
+
+【受信者（返答する人）】
+- 役割: ${sceneDraft.receiver.role}
+- 性別: ${sceneDraft.receiver.voice === 'male' ? '男性' : '女性'}
+- 場所: ${sceneDraft.receiver.where}
+
+【重要な要件】
+1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
+   - **最重要: 必ず${wordCountRange.max}単語以内の短い文にすること。長い文は絶対に禁止。**${noteInstruction}
+   - 良い例: "Do you like cats?" (4単語), "Can you swim?" (3単語), "I like pizza." (3単語)
+   - 悪い例: "Do you want to go to the park with me after school?" (長すぎる)
+2. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
+  - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
+  - 例: "Are you hungry?" に対して "Yes, I want some pizza."
+3. 使用する文法は be動詞、一般動詞の現在形・過去形、can、疑問文(Do you/Is this/Can you/Did you)程度に限定すること。関係代名詞、仮定法、完了形、受動態は使わないこと。
+4. 両方とも自然な口語表現で、実際の会話らしくすること。
+5. 文脈に合った適切な内容にすること。
+
+【重要】以下のJSON形式で必ず回答してください
+
+\`\`\`json
+{
+  "englishSentence": "ここに英文が入る。",
+  "englishReply": "ここに返答の英文が入る。"
+}
+\`\`\``
+    : `以下のシーン設定に基づいて、自然な英語の会話を作成してください。TOEICのリスニング問題に出てきそうな会話にしてください。
 
 【シーン設定】
 - いつ: ${sceneDraft.when}
@@ -619,13 +659,16 @@ ${japaneseSentence}
 /**
  * OpenAI APIを使ってシーンの下書きを作成
  */
-async function createSceneDraft({
-  value,
-  genre,
-}: {
-  value: string;
-  genre: 'ビジネス' | '日常生活';
-}): Promise<{
+async function createSceneDraft(
+  {
+    value,
+    genre,
+  }: {
+    value: string;
+    genre: 'ビジネス' | '日常生活';
+  },
+  isKids = false,
+): Promise<{
   result: SceneDraft;
   tokenUsage: TokenUsage;
 }> {
@@ -636,7 +679,45 @@ async function createSceneDraft({
       ? '電話やビデオ通話も積極的に使用して良い。'
       : '基本的には対面を想定しているが、';
 
-  const prompt = `「${value}」というワード・フレーズを使って、${genre}系の会話シーンを作成してください。TOEICのリスニング問題に出てきそうなシーンにしてください。
+  const prompt = isKids
+    ? `「${value}」というワード・フレーズを使って、日常生活の会話シーンを作成してください。中学1年生の英語の教科書に出てきそうな、簡単で身近なシーンにしてください。
+
+【最重要ルール】
+- このシーンから生まれる英文は「${value}」をそのまま使った5単語以内の短い一言になります。
+- whyは「${value}」をそのまま口にする理由だけにしてください。余計な状況や追加の意図を盛り込まないこと。
+- 例: "good morning" → why: "朝の挨拶をしたい"（○）、why: "朝の挨拶をして、今日の予定を確認したい"（×：余計）
+
+【要件】
+- sender: 送信者の情報（こちらが「${value}」というワードを使用する人物）
+  - why: なぜこの発言をするのか（15文字程度）「${value}」という表現から必然的に導かれる動機を設定してください。できるだけシンプルに。（例: ワードが"good morning"なら「朝起きたので、挨拶をしたい」）
+  - role: 役割（例: 友人、家族、先生、店員、クラスメート）※ビジネスシーンは禁止
+  - where: どこにいるか具体的に（例: 教室、自宅のリビング、コンビニのレジ前、公園）
+- how: どのように会話するか（基本的に対面）**音声会話のみ想定。チャット、メール、LINEなどの文字ベースは禁止**
+- receiver: 受信者の情報
+  - role: 役割（例: 友人、家族、先生、店員、クラスメート）
+  - where: どこにいるか具体的に（対面での会話の場合は、senderと同じ場所または近い場所にすること）
+- when: いつ会話するか（例: 放課後、週末の午前、夕食の時間）
+- word: 使用する単語・フレーズ（必ず「${value}」を設定）
+
+【重要】以下のJSON形式で必ず回答してください:
+
+\`\`\`json
+{
+  "word": "good morning",
+  "sender": {
+    "why": "朝の挨拶をしたい",
+    "role": "クラスメート",
+    "where": "教室の入り口"
+  },
+  "how": "対面",
+  "receiver": {
+    "role": "クラスメート",
+    "where": "教室の自分の席"
+  },
+  "when": "平日の朝"
+}
+\`\`\``
+    : `「${value}」というワード・フレーズを使って、${genre}系の会話シーンを作成してください。TOEICのリスニング問題に出てきそうなシーンにしてください。
 
 【要件】
 - sender: 送信者の情報（こちらが「${value}」というワードを使用する人物）
@@ -832,6 +913,7 @@ async function generateProblemFromSceneDraft(
   sceneDraft: SceneDraftWithVoice,
   wordRange: { min: number; max: number; note?: string },
   problemIndex: number,
+  isKids = false,
 ): Promise<{
   result: {
     when: string;
@@ -862,7 +944,7 @@ async function generateProblemFromSceneDraft(
   let totalOutputTokens = 0;
 
   // 1. 英会話生成
-  const conversationResult = await createEnglishConversation(sceneDraft, wordRange);
+  const conversationResult = await createEnglishConversation(sceneDraft, wordRange, isKids);
   totalInputTokens += conversationResult.tokenUsage.input_tokens;
   totalOutputTokens += conversationResult.tokenUsage.output_tokens;
 
@@ -940,6 +1022,7 @@ async function generateProblemFromSceneDraft(
  */
 async function generateSceneDrafts(
   wordsWithGenres: { value: string; genre: 'ビジネス' | '日常生活' }[],
+  isKids = false,
 ): Promise<{
   sceneDrafts: SceneDraftWithVoice[];
   tokenUsage: TokenUsage;
@@ -951,7 +1034,7 @@ async function generateSceneDrafts(
   let totalOutputTokens = 0;
 
   for (const wordWithGenre of wordsWithGenres) {
-    const sceneDraftResult = await createSceneDraft(wordWithGenre);
+    const sceneDraftResult = await createSceneDraft(wordWithGenre, isKids);
 
     // voiceをランダムに設定
     const senderVoice: 'male' | 'female' = Math.random() < 0.5 ? 'male' : 'female';
@@ -989,6 +1072,7 @@ async function generateSceneDrafts(
 async function generateProblemsInSingleMode(
   sceneDrafts: SceneDraftWithVoice[],
   problemType: ProblemLength,
+  isKids = false,
 ): Promise<{
   problems: Array<{
     when: string;
@@ -1023,7 +1107,12 @@ async function generateProblemsInSingleMode(
   let totalOutputTokens = 0;
 
   for (const [index, sceneDraft] of sceneDrafts.entries()) {
-    const problemResult = await generateProblemFromSceneDraft(sceneDraft, wordRange, index + 1);
+    const problemResult = await generateProblemFromSceneDraft(
+      sceneDraft,
+      wordRange,
+      index + 1,
+      isKids,
+    );
     problems.push(problemResult.result);
     totalInputTokens += problemResult.tokenUsage.input_tokens;
     totalOutputTokens += problemResult.tokenUsage.output_tokens;
@@ -1137,6 +1226,7 @@ async function finalizeAndSave(
   }>,
   selectedWords: readonly string[],
   tokenUsage: TokenUsage,
+  isKids = false,
 ): Promise<void> {
   const totalProblems = problems.length;
 
@@ -1180,7 +1270,7 @@ async function finalizeAndSave(
 
   // SeedProblemDataに変換
   console.log('\n📦 SeedProblemDataに変換中...');
-  const seedProblems = convertToSeedProblemData(problems);
+  const seedProblems = convertToSeedProblemData(problems, isKids);
 
   // ファイルを保存
   const fileNumber = getNextProblemNumber();
@@ -1215,9 +1305,12 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength | 'all'; c
     console.log(`  2. medium (${WORD_COUNT_RULES.medium.min}-${WORD_COUNT_RULES.medium.max}単語)`);
     console.log(`  3. long   (${WORD_COUNT_RULES.long.min}-${WORD_COUNT_RULES.long.max}単語)`);
     console.log(`  4. all    (short + medium + long を一度に生成)`);
+    console.log(
+      `  5. kids   (${WORD_COUNT_RULES.kids.min}-${WORD_COUNT_RULES.kids.max}単語 / 中学1年レベルの日常会話のみ)`,
+    );
     console.log('');
 
-    rl.question('選択してください [1/2/3/4]: ', (typeAnswer) => {
+    rl.question('選択してください [1/2/3/4/5]: ', (typeAnswer) => {
       const trimmed = typeAnswer.trim();
       let selectedType: ProblemLength | 'all';
 
@@ -1229,6 +1322,8 @@ async function promptProblemSettings(): Promise<{ type: ProblemLength | 'all'; c
         selectedType = 'long';
       } else if (trimmed === '4' || trimmed.toLowerCase() === 'all') {
         selectedType = 'all';
+      } else if (trimmed === '5' || trimmed.toLowerCase() === 'kids') {
+        selectedType = 'kids';
       } else {
         console.log('無効な選択です。デフォルトの medium を使用します。\n');
         selectedType = 'medium';
@@ -1318,6 +1413,7 @@ function convertToSeedProblemData(
     };
     incorrectOptions: string[];
   }>,
+  isKids = false,
 ): SeedProblemData[] {
   return completeResults.map((result) => {
     return {
@@ -1334,7 +1430,7 @@ function convertToSeedProblemData(
       senderVoiceInstruction: null,
       receiverVoiceInstruction: null,
       incorrectOptions: result.incorrectOptions,
-      difficultyLevel: null,
+      difficultyLevel: isKids ? 1 : null,
     };
   });
 }
@@ -1459,16 +1555,29 @@ async function main() {
 
     // 指定された数の単語を取得
     const selectedWords = words.slice(0, count);
+    const isKids = problemType === 'kids';
 
-    // ジャンル分けを実行
-    const { result: wordsWithGenres, tokenUsage: genreTokenUsage } =
-      await wordsToGenres(selectedWords);
+    // ジャンル分けを実行（kids は全て日常生活に固定）
+    let wordsWithGenres: { value: string; genre: 'ビジネス' | '日常生活' }[];
+    let genreTokenUsage: TokenUsage;
+
+    if (isKids) {
+      wordsWithGenres = selectedWords.map((w) => ({ value: w, genre: '日常生活' as const }));
+      genreTokenUsage = { input_tokens: 0, output_tokens: 0 };
+      console.log('🧒 kids モード: ジャンル分けをスキップし、全て日常生活に固定します');
+    } else {
+      const genreResult = await wordsToGenres(selectedWords);
+      wordsWithGenres = genreResult.result;
+      genreTokenUsage = genreResult.tokenUsage;
+    }
 
     console.log(`\n📝 取得した${count}個の単語:\n`);
 
     // 2. シーンドラフト生成（共通）
-    const { sceneDrafts, tokenUsage: sceneDraftTokenUsage } =
-      await generateSceneDrafts(wordsWithGenres);
+    const { sceneDrafts, tokenUsage: sceneDraftTokenUsage } = await generateSceneDrafts(
+      wordsWithGenres,
+      isKids,
+    );
 
     let totalInputTokens = genreTokenUsage.input_tokens + sceneDraftTokenUsage.input_tokens;
     let totalOutputTokens = genreTokenUsage.output_tokens + sceneDraftTokenUsage.output_tokens;
@@ -1483,8 +1592,8 @@ async function main() {
       allProblems = result.problems;
       problemTokenUsage = result.tokenUsage;
     } else {
-      // 従来モード: 各単語から1問
-      const result = await generateProblemsInSingleMode(sceneDrafts, problemType);
+      // 従来モード / kidsモード: 各単語から1問
+      const result = await generateProblemsInSingleMode(sceneDrafts, problemType, isKids);
       allProblems = result.problems;
       problemTokenUsage = result.tokenUsage;
     }
@@ -1493,10 +1602,15 @@ async function main() {
     totalOutputTokens += problemTokenUsage.output_tokens;
 
     // 4. 共通の後処理（統計・保存・クリーンアップ）
-    await finalizeAndSave(allProblems, selectedWords, {
-      input_tokens: totalInputTokens,
-      output_tokens: totalOutputTokens,
-    });
+    await finalizeAndSave(
+      allProblems,
+      selectedWords,
+      {
+        input_tokens: totalInputTokens,
+        output_tokens: totalOutputTokens,
+      },
+      isKids,
+    );
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);
     process.exit(1);

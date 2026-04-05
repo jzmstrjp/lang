@@ -48,12 +48,13 @@ function analyzeWordCountDistribution(seedData: SeedProblemData[]): void {
 
   // WORD_COUNT_RULESを使って動的に統計情報を作成
   const stats: Record<ProblemLength, { count: number; example?: string }> = {
+    kids: { count: 0 },
     short: { count: 0 },
     medium: { count: 0 },
     long: { count: 0 },
   };
 
-  (['short', 'medium', 'long'] as ProblemLength[]).forEach((type) => {
+  (['kids', 'short', 'medium', 'long'] as ProblemLength[]).forEach((type) => {
     const rule = WORD_COUNT_RULES[type];
     const filtered = distribution.filter((d) => d.wordCount >= rule.min && d.wordCount <= rule.max);
     stats[type] = {
