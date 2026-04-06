@@ -563,7 +563,10 @@ async function adjustIncorrectOptionsLength(
 /**
  * OpenAI APIを使って誤答選択肢を生成
  */
-async function createIncorrectOptions(japaneseSentence: string): Promise<{
+async function createIncorrectOptions(
+  japaneseSentence: string,
+  isKids = false,
+): Promise<{
   result: string[];
   tokenUsage: TokenUsage;
 }> {
@@ -581,7 +584,8 @@ ${japaneseSentence}
   - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
 
 2つ目: **明らかな間違い**
-  - 正解とはズレた逆のことを言っている
+  - 正解と微妙に違う話題。
+    - 例: 正解が「いつも夕飯は自分で作るの？」だとしたら「朝食はほとんど食べないの？」など
   - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
 
 3つ目: **明らかな間違い**
@@ -589,7 +593,7 @@ ${japaneseSentence}
   - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
 
 【重要ルール】
-- 文字数が全然足りないのは禁止。少し冗長な言い回しにしてでも（${japaneseSentence.length}文字）とほぼ同じ文字数にすること。
+${!isKids && `- 文字数が全然足りないのは禁止。少し冗長な言い回しにしてでも（${japaneseSentence.length}文字）とほぼ同じ文字数にすること。`}
 - 正解の日本語文が疑問文の場合、3つとも全て疑問文を生成すること
 - 正解の文と似たような意味に取れる文は作らないこと。（それではクイズにならないため）
 - 3つとも、バラバラの単語から始まる文であること。ただし頭に「まずは」「実は」「ちなみに」「ところで」などを加えて誤魔化すのは禁止。自然に別の単語から始まる文を作ること。
@@ -600,7 +604,7 @@ ${japaneseSentence}
 \`\`\`json
 [
   "馬鹿馬鹿しい選択肢（1つ目）",
-  "逆の内容（2つ目）",
+  "微妙に違う話題（2つ目）",
   "明らかな間違い（3つ目）"
 ]
 \`\`\``;
@@ -994,6 +998,7 @@ async function generateProblemFromSceneDraft(
   // 4. 誤答選択肢生成
   const incorrectOptionsResult = await createIncorrectOptions(
     dataWithScenePrompt.sender.japaneseSentence,
+    isKids,
   );
   totalInputTokens += incorrectOptionsResult.tokenUsage.input_tokens;
   totalOutputTokens += incorrectOptionsResult.tokenUsage.output_tokens;
