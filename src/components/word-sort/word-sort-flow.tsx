@@ -14,10 +14,8 @@ import {
 } from '@/lib/word-sort-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
-import { StartButton } from '@/components/ui/start-button';
 
 type Phase =
-  | { kind: 'start'; problem: ProblemWithAudio }
   | {
       kind: 'quiz';
       problem: ProblemWithAudio;
@@ -50,9 +48,9 @@ export default function WordSortFlow({ initialProblem }: WordSortFlowProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [phase, setPhase] = useState<Phase>({
-    kind: 'start',
-    problem: initialProblem,
+  const [phase, setPhase] = useState<Phase>(() => {
+    const sortProblem = generateWordSortProblem(initialProblem);
+    return { kind: 'quiz', problem: initialProblem, sortProblem, incorrectCount: 0 };
   });
 
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
@@ -79,14 +77,11 @@ export default function WordSortFlow({ initialProblem }: WordSortFlowProps) {
     }
   }, [problemQueue.length]);
 
-  const handleStart = () => {
-    if (phase.kind !== 'start') return;
-
-    const sortProblem = generateWordSortProblem(phase.problem);
-    setPhase({ kind: 'quiz', problem: phase.problem, sortProblem, incorrectCount: 0 });
-
+  const didInitRef = useRef(false);
+  if (!didInitRef.current) {
+    didInitRef.current = true;
     void refillQueueIfNeeded();
-  };
+  }
 
   const handleSubmit = (selectedTokens: WordToken[]) => {
     if (phase.kind !== 'quiz') return;
@@ -152,7 +147,6 @@ export default function WordSortFlow({ initialProblem }: WordSortFlowProps) {
 
   return (
     <div className="max-w-full">
-      {phase.kind === 'start' && <StartView onStart={handleStart} />}
       {phase.kind === 'quiz' && (
         <QuizView problem={phase.problem} sortProblem={phase.sortProblem} onSubmit={handleSubmit} />
       )}
@@ -169,28 +163,6 @@ export default function WordSortFlow({ initialProblem }: WordSortFlowProps) {
       {phase.kind === 'giveUp' && (
         <GiveUpView sortProblem={phase.sortProblem} onNextProblem={handleNextProblem} />
       )}
-    </div>
-  );
-}
-
-// ─── Start ───────────────────────────────────────────────────────────────────
-
-type StartViewProps = { onStart: () => void };
-
-function StartView({ onStart }: StartViewProps) {
-  return (
-    <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <StartButton
-          error={null}
-          handleStart={onStart}
-          disabled={false}
-          autoFocus
-          showAudioWarning={false}
-        >
-          単語並び替えを始める
-        </StartButton>
-      </div>
     </div>
   );
 }

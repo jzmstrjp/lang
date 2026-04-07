@@ -3,7 +3,7 @@ import { HeaderPortal } from '@/components/layout/header-portal';
 import WordSortFlow from '@/components/word-sort/word-sort-flow';
 import type { ProblemWithAudio } from '@/lib/problem-service';
 import { fetchProblems } from '@/lib/problem-service';
-import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 type ProblemData = ProblemWithAudio | null;
 
@@ -51,7 +51,7 @@ export default async function WordSortPage({ searchParams }: WordSortPageProps) 
   return (
     <>
       <HeaderPortal>narabi-kae</HeaderPortal>
-      <Suspense fallback={<ProblemLoadingPlaceholder message="問題を取得中..." />}>
+      <Suspense fallback={<LoadingSpinner label="問題を取得中..." className="mt-20" />}>
         <WordSortContent searchQuery={searchQuery} initialProblemPromise={initialProblemPromise} />
       </Suspense>
     </>

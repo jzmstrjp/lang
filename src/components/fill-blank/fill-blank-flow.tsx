@@ -8,13 +8,8 @@ import type { ProblemWithAudio } from '@/lib/problem-service';
 import { generateBlankProblem, type BlankProblemData } from '@/lib/fill-blank-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
-import { StartButton } from '@/components/ui/start-button';
 
 type Phase =
-  | {
-      kind: 'start';
-      problem: ProblemWithAudio;
-    }
   | {
       kind: 'quiz';
       problem: ProblemWithAudio;
@@ -48,9 +43,9 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [phase, setPhase] = useState<Phase>({
-    kind: 'start',
-    problem: initialProblem,
+  const [phase, setPhase] = useState<Phase>(() => {
+    const blankProblem = generateBlankProblem(initialProblem);
+    return { kind: 'quiz', problem: initialProblem, blankProblem };
   });
 
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
@@ -79,18 +74,11 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
     }
   }, [problemQueue.length]);
 
-  const handleStart = () => {
-    if (phase.kind !== 'start') return;
-
-    const blankProblem = generateBlankProblem(phase.problem);
-    setPhase({
-      kind: 'quiz',
-      problem: phase.problem,
-      blankProblem,
-    });
-
+  const didInitRef = useRef(false);
+  if (!didInitRef.current) {
+    didInitRef.current = true;
     void refillQueueIfNeeded();
-  };
+  }
 
   const handleOptionSelect = (selectedIndex: number) => {
     if (phase.kind !== 'quiz') return;
@@ -159,7 +147,6 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
 
   return (
     <div className="max-w-full">
-      {phase.kind === 'start' && <StartView onStart={handleStart} />}
       {phase.kind === 'quiz' && (
         <QuizView blankProblem={phase.blankProblem} onSelectOption={handleOptionSelect} />
       )}
@@ -173,28 +160,6 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
         />
       )}
       {phase.kind === 'incorrect' && <IncorrectView onRetry={handleRetry} />}
-    </div>
-  );
-}
-
-type StartViewProps = {
-  onStart: () => void;
-};
-
-function StartView({ onStart }: StartViewProps) {
-  return (
-    <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
-      <div className="absolute inset-0 flex items-center justify-center">
-        <StartButton
-          error={null}
-          handleStart={onStart}
-          disabled={false}
-          autoFocus
-          showAudioWarning={false}
-        >
-          単語穴埋めを始める
-        </StartButton>
-      </div>
     </div>
   );
 }
