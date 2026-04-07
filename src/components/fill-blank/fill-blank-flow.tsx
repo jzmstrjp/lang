@@ -5,6 +5,7 @@ import { ExternalLink } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProblemWithAudio } from '@/lib/problem-service';
+import type { DifficultyLevel } from '@/config/problem';
 import { generateBlankProblem, type BlankProblemData } from '@/lib/fill-blank-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
@@ -33,9 +34,10 @@ type ApiProblemsResponse = {
 
 type FillBlankFlowProps = {
   initialProblem: ProblemWithAudio;
+  difficultyLevel?: DifficultyLevel;
 };
 
-export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
+export default function FillBlankFlow({ initialProblem, difficultyLevel }: FillBlankFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-fill-blank', 0);
 
   const searchParams = useSearchParams();
@@ -59,7 +61,9 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
 
     try {
       // 補充時は常に検索なしで取得
-      const response = await fetch('/api/problems?limit=10', { cache: 'no-store' });
+      const params = new URLSearchParams({ limit: '10' });
+      if (difficultyLevel) params.set('difficultyLevel', difficultyLevel);
+      const response = await fetch(`/api/problems?${params}`, { cache: 'no-store' });
 
       if (response.ok) {
         const data: ApiProblemsResponse = await response.json();
@@ -72,7 +76,7 @@ export default function FillBlankFlow({ initialProblem }: FillBlankFlowProps) {
     } finally {
       isPrefetchingRef.current = false;
     }
-  }, [problemQueue.length]);
+  }, [problemQueue.length, difficultyLevel]);
 
   const didInitRef = useRef(false);
   if (!didInitRef.current) {

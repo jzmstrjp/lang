@@ -1,59 +1,37 @@
-import { Suspense } from 'react';
+import Link from 'next/link';
 import { HeaderPortal } from '@/components/layout/header-portal';
-import FillBlankFlow from '@/components/fill-blank/fill-blank-flow';
-import type { ProblemWithAudio } from '@/lib/problem-service';
-import { fetchProblems } from '@/lib/problem-service';
-import LoadingSpinner from '@/components/ui/loading-spinner';
+import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
+import type { DifficultyLevel } from '@/config/problem';
 
-type ProblemData = ProblemWithAudio | null;
+const LEVELS: { level: DifficultyLevel; description: string }[] = [
+  { level: 'kids', description: '子ども向け' },
+  { level: 'non_kids', description: 'おとな向け' },
+];
 
-type FillBlankPageProps = {
-  searchParams: Promise<{ search?: string }>;
-};
-
-function loadInitialProblem({ searchQuery }: { searchQuery?: string }): Promise<ProblemData> {
-  return (async () => {
-    // 難易度フィルタなしで全問題から1件取得
-    const { problems } = await fetchProblems({
-      limit: 1,
-      search: searchQuery,
-    });
-    return problems[0] ?? null;
-  })();
-}
-
-async function FillBlankContent({
-  searchQuery,
-  initialProblemPromise,
-}: {
-  searchQuery?: string;
-  initialProblemPromise: Promise<ProblemData>;
-}) {
-  const initialProblem = await initialProblemPromise;
-
-  if (!initialProblem) {
-    return (
-      <p className="mt-10 text-sm text-rose-500 text-center">
-        {searchQuery
-          ? '検索条件に一致する問題が見つかりませんでした。'
-          : '問題が見つかりませんでした。'}
-      </p>
-    );
-  }
-
-  return <FillBlankFlow initialProblem={initialProblem} />;
-}
-
-export default async function FillBlankPage({ searchParams }: FillBlankPageProps) {
-  const searchQuery = (await searchParams).search?.trim();
-  const initialProblemPromise = loadInitialProblem({ searchQuery });
-
+export default function FillBlankPage() {
   return (
     <>
       <HeaderPortal>ana-ume</HeaderPortal>
-      <Suspense fallback={<LoadingSpinner label="問題を取得中..." className="mt-20" />}>
-        <FillBlankContent searchQuery={searchQuery} initialProblemPromise={initialProblemPromise} />
-      </Suspense>
+      <div className="mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 text-[var(--text)]">
+        <h1 className="text-2xl font-bold">単語穴埋め</h1>
+        <nav className="grid w-full grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-lg">
+          {LEVELS.map(({ level, description }) => {
+            const displayName = DIFFICULTY_LEVEL_RULES[level].displayName;
+            return (
+              <Link
+                key={level}
+                href={`/ana-ume/level/${level}`}
+                className="flex w-full flex-col gap-2 items-center rounded-2xl border px-5 py-6 shadow-sm shadow-[var(--border)]/40 transition border-[var(--course-link-outlined-border)] bg-[var(--course-link-outlined-bg)] text-[var(--course-link-outlined-text)] hover:border-[var(--course-link-outlined-hover-border)] hover:bg-[var(--course-link-outlined-hover-bg)] hover:text-[var(--course-link-outlined-hover-text)]"
+              >
+                <span className="text-2xl sm:text-xl font-semibold">{displayName}</span>
+                <span className="text-sm font-medium text-[var(--course-link-outlined-secondary-text)]">
+                  {description}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     </>
   );
 }
