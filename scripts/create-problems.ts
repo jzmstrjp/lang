@@ -362,7 +362,7 @@ async function createScenePrompt(problemData: {
 }> {
   console.log(`  🎨 「${problemData.word}」のシーンプロンプト生成中...`);
 
-  const prompt = `以下の会話シーンについて、画像生成AIを使用して実写の2コマ漫画を生成します。画像生成AIに渡すための場面説明を200文字程度の日本語で作成してください。
+  const prompt = `以下の会話シーンについて、画像生成AIを使用して実写の2コマ画像を生成します。画像生成AIに渡すための場面説明を200文字程度の日本語で作成してください。
 
 【シーン情報】
 - いつ: ${problemData.when}
