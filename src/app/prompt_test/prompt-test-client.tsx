@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { SceneImage } from '@/components/ui/scene-image';
 import type { GeneratedProblem } from '@/types/generated-problem';
+import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 
 const CORRECT_INDEX = 0;
 
-type ProblemType = 'all' | 'short' | 'medium' | 'long';
+type ProblemType = 'all' | ProblemLength;
 
 type AssetsData = {
   audio: {
@@ -142,9 +143,16 @@ export default function PromptTestClient() {
                   className="min-w-[200px] px-4 py-2 border-2 border-[var(--border)] rounded-xl bg-[var(--background)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer shadow-sm"
                 >
                   <option value="all">全て</option>
-                  <option value="short">shortのみ (2-9語)</option>
-                  <option value="medium">mediumのみ (10-15語)</option>
-                  <option value="long">longのみ (16-30語)</option>
+                  {(Object.keys(WORD_COUNT_RULES) as ProblemLength[]).map((key) => {
+                    const rule = WORD_COUNT_RULES[key];
+                    const isKids = key === 'kids';
+                    const label = isKids ? `${key}のみ` : `${key}のみ (${rule.min}-${rule.max}語)`;
+                    return (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>

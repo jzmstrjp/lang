@@ -5,7 +5,12 @@ import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
 import { generateImageBuffer, generateImageWithCharactersBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
-import { countWords, WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
+import {
+  countWords,
+  WORD_COUNT_RULES,
+  DIFFICULTY_LEVEL_RULES,
+  type ProblemLength,
+} from '@/config/problem';
 import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
@@ -88,12 +93,29 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
  */
 async function getRandomProblemFromSeed(type?: ProblemLength): Promise<GeneratedProblem> {
   const seedProblems = await loadSeedProblems();
+  const isKids = type === 'kids';
+  const kidsLevelRange = DIFFICULTY_LEVEL_RULES.kids;
+
   const filteredProblems = type
-    ? seedProblems.filter((p) => {
-        const wordCount = countWords(p.englishSentence);
-        const rule = WORD_COUNT_RULES[type];
-        return wordCount >= rule.min && wordCount <= rule.max;
-      })
+    ? isKids
+      ? seedProblems.filter(
+          (p) =>
+            p.difficultyLevel != null &&
+            p.difficultyLevel >= kidsLevelRange.min &&
+            p.difficultyLevel <= kidsLevelRange.max,
+        )
+      : seedProblems.filter((p) => {
+          if (
+            p.difficultyLevel != null &&
+            p.difficultyLevel >= kidsLevelRange.min &&
+            p.difficultyLevel <= kidsLevelRange.max
+          ) {
+            return false;
+          }
+          const wordCount = countWords(p.englishSentence);
+          const rule = WORD_COUNT_RULES[type];
+          return wordCount >= rule.min && wordCount <= rule.max;
+        })
     : seedProblems;
 
   if (filteredProblems.length === 0) {

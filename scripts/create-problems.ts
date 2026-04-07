@@ -522,6 +522,76 @@ async function extendShortOption(
 }
 
 /**
+ * 長い文を指定された文字数に縮める
+ */
+async function shortenLongOption(
+  originalText: string,
+  targetLength: number,
+  problemIndex: number,
+): Promise<{
+  result: string;
+  tokenUsage: TokenUsage;
+}> {
+  const charsToRemove = originalText.length - targetLength;
+
+  if (charsToRemove <= 0) {
+    return {
+      result: originalText,
+      tokenUsage: { input_tokens: 0, output_tokens: 0 },
+    };
+  }
+
+  try {
+    const userPrompt = `${originalText}
+
+上記の文章から「早く」「大声で」「ちゃんと」など、副詞的なワードを1つ削ることで、${targetLength - 1}文字の文章にしてください。必要であれば2ワード以上削ってもいいです。最後は「。」または「？」で終わること。そしてその文章だけを返してください。`;
+
+    const response = await openai.responses.create({
+      model: TEXT_MODEL,
+      input: [{ role: 'user', content: userPrompt }],
+      temperature: 0.7,
+    });
+
+    if (response.status === 'incomplete') {
+      throw new Error('GPTからのレスポンスが完了しませんでした');
+    }
+
+    const content = response.output_text;
+    if (!content) {
+      throw new Error('GPTからのレスポンスが空です');
+    }
+
+    const shortenedText = content.trim();
+
+    if (shortenedText.length < originalText.length) {
+      console.log(
+        `  ✅ ${problemIndex}問目: 選択肢を縮めました（${originalText.length}文字 → ${shortenedText.length}文字）`,
+      );
+      return {
+        result: shortenedText,
+        tokenUsage: {
+          input_tokens: response.usage?.input_tokens ?? 0,
+          output_tokens: response.usage?.output_tokens ?? 0,
+        },
+      };
+    } else {
+      return {
+        result: originalText,
+        tokenUsage: {
+          input_tokens: response.usage?.input_tokens ?? 0,
+          output_tokens: response.usage?.output_tokens ?? 0,
+        },
+      };
+    }
+  } catch {
+    return {
+      result: originalText,
+      tokenUsage: { input_tokens: 0, output_tokens: 0 },
+    };
+  }
+}
+
+/**
  * incorrectOptionsの長さをチェックし、必要に応じて調整する
  */
 async function adjustIncorrectOptionsLength(
@@ -534,31 +604,49 @@ async function adjustIncorrectOptionsLength(
 }> {
   const japaneseSentenceLength = japaneseSentence.length;
 
-  // 3つ全てがjapaneseSentenceより短いかチェック
   const allShorter = incorrectOptions.every((opt) => opt.length < japaneseSentenceLength);
+  const allLonger = incorrectOptions.every((opt) => opt.length > japaneseSentenceLength);
 
-  if (!allShorter) {
+  if (!allShorter && !allLonger) {
     return {
       result: incorrectOptions,
       tokenUsage: { input_tokens: 0, output_tokens: 0 },
     };
   }
 
+  if (allShorter) {
+    console.log(
+      `  ⚠️ ${problemIndex}問目: incorrectOptionsが全て短いため、調整します（基準: ${japaneseSentenceLength}文字）`,
+    );
+
+    incorrectOptions.sort((a, b) => a.length - b.length);
+    const shortest = incorrectOptions.shift()!;
+    console.log(`  📌 ${problemIndex}問目: 選択肢（${shortest.length}文字）を伸ばします`);
+
+    const targetLength = japaneseSentenceLength + 3;
+    const extendResult = await extendShortOption(shortest, targetLength, problemIndex);
+
+    return {
+      result: [...incorrectOptions, extendResult.result],
+      tokenUsage: extendResult.tokenUsage,
+    };
+  }
+
+  // allLonger: 全て長い → 最長のものを縮める
   console.log(
-    `  ⚠️ ${problemIndex}問目: incorrectOptionsが全て短いため、調整します（基準: ${japaneseSentenceLength}文字）`,
+    `  ⚠️ ${problemIndex}問目: incorrectOptionsが全て長いため、調整します（基準: ${japaneseSentenceLength}文字）`,
   );
 
-  // 短い順にソートして先頭を取り出す
-  incorrectOptions.sort((a, b) => a.length - b.length);
-  const shortest = incorrectOptions.shift()!;
-  console.log(`  📌 ${problemIndex}問目: 選択肢（${shortest.length}文字）を伸ばします`);
+  incorrectOptions.sort((a, b) => b.length - a.length);
+  const longest = incorrectOptions.shift()!;
+  console.log(`  📌 ${problemIndex}問目: 選択肢（${longest.length}文字）を縮めます`);
 
-  const targetLength = japaneseSentenceLength + 3;
-  const extendResult = await extendShortOption(shortest, targetLength, problemIndex);
+  const targetLength = Math.max(japaneseSentenceLength - 3, 5);
+  const shortenResult = await shortenLongOption(longest, targetLength, problemIndex);
 
   return {
-    result: [...incorrectOptions, extendResult.result],
-    tokenUsage: extendResult.tokenUsage,
+    result: [...incorrectOptions, shortenResult.result],
+    tokenUsage: shortenResult.tokenUsage,
   };
 }
 
@@ -583,19 +671,19 @@ ${japaneseSentence}
 1つ目: **馬鹿馬鹿しい選択肢**
   - 笑ってしまうような、ありえない内容
   - 正解とは全く関係ない、面白おかしい文（例: たい焼きは本当に鯛を焼いて作っているらしいですが、ご存知でしたか？）
-  - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
+  - 文字数: 正解（${japaneseSentence.length}文字）と同じ
 
 2つ目: **明らかな間違い**
   - 正解と微妙に違う話題。
     - 例: 正解が「いつも夕飯は自分で作るの？」だとしたら「朝食はほとんど食べないの？」など
-  - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
+  - 文字数: 正解（${japaneseSentence.length}文字）と同じ
 
 3つ目: **明らかな間違い**
   - かなり無関係な内容
-  - 文字数: 正解（${japaneseSentence.length}文字）とほぼ同じ
+  - 文字数: 正解（${japaneseSentence.length}文字）と同じ
 
 【重要ルール】
-${!isKids && `- 文字数が全然足りないのは禁止。少し冗長な言い回しにしてでも（${japaneseSentence.length}文字）とほぼ同じ文字数にすること。`}
+${!isKids && `- 文字数が全然足りないのは禁止。少し冗長な言い回しにしてでも（${japaneseSentence.length}文字）と同じ文字数にすること。`}
 - 正解の日本語文が疑問文の場合、3つとも全て疑問文を生成すること
 - 正解の文と似たような意味に取れる文は作らないこと。（それではクイズにならないため）
 - 3つとも、バラバラの単語から始まる文であること。ただし頭に「まずは」「実は」「ちなみに」「ところで」などを加えて誤魔化すのは禁止。自然に別の単語から始まる文を作ること。
