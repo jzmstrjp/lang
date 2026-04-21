@@ -4,7 +4,7 @@ import type { ChatModel } from 'openai/resources/shared';
 export const TEXT_MODEL: ChatModel = 'gpt-4.1';
 
 export const IMAGE_MODEL_SETTING = {
-  model: 'gpt-image-1.5',
+  model: 'gpt-image-2',
   size: '1024x1536',
   quality: 'low',
 } as const satisfies Omit<ImageGenerateParams, 'prompt'>;
