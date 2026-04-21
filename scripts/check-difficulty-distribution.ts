@@ -43,7 +43,9 @@ async function main() {
     console.log('📊 集計結果\n');
 
     // レベル1〜10を表示
-    const levelStats = stats.filter((s) => s.level !== null).sort((a, b) => a.level! - b.level!);
+    const levelStats = stats
+      .filter((s) => s.level !== null)
+      .toSorted((a, b) => a.level! - b.level!);
     levelStats.forEach((stat) => {
       const levelStr = `レベル ${stat.level}`;
       const bar = '█'.repeat(Math.ceil(stat.count / 10));

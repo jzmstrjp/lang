@@ -218,7 +218,7 @@ async function main() {
     console.log(`✅ 本当に不足している語彙: ${notInLong.length}個\n`);
 
     // 結果をソート
-    const sortedVocabulary = notInLong.sort((a, b) => {
+    const sortedVocabulary = notInLong.toSorted((a, b) => {
       // 単語数でソート（単語→フレーズの順）
       const aWordCount = a.split(' ').length;
       const bWordCount = b.split(' ').length;
@@ -269,7 +269,7 @@ async function main() {
     console.log(`📊 合計: ${allWords.length}個`);
 
     // 語数の少ない順でソート（単語→イディオム、同じ語数ならアルファベット順）
-    const sortedAllWords = allWords.sort((a, b) => {
+    const sortedAllWords = allWords.toSorted((a, b) => {
       const aWordCount = a.split(' ').length;
       const bWordCount = b.split(' ').length;
       if (aWordCount !== bWordCount) {

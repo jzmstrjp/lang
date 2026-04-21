@@ -46,7 +46,7 @@ async function loadSeedProblems(): Promise<SeedProblemData[]> {
       (entry) => entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts'),
     )
     .map((entry) => entry.name)
-    .sort();
+    .toSorted();
 
   if (problemFiles.length === 0) {
     cachedSeedProblems = [];
