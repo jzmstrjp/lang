@@ -187,7 +187,7 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
     senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
 
   return `上下2コマに分割された写真を生成すること。
-上下のコマの高さは正確に同じであること。
+上下のコマの高さは正確に同じであること。コマの周囲に枠線と余白を作らないこと。
 
 【重要】
 - 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
@@ -231,6 +231,7 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 
 【禁止事項】
 - 1つのコマの中に同じ人物を2回描画してはならない。
+- コマの周囲に枠線と余白を作らないこと。
 `;
 }
 
