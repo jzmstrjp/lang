@@ -9,7 +9,7 @@ import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS } from '@/const';
-import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench, X } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type ProblemLength, type DifficultyLevel } from '@/config/problem';
 
@@ -837,7 +837,9 @@ export default function ProblemFlow({
       <Suspense fallback={null}>
         <FixedAdminButton
           isAdminPromise={isAdminPromise}
+          isAdminModalOpen={isAdminModalOpen}
           onOpenAdminModal={() => setAdminModalOpen(true)}
+          onCloseAdminModal={() => setAdminModalOpen(false)}
         />
       </Suspense>
     </div>
@@ -1321,10 +1323,11 @@ function QuizOptionsSection({
         <button
           type="button"
           onClick={onReplayAudio}
-          className="inline-flex items-center justify-center rounded-full bg-[var(--primary)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--primary)]/30 enabled:hover:bg-[var(--primary-hover)] disabled:opacity-30"
+          className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] p-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
           disabled={!phase.problem.audioEnUrl || isAudioBusy}
+          aria-label="もう一度聞く"
         >
-          もう一度聞く
+          <RotateCw className="w-5 h-5" />
         </button>
       </div>
     </section>
@@ -1422,12 +1425,14 @@ function AdminProblemActions({
       role="dialog"
       aria-modal="true"
       aria-label="管理者向け機能"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onClose();
+      }}
     >
-      <div
-        className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
         <div className="space-y-6">
           <button
             type="button"
@@ -1483,16 +1488,6 @@ function AdminProblemActions({
             {isDeletingProblem ? '削除中…' : '問題自体を削除する'}
           </button>
         </div>
-        <div className="flex justify-center mt-20">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-            aria-label="モーダルを閉じる"
-          >
-            閉じる
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -1500,10 +1495,17 @@ function AdminProblemActions({
 
 type FixedAdminButtonProps = {
   isAdminPromise: Promise<boolean>;
+  isAdminModalOpen: boolean;
   onOpenAdminModal: () => void;
+  onCloseAdminModal: () => void;
 };
 
-function FixedAdminButton({ isAdminPromise, onOpenAdminModal }: FixedAdminButtonProps) {
+function FixedAdminButton({
+  isAdminPromise,
+  isAdminModalOpen,
+  onOpenAdminModal,
+  onCloseAdminModal,
+}: FixedAdminButtonProps) {
   const isAdmin = use(isAdminPromise);
 
   if (!isAdmin) return null;
@@ -1511,12 +1513,12 @@ function FixedAdminButton({ isAdminPromise, onOpenAdminModal }: FixedAdminButton
   return (
     <button
       type="button"
-      onClick={onOpenAdminModal}
+      onClick={isAdminModalOpen ? onCloseAdminModal : onOpenAdminModal}
       tabIndex={-1}
       className="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] h-13 w-13 text-base font-semibold text-[var(--text)] shadow-lg shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-      aria-label="管理機能を開く"
+      aria-label={isAdminModalOpen ? '管理機能を閉じる' : '管理機能を開く'}
     >
-      <Wrench className="w-5 h-5" />
+      {isAdminModalOpen ? <X className="w-5 h-5" /> : <Wrench className="w-5 h-5" />}
     </button>
   );
 }

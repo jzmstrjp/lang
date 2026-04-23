@@ -47,11 +47,13 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
     setTheme(isDarkMode ? 'light' : 'dark');
   };
 
+  const rowClassName =
+    'cursor-pointer flex items-center justify-start bg-transparent border-0 p-0 m-0 text-left';
+
   return (
     <div className={containerClassName}>
-      <div onClick={toggleEnglishMode} className="cursor-pointer flex items-center justify-start">
-        <button
-          type="button"
+      <button type="button" onClick={toggleEnglishMode} className={rowClassName}>
+        <span
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasEnglishInteraction ? 'transition-colors duration-200' : ''
           } ${isJapaneseAudioEnabled ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]'}`}
@@ -61,16 +63,15 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
               hasEnglishInteraction ? 'transition-transform duration-200' : ''
             } ${isJapaneseAudioEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
-        </button>
+        </span>
 
-        <div className="flex flex-col">
+        <span className="flex flex-col">
           <span className="font-bold transition-opacity">{englishModeLabel}</span>
-        </div>
-      </div>
+        </span>
+      </button>
 
-      <div onClick={toggleNoImageMode} className="cursor-pointer flex items-center justify-start">
-        <button
-          type="button"
+      <button type="button" onClick={toggleNoImageMode} className={rowClassName}>
+        <span
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasNoImageInteraction ? 'transition-colors duration-200' : ''
           } ${isImageEnabled ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]'}`}
@@ -80,16 +81,15 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
               hasNoImageInteraction ? 'transition-transform duration-200' : ''
             } ${isImageEnabled ? 'translate-x-6' : 'translate-x-1'}`}
           />
-        </button>
+        </span>
 
-        <div className="flex flex-col">
+        <span className="flex flex-col">
           <span className="font-bold transition-opacity">{imageModeLabel}</span>
-        </div>
-      </div>
+        </span>
+      </button>
 
-      <div onClick={toggleDarkMode} className="cursor-pointer flex items-center justify-start">
-        <button
-          type="button"
+      <button type="button" onClick={toggleDarkMode} className={rowClassName}>
+        <span
           className={`mr-3 relative inline-flex h-6 w-11 items-center rounded-full ${
             hasDarkModeInteraction ? 'transition-colors duration-200' : ''
           } ${isDarkMode ? 'bg-[var(--switch-on)]' : 'bg-[var(--switch-off)]'}`}
@@ -99,12 +99,12 @@ export function ModeSwitches({ className = '' }: ModeSwitchesProps) {
               hasDarkModeInteraction ? 'transition-transform duration-200' : ''
             } ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`}
           />
-        </button>
+        </span>
 
-        <div className="flex flex-col">
+        <span className="flex flex-col">
           <span className="font-bold transition-opacity">{darkModeLabel}</span>
-        </div>
-      </div>
+        </span>
+      </button>
     </div>
   );
 }

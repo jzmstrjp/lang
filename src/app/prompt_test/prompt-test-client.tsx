@@ -100,8 +100,10 @@ export default function PromptTestClient() {
     try {
       const englishAudio = new Audio(audioAssets.audio.english);
       await new Promise<void>((resolve, reject) => {
-        englishAudio.onended = () => resolve();
-        englishAudio.onerror = () => reject(new Error('English audio failed'));
+        englishAudio.addEventListener('ended', () => resolve(), { once: true });
+        englishAudio.addEventListener('error', () => reject(new Error('English audio failed')), {
+          once: true,
+        });
         englishAudio.play();
       });
 
@@ -109,8 +111,10 @@ export default function PromptTestClient() {
 
       const japaneseAudio = new Audio(audioAssets.audio.japanese);
       await new Promise<void>((resolve, reject) => {
-        japaneseAudio.onended = () => resolve();
-        japaneseAudio.onerror = () => reject(new Error('Japanese audio failed'));
+        japaneseAudio.addEventListener('ended', () => resolve(), { once: true });
+        japaneseAudio.addEventListener('error', () => reject(new Error('Japanese audio failed')), {
+          once: true,
+        });
         japaneseAudio.play();
       });
     } catch (err) {
