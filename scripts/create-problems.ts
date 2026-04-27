@@ -909,7 +909,7 @@ ${adultJsonExample}`;
     }
 
     // receiver.whyを固定値で上書き
-    result.receiver.why = '相手の言葉を受け取って、簡潔に適切な応答を返したい';
+    result.receiver.why = '相手の言葉を受け取って、応答したい';
 
     return {
       result,
