@@ -99,7 +99,7 @@ async function createEnglishConversation(
 - 意図: ${sceneDraft.receiver.why}
 
 【重要な要件】
-1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
+1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、文脈を知らなくても意図や状況が分かるような文が好ましい。
    - **最重要: 必ず${wordCountRange.max}単語以内の短い文にすること。長い文は絶対に禁止。**${noteInstruction}
    - 良い例: "Do you like cats?" (4単語), "Can you swim?" (3単語), "I like pizza." (3単語)
    - 悪い例: "Do you want to go to the park with me after school?" (長すぎる)
@@ -138,7 +138,7 @@ async function createEnglishConversation(
 - 意図: ${sceneDraft.receiver.why}
 
 【重要な要件】
-1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
+1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、文脈を知らなくても意図や状況が分かるような文が好ましい。
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
 2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
   - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
