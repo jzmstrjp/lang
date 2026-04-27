@@ -761,8 +761,8 @@ async function createSceneDraft(
     ? '友人、家族、店員、隣人、ルームメイトなど'
     : '上司、同僚、部下、取引先の担当者など';
   const adultWhereExamples = isDailyLifeGenre
-    ? '自宅のリビング、駅のホーム、駅の券売機前、カフェ、スーパーのレジ前、病院の受付、公園など'
-    : 'オフィスの自席、会議室、応接室、取引先のオフィス、社内カフェテリアなど';
+    ? '自宅のリビング、駅のホーム、駅の券売機前、カフェ、スーパーのレジ前、病院の受付、公園、学校の教室、教室の前など'
+    : 'オフィスの自席、会議室、応接室、取引先のオフィス、社内カフェテリア、会議室の前、オフィスの受付、オフィスの廊下など';
 
   const adultJsonExample = isDailyLifeGenre
     ? `\`\`\`json
@@ -824,7 +824,7 @@ async function createSceneDraft(
 - when: いつ会話するか（例: 放課後、週末の午前、夕食の時間）
 - word: 使用する単語・フレーズ（必ず「${value}」を設定）
 
-【重要】以下のJSON形式で必ず回答してください:
+【重要】以下のJSON形式で必ず回答してください（内容は参考例です）:
 
 \`\`\`json
 {
@@ -1155,6 +1155,8 @@ async function generateSceneDrafts(
 
   for (const wordWithGenre of wordsWithGenres) {
     const sceneDraftResult = await createSceneDraft(wordWithGenre, isKids);
+    console.log('sceneDraftResult');
+    console.log(sceneDraftResult);
 
     if (!sceneDraftResult) {
       console.error(`  ⏭️ 「${wordWithGenre.value}」のシーン生成に失敗したためスキップします`);
