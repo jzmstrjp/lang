@@ -31,11 +31,14 @@ type SceneDraft = {
     role: string;
     where: string;
     why: string;
+    gender: 'male' | 'female';
   };
   receiver: {
     role: string;
     where: string;
     why: string;
+    /** sender.gender と必ず逆 */
+    gender: 'male' | 'female';
   };
 };
 
@@ -93,6 +96,7 @@ async function createEnglishConversation(
 - 役割: ${sceneDraft.receiver.role}
 - 性別: ${sceneDraft.receiver.voice === 'male' ? '男性' : '女性'}
 - 場所: ${sceneDraft.receiver.where}
+- 意図: ${sceneDraft.receiver.why}
 
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
@@ -131,6 +135,7 @@ async function createEnglishConversation(
 - 役割: ${sceneDraft.receiver.role}
 - 性別: ${sceneDraft.receiver.voice === 'male' ? '男性' : '女性'}
 - 場所: ${sceneDraft.receiver.where}
+- 意図: ${sceneDraft.receiver.why}
 
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、状況が分かるような文が好ましい。
@@ -751,6 +756,52 @@ async function createSceneDraft(
       ? '電話やビデオ通話も積極的に使用して良い。'
       : '基本的には対面を想定しているが、';
 
+  const isDailyLifeGenre = genre === '日常生活';
+  const adultRoleExamples = isDailyLifeGenre
+    ? '友人、家族、店員、隣人、ルームメイトなど'
+    : '上司、同僚、部下、取引先の担当者など';
+  const adultWhereExamples = isDailyLifeGenre
+    ? '自宅のリビング、駅のホーム、駅の券売機前、カフェ、スーパーのレジ前、病院の受付、公園など'
+    : 'オフィスの自席、会議室、応接室、取引先のオフィス、社内カフェテリアなど';
+
+  const adultJsonExample = isDailyLifeGenre
+    ? `\`\`\`json
+{
+  "word": "I'm thirsty",
+  "sender": {
+    "why": "喉が渇いたので飲み物を買いたいということを伝えたい",
+    "role": "友人",
+    "gender": "male",
+    "where": "コンビニの前"
+  },
+  "how": "対面",
+  "receiver": {
+    "role": "友人",
+    "gender": "female",
+    "where": "コンビニの前"
+  },
+  "when": "土曜の午後"
+}
+\`\`\``
+    : `\`\`\`json
+{
+  "word": "remote work",
+  "sender": {
+    "why": "リモートワークが可能だということを部下に伝えたい",
+    "role": "上司",
+    "gender": "male",
+    "where": "オフィスの自席"
+  },
+  "how": "対面",
+  "receiver": {
+    "role": "部下",
+    "gender": "female",
+    "where": "上司の自席の近く"
+  },
+  "when": "月曜の午後"
+}
+\`\`\``;
+
   const prompt = isKids
     ? `「${value}」というワード・フレーズを使って、日常生活の会話シーンを作成してください。中学1年生の英語の教科書に出てきそうな、簡単で身近なシーンにしてください。
 
@@ -762,11 +813,13 @@ async function createSceneDraft(
 【要件】
 - sender: 送信者の情報（こちらが「${value}」というワードを使用する人物）
   - why: なぜこの発言をするのか（15文字程度）「${value}」という表現から必然的に導かれる動機を設定してください。できるだけシンプルに。（例: ワードが"good morning"なら「朝起きたので、挨拶をしたい」）
-  - role: 役割（例: 友人、家族、先生、店員、クラスメート）※ビジネスシーンは禁止
+  - role: 役割（例: 友人、家族、先生、店員、クラスメート、父親、母親）※ビジネスシーンは禁止。**role が示す性別は gender と一致させること**（例: 父親→male、母親→female）
+  - gender: 送信者の性別。必ず JSON では \`"male"\` または \`"female"\` のどちらか一方を文字列で設定すること
   - where: どこにいるか具体的に（例: 教室、自宅のリビング、コンビニのレジ前、公園）
 - how: どのように会話するか（基本的に対面）**音声会話のみ想定。チャット、メール、LINEなどの文字ベースは禁止**
 - receiver: 受信者の情報
-  - role: 役割（例: 友人、家族、先生、店員、クラスメート）
+  - role: 役割（例: 友人、家族、先生、店員、クラスメート）。**role が示す性別は gender と一致させること**
+  - gender: 受信者の性別。必ず JSON では \`"male"\` または \`"female"\` のどちらか。**必ず sender.gender と逆**にすること（sender が male なら female、逆も同様）
   - where: どこにいるか具体的に（対面での会話の場合は、senderと同じ場所または近い場所にすること）
 - when: いつ会話するか（例: 放課後、週末の午前、夕食の時間）
 - word: 使用する単語・フレーズ（必ず「${value}」を設定）
@@ -779,11 +832,13 @@ async function createSceneDraft(
   "sender": {
     "why": "朝の挨拶をしたい",
     "role": "クラスメート",
+    "gender": "male",
     "where": "教室の入り口"
   },
   "how": "対面",
   "receiver": {
     "role": "クラスメート",
+    "gender": "female",
     "where": "教室の自分の席"
   },
   "when": "平日の朝"
@@ -794,33 +849,20 @@ async function createSceneDraft(
 【要件】
 - sender: 送信者の情報（こちらが「${value}」というワードを使用する人物）
   - why: なぜこの発言をするのか（20文字程度）「${value}」という表現から必然的に導かれる動機を設定してください。
-  - role: 役割（例: 上司、同僚、友人、家族）
-  - where: どこにいるか具体的に（例: オフィスの自席、駅の券売機前、病院の受付）
+  - role: 役割（例: ${adultRoleExamples}）。**role が示す性別があれば gender と一致させること**（例: 父親なら male、母親なら female、男性の上司なら male）
+  - gender: 送信者の性別。必ず JSON では \`"male"\` または \`"female"\` のどちらか一方を文字列で設定すること
+  - where: どこにいるか具体的に（例: ${adultWhereExamples}）
 - how: どのように会話するか（例: 対面、電話、ビデオ通話。${taimen}シーンにあった手段を設定してください）**音声会話のみ想定。チャット、メール、LINEなどの文字ベースは禁止**
 - receiver: 受信者の情報
-  - role: 役割
-  - where: どこにいるか具体的に（例: オフィスの自席、駅の券売機前、病院の受付）（対面での会話の場合は、senderと同じ場所または近い場所にすること）
+  - role: 役割（例: ${adultRoleExamples}）。**role が示す性別があれば gender と一致させること**
+  - gender: 受信者の性別。必ず JSON では \`"male"\` または \`"female"\` のどちらか。**必ず sender.gender と逆**にすること
+  - where: どこにいるか具体的に（例: ${adultWhereExamples}）（対面での会話の場合は、senderと同じ場所または近い場所にすること）
 - when: いつ会話するか（例: 金曜の午後、平日の夕方、深夜、平日の昼）
 - word: 使用する単語・フレーズ（必ず「${value}」を設定）
 
-【重要】以下のJSON形式で必ず回答してください:
+【重要】以下のJSON形式で必ず回答してください（内容は参考例です）:
 
-\`\`\`json
-{
-  "word": "remote work",
-  "sender": {
-    "why": "リモートワークが可能だということを部下に伝えたい"
-    "role": "上司",
-    "where": "オフィスの自席",
-  },
-  "how": "対面",
-  "receiver": {
-    "role": "部下",
-    "where": "上司の自席の近く"
-  },
-  "when": "月曜の午後"
-}
-\`\`\``;
+${adultJsonExample}`;
 
   try {
     const response = await openai.responses.create({
@@ -854,10 +896,16 @@ async function createSceneDraft(
       !result.sender?.role ||
       !result.sender?.where ||
       !result.sender?.why ||
+      (result.sender.gender !== 'male' && result.sender.gender !== 'female') ||
       !result.receiver?.role ||
-      !result.receiver?.where
+      !result.receiver?.where ||
+      (result.receiver.gender !== 'male' && result.receiver.gender !== 'female')
     ) {
       throw new Error('レスポンスの形式が正しくありません');
+    }
+
+    if (result.sender.gender === result.receiver.gender) {
+      throw new Error('sender.gender と receiver.gender は逆の性別である必要があります');
     }
 
     // receiver.whyを固定値で上書き
@@ -889,7 +937,7 @@ async function wordsToGenres(words: string[]): Promise<{
 
   console.log('🤖 OpenAI APIで単語のジャンル分けを実行中...');
 
-  const prompt = `以下の英語の単語・フレーズが「ビジネス」シーンでよく使われる単語か「日常生活」シーンでよく使われる単語かを判定してください。できれば半々くらいの割合で分類してください。迷ったら「日常生活」に分類してください。
+  const prompt = `以下の英語の単語・フレーズが「ビジネス」シーンでよく使われる単語か「日常生活」シーンでよく使われる単語かを判定してください。迷ったら「日常生活」に分類してください。
 
 単語リスト:
 ${words.map((word, index) => `${index + 1}. ${word}`).join('\n')}
@@ -943,6 +991,7 @@ ${words.map((word, index) => `${index + 1}. ${word}`).join('\n')}
     }
 
     console.log('✅ ジャンル分け完了');
+    console.log(result);
     return {
       result,
       tokenUsage: {
@@ -1113,19 +1162,18 @@ async function generateSceneDrafts(
       continue;
     }
 
-    // voiceをランダムに設定
-    const senderVoice: 'male' | 'female' = Math.random() < 0.5 ? 'male' : 'female';
-    const receiverVoice: 'male' | 'female' = senderVoice === 'male' ? 'female' : 'male';
+    const { gender: senderGender, ...senderRest } = sceneDraftResult.result.sender;
+    const { gender: receiverGender, ...receiverRest } = sceneDraftResult.result.receiver;
 
     const sceneDraftWithVoice: SceneDraftWithVoice = {
       ...sceneDraftResult.result,
       sender: {
-        ...sceneDraftResult.result.sender,
-        voice: senderVoice,
+        ...senderRest,
+        voice: senderGender,
       },
       receiver: {
-        ...sceneDraftResult.result.receiver,
-        voice: receiverVoice,
+        ...receiverRest,
+        voice: receiverGender,
       },
     };
 
