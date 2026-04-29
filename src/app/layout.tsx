@@ -6,6 +6,7 @@ import { HEADER_PORTAL_ID } from '@/components/layout/header-portal-id';
 import { SettingsMenu } from '@/components/settings/settings-menu';
 import { ThemeColorUpdater } from '@/components/layout/theme-color-updater';
 import { Analytics } from '@vercel/analytics/next';
+import { SITE_ORIGIN } from '@/const';
 import './globals.css';
 
 const geistSans = Geist({
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '英語きわめ太郎',
     description: 'いつの間にか、なぜだか英語が聞き取れるようになるサイト',
-    url: 'https://en-ma.ster.jp.net/',
+    url: `${SITE_ORIGIN}/`,
     siteName: '英語きわめ太郎',
     images: [
       {

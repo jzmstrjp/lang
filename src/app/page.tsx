@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { ALLOWED_SHARE_COUNTS } from '@/const';
+import { ALLOWED_SHARE_COUNTS, SITE_ORIGIN } from '@/const';
 
 type LinkItem = {
   href: string;
@@ -71,7 +71,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
         openGraph: {
           title,
           description,
-          url: 'https://en-ma.ster.jp.net/',
+          url: `${SITE_ORIGIN}/`,
           siteName: '英語きわめ太郎',
           images: [
             {

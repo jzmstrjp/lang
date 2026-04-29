@@ -12,6 +12,10 @@ export const IMAGE_MODEL_SETTING = {
 // 1回で取得する問題数
 export const PROBLEM_FETCH_LIMIT = 10;
 
+const HOST_NAME = 'xn--w8jtfrbw831dz9h.xn--sssu80k.dev';
+
+export const SITE_ORIGIN = `https://${HOST_NAME}`;
+
 // 連続正解のシェア対象となるcount値
 export const ALLOWED_SHARE_COUNTS = [
   5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 300, 400, 500,
