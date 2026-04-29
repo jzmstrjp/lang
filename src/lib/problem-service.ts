@@ -7,7 +7,7 @@ import {
   type ProblemLength,
   type DifficultyLevel,
 } from '@/config/problem';
-import { PROBLEM_FETCH_LIMIT } from '@/const';
+import { PROBLEM_FETCH_LIMIT, cdnUrl } from '@/const';
 
 export type ProblemWithAudio = Omit<
   Problem,
@@ -50,10 +50,10 @@ function formatProblem(problem: ProblemWithAudio): ProblemWithAudio {
   return {
     ...problem,
     incorrectOptions,
-    audioEnUrl: problem.audioEnUrl,
-    audioJaUrl: problem.audioJaUrl,
-    audioEnReplyUrl: problem.audioEnReplyUrl,
-    imageUrl: problem.imageUrl,
+    audioEnUrl: problem.audioEnUrl ? cdnUrl(problem.audioEnUrl) : '',
+    audioJaUrl: problem.audioJaUrl ? cdnUrl(problem.audioJaUrl) : '',
+    audioEnReplyUrl: problem.audioEnReplyUrl ? cdnUrl(problem.audioEnReplyUrl) : '',
+    imageUrl: problem.imageUrl ? cdnUrl(problem.imageUrl) : null,
   };
 }
 

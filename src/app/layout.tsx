@@ -6,7 +6,7 @@ import { HEADER_PORTAL_ID } from '@/components/layout/header-portal-id';
 import { SettingsMenu } from '@/components/settings/settings-menu';
 import { ThemeColorUpdater } from '@/components/layout/theme-color-updater';
 import { Analytics } from '@vercel/analytics/next';
-import { SITE_ORIGIN } from '@/const';
+import { CDN_ORIGIN, SITE_ORIGIN } from '@/const';
 import './globals.css';
 
 const geistSans = Geist({
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     siteName: '英語きわめ太郎',
     images: [
       {
-        url: `${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/ogp.png`,
+        url: `${CDN_ORIGIN}/ogp.png`,
         width: 1200,
         height: 630,
         alt: '英語きわめ太郎 - 英語学習アプリ',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '英語きわめ太郎',
     description: 'いつの間にか、なぜだか英語が聞き取れるようになるサイト',
-    images: [`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/ogp.png`],
+    images: [`${CDN_ORIGIN}/ogp.png`],
   },
 };
 

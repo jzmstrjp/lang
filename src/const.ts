@@ -15,6 +15,13 @@ export const PROBLEM_FETCH_LIMIT = 10;
 const HOST_NAME = 'xn--w8jtfrbw831dz9h.xn--sssu80k.dev';
 
 export const SITE_ORIGIN = `https://${HOST_NAME}`;
+export const CDN_ORIGIN = `https://cdn.${HOST_NAME}`;
+
+/** DB に入っているパス（先頭 / あってもよい）を CDN の URL にする */
+export function cdnUrl(path: string): string {
+  const p = path.replace(/^\/+/, '');
+  return `${CDN_ORIGIN}/${p}`;
+}
 
 // 連続正解のシェア対象となるcount値
 export const ALLOWED_SHARE_COUNTS = [

@@ -6,6 +6,7 @@ import { isAdminEmail } from '@/lib/auth/admin';
 import { generateSpeechBuffer } from '@/lib/audio-utils';
 import { uploadAudioToR2 } from '@/lib/r2-client';
 import { generateAndUploadImageAsset } from '@/lib/problem-generator';
+import { cdnUrl } from '@/const';
 import type { VoiceGender } from '@/config/voice';
 import type { GeneratedProblem } from '@/types/generated-problem';
 
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      [field]: newUrl,
+      [field]: cdnUrl(newUrl),
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {

@@ -14,7 +14,7 @@ import {
   type SlotToken,
 } from '@/lib/word-sort-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { ALLOWED_SHARE_COUNTS } from '@/const';
+import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN } from '@/const';
 
 type Phase =
   | {
@@ -378,7 +378,7 @@ function CorrectView({ problem, correctStreak, isOnStreak, onNextProblem }: Corr
         </h2>
         <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto relative">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct${imageVariant}.webp`}
+            src={`${CDN_ORIGIN}/correct${imageVariant}.webp`}
             alt="ガッツポーズ"
             width={500}
             height={750}
@@ -451,7 +451,7 @@ function IncorrectView({ onRetry }: IncorrectViewProps) {
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect${imageVariant}.webp`}
+            src={`${CDN_ORIGIN}/incorrect${imageVariant}.webp`}
             alt="ショックな様子"
             width={500}
             height={750}
@@ -495,7 +495,7 @@ function GiveUpView({ sortProblem, onNextProblem }: GiveUpViewProps) {
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect${imageVariant}.webp`}
+            src={`${CDN_ORIGIN}/incorrect${imageVariant}.webp`}
             alt="ショックな様子"
             width={500}
             height={750}

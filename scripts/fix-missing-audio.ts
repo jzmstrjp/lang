@@ -7,6 +7,7 @@
 import { prisma } from '../src/lib/prisma';
 import type { VoiceGender } from '../src/config/voice';
 import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
+import { cdnUrl } from '../src/const';
 
 let audioUtilsModule: typeof import('../src/lib/audio-utils') | null = null;
 let r2ClientModule: typeof import('../src/lib/r2-client') | null = null;
@@ -38,7 +39,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           'R2_BUCKET_NAME',
           'R2_ACCESS_KEY_ID',
           'R2_SECRET_ACCESS_KEY',
-          'NEXT_PUBLIC_R2_PUBLIC_DOMAIN',
         ];
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);
 
@@ -241,7 +241,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           ].filter((url): url is string => Boolean(url) && url !== null);
 
           if (urlsToWarmup.length > 0) {
-            await warmupMultipleCDNUrls(urlsToWarmup);
+            await warmupMultipleCDNUrls(urlsToWarmup.map((key) => cdnUrl(key)));
           }
         }
 

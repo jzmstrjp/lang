@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { ALLOWED_SHARE_COUNTS, SITE_ORIGIN } from '@/const';
+import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN, SITE_ORIGIN } from '@/const';
 
 type LinkItem = {
   href: string;
@@ -63,7 +63,7 @@ export async function generateMetadata({ searchParams }: HomePageProps): Promise
     ) {
       const title = `【英語きわめ太郎】${count}問連続正解しました！`;
       const description = `【英語きわめ太郎】${count}問連続正解しました！`;
-      const ogImageUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct-streak-ogp/correct${count}.png`;
+      const ogImageUrl = `${CDN_ORIGIN}/correct-streak-ogp/correct${count}.png`;
 
       return {
         title,
@@ -103,7 +103,7 @@ export default function Home() {
     <div className="mx-auto flex flex-col items-center justify-center gap-4 sm:gap-6 text-[var(--text)]">
       <div className="rounded-2xl overflow-hidden">
         <Image
-          src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/top.webp`}
+          src={`${CDN_ORIGIN}/top.webp`}
           alt="なぜだかいつのまにか英語が聞き取れるようになるサイト"
           unoptimized
           priority

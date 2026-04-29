@@ -13,6 +13,7 @@ import {
   type GeneratedProblem,
 } from '../src/lib/problem-generator';
 import { warmupMultipleCDNUrls } from '../src/lib/cdn-utils';
+import { cdnUrl } from '../src/const';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
@@ -63,7 +64,6 @@ async function main(
           'R2_BUCKET_NAME',
           'R2_ACCESS_KEY_ID',
           'R2_SECRET_ACCESS_KEY',
-          'NEXT_PUBLIC_R2_PUBLIC_DOMAIN',
         ];
     const missingEnvs = requiredEnvs.filter((env) => !process.env[env]);
 
@@ -246,7 +246,7 @@ async function main(
 
         // フェーズ3: CDNウォームアップ
         console.log('\n🔥 フェーズ3: CDNウォームアップ');
-        const imageUrls = updates.map((u) => u.imageUrl);
+        const imageUrls = updates.map((u) => cdnUrl(u.imageUrl));
         await warmupMultipleCDNUrls(imageUrls);
         console.log(`   ✅ ${imageUrls.length}件のURLをウォームアップしました`);
       } catch (error) {

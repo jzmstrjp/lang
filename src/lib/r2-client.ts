@@ -115,12 +115,7 @@ export async function uploadToR2(
 
   await client.send(command);
 
-  // R2.dev パブリックURLを返す
-  const publicDomain = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
-  if (!publicDomain) {
-    throw new Error('NEXT_PUBLIC_R2_PUBLIC_DOMAIN environment variable is not set');
-  }
-  return `${publicDomain}/${key}`;
+  return key;
 }
 
 /**
@@ -290,13 +285,12 @@ export async function deleteFromR2(key: string): Promise<void> {
 /**
  * URLからキーを抽出してR2から削除
  */
-export async function deleteFromR2ByUrl(url: string): Promise<void> {
-  const publicDomain = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN;
-  if (!publicDomain || !url.startsWith(publicDomain)) {
-    throw new Error(`Invalid R2 URL: ${url}`);
-  }
-
-  const key = url.replace(`${publicDomain}/`, '');
+export async function deleteFromR2ByUrl(urlOrKey: string): Promise<void> {
+  const t = urlOrKey.trim();
+  const key =
+    t.startsWith('http://') || t.startsWith('https://')
+      ? new URL(t).pathname.replace(/^\//, '')
+      : t.replace(/^\/+/, '');
   await deleteFromR2(key);
 }
 

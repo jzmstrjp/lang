@@ -8,7 +8,7 @@ import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
 import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
-import { ALLOWED_SHARE_COUNTS } from '@/const';
+import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN } from '@/const';
 import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench, X } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { type ProblemLength, type DifficultyLevel } from '@/config/problem';
@@ -1112,7 +1112,7 @@ function CorrectPhaseView({
         </h2>
         <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto relative">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/correct${imageVariant}.webp`}
+            src={`${CDN_ORIGIN}/correct${imageVariant}.webp`}
             alt="ガッツポーズ"
             width={500}
             height={750}
@@ -1199,7 +1199,7 @@ function IncorrectPhaseView({ isAudioBusy, onRetry }: IncorrectPhaseViewProps) {
         <h2 className="text-4xl font-bold pl-4">残念…</h2>
         <div className="mt-6 flex justify-center max-w-[30%] sm:max-w-[120px] mx-auto">
           <Image
-            src={`${process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN}/incorrect${imageVariant}.webp`}
+            src={`${CDN_ORIGIN}/incorrect${imageVariant}.webp`}
             alt="ショックな様子"
             width={500}
             height={750}
