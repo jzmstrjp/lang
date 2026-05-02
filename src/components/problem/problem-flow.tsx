@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ProblemPageParams } from '@/lib/problem-page-params';
 import { Suspense, use, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { ProblemWithAudio } from '@/app/api/problems/route';
@@ -274,7 +275,7 @@ export default function ProblemFlow({
 
     // searchパラメータがある場合のみURLをクリア
     if (searchQuery) {
-      router.push(pathname);
+      router.push(`${pathname}${new ProblemPageParams(searchParams)}`);
     }
 
     // キューの先頭が次の問題
@@ -352,7 +353,7 @@ export default function ProblemFlow({
 
       if (responseData[field]) {
         const sentence = currentProblem.englishSentence;
-        window.location.href = `${pathname}?search=${encodeURIComponent(sentence)}`;
+        window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
       }
     } catch (error) {
       console.error(`[ProblemFlow] ${field}再生成エラー:`, error);
@@ -656,7 +657,7 @@ export default function ProblemFlow({
 
       // ページをリロード
       const sentence = currentProblem.englishSentence;
-      window.location.href = `${pathname}?search=${encodeURIComponent(sentence)}`;
+      window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
     } catch (error) {
       console.error('[ProblemFlow] 返答再生成エラー:', error);
       if (typeof window !== 'undefined') {

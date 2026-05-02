@@ -38,11 +38,7 @@ export class R2AudioKey extends R2AssetKey {
 }
 
 export class R2ImageKey extends R2AssetKey {
-  constructor(
-    problemId: string,
-    format: 'png' | 'webp',
-    now: Date = new Date(),
-  ) {
+  constructor(problemId: string, format: 'png' | 'webp', now: Date = new Date()) {
     R2AssetKey.validateProblemId(problemId);
     const { date, timeHash } = R2AssetKey.timeComponents(now);
     super(`images/${date}/${problemId}_composite_${timeHash}.${format}`);

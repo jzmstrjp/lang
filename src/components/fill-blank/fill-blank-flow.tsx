@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ProblemPageParams } from '@/lib/problem-page-params';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProblemWithAudio } from '@/lib/problem-service';
 import type { DifficultyLevel } from '@/config/problem';
@@ -122,7 +123,7 @@ export default function FillBlankFlow({ initialProblem, difficultyLevel }: FillB
 
     // searchパラメータがある場合のみURLをクリア
     if (searchQuery) {
-      router.push(pathname);
+      router.push(`${pathname}${new ProblemPageParams(searchParams)}`);
     }
 
     const nextProblem = problemQueue[0];
