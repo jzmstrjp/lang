@@ -9,6 +9,8 @@ import { words } from '../docs/words';
 import { TEXT_MODEL } from '@/const';
 import type { SeedProblemData } from '@/types/problem';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
+import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 
 // 環境変数を読み込み
 dotenv.config();
@@ -1392,6 +1394,7 @@ async function finalizeAndSave(
   skippedWords: readonly string[],
   tokenUsage: TokenUsage,
   isKids = false,
+  useSeed = false,
 ): Promise<void> {
   const totalProblems = problems.length;
 
@@ -1437,11 +1440,21 @@ async function finalizeAndSave(
   console.log('\n📦 SeedProblemDataに変換中...');
   const seedProblems = convertToSeedProblemData(problems, isKids);
 
-  // ファイルを保存
-  const fileNumber = getNextProblemNumber();
-  console.log(`💾 ファイルを保存中... (problem${fileNumber}.ts)`);
-  const savedPath = saveProblemFile(seedProblems, fileNumber);
-  console.log(`✅ 保存完了: ${savedPath}\n`);
+  if (useSeed) {
+    // --seed フラグ: ファイルを作らず直接 DB 投入（成功後に LATEST_USED_WORD も更新）
+    console.log('🌱 DB に直接投入します...');
+    const lastWord = successfulWords[successfulWords.length - 1];
+    await seedToDatabase(seedProblems, lastWord);
+  } else {
+    // 通常モード: ファイルに保存
+    const fileNumber = getNextProblemNumber();
+    console.log(`💾 ファイルを保存中... (problem${fileNumber}.ts)`);
+    const savedPath = saveProblemFile(seedProblems, fileNumber);
+    console.log(`✅ 保存完了: ${savedPath}\n`);
+    console.log(`\n次のステップ:`);
+    console.log(`  1. 生成されたファイルを確認してください`);
+    console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
+  }
 
   // スキップされた単語のサマリー
   if (skippedWords.length > 0) {
@@ -1452,19 +1465,120 @@ async function finalizeAndSave(
     console.log('  （これらの単語はwords.tsに残されます。次回再実行してください）');
   }
 
-  console.log('🧹 使用済み語彙をwords.tsから削除中...');
-
-  // 成功した単語のみファイルから削除（スキップされた単語は残す）
-  removeUsedWordsFromWordList(successfulWords);
+  if (!useSeed) {
+    console.log('🧹 使用済み語彙をwords.tsから削除中...');
+    // 成功した単語のみファイルから削除（スキップされた単語は残す）
+    removeUsedWordsFromWordList(successfulWords);
+  }
 
   console.log(`\n🎉 完了！${successfulWords.length}単語から${totalProblems}問を生成しました`);
   if (skippedWords.length > 0) {
     console.log(`⏭️ ${skippedWords.length}単語はAPI失敗のためスキップされました`);
   }
-  console.log(`📚 残りの単語数: ${words.length - successfulWords.length}個`);
-  console.log(`\n次のステップ:`);
-  console.log(`  1. 生成されたファイルを確認してください`);
-  console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
+  if (!useSeed) {
+    console.log(`📚 残りの単語数: ${words.length - successfulWords.length}個`);
+  }
+}
+
+/**
+ * CLI 引数をパースする
+ * --type=<short|medium|long|all|kids>
+ * --count=<n>
+ * --seed  生成後に直接 DB 投入する（LATEST_USED_WORD も DB で管理）
+ */
+function parseCliArgs(): {
+  type: ProblemLength | 'all';
+  count: number;
+  seed: boolean;
+} | null {
+  const args = process.argv.slice(2);
+  const typeArg = args.find((a) => a.startsWith('--type='))?.split('=')[1];
+  const countArg = args.find((a) => a.startsWith('--count='))?.split('=')[1];
+
+  if (!typeArg || !countArg) return null;
+
+  const validTypes = ['short', 'medium', 'long', 'all', 'kids'] as const;
+  const type = (validTypes.find((t) => t === typeArg) ?? 'medium') as ProblemLength | 'all';
+  const count = Math.max(1, parseInt(countArg, 10) || 1);
+  const seed = args.includes('--seed');
+
+  return { type, count, seed };
+}
+
+/**
+ * LATEST_USED_WORD に基づいて words 配列の開始インデックスを返す
+ */
+function resolveStartIndex(startAfter: string | null): number {
+  if (!startAfter) return 0;
+  const idx = words.indexOf(startAfter);
+  if (idx === -1) {
+    console.log(
+      `⚠️ LATEST_USED_WORD "${startAfter}" が words に見つかりません。先頭から使用します。`,
+    );
+    return 0;
+  }
+  return idx + 1;
+}
+
+/**
+ * SeedProblemData を直接 DB に投入し、成功後に LATEST_USED_WORD を更新する（--seed フラグ用）
+ */
+async function seedToDatabase(seedProblems: SeedProblemData[], lastWord: string): Promise<void> {
+  // problem.createMany は withAccelerate 経由で、appConfig は生の PrismaClient で操作
+  const rawPrisma = new PrismaClient({ log: ['error'] });
+  const acceleratedPrisma = rawPrisma.$extends(withAccelerate()) as unknown as PrismaClient;
+
+  try {
+    const createData = seedProblems.map((problem) => {
+      const wordCount = problem.englishSentence
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0).length;
+      return {
+        ...problem,
+        wordCount,
+        incorrectOptions: problem.incorrectOptions,
+        audioEnUrl: null,
+        audioJaUrl: null,
+        audioEnReplyUrl: null,
+        imageUrl: null,
+      };
+    });
+
+    const result = await acceleratedPrisma.problem.createMany({
+      data: createData,
+      skipDuplicates: true,
+    });
+
+    console.log(
+      `✅ DB投入完了: ${result.count}件挿入 (重複スキップ: ${createData.length - result.count}件)`,
+    );
+
+    // 投入成功後に LATEST_USED_WORD を更新
+    await rawPrisma.appConfig.upsert({
+      where: { key: 'LATEST_USED_WORD' },
+      update: { value: lastWord },
+      create: { key: 'LATEST_USED_WORD', value: lastWord },
+    });
+    console.log(`🔖 LATEST_USED_WORD を "${lastWord}" に更新しました`);
+  } finally {
+    await rawPrisma.$disconnect();
+  }
+}
+
+/**
+ * DB から LATEST_USED_WORD を読む（--seed モード用）
+ */
+async function getLatestUsedWord(): Promise<string | null> {
+  const prisma = new PrismaClient({ log: ['error'] });
+  try {
+    const config = await prisma.appConfig.findUnique({
+      where: { key: 'LATEST_USED_WORD' },
+    });
+    return config?.value ?? null;
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 /**
@@ -1717,8 +1831,21 @@ async function main() {
       );
     }
 
-    // 1. 初期設定：ユーザーに問題タイプと問題数を聞く
-    const { type: problemType, count } = await promptProblemSettings();
+    // 1. 初期設定：CLI引数がある場合はスキップ、なければ対話プロンプト
+    const cliArgs = parseCliArgs();
+    const { type: problemType, count } = cliArgs ?? (await promptProblemSettings());
+    const useSeed = cliArgs?.seed ?? false;
+
+    // --seed モードの場合は DB から LATEST_USED_WORD を読む
+    let startAfter: string | null = null;
+    if (useSeed) {
+      startAfter = await getLatestUsedWord();
+      if (startAfter) {
+        console.log(`📍 LATEST_USED_WORD: "${startAfter}"`);
+      } else {
+        console.log('📍 LATEST_USED_WORD: 未設定（先頭から使用）');
+      }
+    }
 
     // モード表示
     if (problemType === 'all') {
@@ -1730,8 +1857,12 @@ async function main() {
       );
     }
 
-    // 指定された数の単語を取得
-    const selectedWords = words.slice(0, count);
+    // 指定された数の単語を取得（LATEST_USED_WORD で開始位置を決める）
+    const startIndex = resolveStartIndex(startAfter);
+    if (startAfter) {
+      console.log(`📍 開始位置: index ${startIndex} ("${startAfter}" の次)`);
+    }
+    const selectedWords = words.slice(startIndex, startIndex + count);
     const isKids = problemType === 'kids';
 
     // ジャンル分けを実行（kids は全て日常生活に固定）
@@ -1795,6 +1926,7 @@ async function main() {
         output_tokens: totalOutputTokens,
       },
       isKids,
+      useSeed,
     );
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);

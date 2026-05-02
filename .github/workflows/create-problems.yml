@@ -1,0 +1,374 @@
+name: 問題生成パイプライン
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: '問題タイプ'
+        required: true
+        default: 'medium'
+        type: choice
+        options:
+          - short
+          - medium
+          - long
+          - all
+          - kids
+      count:
+        description: '生成する問題数（単語数）'
+        required: false
+        default: '5'
+        type: string
+      batch_size:
+        description: '音声・画像の処理件数上限（デフォルト：10件）'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  create-and-seed:
+    name: 問題生成 & DB投入
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      actions: write # LATEST_USED_WORD Variable の更新に必要
+
+    outputs:
+      latest_used_word: ${{ steps.create.outputs.latest_used_word }}
+      created_count: ${{ steps.create.outputs.created_count }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set environment variables
+        run: |
+          echo "PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS=true" >> $GITHUB_ENV
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Validate required secrets
+        run: |
+          echo "🔍 必要なシークレットの存在確認中..."
+
+          REQUIRED_SECRETS=(
+            "OPENAI_API_KEY"
+            "DATABASE_URL"
+          )
+
+          MISSING_SECRETS=()
+
+          for secret in "${REQUIRED_SECRETS[@]}"; do
+            if [ -z "${!secret}" ]; then
+              MISSING_SECRETS+=("$secret")
+            fi
+          done
+
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ すべての必要なシークレットが設定されています"
+          else
+            echo "❌ 以下のシークレットが設定されていません:"
+            printf '  - %s\n' "${MISSING_SECRETS[@]}"
+            exit 1
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: 問題生成 & DB投入
+        id: create
+        run: |
+          LATEST_USED_WORD="${{ vars.LATEST_USED_WORD }}"
+          INPUT_TYPE="${{ github.event.inputs.type }}"
+          INPUT_COUNT="${{ github.event.inputs.count || '5' }}"
+
+          echo "🚀 問題生成を開始します"
+          echo "📌 タイプ: $INPUT_TYPE / 件数: $INPUT_COUNT"
+          if [ -n "$LATEST_USED_WORD" ]; then
+            echo "📍 LATEST_USED_WORD: $LATEST_USED_WORD"
+          else
+            echo "📍 LATEST_USED_WORD: 未設定（先頭から使用）"
+          fi
+
+          # --start-after は値がある場合のみ付与
+          START_AFTER_ARG=""
+          if [ -n "$LATEST_USED_WORD" ]; then
+            START_AFTER_ARG="--start-after=$LATEST_USED_WORD"
+          fi
+
+          OUTPUT=$(NODE_ENV=production npx tsx scripts/create-problems.ts \
+            --type="$INPUT_TYPE" \
+            --count="$INPUT_COUNT" \
+            $START_AFTER_ARG \
+            --seed \
+            --ci 2>&1)
+
+          echo "$OUTPUT"
+
+          # 最後に使った単語を取得（--ci フラグで最終行に LATEST_USED_WORD=<word> が出力される）
+          LAST_LINE=$(echo "$OUTPUT" | grep "^LATEST_USED_WORD=" | tail -1)
+          LAST_WORD="${LAST_LINE#LATEST_USED_WORD=}"
+
+          if [ -n "$LAST_WORD" ]; then
+            echo "✅ 最後に使用した単語: $LAST_WORD"
+            echo "latest_used_word=$LAST_WORD" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ 最後の単語を取得できませんでした"
+            echo "latest_used_word=" >> $GITHUB_OUTPUT
+          fi
+
+          # 生成件数をカウント（ログから取得）
+          CREATED=$(echo "$OUTPUT" | grep -oP '\d+(?=件挿入)' | tail -1)
+          echo "created_count=${CREATED:-0}" >> $GITHUB_OUTPUT
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: LATEST_USED_WORD を更新
+        if: steps.create.outputs.latest_used_word != ''
+        run: |
+          LAST_WORD="${{ steps.create.outputs.latest_used_word }}"
+          echo "🔖 LATEST_USED_WORD を '$LAST_WORD' に更新します"
+          gh variable set LATEST_USED_WORD --body "$LAST_WORD"
+          echo "✅ 更新完了"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 生成サマリー
+        run: |
+          echo ""
+          echo "🎊 ================================================"
+          echo "🎉 問題生成 & DB投入が完了しました"
+          echo "🎊 ================================================"
+          echo "📌 タイプ: ${{ github.event.inputs.type }}"
+          echo "📊 生成件数: ${{ steps.create.outputs.created_count }}件"
+          if [ -n "${{ steps.create.outputs.latest_used_word }}" ]; then
+            echo "🔖 最後の単語: ${{ steps.create.outputs.latest_used_word }}"
+          fi
+          echo ""
+
+  fix-audio:
+    name: 音声URL修復
+    needs: create-and-seed
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set environment variables
+        run: |
+          echo "PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS=true" >> $GITHUB_ENV
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Validate required secrets
+        run: |
+          REQUIRED_SECRETS=(
+            "OPENAI_API_KEY"
+            "DATABASE_URL"
+            "R2_BUCKET_NAME"
+            "R2_ACCESS_KEY_ID"
+            "R2_SECRET_ACCESS_KEY"
+          )
+          MISSING_SECRETS=()
+          for secret in "${REQUIRED_SECRETS[@]}"; do
+            if [ -z "${!secret}" ]; then
+              MISSING_SECRETS+=("$secret")
+            fi
+          done
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ すべての必要なシークレットが設定されています"
+          else
+            echo "❌ 以下のシークレットが設定されていません:"
+            printf '  - %s\n' "${MISSING_SECRETS[@]}"
+            exit 1
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      - name: Check for missing audio files
+        id: check_missing
+        run: |
+          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-audio.ts --check-only 2>/dev/null | tail -1)
+          if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
+            echo "missing_count=$MISSING_COUNT" >> $GITHUB_OUTPUT
+            if [ "$MISSING_COUNT" -eq 0 ]; then
+              echo "✅ 音声URLがnullなレコードは見つかりませんでした"
+              echo "should_run=false" >> $GITHUB_OUTPUT
+            else
+              echo "📊 $MISSING_COUNT件の音声URLがnullなレコードが見つかりました"
+              echo "should_run=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ レコード数の取得に失敗しました。スクリプトを実行します。"
+            echo "missing_count=unknown" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run fix-missing-audio script
+        if: steps.check_missing.outputs.should_run == 'true'
+        run: |
+          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '10' }}"
+          echo "🚀 音声URL修復スクリプトを開始します（処理件数上限: $INPUT_BATCH_SIZE件）"
+          npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      - name: Wait for cleanup
+        if: steps.check_missing.outputs.should_run == 'true'
+        run: sleep 5
+
+      - name: Verify fixed audio URLs
+        if: steps.check_missing.outputs.should_run == 'true'
+        run: |
+          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-audio.ts --check-only 2>/dev/null | tail -1 || echo "TIMEOUT")
+          if [ "$REMAINING_COUNT" = "TIMEOUT" ]; then
+            echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"
+          elif [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
+            FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
+            echo "✅ $FIXED_COUNT件のレコードの音声URLを修復しました（残り: $REMAINING_COUNT件）"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  fix-image:
+    name: 画像URL修復
+    needs: create-and-seed
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set environment variables
+        run: |
+          echo "PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS=true" >> $GITHUB_ENV
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Validate required secrets
+        run: |
+          REQUIRED_SECRETS=(
+            "OPENAI_API_KEY"
+            "DATABASE_URL"
+            "R2_BUCKET_NAME"
+            "R2_ACCESS_KEY_ID"
+            "R2_SECRET_ACCESS_KEY"
+          )
+          MISSING_SECRETS=()
+          for secret in "${REQUIRED_SECRETS[@]}"; do
+            if [ -z "${!secret}" ]; then
+              MISSING_SECRETS+=("$secret")
+            fi
+          done
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ すべての必要なシークレットが設定されています"
+          else
+            echo "❌ 以下のシークレットが設定されていません:"
+            printf '  - %s\n' "${MISSING_SECRETS[@]}"
+            exit 1
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      - name: Check for missing image files
+        id: check_missing
+        run: |
+          MISSING_COUNT=$(NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>/dev/null | tail -1)
+          if [[ "$MISSING_COUNT" =~ ^[0-9]+$ ]]; then
+            echo "missing_count=$MISSING_COUNT" >> $GITHUB_OUTPUT
+            if [ "$MISSING_COUNT" -eq 0 ]; then
+              echo "✅ 画像URLがnullなレコードは見つかりませんでした"
+              echo "should_run=false" >> $GITHUB_OUTPUT
+            else
+              echo "📊 $MISSING_COUNT件の画像URLがnullなレコードが見つかりました"
+              echo "should_run=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️ レコード数の取得に失敗しました。スクリプトを実行します。"
+            echo "missing_count=unknown" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run fix-missing-image script
+        if: steps.check_missing.outputs.should_run == 'true'
+        run: |
+          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '10' }}"
+          echo "🚀 画像URL修復スクリプトを開始します（処理件数上限: $INPUT_BATCH_SIZE件）"
+          npx tsx scripts/fix-missing-image.ts "$INPUT_BATCH_SIZE"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      - name: Wait for cleanup
+        if: steps.check_missing.outputs.should_run == 'true'
+        run: sleep 5
+
+      - name: Verify fixed image URLs
+        if: steps.check_missing.outputs.should_run == 'true'
+        run: |
+          REMAINING_COUNT=$(timeout 30 NODE_ENV=production npx tsx scripts/fix-missing-image.ts --check-only 2>/dev/null | tail -1 || echo "TIMEOUT")
+          if [ "$REMAINING_COUNT" = "TIMEOUT" ]; then
+            echo "⚠️ DB確認はタイムアウトしましたが、スクリプトは正常に実行されました"
+          elif [[ "$REMAINING_COUNT" =~ ^[0-9]+$ ]]; then
+            FIXED_COUNT=$((${{ steps.check_missing.outputs.missing_count }} - REMAINING_COUNT))
+            echo "✅ $FIXED_COUNT件のレコードの画像URLを修復しました（残り: $REMAINING_COUNT件）"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

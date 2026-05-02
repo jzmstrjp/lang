@@ -1,5 +1,4 @@
 export const words: string[] = [
-  'hence',
   'highlight',
   'highlighting',
   'hosting',
