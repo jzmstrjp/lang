@@ -1474,8 +1474,18 @@ async function finalizeAndSave(
     console.log('  （これらの単語はwords.tsに残されます。次回再実行してください）');
   }
 
+  // 先頭から lastWord まで（スキップ分も含む）まとめて削除
   console.log('🧹 使用済み語彙をwords.tsから削除中...');
-  removeUsedWordsFromWordList(successfulWords);
+  if (lastWord) {
+    const lastIdx = words.indexOf(lastWord);
+    if (lastIdx !== -1) {
+      removeUsedWordsFromWordList(words.slice(0, lastIdx + 1));
+    } else {
+      removeUsedWordsFromWordList(successfulWords);
+    }
+  } else {
+    removeUsedWordsFromWordList(successfulWords);
+  }
 
   console.log(`\n🎉 完了！${successfulWords.length}単語から${totalProblems}問を生成しました`);
   if (skippedWords.length > 0) {
