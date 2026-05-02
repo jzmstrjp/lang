@@ -6,7 +6,7 @@ on:
       type:
         description: '問題タイプ'
         required: true
-        default: 'medium'
+        default: 'short'
         type: choice
         options:
           - short
@@ -17,12 +17,12 @@ on:
       count:
         description: '生成する問題数（単語数）'
         required: false
-        default: '5'
+        default: '30'
         type: string
       batch_size:
-        description: '音声・画像の処理件数上限（デフォルト：10件）'
+        description: '音声・画像の処理件数上限'
         required: false
-        default: '10'
+        default: '30'
         type: string
 
 jobs:
