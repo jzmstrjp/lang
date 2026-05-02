@@ -1440,17 +1440,26 @@ async function finalizeAndSave(
   console.log('\n📦 SeedProblemDataに変換中...');
   const seedProblems = convertToSeedProblemData(problems, isKids);
 
+  const lastWord = successfulWords.length > 0 ? successfulWords[successfulWords.length - 1] : null;
+
   if (useSeed) {
     // --seed フラグ: ファイルを作らず直接 DB 投入（成功後に LATEST_USED_WORD も更新）
     console.log('🌱 DB に直接投入します...');
-    const lastWord = successfulWords[successfulWords.length - 1];
-    await seedToDatabase(seedProblems, lastWord);
+    if (lastWord) {
+      await seedToDatabase(seedProblems, lastWord);
+    }
   } else {
-    // 通常モード: ファイルに保存
+    // 通常モード: ファイルに保存してから手動で db:seed する
     const fileNumber = getNextProblemNumber();
     console.log(`💾 ファイルを保存中... (problem${fileNumber}.ts)`);
     const savedPath = saveProblemFile(seedProblems, fileNumber);
     console.log(`✅ 保存完了: ${savedPath}\n`);
+
+    // LATEST_USED_WORD を DB に保存
+    if (lastWord) {
+      await updateLatestUsedWord(lastWord);
+    }
+
     console.log(`\n次のステップ:`);
     console.log(`  1. 生成されたファイルを確認してください`);
     console.log(`  2. npm run db:seed ${savedPath} でデータベースに登録できます`);
@@ -1465,19 +1474,14 @@ async function finalizeAndSave(
     console.log('  （これらの単語はwords.tsに残されます。次回再実行してください）');
   }
 
-  if (!useSeed) {
-    console.log('🧹 使用済み語彙をwords.tsから削除中...');
-    // 成功した単語のみファイルから削除（スキップされた単語は残す）
-    removeUsedWordsFromWordList(successfulWords);
-  }
+  console.log('🧹 使用済み語彙をwords.tsから削除中...');
+  removeUsedWordsFromWordList(successfulWords);
 
   console.log(`\n🎉 完了！${successfulWords.length}単語から${totalProblems}問を生成しました`);
   if (skippedWords.length > 0) {
     console.log(`⏭️ ${skippedWords.length}単語はAPI失敗のためスキップされました`);
   }
-  if (!useSeed) {
-    console.log(`📚 残りの単語数: ${words.length - successfulWords.length}個`);
-  }
+  console.log(`📚 残りの単語数: ${words.length - successfulWords.length}個`);
 }
 
 /**
@@ -1567,7 +1571,7 @@ async function seedToDatabase(seedProblems: SeedProblemData[], lastWord: string)
 }
 
 /**
- * DB から LATEST_USED_WORD を読む（--seed モード用）
+ * DB から LATEST_USED_WORD を読む
  */
 async function getLatestUsedWord(): Promise<string | null> {
   const prisma = new PrismaClient({ log: ['error'] });
@@ -1576,6 +1580,23 @@ async function getLatestUsedWord(): Promise<string | null> {
       where: { key: 'LATEST_USED_WORD' },
     });
     return config?.value ?? null;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
+ * DB に LATEST_USED_WORD を保存する（通常モード用）
+ */
+async function updateLatestUsedWord(word: string): Promise<void> {
+  const prisma = new PrismaClient({ log: ['error'] });
+  try {
+    await prisma.appConfig.upsert({
+      where: { key: 'LATEST_USED_WORD' },
+      update: { value: word },
+      create: { key: 'LATEST_USED_WORD', value: word },
+    });
+    console.log(`🔖 LATEST_USED_WORD を "${word}" に更新しました`);
   } finally {
     await prisma.$disconnect();
   }
@@ -1836,15 +1857,12 @@ async function main() {
     const { type: problemType, count } = cliArgs ?? (await promptProblemSettings());
     const useSeed = cliArgs?.seed ?? false;
 
-    // --seed モードの場合は DB から LATEST_USED_WORD を読む
-    let startAfter: string | null = null;
-    if (useSeed) {
-      startAfter = await getLatestUsedWord();
-      if (startAfter) {
-        console.log(`📍 LATEST_USED_WORD: "${startAfter}"`);
-      } else {
-        console.log('📍 LATEST_USED_WORD: 未設定（先頭から使用）');
-      }
+    // DB から LATEST_USED_WORD を読んで開始位置を決める
+    const startAfter = await getLatestUsedWord();
+    if (startAfter) {
+      console.log(`📍 LATEST_USED_WORD: "${startAfter}"`);
+    } else {
+      console.log('📍 LATEST_USED_WORD: 未設定（先頭から使用）');
     }
 
     // モード表示
