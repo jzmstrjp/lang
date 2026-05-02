@@ -12,6 +12,31 @@ import { compressionConfig } from '../config/compression';
 
 const gzipAsync = promisify(gzip);
 
+export class R2AssetKey {
+  readonly value: string;
+
+  private constructor(value: string) {
+    this.value = value;
+  }
+
+  static forAudio(
+    problemId: string,
+    language: 'en' | 'ja' | 'en-reply',
+    speaker: VoiceGender,
+    now: Date = new Date(),
+  ): R2AssetKey {
+    const date = now.toISOString().slice(0, 10);
+    const timeHash = now.getTime().toString(36);
+    return new R2AssetKey(`audio/${date}/${problemId}_${language}_${speaker}_${timeHash}.mp3`);
+  }
+
+  static forImage(problemId: string, format: 'png' | 'webp', now: Date = new Date()): R2AssetKey {
+    const date = now.toISOString().slice(0, 10);
+    const timeHash = now.getTime().toString(36);
+    return new R2AssetKey(`images/${date}/${problemId}_composite_${timeHash}.${format}`);
+  }
+}
+
 // 環境変数を読み込み
 if (typeof window === 'undefined') {
   config({ path: '.env' });
@@ -60,8 +85,8 @@ function createR2Client() {
 /**
  * バッファデータをR2にアップロード
  */
-export async function uploadToR2(
-  key: string,
+async function uploadToR2(
+  key: R2AssetKey,
   buffer: Buffer,
   contentType: string,
   metadata?: Record<string, string>,
@@ -104,7 +129,7 @@ export async function uploadToR2(
 
   const command = new PutObjectCommand({
     Bucket: R2_BUCKET_NAME,
-    Key: key,
+    Key: key.value,
     Body: body,
     ContentType: finalContentType,
     ContentEncoding: contentEncoding,
@@ -115,7 +140,7 @@ export async function uploadToR2(
 
   await client.send(command);
 
-  return key;
+  return key.value;
 }
 
 /**
@@ -128,22 +153,14 @@ export async function uploadAudioToR2(
   speaker: VoiceGender,
   compress: boolean = false,
 ): Promise<string> {
-  const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `audio/${timestamp}/${problemId}_${language}_${speaker}.mp3`;
-
-  // 設定から音声圧縮の有効性を判定
+  const key = R2AssetKey.forAudio(problemId, language, speaker);
   const shouldCompress = compress !== false && compressionConfig.audio.compressMP3;
 
   return uploadToR2(
     key,
     audioBuffer,
     'audio/mpeg',
-    {
-      problemId,
-      language,
-      speaker,
-      type: 'audio',
-    },
+    { problemId, language, speaker, type: 'audio' },
     shouldCompress,
   );
 }
@@ -157,7 +174,6 @@ export async function uploadImageToR2(
   imageType: 'composite',
   compress?: boolean,
 ): Promise<string> {
-  // 設定でWebPが有効な場合はWebP形式でアップロード
   if (compressionConfig.image.useWebP) {
     return uploadImageAsWebPToR2(
       imageBuffer,
@@ -167,21 +183,14 @@ export async function uploadImageToR2(
     );
   }
 
-  const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `images/${timestamp}/${problemId}_${imageType}.png`;
-
-  // 設定から画像圧縮の有効性を判定
+  const key = R2AssetKey.forImage(problemId, 'png');
   const shouldCompress = compress !== false && compressionConfig.image.pngCompression;
 
   return uploadToR2(
     key,
     imageBuffer,
     'image/png',
-    {
-      problemId,
-      imageType,
-      type: 'image',
-    },
+    { problemId, imageType, type: 'image' },
     shouldCompress,
   );
 }
@@ -203,8 +212,7 @@ export async function uploadImageAsWebPToR2(
     // WebP形式に変換（品質設定で圧縮率調整）
     const webpBuffer = await sharp(imageBuffer).webp({ quality }).toBuffer();
 
-    const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const key = `images/${timestamp}/${problemId}_${imageType}.webp`;
+    const key = R2AssetKey.forImage(problemId, 'webp');
 
     console.log(
       `[R2] WebP変換: ${imageBuffer.length} → ${webpBuffer.length} bytes (${Math.round((1 - webpBuffer.length / imageBuffer.length) * 100)}% 削減)`,
@@ -214,33 +222,22 @@ export async function uploadImageAsWebPToR2(
       key,
       webpBuffer,
       'image/webp',
-      {
-        problemId,
-        imageType,
-        type: 'image',
-        format: 'webp',
-        quality: quality.toString(),
-      },
-      false,
-    ); // WebPは既に圧縮済みなのでgzip圧縮は無効
+      { problemId, imageType, type: 'image', format: 'webp', quality: quality.toString() },
+      false, // WebPは既に圧縮済みなのでgzip圧縮は無効
+    );
   } catch (error) {
     console.error('[R2] WebP変換エラーの詳細:', error);
     console.warn('[R2] WebP変換に失敗、PNG形式でアップロード');
 
     // フォールバック: 通常のPNG形式でアップロード（無限ループを防ぐため直接処理）
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const key = `images/${timestamp}/${problemId}_${imageType}.png`;
+    const key = R2AssetKey.forImage(problemId, 'png');
     const shouldCompress = compressionConfig.image.pngCompression;
 
     return uploadToR2(
       key,
       imageBuffer,
       'image/png',
-      {
-        problemId,
-        imageType,
-        type: 'image',
-      },
+      { problemId, imageType, type: 'image' },
       shouldCompress,
     );
   }
