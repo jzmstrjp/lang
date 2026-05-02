@@ -115,6 +115,7 @@ export default function ProblemFlow({
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
   const [isImprovingTranslation, setImprovingTranslation] = useState(false);
+  const [isRegeneratingReply, setRegeneratingReply] = useState(false);
   const [isAdminModalOpen, setAdminModalOpen] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
@@ -559,6 +560,113 @@ export default function ProblemFlow({
     }
   };
 
+  const handleRegenerateReply = async () => {
+    if (isRegeneratingReply) {
+      return;
+    }
+
+    const targetProblemId = currentProblem?.id;
+    const japaneseSentence = currentProblem?.japaneseSentence;
+    const currentJapaneseReply = currentProblem?.japaneseReply;
+
+    if (!targetProblemId || !currentJapaneseReply) {
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    setRegeneratingReply(true);
+
+    try {
+      // AI で englishReply + japaneseReply を再生成
+      const regenerateResponse = await fetch('/api/admin/problems/regenerate-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemId: targetProblemId }),
+      });
+
+      if (!regenerateResponse.ok) {
+        const data = await regenerateResponse.json().catch(() => null);
+        window.alert(data?.error ?? '返答の再生成に失敗しました。');
+        return;
+      }
+
+      const regenerateData = await regenerateResponse.json();
+      const newEnglishReply = regenerateData.englishReply as string;
+      const newJapaneseReply = regenerateData.japaneseReply as string;
+
+      if (!newEnglishReply || !newJapaneseReply) {
+        window.alert('返答の再生成に失敗しました。');
+        return;
+      }
+
+      // confirm ダイアログで新しい返答を提示
+      const confirmed = window.confirm(
+        `「${japaneseSentence}」\nに対する返答を以下の内容に変更しますか？\n\n【日本語】\n「${currentJapaneseReply}」\n↓\n「${newJapaneseReply}」\n【英語】\n「${newEnglishReply}」`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // DB を更新
+      const updateResponse = await fetch('/api/admin/problems/update-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problemId: targetProblemId,
+          englishReply: newEnglishReply,
+          japaneseReply: newJapaneseReply,
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        const data = await updateResponse.json().catch(() => null);
+        window.alert(data?.error ?? '返答の更新に失敗しました。');
+        return;
+      }
+
+      // 英語返答音声を再生成
+      const audioEnReplyResponse = await fetch('/api/admin/problems/regenerate-asset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemId: targetProblemId, field: 'audioEnReplyUrl' }),
+      });
+
+      if (!audioEnReplyResponse.ok) {
+        const data = await audioEnReplyResponse.json().catch(() => null);
+        window.alert(data?.error ?? '英語返答音声の再生成に失敗しました。');
+        return;
+      }
+
+      // 日本語返答音声を再生成
+      const audioJaResponse = await fetch('/api/admin/problems/regenerate-asset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemId: targetProblemId, field: 'audioJaUrl' }),
+      });
+
+      if (!audioJaResponse.ok) {
+        const data = await audioJaResponse.json().catch(() => null);
+        window.alert(data?.error ?? '日本語返答音声の再生成に失敗しました。');
+        return;
+      }
+
+      // ページをリロード
+      const sentence = currentProblem.englishSentence;
+      window.location.href = `${pathname}?search=${encodeURIComponent(sentence)}`;
+    } catch (error) {
+      console.error('[ProblemFlow] 返答再生成エラー:', error);
+      if (typeof window !== 'undefined') {
+        window.alert('返答の再生成中にエラーが発生しました。');
+      }
+    } finally {
+      setRegeneratingReply(false);
+    }
+  };
+
   const updateIncorrectOption = async (
     incorrectIndex: number,
     nextText: string,
@@ -821,6 +929,7 @@ export default function ProblemFlow({
             isAdminPromise={isAdminPromise}
             isDeletingProblem={isDeletingProblem}
             isImprovingTranslation={isImprovingTranslation}
+            isRegeneratingReply={isRegeneratingReply}
             regeneratingAssetRef={regeneratingAssetRef}
             onRegenerateImage={handleRegenerateImage}
             onRegenerateAudioEn={handleRegenerateAudioEn}
@@ -828,6 +937,7 @@ export default function ProblemFlow({
             onRegenerateAudioJa={handleRegenerateAudioJa}
             onDeleteProblem={handleDeleteProblem}
             onImproveTranslation={handleImproveTranslation}
+            onRegenerateReply={handleRegenerateReply}
             isModalOpen={isAdminModalOpen}
             onClose={() => setAdminModalOpen(false)}
           />
@@ -1378,6 +1488,7 @@ type AdminProblemActionsProps = {
   isAdminPromise: Promise<boolean>;
   isDeletingProblem: boolean;
   isImprovingTranslation: boolean;
+  isRegeneratingReply: boolean;
   regeneratingAssetRef: React.MutableRefObject<Record<RemovableField, boolean>>;
   onRegenerateImage: () => void;
   onRegenerateAudioEn: () => void;
@@ -1385,6 +1496,7 @@ type AdminProblemActionsProps = {
   onRegenerateAudioJa: () => void;
   onDeleteProblem: () => void;
   onImproveTranslation: () => void;
+  onRegenerateReply: () => void;
   isModalOpen: boolean;
   onClose: () => void;
 };
@@ -1393,6 +1505,7 @@ function AdminProblemActions({
   isAdminPromise,
   isDeletingProblem,
   isImprovingTranslation,
+  isRegeneratingReply,
   regeneratingAssetRef,
   onRegenerateImage,
   onRegenerateAudioEn,
@@ -1400,6 +1513,7 @@ function AdminProblemActions({
   onRegenerateAudioJa,
   onDeleteProblem,
   onImproveTranslation,
+  onRegenerateReply,
   isModalOpen,
   onClose,
 }: AdminProblemActionsProps) {
@@ -1433,7 +1547,7 @@ function AdminProblemActions({
       }}
     >
       <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
-        <div className="space-y-6">
+        <div className="space-y-8">
           <button
             type="button"
             onClick={onRegenerateImage}
@@ -1448,6 +1562,14 @@ function AdminProblemActions({
             className="inline-flex w-full items-center justify-center rounded-full bg-yellow-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-30"
           >
             {isImprovingTranslation ? '改善中…' : '日本語訳を改善する'}
+          </button>
+          <button
+            type="button"
+            onClick={onRegenerateReply}
+            disabled={isRegeneratingReply}
+            className="inline-flex w-full items-center justify-center rounded-full bg-orange-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-orange-500/30 transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            {isRegeneratingReply ? '再生成中…' : '返答全体を再生成する'}
           </button>
           <div className="space-y-3">
             <button
