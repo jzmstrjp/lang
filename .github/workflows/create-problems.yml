@@ -34,10 +34,6 @@ jobs:
     permissions:
       actions: write # LATEST_USED_WORD Variable の更新に必要
 
-    outputs:
-      latest_used_word: ${{ steps.create.outputs.latest_used_word }}
-      created_count: ${{ steps.create.outputs.created_count }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,60 +87,19 @@ jobs:
       - name: 問題生成 & DB投入
         id: create
         run: |
-          LATEST_USED_WORD="${{ vars.LATEST_USED_WORD }}"
           INPUT_TYPE="${{ github.event.inputs.type }}"
           INPUT_COUNT="${{ github.event.inputs.count || '5' }}"
 
           echo "🚀 問題生成を開始します"
           echo "📌 タイプ: $INPUT_TYPE / 件数: $INPUT_COUNT"
-          if [ -n "$LATEST_USED_WORD" ]; then
-            echo "📍 LATEST_USED_WORD: $LATEST_USED_WORD"
-          else
-            echo "📍 LATEST_USED_WORD: 未設定（先頭から使用）"
-          fi
+          echo "📍 LATEST_USED_WORD は DB から自動取得します"
 
-          # --start-after は値がある場合のみ付与
-          START_AFTER_ARG=""
-          if [ -n "$LATEST_USED_WORD" ]; then
-            START_AFTER_ARG="--start-after=$LATEST_USED_WORD"
-          fi
-
-          OUTPUT=$(NODE_ENV=production npx tsx scripts/create-problems.ts \
+          NODE_ENV=production npx tsx scripts/create-problems.ts \
             --type="$INPUT_TYPE" \
             --count="$INPUT_COUNT" \
-            $START_AFTER_ARG \
-            --seed \
-            --ci 2>&1)
-
-          echo "$OUTPUT"
-
-          # 最後に使った単語を取得（--ci フラグで最終行に LATEST_USED_WORD=<word> が出力される）
-          LAST_LINE=$(echo "$OUTPUT" | grep "^LATEST_USED_WORD=" | tail -1)
-          LAST_WORD="${LAST_LINE#LATEST_USED_WORD=}"
-
-          if [ -n "$LAST_WORD" ]; then
-            echo "✅ 最後に使用した単語: $LAST_WORD"
-            echo "latest_used_word=$LAST_WORD" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️ 最後の単語を取得できませんでした"
-            echo "latest_used_word=" >> $GITHUB_OUTPUT
-          fi
-
-          # 生成件数をカウント（ログから取得）
-          CREATED=$(echo "$OUTPUT" | grep -oP '\d+(?=件挿入)' | tail -1)
-          echo "created_count=${CREATED:-0}" >> $GITHUB_OUTPUT
+            --seed
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-      - name: LATEST_USED_WORD を更新
-        if: steps.create.outputs.latest_used_word != ''
-        run: |
-          LAST_WORD="${{ steps.create.outputs.latest_used_word }}"
-          echo "🔖 LATEST_USED_WORD を '$LAST_WORD' に更新します"
-          gh variable set LATEST_USED_WORD --body "$LAST_WORD"
-          echo "✅ 更新完了"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 生成サマリー
         run: |
@@ -153,10 +108,7 @@ jobs:
           echo "🎉 問題生成 & DB投入が完了しました"
           echo "🎊 ================================================"
           echo "📌 タイプ: ${{ github.event.inputs.type }}"
-          echo "📊 生成件数: ${{ steps.create.outputs.created_count }}件"
-          if [ -n "${{ steps.create.outputs.latest_used_word }}" ]; then
-            echo "🔖 最後の単語: ${{ steps.create.outputs.latest_used_word }}"
-          fi
+          echo "📊 件数: ${{ github.event.inputs.count || '5' }}問"
           echo ""
 
   fix-audio:
