@@ -153,7 +153,11 @@ export default function FillBlankFlow({ initialProblem, difficultyLevel }: FillB
   return (
     <div className="max-w-full">
       {phase.kind === 'quiz' && (
-        <QuizView blankProblem={phase.blankProblem} onSelectOption={handleOptionSelect} />
+        <QuizView
+          blankProblem={phase.blankProblem}
+          japaneseSentence={difficultyLevel === 'kids' ? phase.problem.japaneseSentence : undefined}
+          onSelectOption={handleOptionSelect}
+        />
       )}
       {phase.kind === 'correct' && (
         <CorrectView
@@ -171,10 +175,11 @@ export default function FillBlankFlow({ initialProblem, difficultyLevel }: FillB
 
 type QuizViewProps = {
   blankProblem: BlankProblemData;
+  japaneseSentence?: string;
   onSelectOption: (index: number) => void;
 };
 
-function QuizView({ blankProblem, onSelectOption }: QuizViewProps) {
+function QuizView({ blankProblem, japaneseSentence, onSelectOption }: QuizViewProps) {
   return (
     <section className="grid w-[500px] max-w-full mx-auto pt-3">
       <div className="mb-8">
@@ -185,6 +190,9 @@ function QuizView({ blankProblem, onSelectOption }: QuizViewProps) {
           </span>
           {blankProblem.afterBlank}
         </p>
+        {japaneseSentence && (
+          <p className="mt-3 -mb-2 text-center text-base text-[var(--text)]">{japaneseSentence}</p>
+        )}
       </div>
       <ul className="grid gap-3">
         {blankProblem.options.map((option, index) => (
