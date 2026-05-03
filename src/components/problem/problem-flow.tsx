@@ -341,19 +341,14 @@ export default function ProblemFlow({
 
       const responseData = await response.json();
 
-      // 画像の場合は非同期処理（バックグラウンドで生成）
-      if (field === 'imageUrl' && responseData.async) {
-        if (typeof window !== 'undefined') {
-          window.alert(
-            responseData.message || '画像の再生成を依頼しました。完了まで数十秒かかります。',
-          );
-        }
-        return;
-      }
-
       if (responseData[field]) {
         const sentence = currentProblem.englishSentence;
-        window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
+        const shouldReload =
+          field !== 'imageUrl' ||
+          window.confirm('画像の再生成が完了しました。画面を更新して新しい画像を表示しますか？');
+        if (shouldReload) {
+          window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
+        }
       }
     } catch (error) {
       console.error(`[ProblemFlow] ${field}再生成エラー:`, error);
