@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const latestParam = searchParams.get('latest');
     const latestDays =
       latestParam !== null && Number.isFinite(Number(latestParam))
-        ? parseInt(latestParam, 10)
+        ? parseFloat(latestParam)
         : undefined;
 
     const result = await fetchProblems({

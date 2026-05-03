@@ -119,9 +119,8 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
 
   // latestDaysが指定されている場合は作成日でフィルタ
   if (latestDays !== undefined) {
-    const sanitizedDays = Math.min(Math.max(Math.floor(latestDays), 1), 365);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - sanitizedDays);
+    const sanitizedDays = Math.min(Math.max(latestDays, 0.01), 365);
+    const cutoff = new Date(Date.now() - sanitizedDays * 24 * 60 * 60 * 1000);
     whereClauses.push(Prisma.sql`"createdAt" >= ${cutoff}`);
   }
 

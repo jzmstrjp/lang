@@ -97,7 +97,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
   const latestParam = resolvedSearchParams.latest;
   const latestDays =
     latestParam !== undefined && Number.isFinite(Number(latestParam))
-      ? parseInt(latestParam, 10)
+      ? parseFloat(latestParam)
       : undefined;
   const displayName = type;
   const initialProblemPromise = loadInitialProblem({
