@@ -186,7 +186,7 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
   const [senderFaceDirection, receiverFaceDirection] =
     senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
 
-  return `上下2コマに分割された写真を生成すること。
+  return `上下半分に分割された写真を生成すること。
 上下のコマの高さは正確に同じであること。コマの周囲に枠線と余白を作らないこと。
 
 【重要】
@@ -201,9 +201,9 @@ ${problem.place}
 
 【登場人物】
 - 話しかける人（sender）
-  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
+  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。派手さはないが、ものすごく美形。
 - 話しかけられて応答する人（receiver）
-  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
+  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。派手さはないが、ものすごく美形。
 
 ※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
@@ -212,14 +212,12 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 これを2コマに分けて描いてください。
 
 【1コマ目】
-- ${senderName}（${senderGenderText}）は画像の${receiverFaceDirection}にいて、${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている。
+- ${senderName}（${senderGenderText}）が「${problem.englishSentence}」と言っている。
 - ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
-- まだ${receiverName}（${receiverGenderText}）は描かないこと。
 
 【2コマ目】
-- ${receiverName}（${receiverGenderText}）は画像の${senderFaceDirection}にいて、${receiverFaceDirection}を向いて「${problem.englishReply}」と返答している。つまり1コマ目とは左右逆のアングルで描画すること。
+- ${receiverName}（${receiverGenderText}）が「${problem.englishReply}」と返答している。1コマ目とは左右逆のアングルで描画すること。
 - ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
-- もう${senderName}（${senderGenderText}）は描かないこと。
 
 【備考】
 - 1コマ目、2コマ目が同じ場所だとしても、背景のアングルは変えるべきです。
