@@ -201,9 +201,9 @@ ${problem.place}
 
 【登場人物】
 - 話しかける人（sender）
-  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。派手さはないが、ものすごく美形。
+  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。派手さはないが、モデルやアイドルのようにものすごく美形。
 - 話しかけられて応答する人（receiver）
-  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。派手さはないが、ものすごく美形。
+  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。派手さはないが、モデルやアイドルのようにものすごく美形。
 
 ※ビデオ通話の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
