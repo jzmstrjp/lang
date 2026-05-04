@@ -23,6 +23,12 @@ export function cdnUrl(path: string): string {
   return `${CDN_ORIGIN}/${p}`;
 }
 
+export const ENGLISH_REPLY_PROMPT_RULES = `受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動詞や相槌が欲しい。
+  - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
+  - 例: "Are you hungry?" に対して "Yes, I want some pizza."
+  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
+  - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）`;
+
 // 連続正解のシェア対象となるcount値
 export const ALLOWED_SHARE_COUNTS = [
   5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 300, 400, 500,

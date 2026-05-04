@@ -3,7 +3,7 @@ import { OpenAI } from 'openai';
 import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL, ENGLISH_REPLY_PROMPT_RULES } from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -58,13 +58,9 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 - 性別: ${problem.receiverVoice === 'male' ? '男性' : '女性'}
 
 【重要な要件】
-1. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
-   - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
-   - 例: "Are you hungry?" に対して "Yes, I want some pizza."
-   - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
-   - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
-2. 自然な口語表現で、実際の会話らしくすること。
-3. 文脈に合った適切な内容にすること。
+- englishReply: ${ENGLISH_REPLY_PROMPT_RULES}
+- 自然な口語表現で、実際の会話らしくすること。
+- 文脈に合った適切な内容にすること。
 
 【重要】以下のJSON形式で必ず回答してください:
 

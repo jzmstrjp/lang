@@ -6,7 +6,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import * as readline from 'readline';
 import { words } from '../docs/words';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL, ENGLISH_REPLY_PROMPT_RULES } from '@/const';
 import type { SeedProblemData } from '@/types/problem';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { PrismaClient } from '@prisma/client';
@@ -62,6 +62,25 @@ type SceneDraftWithVoice = {
   };
 };
 
+function buildScenePromptBlock(sceneDraft: SceneDraftWithVoice): string {
+  return `【シーン設定】
+- いつ: ${sceneDraft.when}
+- どのように: ${sceneDraft.how}
+- 使用する単語: ${sceneDraft.word}
+
+【送信者（英文を話す人）】
+- 役割: ${sceneDraft.sender.role}
+- 性別: ${sceneDraft.sender.voice === 'male' ? '男性' : '女性'}
+- 場所: ${sceneDraft.sender.where}
+- 意図: ${sceneDraft.sender.why}
+
+【受信者（返答する人）】
+- 役割: ${sceneDraft.receiver.role}
+- 性別: ${sceneDraft.receiver.voice === 'male' ? '男性' : '女性'}
+- 場所: ${sceneDraft.receiver.where}
+- 意図: ${sceneDraft.receiver.why}`;
+}
+
 /**
  * OpenAI APIを使って英文の会話を生成
  */
@@ -83,33 +102,14 @@ async function createEnglishConversation(
   const prompt = isKids
     ? `以下のシーン設定に基づいて、中学1年生の英語の教科書に出てきそうな、とても短くて簡単な英語の会話を作成してください。
 
-【シーン設定】
-- いつ: ${sceneDraft.when}
-- どのように: ${sceneDraft.how}
-- 使用する単語: ${sceneDraft.word}
-
-【送信者（英文を話す人）】
-- 役割: ${sceneDraft.sender.role}
-- 性別: ${sceneDraft.sender.voice === 'male' ? '男性' : '女性'}
-- 場所: ${sceneDraft.sender.where}
-- 意図: ${sceneDraft.sender.why}
-
-【受信者（返答する人）】
-- 役割: ${sceneDraft.receiver.role}
-- 性別: ${sceneDraft.receiver.voice === 'male' ? '男性' : '女性'}
-- 場所: ${sceneDraft.receiver.where}
-- 意図: ${sceneDraft.receiver.why}
+${buildScenePromptBlock(sceneDraft)}
 
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、文脈を知らなくても意図や状況が分かるような文が好ましい。
    - **最重要: 必ず${wordCountRange.max}単語以内の短い文にすること。長い文は絶対に禁止。**${noteInstruction}
    - 良い例: "Do you like cats?" (4単語), "Can you swim?" (3単語), "I like pizza." (3単語)
    - 悪い例: "Do you want to go to the park with me after school?" (長すぎる)
-2. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
-  - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
-  - 例: "Are you hungry?" に対して "Yes, I want some pizza."
-  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
-  - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
+2. englishReply: ${ENGLISH_REPLY_PROMPT_RULES}
 3. 使用する文法は be動詞、一般動詞の現在形・過去形、can、疑問文(Do you/Is this/Can you/Did you)程度に限定すること。関係代名詞、仮定法、完了形、受動態は使わないこと。
 4. 両方とも自然な口語表現で、実際の会話らしくすること。
 5. 文脈に合った適切な内容にすること。
@@ -125,31 +125,12 @@ async function createEnglishConversation(
 \`\`\``
     : `以下のシーン設定に基づいて、自然な英語の会話を作成してください。TOEICのリスニング問題に出てきそうな会話にしてください。
 
-【シーン設定】
-- いつ: ${sceneDraft.when}
-- どのように: ${sceneDraft.how}
-- 使用する単語: ${sceneDraft.word}
-
-【送信者（英文を話す人）】
-- 役割: ${sceneDraft.sender.role}
-- 性別: ${sceneDraft.sender.voice === 'male' ? '男性' : '女性'}
-- 場所: ${sceneDraft.sender.where}
-- 意図: ${sceneDraft.sender.why}
-
-【受信者（返答する人）】
-- 役割: ${sceneDraft.receiver.role}
-- 性別: ${sceneDraft.receiver.voice === 'male' ? '男性' : '女性'}
-- 場所: ${sceneDraft.receiver.where}
-- 意図: ${sceneDraft.receiver.why}
+${buildScenePromptBlock(sceneDraft)}
 
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、文脈を知らなくても意図や状況が分かるような文が好ましい。
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
-2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
-  - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
-  - 例: "Is this your bag?" に対して "No, I think it might belong to Mr. Yamada."
-  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
-  - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
+2. englishReply: ${ENGLISH_REPLY_PROMPT_RULES}
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
   - 「こう話しかけられたら、こう返答するのは自然だよなあ」と感じる内容にすること。
