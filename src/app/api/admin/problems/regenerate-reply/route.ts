@@ -61,7 +61,7 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 1. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
    - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
    - 例: "Are you hungry?" に対して "Yes, I want some pizza."
-   - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。
+   - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただし単純なオウム返しは禁止する。
    - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
 2. 自然な口語表現で、実際の会話らしくすること。
 3. 文脈に合った適切な内容にすること。
