@@ -105,7 +105,7 @@ async function createEnglishConversation(
    - **最重要: 必ず${wordCountRange.max}単語以内の短い文にすること。長い文は絶対に禁止。**${noteInstruction}
    - 良い例: "Do you like cats?" (4単語), "Can you swim?" (3単語), "I like pizza." (3単語)
    - 悪い例: "Do you want to go to the park with me after school?" (長すぎる)
-2. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
+2. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。できれば最初に感動しや相槌が欲しい。
   - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
   - 例: "Are you hungry?" に対して "Yes, I want some pizza."
   - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。
@@ -144,7 +144,7 @@ async function createEnglishConversation(
 【重要な要件】
 1. englishSentence: 送信者が話す英文。「${sceneDraft.word}」という表現を必ず使用すること。この文だけ読めば、文脈を知らなくても意図や状況が分かるような文が好ましい。
    - **重要: ${wordCountRange.min}〜${wordCountRange.max}単語の範囲内で作成すること**${noteInstruction}
-2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。
+2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。できれば最初に感動しや相槌が欲しい。
   - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
   - 例: "Is this your bag?" に対して "No, I think it might belong to Mr. Yamada."
   - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。
@@ -914,8 +914,15 @@ ${adultJsonExample}`;
       throw new Error('sender.gender と receiver.gender は逆の性別である必要があります');
     }
 
-    // receiver.whyを固定値で上書き
-    result.receiver.why = '相手の言葉を受け取って、具体的な反応を返したい';
+    const reactions = [
+      '肯定的な反応を具体的に返したい。',
+      '不明点について具体的に質問したい。',
+      '否定な反応を具体的に返したい。',
+    ];
+
+    // receiver.whyをランダムな反応で上書き
+    const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
+    result.receiver.why = `相手の言葉を受け取って、${randomReaction}`;
 
     return {
       result,
