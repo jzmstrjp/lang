@@ -108,7 +108,7 @@ async function createEnglishConversation(
 2. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
   - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
   - 例: "Are you hungry?" に対して "Yes, I want some pizza."
-  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただし単純なオウム返しは禁止する。
+  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
   - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
 3. 使用する文法は be動詞、一般動詞の現在形・過去形、can、疑問文(Do you/Is this/Can you/Did you)程度に限定すること。関係代名詞、仮定法、完了形、受動態は使わないこと。
 4. 両方とも自然な口語表現で、実際の会話らしくすること。
@@ -148,7 +148,7 @@ async function createEnglishConversation(
 2. englishReply: 受信者の返答。englishSentence対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
   - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
   - 例: "Is this your bag?" に対して "No, I think it might belong to Mr. Yamada."
-  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただし単純なオウム返しは禁止する。
+  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
   - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
