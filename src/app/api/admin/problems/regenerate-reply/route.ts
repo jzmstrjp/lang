@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     // englishReply を再生成
-    const englishPrompt = `以下のシーン設定に基づいて、以下の英文に対する自然な英語の返答を作成してください。
+    const englishPrompt = `以下のシーン設定に基づいて、以下の英文（englishSentence）に対する自然な英語の返答を作成してください。
 
 【シーン情報】
 - 場所: ${problem.place}
@@ -51,7 +51,7 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 【送信者】
 - 役割: ${problem.senderRole}
 - 性別: ${problem.senderVoice === 'male' ? '男性' : '女性'}
-- 英文: "${problem.englishSentence}"
+- 英文（englishSentence）: "${problem.englishSentence}"
 
 【受信者（返答する人）】
 - 役割: ${problem.receiverRole}
@@ -120,8 +120,9 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 1. japaneseReply: 受信者の英文を自然な日本語に翻訳
 2. シーンや役割に合った適切な日本語表現にすること
 3. 口語的で自然な会話になるようにすること
+  - 自然な翻訳の例: "Early check-in is subject to room availability."という英文ならば"早めのご入室は、お部屋の空き状況によります。"よりも"空室状況によっては、早めにチェックインいただけます。"の方が自然な日本語翻訳です。
 4. 英文に含まれていない情報は日本語訳に含めないこと。
-5. カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。
+5. カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
 6. TTSに読み上げさせるため、読み方が曖昧な漢字（例: 「辛く」は「からく」とも「つらく」とも読める）だけは、半角スペースで挟んだ" からく "の形式で書くこと。TTSにとってかなり読みにくい漢字（例: 「今朝」→「けさ」、「絆創膏」→「ばんそうこう」）も半角スペースで挟んだ" ひらがな "の形式で書くこと。そのまま読めそうな漢字は漢字のままでいい。
 
 【重要】以下のJSON形式で必ず回答してください:

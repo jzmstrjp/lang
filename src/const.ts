@@ -23,11 +23,14 @@ export function cdnUrl(path: string): string {
   return `${CDN_ORIGIN}/${p}`;
 }
 
-export const ENGLISH_REPLY_PROMPT_RULES = `受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動詞や相槌が欲しい。
+export const ENGLISH_REPLY_PROMPT_RULES = `受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は10単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動詞や相槌が欲しい。
   - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
   - 例: "Are you hungry?" に対して "Yes, I want some pizza."
-  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容を言い直しているだけのenglishReplyは禁止する。
-  - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）`;
+  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容をそのままオウム返ししたenglishReplyは禁止する。
+    - オウム返しで良くない例: "We will start using external vendors from now on."に対して"Oh, so that means you'll be using external vendors going forward?"と答えるのはオウム返しで良くない。
+    - 自然に言及できている良い例: "We will start using external vendors from now on."に対して"I see. Which vendor will you be using?"と答えるのは自然に言及できていて良い。
+  - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
+  - englishSentenceの主題となる単語をenglishReplyにも含めると良い。`;
 
 // 連続正解のシェア対象となるcount値
 export const ALLOWED_SHARE_COUNTS = [
