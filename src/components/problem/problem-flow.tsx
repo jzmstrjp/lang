@@ -1549,33 +1549,39 @@ function AdminProblemActions({
             onClick={onRegenerateImage}
             className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
           >
-            画像を再生成する
+            2コマ画像を再生成する
           </button>
-          <button
-            type="button"
-            onClick={onImproveTranslation}
-            disabled={isImprovingTranslation}
-            className="inline-flex w-full items-center justify-center rounded-full bg-yellow-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            {isImprovingTranslation ? '改善中…' : '日本語訳を改善する'}
-          </button>
-          <button
-            type="button"
-            onClick={onRegenerateReply}
-            disabled={isRegeneratingReply}
-            className="inline-flex w-full items-center justify-center rounded-full bg-orange-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-orange-500/30 transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            {isRegeneratingReply ? '再生成中…' : '返答全体を再生成する'}
-          </button>
+
           <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onImproveTranslation}
+              disabled={isImprovingTranslation}
+              className="inline-flex w-full items-center justify-center rounded-full bg-yellow-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              {isImprovingTranslation ? '改善中…' : '1コマ目の日本語訳を改善する'}
+            </button>
             <button
               type="button"
               onClick={onRegenerateAudioEn}
               disabled={regeneratingAssetRef.current.audioEnUrl}
               className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-audio-en)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-audio-en)]/30 transition enabled:hover:bg-[var(--admin-audio-en-hover)] disabled:cursor-not-allowed disabled:opacity-30"
             >
-              {regeneratingAssetRef.current.audioEnUrl ? '再生成中...' : '英語音声を再生成する'}
+              {regeneratingAssetRef.current.audioEnUrl
+                ? '再生成中...'
+                : '1コマ目の英語音声を再生成する'}
             </button>
+          </div>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onRegenerateReply}
+              disabled={isRegeneratingReply}
+              className="inline-flex w-full items-center justify-center rounded-full bg-orange-500 px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-orange-500/30 transition enabled:hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              {isRegeneratingReply ? '再生成中…' : '2コマ目のセリフを再生成する'}
+            </button>
+
             <button
               type="button"
               onClick={onRegenerateAudioEnReply}
@@ -1584,7 +1590,7 @@ function AdminProblemActions({
             >
               {regeneratingAssetRef.current.audioEnReplyUrl
                 ? '再生成中...'
-                : '英語返答音声を再生成する'}
+                : '2コマ目の英語音声だけ再生成する'}
             </button>
             <button
               type="button"
@@ -1594,7 +1600,7 @@ function AdminProblemActions({
             >
               {regeneratingAssetRef.current.audioJaUrl
                 ? '再生成中...'
-                : '日本語返答音声を再生成する'}
+                : '2コマ目の日本語音声だけ再生成する'}
             </button>
           </div>
           <button
@@ -1603,7 +1609,7 @@ function AdminProblemActions({
             disabled={isDeletingProblem}
             className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-delete)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-delete)]/30 transition enabled:hover:bg-[var(--admin-delete-hover)] disabled:cursor-not-allowed disabled:opacity-30"
           >
-            {isDeletingProblem ? '削除中…' : '問題自体を削除する'}
+            {isDeletingProblem ? '削除中…' : '問題を削除する'}
           </button>
         </div>
       </div>
