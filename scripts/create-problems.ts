@@ -149,6 +149,7 @@ async function createEnglishConversation(
   - 例: "So much red tape here." に対して "Yeah, it's a lot of unnecessary paperwork."
   - 例: "Is this your bag?" に対して "No, I think it might belong to Mr. Yamada."
   - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。
+  - englishSentenceの内容に具体的に言及しないenglishReplyはNG。（NG例: "Ok, I'll do."）
 3. 両方とも自然な口語表現で、実際の会話らしくすること。
 4. 文脈に合った適切な内容にすること。
   - 「こう話しかけられたら、こう返答するのは自然だよなあ」と感じる内容にすること。
