@@ -916,7 +916,7 @@ ${adultJsonExample}`;
     }
 
     const reactions = [
-      'Noと答えたい。',
+      'Noと答え、具体的な理由を伝えたい。',
       '具体的な反応を返したい。',
     ];
 
