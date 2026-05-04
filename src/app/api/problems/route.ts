@@ -23,10 +23,9 @@ export async function GET(request: Request) {
     const maxWordCountParam = searchParams.get('maxWordCount');
     const maxWordCount = maxWordCountParam ? parseInt(maxWordCountParam, 10) : undefined;
     const latestParam = searchParams.get('latest');
-    const latestDays =
-      latestParam !== null && Number.isFinite(Number(latestParam))
-        ? parseFloat(latestParam)
-        : undefined;
+    const parsedLatest = latestParam !== null ? parseInt(latestParam, 10) : NaN;
+    const latestCount =
+      Number.isFinite(parsedLatest) && parsedLatest > 0 ? parsedLatest : undefined;
 
     const result = await fetchProblems({
       type,
@@ -35,7 +34,7 @@ export async function GET(request: Request) {
       search,
       limit,
       includeNullDifficulty,
-      latestDays,
+      latestCount,
     });
 
     return NextResponse.json(result);

@@ -20,11 +20,11 @@ type ProblemData = ProblemWithAudio | null;
 function loadInitialProblem({
   type,
   searchQuery,
-  latestDays,
+  latestCount,
 }: {
   type: ProblemLength;
   searchQuery?: string;
-  latestDays?: number;
+  latestCount?: number;
 }): Promise<ProblemData> {
   return (async () => {
     const { problems } = await fetchProblems({
@@ -33,7 +33,7 @@ function loadInitialProblem({
       search: searchQuery,
       limit: 1,
       includeNullDifficulty: true,
-      latestDays,
+      latestCount,
     });
     return problems[0] ?? null;
   })();
@@ -51,13 +51,13 @@ const fetchIsAdmin = async () => {
 async function ProblemContent({
   type,
   searchQuery,
-  latestDays,
+  latestCount,
   initialProblemPromise,
   isAdminPromise,
 }: {
   type: ProblemLength;
   searchQuery?: string;
-  latestDays?: number;
+  latestCount?: number;
   initialProblemPromise: Promise<ProblemData>;
   isAdminPromise: Promise<boolean>;
 }) {
@@ -80,7 +80,7 @@ async function ProblemContent({
       initialProblem={initialProblem}
       isAdminPromise={isAdminPromise}
       includeNullDifficulty={true}
-      latestDays={latestDays}
+      latestCount={latestCount}
     />
   );
 }
@@ -95,15 +95,13 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
   const resolvedSearchParams = await searchParams;
   const searchQuery = resolvedSearchParams.search?.trim();
   const latestParam = resolvedSearchParams.latest;
-  const latestDays =
-    latestParam !== undefined && Number.isFinite(Number(latestParam))
-      ? parseFloat(latestParam)
-      : undefined;
+  const parsedLatest = latestParam !== undefined ? parseInt(latestParam, 10) : NaN;
+  const latestCount = Number.isFinite(parsedLatest) && parsedLatest > 0 ? parsedLatest : undefined;
   const displayName = type;
   const initialProblemPromise = loadInitialProblem({
     type: type as ProblemLength,
     searchQuery,
-    latestDays,
+    latestCount,
   });
   const isAdminPromise = fetchIsAdmin();
 
@@ -114,7 +112,7 @@ export default async function ProblemPage({ params, searchParams }: ProblemPageP
         <ProblemContent
           type={type as ProblemLength}
           searchQuery={searchQuery}
-          latestDays={latestDays}
+          latestCount={latestCount}
           initialProblemPromise={initialProblemPromise}
           isAdminPromise={isAdminPromise}
         />

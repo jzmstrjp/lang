@@ -57,7 +57,7 @@ type ProblemFlowProps = {
   initialProblem: ProblemWithAudio;
   isAdminPromise: Promise<boolean>;
   includeNullDifficulty?: boolean;
-  latestDays?: number;
+  latestCount?: number;
 };
 
 type ApiProblemsResponse = {
@@ -80,7 +80,7 @@ export default function ProblemFlow({
   difficultyLevel,
   initialProblem,
   isAdminPromise,
-  latestDays,
+  latestCount,
   includeNullDifficulty = false,
 }: ProblemFlowProps) {
   // ストレージキー用の識別子（lengthまたはdifficultyLevel）
@@ -169,8 +169,8 @@ export default function ProblemFlow({
           params.set('includeNullDifficulty', 'true');
         }
       }
-      if (latestDays !== undefined) {
-        params.set('latest', String(latestDays));
+      if (latestCount !== undefined) {
+        params.set('latest', String(latestCount));
       }
       const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
 
@@ -193,7 +193,7 @@ export default function ProblemFlow({
     } finally {
       isPrefetchingNextRef.current = false;
     }
-  }, [difficultyLevel, length, problemQueue.length, includeNullDifficulty, latestDays]);
+  }, [difficultyLevel, length, problemQueue.length, includeNullDifficulty, latestCount]);
 
   // phaseごとの処理
   useLayoutEffect(() => {

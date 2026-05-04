@@ -26,8 +26,10 @@ export type FetchProblemsOptions = {
   search?: string;
   limit?: number;
   includeNullDifficulty?: boolean;
-  latestDays?: number;
+  latestCount?: number;
 };
+
+const LATEST_COUNT_MAX = 10000;
 
 export type FetchProblemsResult = {
   problems: ProblemWithAudio[];
@@ -69,7 +71,7 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     search,
     limit = PROBLEM_FETCH_LIMIT,
     includeNullDifficulty = false,
-    latestDays,
+    latestCount,
   } = options;
 
   // limitの範囲チェック
@@ -117,13 +119,6 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     }
   }
 
-  // latestDaysが指定されている場合は作成日でフィルタ
-  if (latestDays !== undefined) {
-    const sanitizedDays = Math.min(Math.max(latestDays, 0.01), 365);
-    const cutoff = new Date(Date.now() - sanitizedDays * 24 * 60 * 60 * 1000);
-    whereClauses.push(Prisma.sql`"createdAt" >= ${cutoff}`);
-  }
-
   // 検索条件を追加
   if (hasSearch) {
     whereClauses.push(
@@ -134,14 +129,27 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   // WHERE句を結合
   const whereClause = Prisma.join(whereClauses, ' AND ');
 
-  // PostgreSQLのRANDOM()を使って複数件をランダムに取得
+  // latestCountが指定されている場合は「最新N件」のサブクエリで絞り込んでからランダム取得
+  // それ以外は条件全体からランダム取得
   // $queryRawを使用してパラメータ化クエリでSQLインジェクションを防止
-  const problems = await prisma.$queryRaw<ProblemWithAudio[]>`
-    SELECT * FROM "problems"
-    WHERE ${whereClause}
-    ORDER BY RANDOM()
-    LIMIT ${sanitizedLimit}
-  `;
+  const problems =
+    latestCount !== undefined
+      ? await prisma.$queryRaw<ProblemWithAudio[]>`
+          SELECT * FROM (
+            SELECT * FROM "problems"
+            WHERE ${whereClause}
+            ORDER BY "createdAt" DESC
+            LIMIT ${Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX)}
+          ) AS recent
+          ORDER BY RANDOM()
+          LIMIT ${sanitizedLimit}
+        `
+      : await prisma.$queryRaw<ProblemWithAudio[]>`
+          SELECT * FROM "problems"
+          WHERE ${whereClause}
+          ORDER BY RANDOM()
+          LIMIT ${sanitizedLimit}
+        `;
 
   if (!problems || problems.length === 0) {
     return { problems: [], count: 0 };

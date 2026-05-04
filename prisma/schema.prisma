@@ -3,41 +3,42 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model Problem {
-  id               String      @id @default(cuid())
-  wordCount        Int
-  englishSentence  String
-  japaneseSentence String
-  japaneseReply    String
-  englishReply     String
-  incorrectOptions Json
-  audioEnUrl       String?
-  audioEnReplyUrl  String?
-  audioJaUrl       String?
-  imageUrl         String?
-  audioReady       Boolean     @default(false)
-  senderVoice      VoiceType
-  senderRole       String
-  receiverVoice    VoiceType
-  receiverRole     String
-  place            String
-  scenePrompt      String?
-  senderVoiceInstruction String?
+  id                       String    @id @default(cuid())
+  wordCount                Int
+  englishSentence          String
+  japaneseSentence         String
+  japaneseReply            String
+  englishReply             String
+  incorrectOptions         Json
+  audioEnUrl               String?
+  audioEnReplyUrl          String?
+  audioJaUrl               String?
+  imageUrl                 String?
+  audioReady               Boolean   @default(false)
+  senderVoice              VoiceType
+  senderRole               String
+  receiverVoice            VoiceType
+  receiverRole             String
+  place                    String
+  scenePrompt              String?
+  senderVoiceInstruction   String?
   receiverVoiceInstruction String?
-  difficultyLevel  Int?
-  
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  difficultyLevel          Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([englishSentence])
   @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
   @@index([audioReady, difficultyLevel], map: "idx_problems_audio_ready_difficulty")
   @@index([audioReady, wordCount, difficultyLevel], map: "idx_problems_audio_wordcount_difficulty")
+  @@index([audioReady, wordCount, createdAt(sort: Desc)], map: "idx_problems_audio_wordcount_createdat_desc")
   @@map("problems")
 }
 
