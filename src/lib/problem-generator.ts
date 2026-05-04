@@ -183,8 +183,8 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
   const senderName = senderNameMap[problem.senderVoice];
   const receiverName = receiverNameMap[problem.receiverVoice];
 
-  const [senderFaceDirection, receiverFaceDirection] =
-    senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
+  // const [senderFaceDirection, receiverFaceDirection] =
+  //   senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
 
   return `上下半分に分割された写真を生成すること。
 上下のコマの高さは正確に同じであること。コマの周囲に枠線と余白を作らないこと。
