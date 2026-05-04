@@ -53,6 +53,8 @@
   --admin-delete-hover: #dc2626;
   --admin-remove: #dc2626;
   --admin-remove-hover: #ef4444;
+  --admin-scene-prompt: #7c3aed;
+  --admin-scene-prompt-hover: #8b5cf6;
   --admin-audio-en: #0284c7;
   --admin-audio-en-hover: #0ea5e9;
   --admin-audio-en-reply: #4f46e5;
@@ -169,6 +171,8 @@
   --admin-delete-hover: #ff9e64;
   --admin-remove: #f7768e;
   --admin-remove-hover: #ff9e64;
+  --admin-scene-prompt: #c084fc;
+  --admin-scene-prompt-hover: #d8b4fe;
   --admin-audio-en: #7dcfff;
   --admin-audio-en-hover: #b4f9f8;
   --admin-audio-en-reply: #bb9af7;

@@ -44,6 +44,8 @@ export const lightColors = {
   adminDeleteHover: '#dc2626', // red-600
   adminRemove: '#dc2626', // rose-600
   adminRemoveHover: '#ef4444', // rose-500
+  adminScenePrompt: '#7c3aed', // violet-600
+  adminScenePromptHover: '#8b5cf6', // violet-500
   adminAudioEn: '#0284c7', // sky-600
   adminAudioEnHover: '#0ea5e9', // sky-500
   adminAudioEnReply: '#4f46e5', // indigo-600
@@ -97,6 +99,8 @@ export const darkColors = {
   adminDeleteHover: '#ff9e64',
   adminRemove: '#f7768e',
   adminRemoveHover: '#ff9e64',
+  adminScenePrompt: '#c084fc',
+  adminScenePromptHover: '#d8b4fe',
   adminAudioEn: '#7dcfff',
   adminAudioEnHover: '#b4f9f8',
   adminAudioEnReply: '#bb9af7',
@@ -134,6 +138,8 @@ export type ColorTheme = {
   adminDeleteHover: string;
   adminRemove: string;
   adminRemoveHover: string;
+  adminScenePrompt: string;
+  adminScenePromptHover: string;
   adminAudioEn: string;
   adminAudioEnHover: string;
   adminAudioEnReply: string;
