@@ -310,12 +310,14 @@ export default function ProblemFlow({
     {
       confirmMessage,
       errorMessage,
+      skipConfirm,
     }: {
       confirmMessage: string;
       errorMessage: string;
+      skipConfirm?: boolean;
     },
   ) => {
-    if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) return;
+    if (!skipConfirm && typeof window !== 'undefined' && !window.confirm(confirmMessage)) return;
 
     const targetProblemId = currentProblem?.id;
 
@@ -360,11 +362,63 @@ export default function ProblemFlow({
     }
   };
 
-  const handleRegenerateImage = () =>
-    handleRegenerateAsset('imageUrl', {
-      confirmMessage: 'この問題の画像を再生成しますか？（数十秒かかります）',
+  const handleRegenerateImage = async () => {
+    if (typeof window === 'undefined') return;
+
+    const targetProblemId = currentProblem?.id;
+    if (!targetProblemId) return;
+
+    const currentScenePrompt = currentProblem?.scenePrompt ?? '';
+    const newScenePrompt = window.prompt(
+      '必要であればシーン説明文を修正してください。',
+      currentScenePrompt,
+    );
+
+    if (newScenePrompt === null) return;
+
+    if (newScenePrompt.trim() !== currentScenePrompt.trim()) {
+      try {
+        const updateResponse = await fetch('/api/admin/problems/update-scene-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ problemId: targetProblemId, scenePrompt: newScenePrompt }),
+        });
+
+        if (!updateResponse.ok) {
+          const data = await updateResponse.json().catch(() => null);
+          window.alert(data?.error ?? 'シーン説明文の更新に失敗しました。');
+          return;
+        }
+
+        const updatedScenePrompt = newScenePrompt.trim() === '' ? null : newScenePrompt.trim();
+
+        setPhase(
+          (prev) =>
+            ({
+              ...prev,
+              problem: { ...prev.problem, scenePrompt: updatedScenePrompt },
+            }) as Phase,
+        );
+
+        setProblemQueue((prev) =>
+          prev.map((p) =>
+            p.id === targetProblemId
+              ? ({ ...p, scenePrompt: updatedScenePrompt } as ProblemWithAudio)
+              : p,
+          ),
+        );
+      } catch {
+        window.alert('シーン説明文の更新に失敗しました。');
+        return;
+      }
+    }
+
+    void handleRegenerateAsset('imageUrl', {
+      confirmMessage: '',
       errorMessage: '画像の再生成に失敗しました。',
+      skipConfirm: true,
     });
+  };
 
   const handleRegenerateAudioEn = () =>
     handleRegenerateAsset('audioEnUrl', {
@@ -1544,14 +1598,15 @@ function AdminProblemActions({
     >
       <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
         <div className="space-y-8">
-          <button
-            type="button"
-            onClick={onRegenerateImage}
-            className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            2コマ画像を再生成する
-          </button>
-
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onRegenerateImage}
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-remove)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-remove)]/30 transition enabled:hover:bg-[var(--admin-remove-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              2コマ画像を再生成する
+            </button>
+          </div>
           <div className="space-y-3">
             <button
               type="button"
