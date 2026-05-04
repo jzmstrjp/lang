@@ -58,7 +58,7 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 - 性別: ${problem.receiverVoice === 'male' ? '男性' : '女性'}
 
 【重要な要件】
-1. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるような、具体的な言及を含む文がいい。できれば最初に感動しや相槌が欲しい。
+1. englishReply: 受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動しや相槌が欲しい。
    - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
    - 例: "Are you hungry?" に対して "Yes, I want some pizza."
    - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。
