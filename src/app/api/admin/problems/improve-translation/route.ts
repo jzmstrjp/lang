@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL, JAPANESE_TRANSLATION_RULES, TTS_READING_RULES } from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -38,17 +38,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OpenAI APIキーが設定されていません。' }, { status: 500 });
     }
 
-    const prompt = `${scenePrompt ? `【文脈】${scenePrompt}` : ''}
-
-${scenePrompt ? '上記の文脈で' : ''}「${englishSentence}」という英文を、自然で質の高い日本語訳にしたいです。
-
+    const prompt = `${scenePrompt ? `【文脈】${scenePrompt}\n\n上記の文脈で` : ''}「${englishSentence}」という英文を、自然で質の高い日本語訳にしたいです。
 AIで読み上げるための日本語文です。リスニング用です。
 
-日本語訳を生成してください。
-文脈に沿った翻訳をしてください。ただし、文脈に引っ張られ過ぎないでください。英文中にない意味を勝手に足さないでください。
-できるだけカタカナ英語は避けて、ちゃんと日本語に翻訳してください。
-日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
-正しさと自然さを兼ね備えた翻訳をすること。
+【翻訳ルール】
+${JAPANESE_TRANSLATION_RULES}
+- 文脈には沿いつつ、文脈に引っ張られ過ぎないこと。
+${TTS_READING_RULES}
 
 重要: 日本語訳のテキストのみを出力してください。説明や解説は不要です。`;
 

@@ -3,7 +3,12 @@ import { OpenAI } from 'openai';
 import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL, ENGLISH_REPLY_PROMPT_RULES } from '@/const';
+import {
+  TEXT_MODEL,
+  ENGLISH_REPLY_PROMPT_RULES,
+  JAPANESE_TRANSLATION_RULES,
+  TTS_READING_RULES,
+} from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -99,8 +104,6 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 
     // japaneseReply を翻訳生成
     const japanesePrompt = `以下の英会話を自然な日本語に翻訳してください。
-機械音声で読み上げるための日本語文なので、括弧書きは含めないでください。
-最後は「。」または「？」で終わること。
 
 【シーン情報】
 - 場所: ${problem.place}
@@ -116,14 +119,12 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 - 英文: "${newEnglishReply}"
 - 性別: ${problem.receiverVoice === 'male' ? '男性' : '女性'}
 
-【重要な要件】
-1. japaneseReply: 受信者の英文を自然な日本語に翻訳
-2. シーンや役割に合った適切な日本語表現にすること
-3. 口語的で自然な会話になるようにすること
-  - 自然な翻訳の例: "Early check-in is subject to room availability."という英文ならば"早めのご入室は、お部屋の空き状況によります。"よりも"空室状況によっては、早めにチェックインいただけます。"の方が自然な日本語翻訳です。
-4. 英文に含まれていない情報は日本語訳に含めないこと。
-5. カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
-6. TTSに読み上げさせるため、読み方が曖昧な漢字（例: 「辛く」は「からく」とも「つらく」とも読める）だけは、半角スペースで挟んだ" からく "の形式で書くこと。TTSにとってかなり読みにくい漢字（例: 「今朝」→「けさ」、「絆創膏」→「ばんそうこう」）も半角スペースで挟んだ" ひらがな "の形式で書くこと。そのまま読めそうな漢字は漢字のままでいい。
+【生成対象】
+- japaneseReply: 受信者の英文を自然な日本語に翻訳
+
+【翻訳ルール】
+${JAPANESE_TRANSLATION_RULES}
+${TTS_READING_RULES}
 
 【重要】以下のJSON形式で必ず回答してください:
 
