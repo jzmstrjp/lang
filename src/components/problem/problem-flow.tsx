@@ -252,6 +252,7 @@ function ProblemFlowInner({
       }
     }
   }, [currentSetting, length, phase, refillQueueIfNeeded, sceneImage]);
+
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
 
