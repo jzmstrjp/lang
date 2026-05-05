@@ -7,6 +7,7 @@ import {
   TEXT_MODEL,
   ENGLISH_REPLY_PROMPT_RULES,
   JAPANESE_TRANSLATION_RULES,
+  TRANSLATION_FORMAT_RULES,
   TTS_READING_RULES,
 } from '@/const';
 
@@ -124,6 +125,7 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 
 【翻訳ルール】
 ${JAPANESE_TRANSLATION_RULES}
+${TRANSLATION_FORMAT_RULES}
 ${TTS_READING_RULES}
 
 【重要】以下のJSON形式で必ず回答してください:

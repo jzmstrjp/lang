@@ -10,6 +10,7 @@ import {
   TEXT_MODEL,
   ENGLISH_REPLY_PROMPT_RULES,
   JAPANESE_TRANSLATION_RULES,
+  TRANSLATION_FORMAT_RULES,
   TTS_READING_RULES,
 } from '@/const';
 import type { SeedProblemData } from '@/types/problem';
@@ -254,8 +255,11 @@ async function createJapaneseConversation(problemData: {
 - japaneseSentence: 送信者の英文を自然な日本語に翻訳
 - japaneseReply: 受信者の英文を自然な日本語に翻訳
 
-【翻訳ルール】
+【翻訳ルール（japaneseSentence・japaneseReply 共通）】
 ${JAPANESE_TRANSLATION_RULES}
+${TRANSLATION_FORMAT_RULES}
+
+【japaneseReply にのみ適用する追加ルール】
 ${TTS_READING_RULES}
 
 【重要】以下のJSON形式で必ず回答してください:

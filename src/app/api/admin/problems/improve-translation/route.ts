@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL, JAPANESE_TRANSLATION_RULES, TTS_READING_RULES } from '@/const';
+import { TEXT_MODEL, JAPANESE_TRANSLATION_RULES, TRANSLATION_FORMAT_RULES } from '@/const';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -43,8 +43,7 @@ AIで読み上げるための日本語文です。リスニング用です。
 
 【翻訳ルール】
 ${JAPANESE_TRANSLATION_RULES}
-- 文脈には沿いつつ、文脈に引っ張られ過ぎないこと。
-${TTS_READING_RULES}
+${TRANSLATION_FORMAT_RULES}
 
 重要: 日本語訳のテキストのみを出力してください。説明や解説は不要です。`;
 
