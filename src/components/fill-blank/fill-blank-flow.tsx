@@ -35,7 +35,7 @@ type ApiProblemsResponse = {
 };
 
 type FillBlankFlowProps = {
-  initialProblems: ProblemWithAudio[];
+  initialProblem: ProblemWithAudio;
   difficultyLevel?: DifficultyLevel;
 };
 
@@ -51,7 +51,7 @@ export default function FillBlankFlow(props: FillBlankFlowProps) {
   return <FillBlankFlowInner key={mountKey} {...props} />;
 }
 
-function FillBlankFlowInner({ initialProblems, difficultyLevel }: FillBlankFlowProps) {
+function FillBlankFlowInner({ initialProblem, difficultyLevel }: FillBlankFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-fill-blank', 0);
 
   const searchParams = useSearchParams();
@@ -59,11 +59,7 @@ function FillBlankFlowInner({ initialProblems, difficultyLevel }: FillBlankFlowP
   const router = useRouter();
   const pathname = usePathname();
 
-  // initialProblems から Math.random で1件選ぶのはクライアント側で行う。
-  // サーバー側で行うと PPR の prerender に固定されてしまい、毎回同じ問題が出てしまうため。
   const [phase, setPhase] = useState<Phase>(() => {
-    const initialProblem =
-      initialProblems[Math.floor(Math.random() * initialProblems.length)] ?? initialProblems[0];
     const blankProblem = generateBlankProblem(initialProblem);
     return { kind: 'quiz', problem: initialProblem, blankProblem };
   });

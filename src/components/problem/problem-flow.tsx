@@ -55,7 +55,7 @@ export type { ProblemLength, DifficultyLevel };
 type ProblemFlowProps = {
   length?: ProblemLength;
   difficultyLevel?: DifficultyLevel;
-  initialProblems: ProblemWithAudio[];
+  initialProblem: ProblemWithAudio;
   isAdminPromise: Promise<boolean>;
   includeNullDifficulty?: boolean;
   latestCount?: number;
@@ -91,7 +91,7 @@ export default function ProblemFlow(props: ProblemFlowProps) {
 function ProblemFlowInner({
   length,
   difficultyLevel,
-  initialProblems,
+  initialProblem,
   isAdminPromise,
   latestCount,
   includeNullDifficulty = false,
@@ -118,12 +118,7 @@ function ProblemFlowInner({
   const router = useRouter();
   const pathname = usePathname();
 
-  // 直和型のphase状態（統合）
-  // initialProblems から Math.random で1件選ぶのはクライアント側で行う。
-  // サーバー側で行うと PPR の prerender に固定されてしまい、毎回同じ問題が出てしまうため。
   const [phase, setPhase] = useState<Phase>(() => {
-    const initialProblem =
-      initialProblems[Math.floor(Math.random() * initialProblems.length)] ?? initialProblems[0];
     return {
       kind: 'start-button-server',
       problem: initialProblem,

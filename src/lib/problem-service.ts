@@ -208,3 +208,14 @@ export async function loadInitialProblemsByLength(): Promise<ProblemsByLength> {
 
   return Object.fromEntries(entries) as ProblemsByLength;
 }
+
+/**
+ * 初期問題プールから 1 件をランダムに選ぶ。
+ * Server Component から呼ぶことを想定。
+ * 各リクエストで新たに評価されるため、ユーザーごとに異なる問題が選ばれる
+ * （プール自体は `'use cache'` で hour 単位でキャッシュされる）。
+ */
+export function pickRandomProblem(problems: ProblemWithAudio[]): ProblemWithAudio | null {
+  if (problems.length === 0) return null;
+  return problems[Math.floor(Math.random() * problems.length)] ?? null;
+}

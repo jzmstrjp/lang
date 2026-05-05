@@ -4,7 +4,11 @@ import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { fetchProblems, loadInitialProblemsByLength } from '@/lib/problem-service';
+import {
+  fetchProblems,
+  loadInitialProblemsByLength,
+  pickRandomProblem,
+} from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 
 const validTypes = ['kids', 'short', 'medium', 'long'] as const;
@@ -39,9 +43,9 @@ async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
 
   const isAdminPromise = fetchIsAdmin();
   // search / latest 指定時は最新の DB 結果が欲しいのでキャッシュを通さない。
-  // それ以外は全 type 集約済みのキャッシュからプールを取り出す。
-  // 配列のまま ProblemFlow に渡し、ランダム抽出はクライアント側で行う
-  // （サーバーで Math.random すると PPR の prerender に固定されてしまうため）。
+  // それ以外は全 type 集約済みのキャッシュからプールを取り出し、
+  // Server 側でランダムに 1 件選ぶ。この content 自体は dynamic なので
+  // リクエストごとに評価され、ユーザーごとに異なる問題が選ばれる。
   const initialProblems =
     searchQuery || latestCount !== undefined
       ? (
@@ -56,14 +60,16 @@ async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
         ).problems
       : (await loadInitialProblemsByLength())[problemLength];
 
+  const initialProblem = pickRandomProblem(initialProblems);
+
   return (
     <>
       <HeaderPortal>{problemLength}</HeaderPortal>
-      {initialProblems.length > 0 ? (
+      {initialProblem ? (
         <ProblemFlow
           length={problemLength}
           difficultyLevel="non_kids"
-          initialProblems={initialProblems}
+          initialProblem={initialProblem}
           isAdminPromise={isAdminPromise}
           includeNullDifficulty={true}
           latestCount={latestCount}

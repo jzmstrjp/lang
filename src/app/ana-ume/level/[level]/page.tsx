@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import FillBlankFlow from '@/components/fill-blank/fill-blank-flow';
-import { fetchProblems, loadInitialProblems } from '@/lib/problem-service';
+import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
 import type { DifficultyLevel } from '@/config/problem';
@@ -25,7 +25,9 @@ async function FillBlankLevelContent({ params, searchParams }: LevelPageProps) {
   const displayName = DIFFICULTY_LEVEL_RULES[difficultyLevel].displayName;
   const searchQuery = (await searchParams).search?.trim();
 
-  // ランダム抽出はクライアント側で行う（PPR の prerender 固定を避けるため）。
+  // 検索時はキャッシュを通さず最新を取りに行く。
+  // それ以外は loadInitialProblems の結果（プール）から Server 側でランダムに 1 件選ぶ。
+  // この content 自体は dynamic なのでリクエストごとに評価される。
   const initialProblems = searchQuery
     ? (
         await fetchProblems({
@@ -40,11 +42,13 @@ async function FillBlankLevelContent({ params, searchParams }: LevelPageProps) {
         includeNullDifficulty: false,
       });
 
+  const initialProblem = pickRandomProblem(initialProblems);
+
   return (
     <>
       <HeaderPortal>ana-ume / {displayName}</HeaderPortal>
-      {initialProblems.length > 0 ? (
-        <FillBlankFlow initialProblems={initialProblems} difficultyLevel={difficultyLevel} />
+      {initialProblem ? (
+        <FillBlankFlow initialProblem={initialProblem} difficultyLevel={difficultyLevel} />
       ) : (
         <p className="mt-10 text-sm text-rose-500 text-center">
           {searchQuery

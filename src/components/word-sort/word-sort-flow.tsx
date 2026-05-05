@@ -40,7 +40,7 @@ type ApiProblemsResponse = {
 };
 
 type WordSortFlowProps = {
-  initialProblems: ProblemWithAudio[];
+  initialProblem: ProblemWithAudio;
   difficultyLevel?: DifficultyLevel;
 };
 
@@ -56,7 +56,7 @@ export default function WordSortFlow(props: WordSortFlowProps) {
   return <WordSortFlowInner key={mountKey} {...props} />;
 }
 
-function WordSortFlowInner({ initialProblems, difficultyLevel }: WordSortFlowProps) {
+function WordSortFlowInner({ initialProblem, difficultyLevel }: WordSortFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-word-sort', 0);
 
   const searchParams = useSearchParams();
@@ -64,11 +64,7 @@ function WordSortFlowInner({ initialProblems, difficultyLevel }: WordSortFlowPro
   const router = useRouter();
   const pathname = usePathname();
 
-  // initialProblems から Math.random で1件選ぶのはクライアント側で行う。
-  // サーバー側で行うと PPR の prerender に固定されてしまい、毎回同じ問題が出てしまうため。
   const [phase, setPhase] = useState<Phase>(() => {
-    const initialProblem =
-      initialProblems[Math.floor(Math.random() * initialProblems.length)] ?? initialProblems[0];
     const sortProblem = generateWordSortProblem(initialProblem);
     return { kind: 'quiz', problem: initialProblem, sortProblem, incorrectCount: 0 };
   });
