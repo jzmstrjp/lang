@@ -3,7 +3,16 @@
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ProblemPageParams } from '@/lib/problem-page-params';
-import { Suspense, use, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  Suspense,
+  use,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useForm } from 'react-hook-form';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
@@ -105,7 +114,7 @@ function ProblemFlowInner({
   const [correctStreak, setCorrectStreak] = useLocalStorage(`correctStreak-${storageKey}`, 0);
 
   // Setting型を動的に構築
-  const getCurrentSetting = useCallback((): Setting => {
+  const currentSetting = useMemo<Setting>((): Setting => {
     return {
       isEnglishMode,
       isImageHiddenMode,
@@ -222,7 +231,7 @@ function ProblemFlowInner({
           kind: 'start-button-client',
           error: null,
           problem: phase.problem,
-          setting: getCurrentSetting(),
+          setting: currentSetting,
         });
         break;
       }
@@ -232,7 +241,7 @@ function ProblemFlowInner({
           setPhase({
             kind: 'scene-ready',
             problem: phase.problem,
-            setting: getCurrentSetting(),
+            setting: currentSetting,
           });
         }
 
@@ -242,14 +251,14 @@ function ProblemFlowInner({
         break;
       }
     }
-  }, [getCurrentSetting, length, phase, refillQueueIfNeeded, sceneImage]);
+  }, [currentSetting, length, phase, refillQueueIfNeeded, sceneImage]);
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
 
     setPhase({
       kind: 'scene-entry',
       problem: phase.problem,
-      setting: getCurrentSetting(),
+      setting: currentSetting,
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -258,7 +267,7 @@ function ProblemFlowInner({
     setPhase({
       kind: 'scene-entry',
       problem: phase.problem,
-      setting: getCurrentSetting(),
+      setting: currentSetting,
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -278,7 +287,7 @@ function ProblemFlowInner({
         problem: phase.problem,
         shuffledOptions,
         correctIndex: shuffledCorrectIndex,
-        setting: getCurrentSetting(),
+        setting: currentSetting,
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
     }
@@ -306,7 +315,7 @@ function ProblemFlowInner({
         kind: 'start-button-client',
         error: '次の問題がありません',
         problem: currentProblem,
-        setting: getCurrentSetting(),
+        setting: currentSetting,
       });
       return;
     }
@@ -318,7 +327,7 @@ function ProblemFlowInner({
     setPhase({
       kind: 'scene-entry',
       problem: nextProblemData,
-      setting: getCurrentSetting(),
+      setting: currentSetting,
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -515,7 +524,7 @@ function ProblemFlowInner({
           kind: 'start-button-client',
           error: nextProblemData ? null : '次の問題がありません',
           problem: nextProblemData ?? phase.problem,
-          setting: getCurrentSetting(),
+          setting: currentSetting,
         });
         return;
       }
@@ -877,10 +886,10 @@ function ProblemFlowInner({
       return {
         kind: 'scene-ready',
         problem: prev.problem,
-        setting: getCurrentSetting(),
+        setting: currentSetting,
       };
     });
-  }, [getCurrentSetting]);
+  }, [currentSetting]);
 
   return (
     <div className="max-w-full">
