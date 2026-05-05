@@ -6,7 +6,11 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
-import { WORD_COUNT_RULES, type ProblemLength } from '../src/config/problem';
+import {
+  WORD_COUNT_RULES,
+  DIFFICULTY_LEVEL_RULES,
+  type ProblemLength,
+} from '../src/config/problem';
 
 type CoverageStats = {
   total: number;
@@ -27,9 +31,13 @@ function buildWordCountFilter(length: ProblemLength): Prisma.IntFilter {
 
 async function collectStats(length: ProblemLength): Promise<CoverageStats> {
   const wordCount = buildWordCountFilter(length);
+  const { min, max } = DIFFICULTY_LEVEL_RULES.non_kids;
 
   const total = await prisma.problem.count({
-    where: { wordCount },
+    where: {
+      wordCount,
+      OR: [{ difficultyLevel: null }, { difficultyLevel: { gte: min, lte: max } }],
+    },
   });
 
   if (total === 0) {
@@ -39,6 +47,32 @@ async function collectStats(length: ProblemLength): Promise<CoverageStats> {
   const withImage = await prisma.problem.count({
     where: {
       wordCount,
+      OR: [{ difficultyLevel: null }, { difficultyLevel: { gte: min, lte: max } }],
+      imageUrl: { not: null },
+    },
+  });
+
+  return {
+    total,
+    withImage,
+    withoutImage: total - withImage,
+  };
+}
+
+async function collectKidsStats(): Promise<CoverageStats> {
+  const { min, max } = DIFFICULTY_LEVEL_RULES.kids;
+
+  const total = await prisma.problem.count({
+    where: { difficultyLevel: { gte: min, lte: max } },
+  });
+
+  if (total === 0) {
+    return { total: 0, withImage: 0, withoutImage: 0 };
+  }
+
+  const withImage = await prisma.problem.count({
+    where: {
+      difficultyLevel: { gte: min, lte: max },
       imageUrl: { not: null },
     },
   });
@@ -55,17 +89,23 @@ async function main() {
     console.log('🔍 imageUrl の有無を長さ別に確認します...');
 
     const lengths: ProblemLength[] = ['short', 'medium', 'long'];
-    const results = await Promise.all(lengths.map((length) => collectStats(length)));
+    const [kidsStats, ...lengthResults] = await Promise.all([
+      collectKidsStats(),
+      ...lengths.map((length) => collectStats(length)),
+    ]);
 
     console.log('\n📊 集計結果');
+    console.log(
+      `  - ${'kids'.padEnd(7)}: ${kidsStats.total}件 （画像あり: ${kidsStats.withImage}件、画像なし: ${kidsStats.withoutImage}件）`,
+    );
     lengths.forEach((length, index) => {
-      const stats = results[index];
+      const stats = lengthResults[index];
       console.log(
         `  - ${String(length).padEnd(7)}: ${stats.total}件 （画像あり: ${stats.withImage}件、画像なし: ${stats.withoutImage}件）`,
       );
     });
 
-    const totals = results.reduce(
+    const totals = [kidsStats, ...lengthResults].reduce(
       (acc, cur) => {
         acc.total += cur.total;
         acc.withImage += cur.withImage;
