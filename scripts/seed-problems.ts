@@ -223,8 +223,8 @@ async function main() {
     });
 
     console.log('\n📈 データベース統計:');
-    stats.forEach((stat) => {
-      console.log(`  ${stat.wordCount}語: ${stat._count}個`);
+    stats.forEach(({ wordCount, _count: count }) => {
+      console.log(`  ${wordCount}語: ${count}個`);
     });
   } catch (error) {
     console.error('❌ シードエラー:', error);
