@@ -39,6 +39,16 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    // Next.js が内部制御に使うシグナル例外（notFound / redirect / プリレンダ中断など）は
+    // フレームワークに伝搬させる必要があるので握りつぶさず再 throw する。
+    if (
+      error instanceof Error &&
+      'digest' in error &&
+      typeof (error as { digest: unknown }).digest === 'string' &&
+      (error as { digest: string }).digest.startsWith('NEXT_')
+    ) {
+      throw error;
+    }
     console.error('[problems] fetch error:', error);
     console.error('[problems] error details:', JSON.stringify(error, null, 2));
     return NextResponse.json(
