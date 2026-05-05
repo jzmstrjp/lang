@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import WordSortFlow from '@/components/word-sort/word-sort-flow';
-import { loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
+import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
 import type { DifficultyLevel } from '@/config/problem';
@@ -25,13 +25,23 @@ async function WordSortLevelContent({ params, searchParams }: LevelPageProps) {
   const displayName = DIFFICULTY_LEVEL_RULES[difficultyLevel].displayName;
   const searchQuery = (await searchParams).search?.trim();
 
-  const problems = await loadInitialProblems({
-    difficultyLevel,
-    search: searchQuery,
-    maxWordCount: 13,
-    includeNullDifficulty: false,
-  });
-  const initialProblem = pickRandomProblem(problems);
+  const initialProblem = searchQuery
+    ? ((
+        await fetchProblems({
+          difficultyLevel,
+          search: searchQuery,
+          maxWordCount: 13,
+          includeNullDifficulty: false,
+          limit: 1,
+        })
+      ).problems[0] ?? null)
+    : pickRandomProblem(
+        await loadInitialProblems({
+          difficultyLevel,
+          maxWordCount: 13,
+          includeNullDifficulty: false,
+        }),
+      );
 
   return (
     <>

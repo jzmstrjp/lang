@@ -4,7 +4,7 @@ import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { DifficultyLevel } from '@/components/problem/problem-flow';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
+import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 import { DIFFICULTY_LEVEL_RULES, VALID_DIFFICULTY_LEVELS } from '@/config/problem';
 
@@ -34,12 +34,22 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
   const searchQuery = (await searchParams).search?.trim();
 
   const isAdminPromise = fetchIsAdmin();
-  const problems = await loadInitialProblems({
-    difficultyLevel,
-    search: searchQuery,
-    includeNullDifficulty: false,
-  });
-  const initialProblem = pickRandomProblem(problems);
+  // 検索時はキャッシュを通さず最新を取りに行く。
+  const initialProblem = searchQuery
+    ? ((
+        await fetchProblems({
+          difficultyLevel,
+          search: searchQuery,
+          includeNullDifficulty: false,
+          limit: 1,
+        })
+      ).problems[0] ?? null)
+    : pickRandomProblem(
+        await loadInitialProblems({
+          difficultyLevel,
+          includeNullDifficulty: false,
+        }),
+      );
 
   return (
     <>

@@ -181,6 +181,34 @@ export async function loadInitialProblems(
   return problems;
 }
 
+const PROBLEM_LENGTHS: ProblemLength[] = ['kids', 'short', 'medium', 'long'];
+
+export type ProblemsByLength = Record<ProblemLength, ProblemWithAudio[]>;
+
+/**
+ * `/problems/[type]` の全 type 分の初期問題プールをまとめて取得する。
+ * 引数なしなのでキャッシュエントリは 1 つに集約される（4 type 分のプールを 1 cache key で保持）。
+ * search や latest など個別パラメータが付くケースでは fetchProblems を直接呼ぶ側で取得する。
+ */
+export async function loadInitialProblemsByLength(): Promise<ProblemsByLength> {
+  'use cache';
+  cacheLife('hours');
+
+  const entries = await Promise.all(
+    PROBLEM_LENGTHS.map(async (type) => {
+      const { problems } = await fetchProblems({
+        type,
+        difficultyLevel: 'non_kids',
+        limit: INITIAL_PROBLEMS_POOL_SIZE,
+        includeNullDifficulty: true,
+      });
+      return [type, problems] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries) as ProblemsByLength;
+}
+
 export function pickRandomProblem(problems: ProblemWithAudio[]): ProblemWithAudio | null {
   if (problems.length === 0) return null;
   return problems[Math.floor(Math.random() * problems.length)] ?? null;

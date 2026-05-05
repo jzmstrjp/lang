@@ -4,7 +4,11 @@ import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
+import {
+  fetchProblems,
+  loadInitialProblemsByLength,
+  pickRandomProblem,
+} from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 
 const validTypes = ['kids', 'short', 'medium', 'long'] as const;
@@ -38,14 +42,21 @@ async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
   const problemLength = type as ProblemLength;
 
   const isAdminPromise = fetchIsAdmin();
-  const problems = await loadInitialProblems({
-    type: problemLength,
-    difficultyLevel: 'non_kids',
-    search: searchQuery,
-    includeNullDifficulty: true,
-    latestCount,
-  });
-  const initialProblem = pickRandomProblem(problems);
+  // search / latest 指定時は最新の DB 結果が欲しいのでキャッシュを通さない。
+  // それ以外は全 type 集約済みのキャッシュからプールを取り出してランダム抽出。
+  const initialProblem =
+    searchQuery || latestCount !== undefined
+      ? ((
+          await fetchProblems({
+            type: problemLength,
+            difficultyLevel: 'non_kids',
+            search: searchQuery,
+            includeNullDifficulty: true,
+            latestCount,
+            limit: 1,
+          })
+        ).problems[0] ?? null)
+      : pickRandomProblem((await loadInitialProblemsByLength())[problemLength]);
 
   return (
     <>
