@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import WordSortFlow from '@/components/word-sort/word-sort-flow';
-import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
+import { fetchProblems, loadInitialProblems } from '@/lib/problem-service';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
 import type { DifficultyLevel } from '@/config/problem';
@@ -25,8 +25,9 @@ async function WordSortLevelContent({ params, searchParams }: LevelPageProps) {
   const displayName = DIFFICULTY_LEVEL_RULES[difficultyLevel].displayName;
   const searchQuery = (await searchParams).search?.trim();
 
-  const initialProblem = searchQuery
-    ? ((
+  // ランダム抽出はクライアント側で行う（PPR の prerender 固定を避けるため）。
+  const initialProblems = searchQuery
+    ? (
         await fetchProblems({
           difficultyLevel,
           search: searchQuery,
@@ -34,20 +35,18 @@ async function WordSortLevelContent({ params, searchParams }: LevelPageProps) {
           includeNullDifficulty: false,
           limit: 1,
         })
-      ).problems[0] ?? null)
-    : pickRandomProblem(
-        await loadInitialProblems({
-          difficultyLevel,
-          maxWordCount: 13,
-          includeNullDifficulty: false,
-        }),
-      );
+      ).problems
+    : await loadInitialProblems({
+        difficultyLevel,
+        maxWordCount: 13,
+        includeNullDifficulty: false,
+      });
 
   return (
     <>
       <HeaderPortal>narabi-kae / {displayName}</HeaderPortal>
-      {initialProblem ? (
-        <WordSortFlow initialProblem={initialProblem} difficultyLevel={difficultyLevel} />
+      {initialProblems.length > 0 ? (
+        <WordSortFlow initialProblems={initialProblems} difficultyLevel={difficultyLevel} />
       ) : (
         <p className="mt-10 text-sm text-rose-500 text-center">
           {searchQuery

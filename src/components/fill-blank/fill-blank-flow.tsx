@@ -9,6 +9,7 @@ import type { ProblemWithAudio } from '@/lib/problem-service';
 import type { DifficultyLevel } from '@/config/problem';
 import { generateBlankProblem, type BlankProblemData } from '@/lib/fill-blank-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useMountKey } from '@/hooks/useMountKey';
 import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN } from '@/const';
 
 type Phase =
@@ -34,11 +35,23 @@ type ApiProblemsResponse = {
 };
 
 type FillBlankFlowProps = {
-  initialProblem: ProblemWithAudio;
+  initialProblems: ProblemWithAudio[];
   difficultyLevel?: DifficultyLevel;
 };
 
-export default function FillBlankFlow({ initialProblem, difficultyLevel }: FillBlankFlowProps) {
+/**
+ * Next 16 + cacheComponents 環境では各ルートが React の <Activity> でラップされ、
+ * ナビゲーション時に unmount されず client state が preserve される。
+ * useMountKey を用いて navigate のたびに FillBlankFlowInner を強制 remount し、
+ * phase などの useState を初期化させるための wrapper。
+ * https://github.com/vercel/next.js/discussions/85502
+ */
+export default function FillBlankFlow(props: FillBlankFlowProps) {
+  const mountKey = useMountKey();
+  return <FillBlankFlowInner key={mountKey} {...props} />;
+}
+
+function FillBlankFlowInner({ initialProblems, difficultyLevel }: FillBlankFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-fill-blank', 0);
 
   const searchParams = useSearchParams();
@@ -46,7 +59,11 @@ export default function FillBlankFlow({ initialProblem, difficultyLevel }: FillB
   const router = useRouter();
   const pathname = usePathname();
 
+  // initialProblems から Math.random で1件選ぶのはクライアント側で行う。
+  // サーバー側で行うと PPR の prerender に固定されてしまい、毎回同じ問題が出てしまうため。
   const [phase, setPhase] = useState<Phase>(() => {
+    const initialProblem =
+      initialProblems[Math.floor(Math.random() * initialProblems.length)] ?? initialProblems[0];
     const blankProblem = generateBlankProblem(initialProblem);
     return { kind: 'quiz', problem: initialProblem, blankProblem };
   });

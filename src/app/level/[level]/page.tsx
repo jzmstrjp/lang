@@ -4,7 +4,7 @@ import { HeaderPortal } from '@/components/layout/header-portal';
 import ProblemFlow, { DifficultyLevel } from '@/components/problem/problem-flow';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
+import { fetchProblems, loadInitialProblems } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
 import { DIFFICULTY_LEVEL_RULES, VALID_DIFFICULTY_LEVELS } from '@/config/problem';
 
@@ -35,29 +35,28 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
 
   const isAdminPromise = fetchIsAdmin();
   // 検索時はキャッシュを通さず最新を取りに行く。
-  const initialProblem = searchQuery
-    ? ((
+  // ランダム抽出はクライアント側で行う（PPR の prerender 固定を避けるため）。
+  const initialProblems = searchQuery
+    ? (
         await fetchProblems({
           difficultyLevel,
           search: searchQuery,
           includeNullDifficulty: false,
           limit: 1,
         })
-      ).problems[0] ?? null)
-    : pickRandomProblem(
-        await loadInitialProblems({
-          difficultyLevel,
-          includeNullDifficulty: false,
-        }),
-      );
+      ).problems
+    : await loadInitialProblems({
+        difficultyLevel,
+        includeNullDifficulty: false,
+      });
 
   return (
     <>
       <HeaderPortal>{displayName}</HeaderPortal>
-      {initialProblem ? (
+      {initialProblems.length > 0 ? (
         <ProblemFlow
           difficultyLevel={difficultyLevel}
-          initialProblem={initialProblem}
+          initialProblems={initialProblems}
           isAdminPromise={isAdminPromise}
           includeNullDifficulty={false}
         />

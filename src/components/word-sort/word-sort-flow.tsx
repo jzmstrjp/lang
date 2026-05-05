@@ -15,6 +15,7 @@ import {
   type SlotToken,
 } from '@/lib/word-sort-utils';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useMountKey } from '@/hooks/useMountKey';
 import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN } from '@/const';
 
 type Phase =
@@ -39,11 +40,23 @@ type ApiProblemsResponse = {
 };
 
 type WordSortFlowProps = {
-  initialProblem: ProblemWithAudio;
+  initialProblems: ProblemWithAudio[];
   difficultyLevel?: DifficultyLevel;
 };
 
-export default function WordSortFlow({ initialProblem, difficultyLevel }: WordSortFlowProps) {
+/**
+ * Next 16 + cacheComponents 環境では各ルートが React の <Activity> でラップされ、
+ * ナビゲーション時に unmount されず client state が preserve される。
+ * useMountKey を用いて navigate のたびに WordSortFlowInner を強制 remount し、
+ * phase などの useState を初期化させるための wrapper。
+ * https://github.com/vercel/next.js/discussions/85502
+ */
+export default function WordSortFlow(props: WordSortFlowProps) {
+  const mountKey = useMountKey();
+  return <WordSortFlowInner key={mountKey} {...props} />;
+}
+
+function WordSortFlowInner({ initialProblems, difficultyLevel }: WordSortFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-word-sort', 0);
 
   const searchParams = useSearchParams();
@@ -51,7 +64,11 @@ export default function WordSortFlow({ initialProblem, difficultyLevel }: WordSo
   const router = useRouter();
   const pathname = usePathname();
 
+  // initialProblems から Math.random で1件選ぶのはクライアント側で行う。
+  // サーバー側で行うと PPR の prerender に固定されてしまい、毎回同じ問題が出てしまうため。
   const [phase, setPhase] = useState<Phase>(() => {
+    const initialProblem =
+      initialProblems[Math.floor(Math.random() * initialProblems.length)] ?? initialProblems[0];
     const sortProblem = generateWordSortProblem(initialProblem);
     return { kind: 'quiz', problem: initialProblem, sortProblem, incorrectCount: 0 };
   });

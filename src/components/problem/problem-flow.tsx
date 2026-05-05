@@ -12,6 +12,7 @@ import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/s
 import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN } from '@/const';
 import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench, X } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useMountKey } from '@/hooks/useMountKey';
 import { type ProblemLength, type DifficultyLevel } from '@/config/problem';
 
 type ServerPhase = {
@@ -54,7 +55,7 @@ export type { ProblemLength, DifficultyLevel };
 type ProblemFlowProps = {
   length?: ProblemLength;
   difficultyLevel?: DifficultyLevel;
-  initialProblem: ProblemWithAudio;
+  initialProblems: ProblemWithAudio[];
   isAdminPromise: Promise<boolean>;
   includeNullDifficulty?: boolean;
   latestCount?: number;
@@ -75,10 +76,22 @@ type EditableIncorrectOptionResult = { ok: true } | { ok: false; message: string
 
 type RemovableField = 'imageUrl' | 'audioEnUrl' | 'audioEnReplyUrl' | 'audioJaUrl';
 
-export default function ProblemFlow({
+/**
+ * Next 16 + cacheComponents 環境では各ルートが React の <Activity> でラップされ、
+ * ナビゲーション時に unmount されず client state が preserve される。
+ * useMountKey を用いて navigate のたびに ProblemFlowInner を強制 remount し、
+ * phase などの useState を初期化させるための wrapper。
+ * https://github.com/vercel/next.js/discussions/85502
+ */
+export default function ProblemFlow(props: ProblemFlowProps) {
+  const mountKey = useMountKey();
+  return <ProblemFlowInner key={mountKey} {...props} />;
+}
+
+function ProblemFlowInner({
   length,
   difficultyLevel,
-  initialProblem,
+  initialProblems,
   isAdminPromise,
   latestCount,
   includeNullDifficulty = false,
@@ -106,9 +119,15 @@ export default function ProblemFlow({
   const pathname = usePathname();
 
   // 直和型のphase状態（統合）
-  const [phase, setPhase] = useState<Phase>({
-    kind: 'start-button-server',
-    problem: initialProblem,
+  // initialProblems から Math.random で1件選ぶのはクライアント側で行う。
+  // サーバー側で行うと PPR の prerender に固定されてしまい、毎回同じ問題が出てしまうため。
+  const [phase, setPhase] = useState<Phase>(() => {
+    const initialProblem =
+      initialProblems[Math.floor(Math.random() * initialProblems.length)] ?? initialProblems[0];
+    return {
+      kind: 'start-button-server',
+      problem: initialProblem,
+    };
   });
 
   // グローバル状態（全phase共通）

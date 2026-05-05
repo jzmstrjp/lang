@@ -208,8 +208,3 @@ export async function loadInitialProblemsByLength(): Promise<ProblemsByLength> {
 
   return Object.fromEntries(entries) as ProblemsByLength;
 }
-
-export function pickRandomProblem(problems: ProblemWithAudio[]): ProblemWithAudio | null {
-  if (problems.length === 0) return null;
-  return problems[Math.floor(Math.random() * problems.length)] ?? null;
-}
