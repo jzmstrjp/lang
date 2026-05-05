@@ -165,13 +165,19 @@ const INITIAL_PROBLEMS_POOL_SIZE = 10;
 
 /**
  * 初期表示用に複数件まとめて取得する。
- * `'use cache'` でサーバー側にキャッシュし、呼び出し側で配列からランダムに1件選ぶことで
+ * `'use cache: remote'` で Vercel Runtime Cache（リージョン内全インスタンス共有）に
+ * キャッシュし、呼び出し側で配列からランダムに1件選ぶことで
  * 「キャッシュは効かせつつアクセスごとの問題はランダム」を両立する。
+ *
+ * `'use cache'`（in-memory）だと Vercel Lambda が ephemeral なため cold start で
+ * 即消失してしまい cache miss が多発する。Next.js 16 + Vercel での公式推奨は
+ * `'use cache: remote'`。
+ * https://www.vercel.com/docs/runtime-cache
  */
 export async function loadInitialProblems(
   options: Omit<FetchProblemsOptions, 'limit'>,
 ): Promise<ProblemWithAudio[]> {
-  'use cache';
+  'use cache: remote';
   cacheLife('hours');
 
   const { problems } = await fetchProblems({
@@ -189,9 +195,12 @@ export type ProblemsByLength = Record<ProblemLength, ProblemWithAudio[]>;
  * `/problems/[type]` の全 type 分の初期問題プールをまとめて取得する。
  * 引数なしなのでキャッシュエントリは 1 つに集約される（4 type 分のプールを 1 cache key で保持）。
  * search や latest など個別パラメータが付くケースでは fetchProblems を直接呼ぶ側で取得する。
+ *
+ * `'use cache: remote'` で Vercel Runtime Cache に保存することで、
+ * Lambda インスタンス間で共有される（cold start でも cache hit する）。
  */
 export async function loadInitialProblemsByLength(): Promise<ProblemsByLength> {
-  'use cache';
+  'use cache: remote';
   cacheLife('hours');
 
   const entries = await Promise.all(
