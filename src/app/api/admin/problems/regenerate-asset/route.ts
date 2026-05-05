@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { generateSpeechBuffer } from '@/lib/audio-utils';
-import { uploadAudioToR2 } from '@/lib/r2-client';
+import { uploadAudioToR2, deleteFromR2ByUrl } from '@/lib/r2-client';
 import { generateAndUploadImageAsset } from '@/lib/problem-generator';
 import { cdnUrl } from '@/const';
 import type { VoiceGender } from '@/config/voice';
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
 
     let newUrl: string;
     const updateData: Prisma.ProblemUpdateInput = {};
+    const oldUrl: string | null = problem[field] ?? null;
 
     switch (field) {
       case 'imageUrl': {
@@ -143,6 +144,13 @@ export async function POST(request: Request) {
     });
 
     console.log(`[regenerate-asset] ${field} 再生成完了: ${newUrl}`);
+
+    // DB更新成功後に古いファイルをR2から削除（失敗しても本処理には影響させない）
+    if (oldUrl && oldUrl !== newUrl) {
+      deleteFromR2ByUrl(oldUrl).catch((err) => {
+        console.warn(`[regenerate-asset] 古いファイルの削除に失敗しました: ${oldUrl}`, err);
+      });
+    }
 
     return NextResponse.json({
       success: true,
