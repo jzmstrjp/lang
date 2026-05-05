@@ -1,3 +1,4 @@
+import { cacheLife } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import type { Problem } from '@prisma/client';
 import { Prisma } from '@prisma/client';
@@ -158,4 +159,29 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   const formattedProblems: ProblemWithAudio[] = problems.map(formatProblem);
 
   return { problems: formattedProblems, count: formattedProblems.length };
+}
+
+const INITIAL_PROBLEMS_POOL_SIZE = 10;
+
+/**
+ * 初期表示用に複数件まとめて取得する。
+ * `'use cache'` でサーバー側にキャッシュし、呼び出し側で配列からランダムに1件選ぶことで
+ * 「キャッシュは効かせつつアクセスごとの問題はランダム」を両立する。
+ */
+export async function loadInitialProblems(
+  options: Omit<FetchProblemsOptions, 'limit'>,
+): Promise<ProblemWithAudio[]> {
+  'use cache';
+  cacheLife('hours');
+
+  const { problems } = await fetchProblems({
+    ...options,
+    limit: INITIAL_PROBLEMS_POOL_SIZE,
+  });
+  return problems;
+}
+
+export function pickRandomProblem(problems: ProblemWithAudio[]): ProblemWithAudio | null {
+  if (problems.length === 0) return null;
+  return problems[Math.floor(Math.random() * problems.length)] ?? null;
 }

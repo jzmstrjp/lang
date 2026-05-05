@@ -1,9 +1,10 @@
+import { Suspense } from 'react';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { isAdminEmail } from '@/lib/auth/admin';
 import { getServerAuthSession } from '@/lib/auth/session';
 
-export default async function AdminPage() {
+async function AdminPageContent() {
   const session = await getServerAuthSession();
   const email = session?.user?.email ?? null;
   const isAdmin = email ? await isAdminEmail(email) : false;
@@ -38,5 +39,13 @@ export default async function AdminPage() {
         </section>
       )}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminPageContent />
+    </Suspense>
   );
 }

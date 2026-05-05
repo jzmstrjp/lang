@@ -2,8 +2,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
 import FillBlankFlow from '@/components/fill-blank/fill-blank-flow';
-import type { ProblemWithAudio } from '@/lib/problem-service';
-import { fetchProblems } from '@/lib/problem-service';
+import { loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
 import type { DifficultyLevel } from '@/config/problem';
@@ -15,51 +14,7 @@ type LevelPageProps = {
   searchParams: Promise<{ search?: string }>;
 };
 
-type ProblemData = ProblemWithAudio | null;
-
-function loadInitialProblem({
-  difficultyLevel,
-  searchQuery,
-}: {
-  difficultyLevel: DifficultyLevel;
-  searchQuery?: string;
-}): Promise<ProblemData> {
-  return (async () => {
-    const { problems } = await fetchProblems({
-      difficultyLevel,
-      search: searchQuery,
-      limit: 1,
-      includeNullDifficulty: false,
-    });
-    return problems[0] ?? null;
-  })();
-}
-
-async function FillBlankContent({
-  difficultyLevel,
-  searchQuery,
-  initialProblemPromise,
-}: {
-  difficultyLevel: DifficultyLevel;
-  searchQuery?: string;
-  initialProblemPromise: Promise<ProblemData>;
-}) {
-  const initialProblem = await initialProblemPromise;
-
-  if (!initialProblem) {
-    return (
-      <p className="mt-10 text-sm text-rose-500 text-center">
-        {searchQuery
-          ? '検索条件に一致する問題が見つかりませんでした。'
-          : '問題が見つかりませんでした。'}
-      </p>
-    );
-  }
-
-  return <FillBlankFlow initialProblem={initialProblem} difficultyLevel={difficultyLevel} />;
-}
-
-export default async function FillBlankLevelPage({ params, searchParams }: LevelPageProps) {
+async function FillBlankLevelContent({ params, searchParams }: LevelPageProps) {
   const { level } = await params;
 
   if (!ALLOWED_LEVELS.includes(level as DifficultyLevel)) {
@@ -69,18 +24,34 @@ export default async function FillBlankLevelPage({ params, searchParams }: Level
   const difficultyLevel = level as DifficultyLevel;
   const displayName = DIFFICULTY_LEVEL_RULES[difficultyLevel].displayName;
   const searchQuery = (await searchParams).search?.trim();
-  const initialProblemPromise = loadInitialProblem({ difficultyLevel, searchQuery });
+
+  const problems = await loadInitialProblems({
+    difficultyLevel,
+    search: searchQuery,
+    includeNullDifficulty: false,
+  });
+  const initialProblem = pickRandomProblem(problems);
 
   return (
     <>
       <HeaderPortal>ana-ume / {displayName}</HeaderPortal>
-      <Suspense fallback={<LoadingSpinner label="問題を取得中..." className="mt-20" />}>
-        <FillBlankContent
-          difficultyLevel={difficultyLevel}
-          searchQuery={searchQuery}
-          initialProblemPromise={initialProblemPromise}
-        />
-      </Suspense>
+      {initialProblem ? (
+        <FillBlankFlow initialProblem={initialProblem} difficultyLevel={difficultyLevel} />
+      ) : (
+        <p className="mt-10 text-sm text-rose-500 text-center">
+          {searchQuery
+            ? '検索条件に一致する問題が見つかりませんでした。'
+            : '問題が見つかりませんでした。'}
+        </p>
+      )}
     </>
+  );
+}
+
+export default function FillBlankLevelPage({ params, searchParams }: LevelPageProps) {
+  return (
+    <Suspense fallback={<LoadingSpinner label="問題を取得中..." className="mt-20" />}>
+      <FillBlankLevelContent params={params} searchParams={searchParams} />
+    </Suspense>
   );
 }
