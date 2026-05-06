@@ -31,7 +31,6 @@ type ServerPhase = {
 };
 
 type ClientPhase = {
-  setting: Setting;
   problem: ProblemWithAudio;
 } & (
   | {
@@ -149,7 +148,7 @@ function ProblemFlowInner({
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
   const nextProblem = problemQueue[0] ?? null;
-  const phaseSetting = phase.kind === 'start-button-server' ? null : phase.setting;
+  const phaseSetting = phase.kind === 'start-button-server' ? null : currentSetting;
   const englishSentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const japaneseReplyAudioRef = useRef<HTMLAudioElement | null>(null);
   const englishReplyAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -231,7 +230,6 @@ function ProblemFlowInner({
           kind: 'start-button-client',
           error: null,
           problem: phase.problem,
-          setting: currentSetting,
         });
         break;
       }
@@ -241,7 +239,6 @@ function ProblemFlowInner({
           setPhase({
             kind: 'scene-ready',
             problem: phase.problem,
-            setting: currentSetting,
           });
         }
 
@@ -259,7 +256,6 @@ function ProblemFlowInner({
     setPhase({
       kind: 'scene-entry',
       problem: phase.problem,
-      setting: currentSetting,
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -268,7 +264,6 @@ function ProblemFlowInner({
     setPhase({
       kind: 'scene-entry',
       problem: phase.problem,
-      setting: currentSetting,
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -288,7 +283,6 @@ function ProblemFlowInner({
         problem: phase.problem,
         shuffledOptions,
         correctIndex: shuffledCorrectIndex,
-        setting: currentSetting,
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
     }
@@ -316,7 +310,6 @@ function ProblemFlowInner({
         kind: 'start-button-client',
         error: '次の問題がありません',
         problem: currentProblem,
-        setting: currentSetting,
       });
       return;
     }
@@ -328,7 +321,6 @@ function ProblemFlowInner({
     setPhase({
       kind: 'scene-entry',
       problem: nextProblemData,
-      setting: currentSetting,
     });
     void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
   };
@@ -525,7 +517,6 @@ function ProblemFlowInner({
           kind: 'start-button-client',
           error: nextProblemData ? null : '次の問題がありません',
           problem: nextProblemData ?? phase.problem,
-          setting: currentSetting,
         });
         return;
       }
@@ -840,22 +831,16 @@ function ProblemFlowInner({
   const handleOptionSelect = (selectedIndex: number) => {
     if (phase.kind !== 'quiz') return;
 
-    const prevSetting = phase.setting;
+    const prevSetting = currentSetting;
     const isCorrect = selectedIndex === phase.correctIndex;
 
     if (isCorrect) {
       const newCorrectStreak = prevSetting.correctStreak + 1;
       setCorrectStreak(newCorrectStreak);
 
-      const newSetting: Setting = {
-        ...prevSetting,
-        correctStreak: newCorrectStreak,
-      };
-
       setPhase({
         kind: 'correct',
         problem: phase.problem,
-        setting: newSetting,
       });
       void (englishSentenceAudioRef.current && playAudio(englishSentenceAudioRef.current, 0));
       return;
@@ -863,15 +848,9 @@ function ProblemFlowInner({
 
     setCorrectStreak(0);
 
-    const newSetting: Setting = {
-      ...prevSetting,
-      correctStreak: 0,
-    };
-
     setPhase({
       kind: 'incorrect',
       problem: phase.problem,
-      setting: newSetting,
     });
   };
 
@@ -887,10 +866,9 @@ function ProblemFlowInner({
       return {
         kind: 'scene-ready',
         problem: prev.problem,
-        setting: currentSetting,
       };
     });
-  }, [currentSetting]);
+  }, []);
 
   return (
     <div className="max-w-full">
@@ -948,6 +926,7 @@ function ProblemFlowInner({
       {phase.kind === 'correct' && (
         <CorrectPhaseView
           phase={phase}
+          setting={currentSetting}
           isOnStreak={isOnStreak}
           length={length}
           difficultyLevel={difficultyLevel}
@@ -1229,6 +1208,7 @@ function QuizPhaseView({
 
 type CorrectPhaseViewProps = {
   phase: Extract<ClientPhase, { kind: 'correct' }>;
+  setting: Setting;
   isOnStreak: boolean;
   length?: ProblemLength;
   difficultyLevel?: DifficultyLevel;
@@ -1239,6 +1219,7 @@ type CorrectPhaseViewProps = {
 
 function CorrectPhaseView({
   phase,
+  setting,
   isOnStreak,
   length,
   difficultyLevel,
@@ -1323,7 +1304,7 @@ function CorrectPhaseView({
         <h2 className="text-4xl font-bold flex justify-center items-center gap-4">
           <div className="transform scale-x-[-1]">🎉</div>
           <div className="flex flex-row items-center justify-center gap-2 flex-wrap">
-            {isOnStreak && <div>{phase.setting.correctStreak}問連続</div>}
+            {isOnStreak && <div>{setting.correctStreak}問連続</div>}
             <div>正解</div>
           </div>
           <div>🎉</div>
@@ -1345,8 +1326,8 @@ function CorrectPhaseView({
                 const courseIdentifier = length || difficultyLevel || 'default';
                 const courseName =
                   courseIdentifier.charAt(0).toUpperCase() + courseIdentifier.slice(1);
-                const shareUrl = `${window.location.origin}?streak=${phase.setting.correctStreak}`;
-                const tweetText = `【英語きわめ太郎】${courseName}コースで${phase.setting.correctStreak}問連続正解しました！`;
+                const shareUrl = `${window.location.origin}?streak=${setting.correctStreak}`;
+                const tweetText = `【英語きわめ太郎】${courseName}コースで${setting.correctStreak}問連続正解しました！`;
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`;
                 window.open(twitterUrl, '_blank', 'width=550,height=420');
               }}
