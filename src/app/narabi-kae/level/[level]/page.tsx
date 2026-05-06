@@ -6,6 +6,7 @@ import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/pro
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
 import type { DifficultyLevel } from '@/config/problem';
+import { generateWordSortProblem } from '@/lib/word-sort-utils';
 
 const ALLOWED_LEVELS: DifficultyLevel[] = ['kids', 'non_kids'];
 
@@ -28,29 +29,37 @@ async function WordSortLevelContent({ params, searchParams }: LevelPageProps) {
   // 検索時はキャッシュを通さず最新を取りに行く。
   // それ以外は loadInitialProblems の結果（プール）から Server 側でランダムに 1 件選ぶ。
   // この content 自体は dynamic なのでリクエストごとに評価される。
+  const includeNullDifficulty = difficultyLevel !== 'kids';
+
   const initialProblems = searchQuery
     ? (
         await fetchProblems({
           difficultyLevel,
           search: searchQuery,
           maxWordCount: 13,
-          includeNullDifficulty: false,
+          includeNullDifficulty,
           limit: 1,
         })
       ).problems
     : await loadInitialProblems({
         difficultyLevel,
         maxWordCount: 13,
-        includeNullDifficulty: false,
+        includeNullDifficulty,
       });
 
   const initialProblem = pickRandomProblem(initialProblems);
+  // hydration mismatch を避けるため、ランダム性を含む sortProblem の生成は server 側で行う。
+  const initialSortProblem = initialProblem ? generateWordSortProblem(initialProblem) : null;
 
   return (
     <>
       <HeaderPortal>narabi-kae / {displayName}</HeaderPortal>
-      {initialProblem ? (
-        <WordSortFlow initialProblem={initialProblem} difficultyLevel={difficultyLevel} />
+      {initialProblem && initialSortProblem ? (
+        <WordSortFlow
+          initialProblem={initialProblem}
+          initialSortProblem={initialSortProblem}
+          difficultyLevel={difficultyLevel}
+        />
       ) : (
         <p className="mt-10 text-sm text-rose-500 text-center">
           {searchQuery

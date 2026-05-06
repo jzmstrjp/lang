@@ -41,6 +41,7 @@ type ApiProblemsResponse = {
 
 type WordSortFlowProps = {
   initialProblem: ProblemWithAudio;
+  initialSortProblem: WordSortProblemData;
   difficultyLevel?: DifficultyLevel;
 };
 
@@ -56,7 +57,11 @@ export default function WordSortFlow(props: WordSortFlowProps) {
   return <WordSortFlowInner key={mountKey} {...props} />;
 }
 
-function WordSortFlowInner({ initialProblem, difficultyLevel }: WordSortFlowProps) {
+function WordSortFlowInner({
+  initialProblem,
+  initialSortProblem,
+  difficultyLevel,
+}: WordSortFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-word-sort', 0);
 
   const searchParams = useSearchParams();
@@ -64,10 +69,12 @@ function WordSortFlowInner({ initialProblem, difficultyLevel }: WordSortFlowProp
   const router = useRouter();
   const pathname = usePathname();
 
-  const [phase, setPhase] = useState<Phase>(() => {
-    const sortProblem = generateWordSortProblem(initialProblem);
-    return { kind: 'quiz', problem: initialProblem, sortProblem, incorrectCount: 0 };
-  });
+  const [phase, setPhase] = useState<Phase>(() => ({
+    kind: 'quiz',
+    problem: initialProblem,
+    sortProblem: initialSortProblem,
+    incorrectCount: 0,
+  }));
 
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
   const isPrefetchingRef = useRef(false);
@@ -95,11 +102,10 @@ function WordSortFlowInner({ initialProblem, difficultyLevel }: WordSortFlowProp
     }
   }, [problemQueue.length, difficultyLevel]);
 
-  const didInitRef = useRef(false);
-  if (!didInitRef.current) {
-    didInitRef.current = true;
+  useEffect(() => {
     void refillQueueIfNeeded();
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = (selectedTokens: WordToken[]) => {
     if (phase.kind !== 'quiz') return;

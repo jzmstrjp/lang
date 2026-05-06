@@ -36,6 +36,7 @@ type ApiProblemsResponse = {
 
 type FillBlankFlowProps = {
   initialProblem: ProblemWithAudio;
+  initialBlankProblem: BlankProblemData;
   difficultyLevel?: DifficultyLevel;
 };
 
@@ -51,7 +52,11 @@ export default function FillBlankFlow(props: FillBlankFlowProps) {
   return <FillBlankFlowInner key={mountKey} {...props} />;
 }
 
-function FillBlankFlowInner({ initialProblem, difficultyLevel }: FillBlankFlowProps) {
+function FillBlankFlowInner({
+  initialProblem,
+  initialBlankProblem,
+  difficultyLevel,
+}: FillBlankFlowProps) {
   const [correctStreak, setCorrectStreak] = useLocalStorage('correctStreak-fill-blank', 0);
 
   const searchParams = useSearchParams();
@@ -59,10 +64,11 @@ function FillBlankFlowInner({ initialProblem, difficultyLevel }: FillBlankFlowPr
   const router = useRouter();
   const pathname = usePathname();
 
-  const [phase, setPhase] = useState<Phase>(() => {
-    const blankProblem = generateBlankProblem(initialProblem);
-    return { kind: 'quiz', problem: initialProblem, blankProblem };
-  });
+  const [phase, setPhase] = useState<Phase>(() => ({
+    kind: 'quiz',
+    problem: initialProblem,
+    blankProblem: initialBlankProblem,
+  }));
 
   const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
   const isPrefetchingRef = useRef(false);
@@ -92,11 +98,10 @@ function FillBlankFlowInner({ initialProblem, difficultyLevel }: FillBlankFlowPr
     }
   }, [problemQueue.length, difficultyLevel]);
 
-  const didInitRef = useRef(false);
-  if (!didInitRef.current) {
-    didInitRef.current = true;
+  useEffect(() => {
     void refillQueueIfNeeded();
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleOptionSelect = (selectedIndex: number) => {
     if (phase.kind !== 'quiz') return;
