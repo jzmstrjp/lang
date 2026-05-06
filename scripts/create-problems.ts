@@ -1376,8 +1376,17 @@ async function generateProblemsInAllMode(sceneDrafts: (SceneDraftWithVoice | nul
 
     const types: ProblemLength[] = ['short', 'medium', 'long'];
     let wordSkipped = false;
+    const wordCount = sceneDraft.word.trim().split(/\s+/).length;
 
     for (const type of types) {
+      const maxWordCount = WORD_COUNT_RULES[type].max;
+      if (wordCount > maxWordCount - 2) {
+        console.log(
+          `  ⏭️ [${type}] "${sceneDraft.word}"（${wordCount}単語）は上限（${maxWordCount}単語）に対して長すぎるためスキップします`,
+        );
+        continue;
+      }
+
       console.log(`  📝 [${type}] 問題生成中...`);
       const wordRange = WORD_COUNT_RULES[type];
 
@@ -1447,6 +1456,7 @@ async function finalizeAndSave(
   tokenUsage: TokenUsage,
   isKids = false,
   useSeed = false,
+  overrideLastWord: string | null = null,
 ): Promise<void> {
   const totalProblems = problems.length;
 
@@ -1492,7 +1502,9 @@ async function finalizeAndSave(
   console.log('\n📦 SeedProblemDataに変換中...');
   const seedProblems = convertToSeedProblemData(problems, isKids);
 
-  const lastWord = successfulWords.length > 0 ? successfulWords[successfulWords.length - 1] : null;
+  const lastWord =
+    overrideLastWord ??
+    (successfulWords.length > 0 ? successfulWords[successfulWords.length - 1] : null);
 
   if (useSeed) {
     // --seed フラグ: ファイルを作らず直接 DB 投入（成功後に LATEST_USED_WORD も更新）
@@ -1942,7 +1954,24 @@ async function main() {
     if (startAfter) {
       console.log(`📍 開始位置: index ${startIndex} ("${startAfter}" の次)`);
     }
-    const selectedWords = words.slice(startIndex, startIndex + count);
+    const rawSelectedWords = words.slice(startIndex, startIndex + count);
+
+    // short/medium/long の場合、word の単語数が (max - 2) を超えるものはスキップ
+    const selectedWords =
+      problemType === 'all' || problemType === 'kids'
+        ? rawSelectedWords
+        : rawSelectedWords.filter((word) => {
+            const wordCount = word.trim().split(/\s+/).length;
+            const maxWordCount = WORD_COUNT_RULES[problemType].max;
+            if (wordCount > maxWordCount - 2) {
+              console.log(
+                `⏭️ "${word}"（${wordCount}単語）は ${problemType} の上限（${maxWordCount}単語）に対して長すぎるためスキップします`,
+              );
+              return false;
+            }
+            return true;
+          });
+
     const isKids = problemType === 'kids';
 
     // ジャンル分けを実行（kids は全て日常生活に固定）
@@ -1992,9 +2021,14 @@ async function main() {
     totalInputTokens += problemTokenUsage.input_tokens;
     totalOutputTokens += problemTokenUsage.output_tokens;
 
-    // 成功/スキップの単語を分類
+    // 成功/スキップの単語を分類（API失敗によるスキップのみ）
     const successfulWords = selectedWords.filter((_, i) => !skippedIndices.has(i));
     const skippedWords = selectedWords.filter((_, i) => skippedIndices.has(i));
+
+    // words.ts の削除範囲は rawSelectedWords の末尾を基準にする
+    // （フィルタで除外した word も含めて削除するため）
+    const lastRawWord =
+      rawSelectedWords.length > 0 ? rawSelectedWords[rawSelectedWords.length - 1] : null;
 
     // 4. 共通の後処理（統計・保存・クリーンアップ）
     await finalizeAndSave(
@@ -2007,6 +2041,7 @@ async function main() {
       },
       isKids,
       useSeed,
+      lastRawWord,
     );
   } catch (error) {
     console.error('\n❌ エラーが発生しました:', error instanceof Error ? error.message : error);
