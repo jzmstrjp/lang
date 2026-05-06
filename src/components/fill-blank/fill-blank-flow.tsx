@@ -82,7 +82,13 @@ function FillBlankFlowInner({
     try {
       // 補充時は常に検索なしで取得
       const params = new URLSearchParams({ limit: '10' });
-      if (difficultyLevel) params.set('difficultyLevel', difficultyLevel);
+      if (difficultyLevel) {
+        params.set('difficultyLevel', difficultyLevel);
+        // kids 以外は difficultyLevel が未設定の問題も対象に含める（page.tsx と挙動を揃える）
+        if (difficultyLevel !== 'kids') {
+          params.set('includeNullDifficulty', 'true');
+        }
+      }
       const response = await fetch(`/api/problems?${params}`, { cache: 'no-store' });
 
       if (response.ok) {

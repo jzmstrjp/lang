@@ -86,7 +86,13 @@ function WordSortFlowInner({
 
     try {
       const params = new URLSearchParams({ limit: '10', maxWordCount: '13' });
-      if (difficultyLevel) params.set('difficultyLevel', difficultyLevel);
+      if (difficultyLevel) {
+        params.set('difficultyLevel', difficultyLevel);
+        // kids 以外は difficultyLevel が未設定の問題も対象に含める（page.tsx と挙動を揃える）
+        if (difficultyLevel !== 'kids') {
+          params.set('includeNullDifficulty', 'true');
+        }
+      }
       const response = await fetch(`/api/problems?${params}`, { cache: 'no-store' });
 
       if (response.ok) {
