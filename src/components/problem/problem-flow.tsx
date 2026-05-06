@@ -236,7 +236,7 @@ function ProblemFlowInner({
         break;
       }
       case 'scene-entry': {
-        const shouldSkipImage = !sceneImage || phase.setting.isImageHiddenMode;
+        const shouldSkipImage = !sceneImage || isImageHiddenMode;
         if (shouldSkipImage) {
           setPhase({
             kind: 'scene-ready',
@@ -251,7 +251,7 @@ function ProblemFlowInner({
         break;
       }
     }
-  }, [currentSetting, length, phase, refillQueueIfNeeded, sceneImage]);
+  }, [currentSetting, isImageHiddenMode, length, phase, refillQueueIfNeeded, sceneImage]);
 
   const handleStart = () => {
     if (phase.kind !== 'start-button-client') return;
@@ -914,7 +914,7 @@ function ProblemFlowInner({
         <SceneEntryView
           sceneImage={sceneImage}
           place={phase.problem.place}
-          isHidden={phase.setting.isImageHiddenMode}
+          isHidden={isImageHiddenMode}
           onSceneReady={handleSceneImageLoad}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
@@ -925,7 +925,7 @@ function ProblemFlowInner({
         <SceneReadyView
           sceneImage={sceneImage}
           place={phase.problem.place}
-          isHidden={phase.setting.isImageHiddenMode}
+          isHidden={isImageHiddenMode}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
           scenePrompt={phase.problem.scenePrompt}
