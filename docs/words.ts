@@ -1,6 +1,4 @@
 export const words: string[] = [
-  'cute',
-  'famous',
   'about to overflow',
   'absolute final deadline',
   'ahead of time',
