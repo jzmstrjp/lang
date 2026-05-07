@@ -221,6 +221,21 @@ function ProblemFlowInner({
     }
   }, [difficultyLevel, length, problemQueue.length, includeNullDifficulty, latestCount]);
 
+  // ページ移動時（Activity hidden 含む）に再生中の音声を停止する
+  // Next.js 16 の cacheComponents 環境では useEffect の cleanup が hidden 時に
+  // 走らないため、useLayoutEffect を使う。
+  // https://nextjs.org/docs/app/guides/preserving-ui-state
+  useLayoutEffect(() => {
+    const englishSentenceAudio = englishSentenceAudioRef.current;
+    const japaneseReplyAudio = japaneseReplyAudioRef.current;
+    const englishReplyAudio = englishReplyAudioRef.current;
+    return () => {
+      englishSentenceAudio?.pause();
+      japaneseReplyAudio?.pause();
+      englishReplyAudio?.pause();
+    };
+  }, []);
+
   // phaseごとの処理
   useLayoutEffect(() => {
     // --- phaseごとの副作用をここに統合 ---
