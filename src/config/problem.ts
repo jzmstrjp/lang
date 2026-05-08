@@ -4,17 +4,18 @@ export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
     max: 6,
-    note: '中学1年生でも分かる単語・表現だけを使うこと。be動詞、一般動詞の現在形・過去形、can、do you〜? などの基本構文のみ使用可。関係代名詞、仮定法、完了形、受動態は使わないこと。難しい単語は絶対に使わないこと。',
+    note: '中学1年生でも分かる単語・表現だけを使うこと。複雑な文法は使わないこと。',
   },
   short: {
-    min: 2,
-    max: 6,
-    note: '指定された語彙以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
+    min: 3,
+    max: 9,
+    note: '指定されたワード以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
   },
-  medium: { min: 7, max: 13 },
+  medium: { min: 10, max: 15 },
   long: {
-    min: 14,
+    min: 16,
     max: 30,
+    note: '1つの文を無理に長くせずとも、複数の文に分けても良い。',
   },
 } as const satisfies Record<ProblemLength, { min: number; max: number; note?: string }>;
 

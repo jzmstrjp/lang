@@ -10,7 +10,7 @@ import { DIFFICULTY_LEVEL_RULES, VALID_DIFFICULTY_LEVELS } from '@/config/proble
 
 type LevelPageProps = {
   params: Promise<{ level: string }>;
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; latest?: string }>;
 };
 
 const fetchIsAdmin = async () => {
@@ -31,26 +31,32 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
 
   const difficultyLevel = level as DifficultyLevel;
   const displayName = DIFFICULTY_LEVEL_RULES[difficultyLevel].displayName;
-  const searchQuery = (await searchParams).search?.trim();
+  const resolvedSearchParams = await searchParams;
+  const searchQuery = resolvedSearchParams.search?.trim();
+  const latestParam = resolvedSearchParams.latest;
+  const parsedLatest = latestParam !== undefined ? parseInt(latestParam, 10) : NaN;
+  const latestCount = Number.isFinite(parsedLatest) && parsedLatest > 0 ? parsedLatest : undefined;
 
   const isAdminPromise = fetchIsAdmin();
-  // 検索時はキャッシュを通さず最新を取りに行く。
+  // search / latest 指定時はキャッシュを通さず最新を取りに行く。
   // それ以外は loadInitialProblems の結果（プール）から Server 側でランダムに 1 件選ぶ。
   // この LevelPageContent 自体は dynamic なのでリクエストごとに評価され、
   // プールがキャッシュされていてもユーザーごとに異なる問題が選ばれる。
-  const initialProblems = searchQuery
-    ? (
-        await fetchProblems({
+  const initialProblems =
+    searchQuery || latestCount !== undefined
+      ? (
+          await fetchProblems({
+            difficultyLevel,
+            search: searchQuery,
+            includeNullDifficulty: false,
+            latestCount,
+            limit: 1,
+          })
+        ).problems
+      : await loadInitialProblems({
           difficultyLevel,
-          search: searchQuery,
           includeNullDifficulty: false,
-          limit: 1,
-        })
-      ).problems
-    : await loadInitialProblems({
-        difficultyLevel,
-        includeNullDifficulty: false,
-      });
+        });
 
   const initialProblem = pickRandomProblem(initialProblems);
 
@@ -63,6 +69,7 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
           initialProblem={initialProblem}
           isAdminPromise={isAdminPromise}
           includeNullDifficulty={false}
+          latestCount={latestCount}
         />
       ) : (
         <p className="mt-10 text-sm text-rose-500 text-center">
