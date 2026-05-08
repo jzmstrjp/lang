@@ -981,7 +981,7 @@ ${adultJsonExample}`;
       throw new Error('sender.gender と receiver.gender は逆の性別である必要があります');
     }
 
-    const reactions = ['具体的な反応を返したい。'];
+    const reactions = ['適切な反応を返したい。'];
 
     // receiver.whyをランダムな反応で上書き
     const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
