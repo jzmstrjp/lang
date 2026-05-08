@@ -1,6 +1,4 @@
 export const words: string[] = [
-  'cleared my schedule',
-  'closing the budget',
   'come into effect',
   'comes and goes',
   'comment briefly on',
