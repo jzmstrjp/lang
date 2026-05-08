@@ -305,7 +305,12 @@ ${TTS_READING_RULES}
     }
 
     return {
-      result,
+      result: {
+        japaneseSentence: result.japaneseSentence,
+        japaneseReply: result.japaneseReply
+          .replaceAll('今朝', 'けさ')
+          .replaceAll('絆創膏', 'ばんそうこう'),
+      },
       tokenUsage: {
         input_tokens: response.usage?.input_tokens ?? 0,
         output_tokens: response.usage?.output_tokens ?? 0,
@@ -793,6 +798,10 @@ const sceneDraftCaution = `
 【注意】whyとplaceが矛盾しないようにしてください。「今日は仕事を休むという旨を上司に伝えたい」シーンであれば、「オフィス」で「対面」で伝えるのは不自然で矛盾しています。休みたいはずなのにオフィスにいるのはおかしいからです。このシーンであれば「自宅」から「オフィス」に「電話」で伝えるのが自然です。
 `;
 
+const getOppositeGenre = (genre: 'ビジネス' | '日常生活'): 'ビジネス' | '日常生活' => {
+  return genre === 'ビジネス' ? '日常生活' : 'ビジネス';
+};
+
 /**
  * OpenAI APIを使ってシーンの下書きを作成
  */
@@ -867,7 +876,7 @@ async function createSceneDraft(
 
 【最重要ルール】
 - このシーンから生まれる英文は「${value}」をそのまま使った${WORD_COUNT_RULES.kids.max}単語以内の短い一言になります。
-- whyは「${value}」をそのまま口にする理由だけにしてください。余計な状況や追加の意図を盛り込まないこと。
+- whyは「${value}」を口にする理由だけにしてください。余計な状況や追加の意図を盛り込まないこと。
 - 例: "good morning" → why: "朝の挨拶をしたい"（○）、why: "朝の挨拶をして、今日の予定を確認したい"（×：余計）
 
 【要件】
@@ -882,7 +891,7 @@ async function createSceneDraft(
   - gender: 受信者の性別。必ず JSON では \`"male"\` または \`"female"\` のどちらか。**必ず sender.gender と逆**にすること（sender が male なら female、逆も同様）
   - where: どこにいるか具体的に（対面での会話の場合は、senderと同じ場所または近い場所にすること）
 - when: いつ会話するか（例: 放課後、週末の午前、夕食の時間）
-- word: 使用する単語・フレーズ（必ず「${value}」を設定）
+- word: 使用する単語・フレーズ（「${value}」がそのまま入ること）
 
 ${sceneDraftCaution}
 
@@ -906,7 +915,7 @@ ${sceneDraftCaution}
   "when": "平日の朝"
 }
 \`\`\``
-    : `「${value}」というワード・フレーズを使って、${genre}系の会話シーンを作成してください。TOEICのリスニング問題に出てきそうなシーンにしてください。
+    : `「${value}」というワード・フレーズを使って、${genre}系の会話シーンを作成してください。TOEICのリスニング問題に出てきそうなシーンにしてください。${getOppositeGenre(genre)}系のシーンは避けてください。
 
 【要件】
 - sender: 送信者の情報（こちらが「${value}」というワードを使用する人物）
@@ -920,7 +929,7 @@ ${sceneDraftCaution}
   - gender: 受信者の性別。必ず JSON では \`"male"\` または \`"female"\` のどちらか。**必ず sender.gender と逆**にすること
   - where: どこにいるか具体的に（例: ${adultWhereExamples}）（対面での会話の場合は、senderと同じ場所または近い場所にすること）
 - when: いつ会話するか（例: 金曜の午後、平日の夕方、深夜、平日の昼）
-- word: 使用する単語・フレーズ（必ず「${value}」を設定）
+- word: 使用する単語・フレーズ（「${value}」がそのまま入ること）
 
 ${sceneDraftCaution}
 
@@ -979,7 +988,7 @@ ${adultJsonExample}`;
     result.receiver.why = `相手の言葉を受け取って、${randomReaction}`;
 
     return {
-      result,
+      result: { ...result, word: value },
       tokenUsage: {
         input_tokens: response.usage?.input_tokens ?? 0,
         output_tokens: response.usage?.output_tokens ?? 0,
