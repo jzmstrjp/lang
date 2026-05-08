@@ -1,7 +1,4 @@
 export const words: string[] = [
-  'come into effect',
-  'comes and goes',
-  'comment briefly on',
   'compare carefully with',
   'complain publicly about',
   'compliment you warmly',
