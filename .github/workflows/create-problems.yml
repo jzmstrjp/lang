@@ -19,11 +19,6 @@ on:
         required: false
         default: '30'
         type: string
-      batch_size:
-        description: '音声・画像の処理件数上限'
-        required: false
-        default: '30'
-        type: string
 
 jobs:
   create-and-seed:
@@ -192,7 +187,7 @@ jobs:
       - name: Run fix-missing-audio script
         if: steps.check_missing.outputs.should_run == 'true'
         run: |
-          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '10' }}"
+          INPUT_BATCH_SIZE=$(( ${{ github.event.inputs.count || '30' }} * 3 ))
           echo "🚀 音声URL修復スクリプトを開始します（処理件数上限: $INPUT_BATCH_SIZE件）"
           npx tsx scripts/fix-missing-audio.ts "$INPUT_BATCH_SIZE"
         env:
@@ -299,7 +294,7 @@ jobs:
       - name: Run fix-missing-image script
         if: steps.check_missing.outputs.should_run == 'true'
         run: |
-          INPUT_BATCH_SIZE="${{ github.event.inputs.batch_size || '10' }}"
+          INPUT_BATCH_SIZE=$(( ${{ github.event.inputs.count || '30' }} * 3 ))
           echo "🚀 画像URL修復スクリプトを開始します（処理件数上限: $INPUT_BATCH_SIZE件）"
           npx tsx scripts/fix-missing-image.ts "$INPUT_BATCH_SIZE"
         env:
