@@ -250,6 +250,7 @@ type SentenceContextDraft = {
   englishSentence: string;
   when: string;
   where: string;
+  receiverWhere: string;
   how: ConversationHow;
   senderRole: string;
   receiverRole: string;
@@ -282,10 +283,15 @@ function parseSentenceContextDraft(
       ? (o.how as ConversationHow)
       : how;
   const receiverVoice: ProblemVoice = senderVoice === 'male' ? 'female' : 'male';
+  const receiverWhere =
+    typeof o.receiverWhere === 'string' && o.receiverWhere.trim() !== ''
+      ? o.receiverWhere
+      : o.where;
   return {
     englishSentence: o.englishSentence,
     when: o.when,
     where: o.where,
+    receiverWhere,
     how: parsedHow,
     senderRole: o.senderRole,
     receiverRole: o.receiverRole,
@@ -344,12 +350,11 @@ async function buildSentenceContextDrafts(
     )
     .join('\n\n');
 
-  const howNote =
-    how === '電話での会話'
-      ? '話しかける人（sender）が電話をかけている場所（例: 自宅のリビング、オフィスのデスク）'
-      : how === 'ビデオ通話での会話'
-        ? '話しかける人（sender）がビデオ通話をしている場所（例: 自宅のデスク、会社の会議室）'
-        : '話しかける人（sender）のいる場所（例: 会社の会議室、自宅のリビング）';
+  const isRemote = how === '電話での会話' || how === 'ビデオ通話での会話';
+  const whereNote = isRemote ? `話しかける人（sender）がいる場所` : `二人がいる場所`;
+  const receiverWhereNote = isRemote
+    ? `聞き手（receiver）がいる場所。where とは別の場所`
+    : `where と同じ場所、またはすぐ近く`;
   const prompt = `以下は会話クイズ用の「話しかけ」とその「返答」のペアである。課題表現「${expression}」に沿って用意された候補である。
 
 ${list}
@@ -360,7 +365,8 @@ ${list}
 
 - englishSentence: 各ペアの「話しかけ（英文）」を**一字一句同じ**にコピーすること
 - when: いつ（例: 平日の午前、会議の直前、週末の夕方）
-- where: どこで（${howNote}）
+- where: ${whereNote}
+- receiverWhere: ${receiverWhereNote}
 - how: **必ず "${how}" 固定**
 - senderRole: 話しかける側の役割・関係（例: 上司、同僚、母親）
 - receiverRole: 聞き手の役割・関係（例: 部下、取引先、息子）
@@ -386,6 +392,7 @@ ${list}
     "englishSentence": "...",
     "when": "...",
     "where": "...",
+    "receiverWhere": "...",
     "how": "${how}",
     "senderRole": "...",
     "receiverRole": "...",
@@ -1174,7 +1181,7 @@ function toScenePromptInputFromRow(
     receiver: {
       role: row.receiverRole,
       voice: row.receiverVoice,
-      where: row.where,
+      where: row.receiverWhere,
       englishReply: row.englishReply,
       japaneseReply: row.japaneseReply,
     },

@@ -1,5 +1,4 @@
 export const words: string[] = [
-  'get started on',
   'get you down',
   'give rise to',
   'Given the situation',
