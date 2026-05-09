@@ -20,6 +20,25 @@ import { scoreProblem } from './score-and-prune-problems';
 
 dotenv.config();
 
+export type ConversationHow = '対面での会話' | '電話での会話' | 'ビデオ通話での会話';
+
+const HOW_CANDIDATES: ConversationHow[] = [
+  '対面での会話',
+  '対面での会話',
+  '対面での会話',
+  '対面での会話',
+  '対面での会話',
+  '対面での会話',
+  '対面での会話',
+  '対面での会話',
+  '電話での会話',
+  'ビデオ通話での会話',
+];
+
+function pickRandomHow(): ConversationHow {
+  return HOW_CANDIDATES[Math.floor(Math.random() * HOW_CANDIDATES.length)]!;
+}
+
 /**
  * LATEST_USED_WORD に基づいて words 配列の開始インデックスを返す
  */
@@ -231,15 +250,19 @@ type SentenceContextDraft = {
   englishSentence: string;
   when: string;
   where: string;
+  how: ConversationHow;
   senderRole: string;
   receiverRole: string;
   senderVoice: ProblemVoice;
   receiverVoice: ProblemVoice;
 };
 
+const VALID_HOW_VALUES: ConversationHow[] = ['対面での会話', '電話での会話', 'ビデオ通話での会話'];
+
 function parseSentenceContextDraft(
   value: unknown,
   senderVoice: ProblemVoice,
+  how: ConversationHow,
 ): SentenceContextDraft | null {
   if (typeof value !== 'object' || value === null) {
     return null;
@@ -254,11 +277,16 @@ function parseSentenceContextDraft(
   ) {
     return null;
   }
+  const parsedHow: ConversationHow =
+    typeof o.how === 'string' && VALID_HOW_VALUES.includes(o.how as ConversationHow)
+      ? (o.how as ConversationHow)
+      : how;
   const receiverVoice: ProblemVoice = senderVoice === 'male' ? 'female' : 'male';
   return {
     englishSentence: o.englishSentence,
     when: o.when,
     where: o.where,
+    how: parsedHow,
     senderRole: o.senderRole,
     receiverRole: o.receiverRole,
     senderVoice,
@@ -299,6 +327,7 @@ async function buildSentenceContextDrafts(
   replies: SentenceReplyDraft[],
   expression: string,
   senderVoice: ProblemVoice,
+  how: ConversationHow,
 ): Promise<SentenceContextDraft[]> {
   if (replies.length === 0) {
     return [];
@@ -315,6 +344,12 @@ async function buildSentenceContextDrafts(
     )
     .join('\n\n');
 
+  const howNote =
+    how === '電話での会話'
+      ? '話しかける人（sender）が電話をかけている場所（例: 自宅のリビング、オフィスのデスク）'
+      : how === 'ビデオ通話での会話'
+        ? '話しかける人（sender）がビデオ通話をしている場所（例: 自宅のデスク、会社の会議室）'
+        : '話しかける人（sender）のいる場所（例: 会社の会議室、自宅のリビング）';
   const prompt = `以下は会話クイズ用の「話しかけ」とその「返答」のペアである。課題表現「${expression}」に沿って用意された候補である。
 
 ${list}
@@ -325,7 +360,8 @@ ${list}
 
 - englishSentence: 各ペアの「話しかけ（英文）」を**一字一句同じ**にコピーすること
 - when: いつ（例: 平日の午前、会議の直前、週末の夕方）
-- where: どこで（例: 会社の会議室、自宅のリビング、ジムの受付）
+- where: どこで（${howNote}）
+- how: **必ず "${how}" 固定**
 - senderRole: 話しかける側の役割・関係（例: 上司、同僚、母親）
 - receiverRole: 聞き手の役割・関係（例: 部下、取引先、息子）
 - senderVoice: **必ず "${senderVoice}" 固定**
@@ -350,6 +386,7 @@ ${list}
     "englishSentence": "...",
     "when": "...",
     "where": "...",
+    "how": "${how}",
     "senderRole": "...",
     "receiverRole": "...",
     "senderVoice": "${senderVoice}",
@@ -382,7 +419,7 @@ ${list}
 
     const inputSet = new Set(replies.map((r) => r.englishSentence.trim()));
     const rows = parsed
-      .map((v) => parseSentenceContextDraft(v, senderVoice))
+      .map((v) => parseSentenceContextDraft(v, senderVoice, how))
       .filter((row): row is SentenceContextDraft => row !== null)
       .filter((row) => inputSet.has(row.englishSentence.trim()));
 
@@ -595,6 +632,7 @@ const createEnglishSentences = async (
   expression: string,
   wordCountLength: ProblemLength = 'short',
   senderVoice: ProblemVoice = 'male',
+  how: ConversationHow = '対面での会話',
 ): Promise<string[]> => {
   const rule = WORD_COUNT_RULES[wordCountLength];
   const { min, max } = rule;
@@ -609,6 +647,7 @@ const createEnglishSentences = async (
     total,
     half,
     senderVoice,
+    how,
   });
 
   try {
@@ -1123,7 +1162,7 @@ function toScenePromptInputFromRow(
 ): ScenePromptProblemInput {
   return {
     when: row.when,
-    how: '対面での会話',
+    how: row.how,
     word: expression,
     sender: {
       role: row.senderRole,
@@ -1532,8 +1571,16 @@ async function buildSeedProblemsForExpression(
 ): Promise<SeedProblemData[]> {
   const isKids = wordCountLength === 'kids';
   const senderVoice: ProblemVoice = Math.random() < 0.5 ? 'male' : 'female';
+  const conversationHow = pickRandomHow();
 
-  const candidates = await createEnglishSentences(expression, wordCountLength, senderVoice);
+  console.error(`  📞 会話形式: ${conversationHow}`);
+
+  const candidates = await createEnglishSentences(
+    expression,
+    wordCountLength,
+    senderVoice,
+    conversationHow,
+  );
   if (candidates.length === 0) {
     return [];
   }
@@ -1547,6 +1594,7 @@ async function buildSeedProblemsForExpression(
     sentenceReplyDrafts,
     expression,
     senderVoice,
+    conversationHow,
   );
   const replyBySentence = new Map(
     sentenceReplyDrafts.map((r) => [r.englishSentence.trim(), r.englishReply]),

@@ -1,9 +1,4 @@
 export const words: string[] = [
-  'follow up accordingly',
-  'for your reference',
-  'formal offer letter',
-  'get accustomed to',
-  'get in touch',
   'get started on',
   'get you down',
   'give rise to',
