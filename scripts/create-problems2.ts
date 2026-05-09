@@ -23,15 +23,6 @@ dotenv.config();
 export type ConversationHow = '対面での会話' | '電話での会話' | 'ビデオ通話での会話';
 
 const HOW_CANDIDATES: ConversationHow[] = [
-  '対面での会話',
-  '対面での会話',
-  '対面での会話',
-  '対面での会話',
-  '対面での会話',
-  '対面での会話',
-  '対面での会話',
-  '対面での会話',
-  '電話での会話',
   'ビデオ通話での会話',
 ];
 
