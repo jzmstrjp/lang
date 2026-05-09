@@ -62,7 +62,7 @@ export type EnglishSentenceGeneratorParams = {
   total: number;
   half: number;
   senderVoice: 'male' | 'female';
-  how: '対面での会話' | '電話での会話' | 'ビデオ通話での会話';
+  how: '対面での会話' | '電話での会話' | 'ビデオ会議での会話';
 };
 
 const isCallNameRequired = () => Math.random() < 0.1;
@@ -78,8 +78,8 @@ export function buildEnglishSentenceGeneratorUserPrompt(p: EnglishSentenceGenera
   const howNote =
     p.how === '電話での会話'
       ? '電話での会話を前提に台詞を作ること。'
-      : p.how === 'ビデオ通話での会話'
-        ? 'ビデオ通話での会話を前提に台詞を作ること。'
+      : p.how === 'ビデオ会議での会話'
+        ? 'ビデオ会議での会話を前提に台詞を作ること。'
         : '対面での会話を前提に台詞を作ること。';
   return `「${p.expression}」という表現を使って、ある${senderGender}がある${receiverGender}に話しかける台詞を作れ。
 話しかける人は${senderGender}、聞き手は${receiverGender}であることを前提に台詞を作ること。

@@ -20,11 +20,9 @@ import { scoreProblem } from './score-and-prune-problems';
 
 dotenv.config();
 
-export type ConversationHow = '対面での会話' | '電話での会話' | 'ビデオ通話での会話';
+export type ConversationHow = '対面での会話' | '電話での会話' | 'ビデオ会議での会話';
 
-const HOW_CANDIDATES: ConversationHow[] = [
-  'ビデオ通話での会話',
-];
+const HOW_CANDIDATES: ConversationHow[] = ['ビデオ会議での会話'];
 
 function pickRandomHow(): ConversationHow {
   return HOW_CANDIDATES[Math.floor(Math.random() * HOW_CANDIDATES.length)]!;
@@ -249,7 +247,7 @@ type SentenceContextDraft = {
   receiverVoice: ProblemVoice;
 };
 
-const VALID_HOW_VALUES: ConversationHow[] = ['対面での会話', '電話での会話', 'ビデオ通話での会話'];
+const VALID_HOW_VALUES: ConversationHow[] = ['対面での会話', '電話での会話', 'ビデオ会議での会話'];
 
 function parseSentenceContextDraft(
   value: unknown,
@@ -341,7 +339,7 @@ async function buildSentenceContextDrafts(
     )
     .join('\n\n');
 
-  const isRemote = how === '電話での会話' || how === 'ビデオ通話での会話';
+  const isRemote = how === '電話での会話' || how === 'ビデオ会議での会話';
   const whereNote = isRemote ? `話しかける人（sender）がいる場所` : `二人がいる場所`;
   const receiverWhereNote = isRemote
     ? `聞き手（receiver）がいる場所。where とは別の場所`
@@ -731,13 +729,13 @@ async function createScenePrompt(problemData: {
 
 【要件】
 1. **200文字程度**で簡潔に。日常やビジネスの場面であり得そうな自然な会話シーンを想像して、そのシーンを説明すること。
-2. ストーリーと場所の様子を説明。まず対面なのか電話なのかビデオ通話なのか書くこと。ストーリーにはセリフそのものは含めず、画像の生成に必要な背景の情報などを描くこと。
+2. ストーリーと場所の様子を説明。まず対面なのか電話なのかビデオ会議なのか書くこと。ストーリーにはセリフそのものは含めず、画像の生成に必要な背景の情報などを描くこと。
 3. 1コマ目と2コマ目で何が起こるかを簡潔に。画像生成AIが1コマ目に何を描くべきか、2コマ目に何を描くべきか迷わないように明確に言語化すること。
 4. AIに描かせたくない内容があれば簡潔に書くこと。(例: 男性は塩を持っていない、まだコーヒーは席に届いていない、テーブルには何もない)
 5. プロパティ名（sender/receiver/englishSentence等）は使わず、自然な日本語で
 
 【例】
-- ビデオ通話での会話。火曜の夕方、1コマ目では女性の同僚が自宅のリビングでパソコンの前に座り、ビデオ通話で男性の同僚に納期の注意を真剣な表情で伝えている。2コマ目では男性がオフィスの会議室でPCのモニタを見ながら自信ありげに返答している。
+- ビデオ会議での会話。火曜の夕方、1コマ目では女性の同僚が自宅のリビングでパソコンの前に座り、ビデオ会議で男性の同僚に納期の注意を真剣な表情で伝えている。2コマ目では男性がオフィスの会議室でPCのモニタを見ながら自信ありげに返答している。
 - 対面での会話。水曜の昼、カフェで女性が男性と向かい合って話している。テーブル上には食べ終わった料理の皿がある。1コマ目で女性はデザートを食べようと提案している。2コマ目では男性が嬉しそうにその提案に賛成している。まだデザートは注文されていない。
 
 【重要】以下のJSON形式で必ず回答してください:
