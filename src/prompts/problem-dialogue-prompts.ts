@@ -75,15 +75,9 @@ export function buildEnglishSentenceGeneratorUserPrompt(p: EnglishSentenceGenera
     p.senderVoice === 'male'
       ? '女性名（例: Sarah, Emily, Anna, Maria など）'
       : '男性名（例: Tom, Jake, James, Dan など）';
-  const howNote =
-    p.how === '電話での会話'
-      ? '電話での会話を前提に台詞を作ること。'
-      : p.how === 'ビデオ会議での会話'
-        ? 'ビデオ会議での会話を前提に台詞を作ること。'
-        : '対面での会話を前提に台詞を作ること。';
   return `「${p.expression}」という表現を使って、ある${senderGender}がある${receiverGender}に話しかける台詞を作れ。
 話しかける人は${senderGender}、聞き手は${receiverGender}であることを前提に台詞を作ること。
-${howNote}
+${p.how}ならではの台詞を作ること。
 ${PROMPT_ENGLISH_SENTENCE_QUALITY}
 必ず${p.min}〜${p.max}単語の文を作成すること。${p.noteBlock}
 「${p.expression}」は何語目に来てもいい。ただし、「${p.expression}」というワードならではの文を作ること。
