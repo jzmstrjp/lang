@@ -224,7 +224,6 @@ const createJapaneseConversation = async ({
   二人の関係性を考慮して、自然な口調のセリフに翻訳してください。
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
   英語に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
-  英文に含まれていない内容は日本語訳にも含まないでください。
   相手のことを「○○さん」「XXXさん」などと伏せ字で翻訳せず「あなた」「君」もしくは「部長」などの呼び方を使ってください。
 
 【シーン】
@@ -235,6 +234,8 @@ const createJapaneseConversation = async ({
 ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）は知らないかもしれない情報です。
 - ${sentence.who}（${voiceMap[voice]}）が話しかけたきっかけ: ${sentence.why}
 - ${sentence.who}（${voiceMap[voice]}）が話しかけた目的: ${sentence.want}
+
+※英文に含まれていない内容は日本語訳にも含まないでください。
 
 以下のJSON形式で必ず回答してください。
 
