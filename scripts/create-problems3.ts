@@ -56,7 +56,7 @@ const createEnglishSentencePrompt = ({
 ${usedBlock}
 「${phrase}」というフレーズを使って、ある${voiceMap[voice]}がある${voiceMap[toggleVoice(voice)]}に${how}で話しかけるとしたら、どんな英文があり得えますか？
 ネイティブが実際に会話で使うような、ごく自然な英文の台詞を作成してください。
-指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使うべし。
+${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使うべし。' : ''}
 ${howNoteMap[how]}
 英文法は正確に、文法の間違いがないようにしてください。
 ${rule.min}語以上${rule.max}語以下の英文を作成してください。
@@ -456,10 +456,10 @@ function createScenePrompt(data: {
 }): string {
   return `${data.how}。
 - タイミング: ${data.when}
-- 場所（1コマ目）: ${data.sender.where}
-- 場所（2コマ目）: ${data.receiver.where}
-- 話しかける理由: ${data.sender.why}
-- 話しかける人の期待すること: ${data.sender.want}
+- ${data.sender.role}（${voiceMap[data.sender.voice]}）がいる場所（1コマ目）: ${data.sender.where}
+- ${data.receiver.role}（${voiceMap[data.receiver.voice]}）がいる場所（2コマ目）: ${data.receiver.where}
+- ${data.sender.role}（${voiceMap[data.sender.voice]}）が話しかける理由: ${data.sender.why}
+- ${data.sender.role}（${voiceMap[data.sender.voice]}）の期待すること: ${data.sender.want}
 `;
 }
 

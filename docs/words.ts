@@ -1,5 +1,4 @@
 export const words: string[] = [
-  'place',
   'thing',
   'in the pipeline',
   'interest rate hike',
