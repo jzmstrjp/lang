@@ -1,4 +1,4 @@
-name: 問題生成パイプライン（create-problems2）
+name: 問題生成パイプライン（create-problems3）
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ on:
 
 jobs:
   create-and-seed:
-    name: 問題生成 & DB投入（create-problems2）
+    name: 問題生成 & DB投入（create-problems3）
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -89,7 +89,7 @@ jobs:
           INPUT_COUNT="${{ github.event.inputs.count || '5' }}"
           INPUT_SEED="${{ github.event.inputs.seed }}"
 
-          echo "🚀 create-problems2 を開始します"
+          echo "🚀 create-problems3 を開始します"
           echo "📌 モード: $INPUT_MODE / ワード数: $INPUT_COUNT"
           echo "📍 LATEST_USED_WORD は DB から自動取得します"
 
@@ -101,7 +101,7 @@ jobs:
             echo "💾 problemData にファイル出力（db:seed は手動）"
           fi
 
-          NODE_ENV=production npx tsx scripts/create-problems2.ts \
+          NODE_ENV=production npx tsx scripts/create-problems3.ts \
             --batch \
             --mode="$INPUT_MODE" \
             --count="$INPUT_COUNT" \
@@ -113,7 +113,7 @@ jobs:
         run: |
           echo ""
           echo "🎊 ================================================"
-          echo "🎉 create-problems2 ジョブが完了しました"
+          echo "🎉 create-problems3 ジョブが完了しました"
           echo "🎊 ================================================"
           echo "📌 モード: ${{ github.event.inputs.mode }}"
           echo "📊 ワード数: ${{ github.event.inputs.count || '5' }}"

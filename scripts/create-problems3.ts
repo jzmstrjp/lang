@@ -6,6 +6,7 @@ import * as readline from 'readline';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 import { words } from '../docs/words';
 import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
@@ -39,14 +40,20 @@ const createEnglishSentencePrompt = ({
   voice,
   how,
   rule,
+  usedSentences,
 }: {
   phrase: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
+  usedSentences: string[];
 }): string => {
+  const usedBlock =
+    usedSentences.length > 0
+      ? `\n以下の英文はすでに使用済みです。これらと被らない英文の台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n`
+      : '';
   return `
-
+${usedBlock}
 「${phrase}」というフレーズを使って、ある${voiceMap[voice]}がある${voiceMap[toggleVoice(voice)]}に${how}で話しかけるとしたら、どんな英文があり得えますか？
 ネイティブが実際に会話で使うような、ごく自然な英文の台詞を作成してください。
 指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使うべし。
@@ -239,13 +246,15 @@ const createEnglishSentence = async ({
   voice,
   how,
   rule,
+  usedSentences = [],
 }: {
   phrase: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
+  usedSentences?: string[];
 }): Promise<EnglishSentenceResult | null> => {
-  const prompt = createEnglishSentencePrompt({ phrase, voice, how, rule });
+  const prompt = createEnglishSentencePrompt({ phrase, voice, how, rule, usedSentences });
 
   try {
     const response = await openai.responses.create({
@@ -689,8 +698,6 @@ async function enrichToSeedProblemData({
   };
 }
 
-type ProblemLengthMode = ProblemLength | 'all' | 'nonKids';
-
 const ALL_PROBLEM_LENGTHS: ProblemLength[] = ['kids', 'short', 'medium', 'long'];
 const NON_KIDS_PROBLEM_LENGTHS: ProblemLength[] = ['short', 'medium', 'long'];
 
@@ -703,12 +710,14 @@ async function generateForPhrase(
   wordCountLength: ProblemLength,
   voice: Voice,
   how: How,
+  usedSentences: string[] = [],
 ): Promise<SeedProblemData | null> {
   const sentence = await createEnglishSentence({
     phrase,
     voice,
     how,
     rule: WORD_COUNT_RULES[wordCountLength],
+    usedSentences,
   });
   if (!sentence) {
     console.log('  ⚠️ スキップ（英文生成失敗）');
@@ -856,12 +865,16 @@ const main = async () => {
 
   for (const phrase of selectedWords) {
     for (const len of lengths) {
+      const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
         const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
         console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, len, voice, how);
-        if (seed) seedProblems.push(seed);
+        const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+        if (seed) {
+          usedSentences.push(seed.englishSentence);
+          seedProblems.push(seed);
+        }
       }
     }
   }
@@ -894,4 +907,166 @@ const main = async () => {
   );
 };
 
-void main();
+// ─── --batch / CI 用 ──────────────────────────────────────────────────────────
+
+type ProblemLengthMode = ProblemLength | 'all' | 'nonKids';
+const BATCH_MODES = ['kids', 'short', 'medium', 'long', 'all', 'nonKids'] as const;
+
+async function seedToDatabase(seedProblems: SeedProblemData[], lastWord: string): Promise<void> {
+  const rawPrisma = new PrismaClient({ log: ['error'] });
+  const acceleratedPrisma = rawPrisma.$extends(withAccelerate()) as unknown as PrismaClient;
+  try {
+    const createData = seedProblems.map((problem) => {
+      const wordCount = problem.englishSentence
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0).length;
+      return {
+        ...problem,
+        wordCount,
+        audioEnUrl: null,
+        audioJaUrl: null,
+        audioEnReplyUrl: null,
+        imageUrl: null,
+      };
+    });
+    const result = await (acceleratedPrisma as PrismaClient).problem.createMany({
+      data: createData,
+      skipDuplicates: true,
+    });
+    console.error(
+      `✅ DB投入完了: ${result.count}件挿入 (重複スキップ: ${createData.length - result.count}件)`,
+    );
+    await rawPrisma.appConfig.upsert({
+      where: { key: 'LATEST_USED_WORD' },
+      update: { value: lastWord },
+      create: { key: 'LATEST_USED_WORD', value: lastWord },
+    });
+    console.error(`🔖 LATEST_USED_WORD を "${lastWord}" に更新しました`);
+  } finally {
+    await rawPrisma.$disconnect();
+  }
+}
+
+function parseBatchCliArgs(): {
+  mode: ProblemLengthMode;
+  wordCount: number;
+  seed: boolean;
+  noRemoveWords: boolean;
+} | null {
+  const args = process.argv.slice(2);
+  if (!args.includes('--batch')) return null;
+
+  let mode: ProblemLengthMode = 'short';
+  let wordCount = 5;
+  let seed = false;
+  let noRemoveWords = false;
+
+  for (const arg of args) {
+    if (arg.startsWith('--mode=')) {
+      const v = arg.slice('--mode='.length);
+      if ((BATCH_MODES as readonly string[]).includes(v)) {
+        mode = v as ProblemLengthMode;
+      } else {
+        console.error(`⚠️ 未対応の --mode=${v}。short を使います`);
+      }
+    } else if (arg.startsWith('--count=')) {
+      const n = parseInt(arg.slice('--count='.length), 10);
+      if (!Number.isNaN(n) && n >= 1) wordCount = Math.min(n, words.length);
+    } else if (arg === '--seed') {
+      seed = true;
+    } else if (arg === '--no-remove-words') {
+      noRemoveWords = true;
+    }
+  }
+  return { mode, wordCount, seed, noRemoveWords };
+}
+
+async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promise<void> {
+  console.error('🚀 create-problems3（--batch / CI）');
+  if (opts.seed && !process.env.DATABASE_URL) {
+    console.error('DATABASE_URL が未設定のため --seed できません');
+    process.exitCode = 1;
+    return;
+  }
+
+  const startAfter = await getLatestUsedWord();
+  if (startAfter) {
+    console.error(`📍 LATEST_USED_WORD: "${startAfter}"`);
+  } else {
+    console.error('📍 LATEST_USED_WORD: 未設定（先頭から使用）');
+  }
+  const startIndex = resolveStartIndex(startAfter);
+  const end = Math.min(startIndex + opts.wordCount, words.length);
+  const selectedWords = words.slice(startIndex, end);
+  if (selectedWords.length === 0) {
+    console.error('選択範囲にワードがありません。');
+    process.exitCode = 1;
+    return;
+  }
+
+  const lengths: ProblemLength[] =
+    opts.mode === 'all'
+      ? ALL_PROBLEM_LENGTHS
+      : opts.mode === 'nonKids'
+        ? NON_KIDS_PROBLEM_LENGTHS
+        : [opts.mode];
+
+  const seedProblems: SeedProblemData[] = [];
+  const PROBLEMS_PER_PHRASE = 3;
+
+  for (const phrase of selectedWords) {
+    for (const len of lengths) {
+      const usedSentences: string[] = [];
+      for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+        const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
+        const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+        console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+        const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+        if (seed) {
+          usedSentences.push(seed.englishSentence);
+          seedProblems.push(seed);
+        }
+      }
+    }
+  }
+
+  if (seedProblems.length === 0) {
+    console.error('\n⚠️ 有効な問題が1件も生成できませんでした');
+    process.exitCode = 1;
+    return;
+  }
+
+  const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+
+  if (opts.seed) {
+    await seedToDatabase(seedProblems, lastConsumedWord);
+  } else {
+    const outRelativePath = `problemData/problem${getNextProblemNumber()}.ts`;
+    const labelExpr =
+      selectedWords.length <= 3
+        ? selectedWords.join(', ')
+        : `${selectedWords.slice(0, 3).join(', ')} 他${selectedWords.length - 3}語`;
+    writeProblemDataTsFile(seedProblems, outRelativePath, {
+      expression: labelExpr,
+      wordCountLength:
+        opts.mode === 'all' ? 'all' : opts.mode === 'nonKids' ? 'nonKids' : opts.mode,
+    });
+    await persistLatestUsedWordIfKnown(lastConsumedWord);
+  }
+
+  if (!opts.noRemoveWords) {
+    removeConsumedWordsThrough(lastConsumedWord);
+  }
+
+  console.error(
+    `\n✅ 完了: 合計 ${seedProblems.length} 問（モード: ${opts.mode}、使用ワード数: ${selectedWords.length}）`,
+  );
+}
+
+const batchOpts = parseBatchCliArgs();
+if (batchOpts) {
+  void runBatch(batchOpts);
+} else {
+  void main();
+}
