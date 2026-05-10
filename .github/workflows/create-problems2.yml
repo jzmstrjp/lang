@@ -1,4 +1,4 @@
-name: 問題生成パイプライン（create-problems3）
+name: 問題生成パイプライン
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       mode:
         description: '語数タイプ（docs/words から LATEST に続き N 語を処理）'
         required: true
-        default: 'short'
+        default: 'nonKids'
         type: choice
         options:
           - short
