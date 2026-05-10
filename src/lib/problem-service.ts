@@ -177,8 +177,8 @@ const INITIAL_PROBLEMS_POOL_SIZE = 10;
 export async function loadInitialProblems(
   options: Omit<FetchProblemsOptions, 'limit'>,
 ): Promise<ProblemWithAudio[]> {
-  // 'use cache: remote';
-  // cacheLife('hours');
+  'use cache: remote';
+  cacheLife('hours');
 
   const { problems } = await fetchProblems({
     ...options,
@@ -200,8 +200,8 @@ export type ProblemsByLength = Record<ProblemLength, ProblemWithAudio[]>;
  * Lambda インスタンス間で共有される（cold start でも cache hit する）。
  */
 export async function loadInitialProblemsByLength(): Promise<ProblemsByLength> {
-  // 'use cache: remote';
-  // cacheLife('hours');
+  'use cache: remote';
+  cacheLife('hours');
 
   const entries = await Promise.all(
     PROBLEM_LENGTHS.map(async (type) => {
