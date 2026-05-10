@@ -2,7 +2,6 @@ export const words: string[] = [
   'place',
   'thing',
   'in the pipeline',
-  'in the red',
   'interest rate hike',
   'internal reporting systems',
   'is about to',
