@@ -1,8 +1,4 @@
 export const words: string[] = [
-  'like',
-  'in the red',
-  'play',
-  'movie',
   'walk',
   'game',
   'food',
