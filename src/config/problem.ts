@@ -4,11 +4,12 @@ export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
     max: 7,
-    note: '子供が勉強するための英文。指定されたワード以外に複雑な文法は使わないこと。',
+    note: '子供が勉強するための英文。複雑な文法は使わないこと。',
   },
   short: {
     min: 3,
     max: 9,
+    note: '指定されたワード以外は、中学生でも分かりそうな語彙で作成すること。',
   },
   medium: { min: 10, max: 15 },
   long: {
