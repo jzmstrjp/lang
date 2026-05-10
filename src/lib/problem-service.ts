@@ -154,7 +154,7 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
         WHERE ${whereClause}
           AND "expression" IS NOT NULL
         GROUP BY "expression"
-        HAVING COUNT(*) >= ${perPhrase}
+        HAVING COUNT(*) >= 2
         ORDER BY RANDOM()
         LIMIT ${phrases}
       ) AS chosen ON p."expression" = chosen."expression"
