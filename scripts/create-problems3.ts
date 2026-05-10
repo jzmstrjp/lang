@@ -1047,8 +1047,10 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     for (const len of lengths) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-        const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-        const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+        const voices = ['male', 'female'] as const satisfies Voice[];
+        const hows = ['対面', '対面', '対面', '対面', '電話'] as const satisfies How[];
+        const voice = voices[Math.floor(Math.random() * voices.length)];
+        const how = hows[Math.floor(Math.random() * hows.length)];
         console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
         const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
         if (seed) {
