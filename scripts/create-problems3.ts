@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import { words } from '../docs/words';
+import { words as kidsWords } from '../docs/kids_words';
 import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import type { SeedProblemData } from '@/types/problem';
@@ -55,15 +56,16 @@ const createEnglishSentencePrompt = ({
   return `
 ${usedBlock}
 「${phrase}」というフレーズを使って、ある${voiceMap[voice]}がある${voiceMap[toggleVoice(voice)]}に${how}で話しかけるとしたら、どんな英文があり得えますか？
+※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 ネイティブが実際に会話で使うような、ごく自然な英文の台詞を作成してください。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使うべし。' : ''}
 ${howNoteMap[how]}
 英文法は正確に、文法の間違いがないようにしてください。
 ${rule.min}語以上${rule.max}語以下の英文を作成してください。
 ${'note' in rule ? rule.note : ''}
-いつ、どこで（話しかける人の場所・返答する人の場所それぞれ）、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかも書いてください。
+いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかも書いてください。
 この情報を元にAIが画像を作成できるほど具体的に書いてください。
-whyやwantなしでenglishSentenceだけを読んでもある程度の状況が分かるように具体的な台詞にしてください。
+why や want なしで englishSentence だけを読んでもある程度の状況が分かるように具体的な台詞にしてください。
 
 以下のJSON形式で必ず回答してください。
 
@@ -72,6 +74,8 @@ ${JSON.stringify(englishSentenceResultDifinition, null, 2)}
 \`\`\`
 
 ## 例
+以下の例を参考にしてください。
+
 ${Object.entries(englishSentenceResultSamples)
   .map(
     ([key, sample]) =>
@@ -98,9 +102,9 @@ const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { ho
   how: '対面または電話',
   when: 'いつ',
   where: '話しかける人がいる場所',
-  receiverWhere: '返答する人がいる場所',
-  who: '誰が',
-  whom: '誰に対して',
+  receiverWhere: '話しかける相手がいる場所',
+  who: '話しかける人の役割',
+  whom: '話しかける相手の役割',
   why: 'きっかけ',
   want: 'どうなりたい',
 };
@@ -307,9 +311,9 @@ const createEnglishSentence = async ({
 
 // ─── ファイル保存ユーティリティ ───────────────────────────────────────────────
 
-function resolveStartIndex(startAfter: string | null): number {
+function resolveStartIndex(startAfter: string | null, wordList: string[]): number {
   if (!startAfter) return 0;
-  const idx = words.indexOf(startAfter);
+  const idx = wordList.indexOf(startAfter);
   if (idx === -1) {
     console.error(
       `⚠️ LATEST_USED_WORD "${startAfter}" が words に見つかりません。先頭から使用します。`,
@@ -319,55 +323,60 @@ function resolveStartIndex(startAfter: string | null): number {
   return idx + 1;
 }
 
-async function getLatestUsedWord(): Promise<string | null> {
+async function getLatestUsedWord(key: string): Promise<string | null> {
   if (!process.env.DATABASE_URL) return null;
   const prisma = new PrismaClient({ log: ['error'] });
   try {
-    const config = await prisma.appConfig.findUnique({ where: { key: 'LATEST_USED_WORD' } });
+    const config = await prisma.appConfig.findUnique({ where: { key } });
     return config?.value ?? null;
   } catch (e) {
-    console.error('⚠️ LATEST_USED_WORD の取得に失敗しました:', e instanceof Error ? e.message : e);
+    console.error(`⚠️ ${key} の取得に失敗しました:`, e instanceof Error ? e.message : e);
     return null;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-async function updateLatestUsedWord(word: string): Promise<void> {
+async function updateLatestUsedWord(key: string, word: string): Promise<void> {
   if (!process.env.DATABASE_URL) {
-    console.error('⚠️ DATABASE_URL が未設定のため LATEST_USED_WORD を更新できません');
+    console.error(`⚠️ DATABASE_URL が未設定のため ${key} を更新できません`);
     return;
   }
   const prisma = new PrismaClient({ log: ['error'] });
   try {
     await prisma.appConfig.upsert({
-      where: { key: 'LATEST_USED_WORD' },
+      where: { key },
       update: { value: word },
-      create: { key: 'LATEST_USED_WORD', value: word },
+      create: { key, value: word },
     });
-    console.error(`🔖 LATEST_USED_WORD を "${word}" に更新しました`);
+    console.error(`🔖 ${key} を "${word}" に更新しました`);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-async function persistLatestUsedWordIfKnown(word: string): Promise<void> {
-  if (!words.includes(word)) {
-    console.error(
-      `⚠️ LATEST_USED_WORD を更新しません（docs/words.ts の語彙に含まれないため: "${word}"）`,
-    );
+async function persistLatestUsedWordIfKnown(
+  key: string,
+  word: string,
+  wordList: string[],
+): Promise<void> {
+  if (!wordList.includes(word)) {
+    console.error(`⚠️ ${key} を更新しません（語彙ファイルに含まれないため: "${word}"）`);
     return;
   }
   try {
-    await updateLatestUsedWord(word);
+    await updateLatestUsedWord(key, word);
   } catch (e) {
-    console.error('⚠️ LATEST_USED_WORD の更新に失敗しました:', e instanceof Error ? e.message : e);
+    console.error(`⚠️ ${key} の更新に失敗しました:`, e instanceof Error ? e.message : e);
   }
 }
 
-function removeUsedWordsFromWordList(wordsToRemove: readonly string[]): void {
+function removeUsedWordsFromWordList(
+  wordsToRemove: readonly string[],
+  wordsFilePath: string,
+): void {
   if (wordsToRemove.length === 0) return;
-  const wordsPath = path.join(process.cwd(), 'docs', 'words.ts');
+  const wordsPath = path.join(process.cwd(), wordsFilePath);
   if (!fs.existsSync(wordsPath)) {
     console.error(`⚠️ 語彙ファイルが見つからないため削除をスキップします: ${wordsPath}`);
     return;
@@ -388,26 +397,30 @@ function removeUsedWordsFromWordList(wordsToRemove: readonly string[]): void {
   });
   if (remainingWords.size > 0) {
     console.error(
-      `⚠️ 次の語彙はwords.tsで見つからず削除できませんでした: ${Array.from(remainingWords).join(', ')}`,
+      `⚠️ 次の語彙は${wordsFilePath}で見つからず削除できませんでした: ${Array.from(remainingWords).join(', ')}`,
     );
   }
   const updatedContent = updatedLines.join('\n');
   if (updatedContent !== originalContent) {
     fs.writeFileSync(wordsPath, updatedContent, 'utf-8');
-    console.error('✅ words.tsから使用済み語彙を削除しました');
+    console.error(`✅ ${wordsFilePath}から使用済み語彙を削除しました`);
   }
 }
 
-function removeConsumedWordsThrough(lastWord: string): void {
-  const lastIdx = words.indexOf(lastWord);
+function removeConsumedWordsThrough(
+  lastWord: string,
+  wordList: string[],
+  wordsFilePath: string,
+): void {
+  const lastIdx = wordList.indexOf(lastWord);
   if (lastIdx === -1) {
     console.error(
-      `⚠️ "${lastWord}" が words 配列に見つからないため、words.ts からの一括削除をスキップします`,
+      `⚠️ "${lastWord}" が words 配列に見つからないため、${wordsFilePath} からの一括削除をスキップします`,
     );
     return;
   }
-  console.error('🧹 使用済み語彙をwords.tsから削除中...');
-  removeUsedWordsFromWordList(words.slice(0, lastIdx + 1));
+  console.error(`🧹 使用済み語彙を${wordsFilePath}から削除中...`);
+  removeUsedWordsFromWordList(wordList.slice(0, lastIdx + 1), wordsFilePath);
 }
 
 function getNextProblemNumber(): number {
@@ -825,8 +838,14 @@ const main = async () => {
     mode = 'short';
   }
 
+  // --- モードに応じてワードリスト・appConfig キー・ファイルパスを決定 ---
+  const isKidsOnly = mode === 'kids';
+  const activeWordList = isKidsOnly ? kidsWords : words;
+  const activeWordsFilePath = isKidsOnly ? 'docs/kids_words.ts' : 'docs/words.ts';
+  const latestUsedWordKey = isKidsOnly ? 'LATEST_USED_WORD_KIDS' : 'LATEST_USED_WORD';
+
   // --- 使用ワード数 ---
-  const maxWords = words.length;
+  const maxWords = activeWordList.length;
   const countAnswer = await ask(rl, `\n何ワード使用しますか？ [最大: ${maxWords}]: `);
   rl.close();
 
@@ -846,18 +865,18 @@ const main = async () => {
   })();
 
   // --- LATEST_USED_WORD から開始位置を決定 ---
-  const startAfter = await getLatestUsedWord();
+  const startAfter = await getLatestUsedWord(latestUsedWordKey);
   if (startAfter) {
-    console.error(`📍 LATEST_USED_WORD: "${startAfter}"`);
+    console.error(`📍 ${latestUsedWordKey}: "${startAfter}"`);
   } else {
-    console.error('📍 LATEST_USED_WORD: 未設定（先頭から使用）');
+    console.error(`📍 ${latestUsedWordKey}: 未設定（先頭から使用）`);
   }
-  const startIndex = resolveStartIndex(startAfter);
-  const selectedWords = words.slice(startIndex, startIndex + wordCount);
+  const startIndex = resolveStartIndex(startAfter, activeWordList);
+  const selectedWords = activeWordList.slice(startIndex, startIndex + wordCount);
 
   if (selectedWords.length === 0) {
     console.error(
-      '選択範囲にワードがありません。LATEST_USED_WORD の位置が末尾付近か、語数が0です。',
+      `選択範囲にワードがありません。${latestUsedWordKey} の位置が末尾付近か、語数が0です。`,
     );
     return;
   }
@@ -922,8 +941,8 @@ const main = async () => {
   const wordCountLength: ProblemLength | 'all' | 'nonKids' =
     mode === 'all' ? 'all' : mode === 'nonKids' ? 'nonKids' : mode;
   writeProblemDataTsFile(seedProblems, outRelativePath, { expression: labelExpr, wordCountLength });
-  await persistLatestUsedWordIfKnown(lastConsumedWord);
-  removeConsumedWordsThrough(lastConsumedWord);
+  await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
+  removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
 
   const modeLabel =
     mode === 'all'
@@ -941,7 +960,11 @@ const main = async () => {
 type ProblemLengthMode = ProblemLength | 'all' | 'nonKids';
 const BATCH_MODES = ['kids', 'short', 'medium', 'long', 'all', 'nonKids'] as const;
 
-async function seedToDatabase(seedProblems: SeedProblemData[], lastWord: string): Promise<void> {
+async function seedToDatabase(
+  seedProblems: SeedProblemData[],
+  lastWord: string,
+  latestUsedWordKey: string,
+): Promise<void> {
   const rawPrisma = new PrismaClient({ log: ['error'] });
   const acceleratedPrisma = rawPrisma.$extends(withAccelerate()) as unknown as PrismaClient;
   try {
@@ -967,11 +990,11 @@ async function seedToDatabase(seedProblems: SeedProblemData[], lastWord: string)
       `✅ DB投入完了: ${result.count}件挿入 (重複スキップ: ${createData.length - result.count}件)`,
     );
     await rawPrisma.appConfig.upsert({
-      where: { key: 'LATEST_USED_WORD' },
+      where: { key: latestUsedWordKey },
       update: { value: lastWord },
-      create: { key: 'LATEST_USED_WORD', value: lastWord },
+      create: { key: latestUsedWordKey, value: lastWord },
     });
-    console.error(`🔖 LATEST_USED_WORD を "${lastWord}" に更新しました`);
+    console.error(`🔖 ${latestUsedWordKey} を "${lastWord}" に更新しました`);
   } finally {
     await rawPrisma.$disconnect();
   }
@@ -1001,7 +1024,7 @@ function parseBatchCliArgs(): {
       }
     } else if (arg.startsWith('--count=')) {
       const n = parseInt(arg.slice('--count='.length), 10);
-      if (!Number.isNaN(n) && n >= 1) wordCount = Math.min(n, words.length);
+      if (!Number.isNaN(n) && n >= 1) wordCount = n;
     } else if (arg === '--seed') {
       seed = true;
     } else if (arg === '--no-remove-words') {
@@ -1019,15 +1042,21 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     return;
   }
 
-  const startAfter = await getLatestUsedWord();
+  // --- モードに応じてワードリスト・appConfig キー・ファイルパスを決定 ---
+  const isKidsOnly = opts.mode === 'kids';
+  const activeWordList = isKidsOnly ? kidsWords : words;
+  const activeWordsFilePath = isKidsOnly ? 'docs/kids_words.ts' : 'docs/words.ts';
+  const latestUsedWordKey = isKidsOnly ? 'LATEST_USED_WORD_KIDS' : 'LATEST_USED_WORD';
+
+  const startAfter = await getLatestUsedWord(latestUsedWordKey);
   if (startAfter) {
-    console.error(`📍 LATEST_USED_WORD: "${startAfter}"`);
+    console.error(`📍 ${latestUsedWordKey}: "${startAfter}"`);
   } else {
-    console.error('📍 LATEST_USED_WORD: 未設定（先頭から使用）');
+    console.error(`📍 ${latestUsedWordKey}: 未設定（先頭から使用）`);
   }
-  const startIndex = resolveStartIndex(startAfter);
-  const end = Math.min(startIndex + opts.wordCount, words.length);
-  const selectedWords = words.slice(startIndex, end);
+  const startIndex = resolveStartIndex(startAfter, activeWordList);
+  const end = Math.min(startIndex + opts.wordCount, activeWordList.length);
+  const selectedWords = activeWordList.slice(startIndex, end);
   if (selectedWords.length === 0) {
     console.error('選択範囲にワードがありません。');
     process.exitCode = 1;
@@ -1071,7 +1100,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
 
   if (opts.seed) {
-    await seedToDatabase(seedProblems, lastConsumedWord);
+    await seedToDatabase(seedProblems, lastConsumedWord, latestUsedWordKey);
   } else {
     const outRelativePath = `problemData/problem${getNextProblemNumber()}.ts`;
     const labelExpr =
@@ -1083,11 +1112,11 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
       wordCountLength:
         opts.mode === 'all' ? 'all' : opts.mode === 'nonKids' ? 'nonKids' : opts.mode,
     });
-    await persistLatestUsedWordIfKnown(lastConsumedWord);
+    await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
   }
 
   if (!opts.noRemoveWords) {
-    removeConsumedWordsThrough(lastConsumedWord);
+    removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
   }
 
   console.error(

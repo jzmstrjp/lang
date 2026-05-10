@@ -1,0 +1,18 @@
+export const words: string[] = [
+  'bad',
+  'hot',
+  'cold',
+  'fast',
+  'slow',
+  'new',
+  'old',
+  'young',
+  'beautiful',
+  'cute',
+  'funny',
+  'strong',
+  'weak',
+  'clean',
+  'dirty',
+  'thing',
+];
