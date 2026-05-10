@@ -1,4 +1,8 @@
 export const words: string[] = [
+  'song',
+  'artist',
+  'songwriter',
+  'conductor',
   'thing',
   'in the pipeline',
   'interest rate hike',
