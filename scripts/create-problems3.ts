@@ -235,7 +235,7 @@ ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）は知らないかもしれ
 - ${sentence.who}（${voiceMap[voice]}）が話しかけたきっかけ: ${sentence.why}
 - ${sentence.who}（${voiceMap[voice]}）が話しかけた目的: ${sentence.want}
 
-※英文に含まれていない内容は日本語訳にも含まないでください。
+※あくまで参考情報です。英文に含まれていない内容は日本語訳に含めないでください。英文に含まれている内容のみを日本語に訳してください。
 
 以下のJSON形式で必ず回答してください。
 
