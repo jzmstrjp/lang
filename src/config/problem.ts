@@ -3,13 +3,12 @@ export type ProblemLength = 'kids' | 'short' | 'medium' | 'long';
 export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
-    max: 6,
-    note: '中学1年生でも分かる単語・表現だけを使うこと。複雑な文法は使わないこと。',
+    max: 7,
+    note: '子供が勉強するための英文。指定されたワード以外に複雑な文法は使わないこと。',
   },
   short: {
     min: 3,
     max: 9,
-    note: '指定されたワード以外は、中学2年生でも知っている単語や表現だけを使ってほしい。',
   },
   medium: { min: 10, max: 15 },
   long: {

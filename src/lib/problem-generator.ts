@@ -201,9 +201,9 @@ ${problem.place}
 
 【登場人物】
 - 話しかける人（sender）
-  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌。
+  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌の持ち主。
 - 話しかけられて応答する人（receiver）
-  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌。
+  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌の持ち主。
 
 ※ビデオ会議の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
