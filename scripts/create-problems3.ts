@@ -83,6 +83,7 @@ ${Object.entries(englishSentenceResultSamples)
 
 type EnglishSentenceResult = {
   englishSentence: string;
+  how: How;
   when: string;
   where: string;
   receiverWhere: string;
@@ -92,8 +93,9 @@ type EnglishSentenceResult = {
   want: string;
 };
 
-const englishSentenceResultDifinition: EnglishSentenceResult = {
+const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { how: string } = {
   englishSentence: 'ここに英文が入る',
+  how: '対面または電話',
   when: 'いつ',
   where: '話しかける人がいる場所',
   receiverWhere: '返答する人がいる場所',
@@ -106,6 +108,7 @@ const englishSentenceResultDifinition: EnglishSentenceResult = {
 const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
   'pass me the O': {
     englishSentence: 'Could you please pass me the salt?',
+    how: '対面',
     when: '夕食前の調理中',
     where: 'キッチン',
     receiverWhere: 'キッチン',
@@ -116,6 +119,7 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
   },
   'was I supposed to': {
     englishSentence: 'Which floor was I supposed to go to again?',
+    how: '対面',
     when: 'エスカレーターで移動中',
     where: 'ショッピングモールのエスカレーター',
     receiverWhere: 'ショッピングモールのエスカレーター',
@@ -123,6 +127,29 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
     whom: '友人',
     why: '目的の店が何階にあるのかを忘れてしまった',
     want: '相手が目的の店のフロアを教えてくれる',
+  },
+  'followed through': {
+    englishSentence: 'I heard Emma followed through on that difficult project.',
+    how: '対面',
+    when: '同僚と雑談している時',
+    where: 'オフィスの休憩スペース',
+    receiverWhere: 'オフィスの休憩スペース',
+    who: '同僚',
+    whom: '同僚',
+    why: 'エマの活躍を知って感心し、誰かに共有したくなった',
+    want: '相手にも、エマの実績に感心してほしい',
+  },
+  'move forward': {
+    englishSentence:
+      "Hi, I'm calling because we'd like to formally move forward with a contract with your company.",
+    how: '電話',
+    when: 'IT会社の業務中',
+    where: '自分のデスク',
+    receiverWhere: 'パートナー企業のデスク',
+    who: 'システムエンジニア',
+    whom: 'パートナー企業の担当者',
+    why: 'パートナー企業の提案内容を見て、正式に契約を結びたいと思った',
+    want: '相手と正式な契約を締結する',
   },
 };
 
@@ -269,7 +296,8 @@ const createEnglishSentence = async ({
     const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
     if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
 
-    return JSON.parse(jsonMatch[1]) as EnglishSentenceResult;
+    const parsed = JSON.parse(jsonMatch[1]) as EnglishSentenceResult;
+    return { ...parsed, how };
   } catch (e) {
     console.error('エラー:', e);
     return null;
