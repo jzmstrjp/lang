@@ -108,6 +108,7 @@ async function main(
         senderVoiceInstruction: true,
         receiverVoiceInstruction: true,
         difficultyLevel: true,
+        expression: true,
       },
       take: batchSize,
       orderBy: {
@@ -194,6 +195,7 @@ async function main(
           senderVoiceInstruction: problem.senderVoiceInstruction ?? null,
           receiverVoiceInstruction: problem.receiverVoiceInstruction ?? null,
           difficultyLevel: problem.difficultyLevel ?? null,
+          expression: problem.expression ?? null,
         };
 
         // 画像生成モードに応じて分岐

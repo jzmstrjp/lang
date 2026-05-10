@@ -147,6 +147,7 @@ async function getRandomProblemFromSeed(type?: ProblemLength): Promise<Generated
     senderVoiceInstruction: selectedProblem.senderVoiceInstruction ?? null,
     receiverVoiceInstruction: selectedProblem.receiverVoiceInstruction ?? null,
     difficultyLevel: null,
+    expression: selectedProblem.expression ?? null,
   };
 }
 

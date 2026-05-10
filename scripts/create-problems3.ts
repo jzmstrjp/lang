@@ -737,6 +737,7 @@ async function enrichToSeedProblemData({
     receiverVoiceInstruction: null,
     incorrectOptions: adjustedOptions,
     difficultyLevel: wordCountLength === 'kids' ? 1 : null,
+    expression,
   };
 }
 
