@@ -36,11 +36,10 @@ model Problem {
   updatedAt DateTime @updatedAt
 
   @@unique([englishSentence])
-  @@index([audioReady, wordCount], map: "idx_problems_audio_ready_wordcount")
   @@index([audioReady, difficultyLevel], map: "idx_problems_audio_ready_difficulty")
   @@index([audioReady, wordCount, difficultyLevel], map: "idx_problems_audio_wordcount_difficulty")
   @@index([audioReady, wordCount, createdAt(sort: Desc)], map: "idx_problems_audio_wordcount_createdat_desc")
-  @@index([audioReady, expression], map: "idx_problems_audio_ready_expression")
+  @@index([audioReady, wordCount, difficultyLevel, expression], map: "idx_problems_audio_wordcount_difficulty_expression")
   @@map("problems")
 }
 

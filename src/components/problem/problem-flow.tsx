@@ -197,6 +197,9 @@ function ProblemFlowInner({
       }
       if (latestCount !== undefined) {
         params.set('latest', String(latestCount));
+      } else {
+        // latestCount 未指定の通常 refill は expression グルーピングで取得
+        params.set('groupByExpression', 'true');
       }
       const response = await fetch(`/api/problems?${params.toString()}`, { cache: 'no-store' });
 

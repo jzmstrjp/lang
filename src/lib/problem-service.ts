@@ -8,7 +8,12 @@ import {
   type ProblemLength,
   type DifficultyLevel,
 } from '@/config/problem';
-import { PROBLEM_FETCH_LIMIT, cdnUrl } from '@/const';
+import {
+  PROBLEM_FETCH_LIMIT,
+  EXPRESSION_FETCH_PHRASES,
+  EXPRESSION_FETCH_PER_PHRASE,
+  cdnUrl,
+} from '@/const';
 
 export type ProblemWithAudio = Omit<
   Problem,
@@ -28,6 +33,7 @@ export type FetchProblemsOptions = {
   limit?: number;
   includeNullDifficulty?: boolean;
   latestCount?: number;
+  groupByExpression?: boolean;
 };
 
 const LATEST_COUNT_MAX = 10000;
@@ -73,6 +79,7 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     limit = PROBLEM_FETCH_LIMIT,
     includeNullDifficulty = false,
     latestCount,
+    groupByExpression = false,
   } = options;
 
   // limitの範囲チェック
@@ -130,27 +137,60 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   // WHERE句を結合
   const whereClause = Prisma.join(whereClauses, ' AND ');
 
-  // latestCountが指定されている場合は「最新N件」のサブクエリで絞り込んでからランダム取得
-  // それ以外は条件全体からランダム取得
-  // $queryRawを使用してパラメータ化クエリでSQLインジェクションを防止
-  const problems =
-    latestCount !== undefined
-      ? await prisma.$queryRaw<ProblemWithAudio[]>`
-          SELECT * FROM (
-            SELECT * FROM "problems"
-            WHERE ${whereClause}
-            ORDER BY "createdAt" DESC
-            LIMIT ${Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX)}
-          ) AS recent
-          ORDER BY RANDOM()
-          LIMIT ${sanitizedLimit}
-        `
-      : await prisma.$queryRaw<ProblemWithAudio[]>`
-          SELECT * FROM "problems"
-          WHERE ${whereClause}
-          ORDER BY RANDOM()
-          LIMIT ${sanitizedLimit}
-        `;
+  let problems: ProblemWithAudio[];
+
+  if (groupByExpression && !hasSearch && latestCount === undefined) {
+    // expressionでグルーピングして N フレーズ × M 問を取得する
+    // 1. 条件に合致する expression をランダムに EXPRESSION_FETCH_PHRASES 個選ぶ
+    // 2. 選んだ expression ごとに EXPRESSION_FETCH_PER_PHRASE 問ずつ取得する
+    const phrases = EXPRESSION_FETCH_PHRASES;
+    const perPhrase = EXPRESSION_FETCH_PER_PHRASE;
+    problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+      SELECT p.*
+      FROM "problems" p
+      JOIN (
+        SELECT "expression"
+        FROM "problems"
+        WHERE ${whereClause}
+          AND "expression" IS NOT NULL
+        GROUP BY "expression"
+        HAVING COUNT(*) >= ${perPhrase}
+        ORDER BY RANDOM()
+        LIMIT ${phrases}
+      ) AS chosen ON p."expression" = chosen."expression"
+      WHERE ${whereClause}
+      ORDER BY p."expression", RANDOM()
+    `;
+    // 各 expression から最大 perPhrase 件に絞る（SQLの都合で超過する場合があるため）
+    const seen = new Map<string, number>();
+    problems = problems.filter((p) => {
+      const key = p.expression ?? '';
+      const count = seen.get(key) ?? 0;
+      if (count >= perPhrase) return false;
+      seen.set(key, count + 1);
+      return true;
+    });
+  } else if (latestCount !== undefined) {
+    // 最新N件から絞り込んでランダム取得
+    problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+      SELECT * FROM (
+        SELECT * FROM "problems"
+        WHERE ${whereClause}
+        ORDER BY "createdAt" DESC
+        LIMIT ${Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX)}
+      ) AS recent
+      ORDER BY RANDOM()
+      LIMIT ${sanitizedLimit}
+    `;
+  } else {
+    // 条件全体からランダム取得
+    problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+      SELECT * FROM "problems"
+      WHERE ${whereClause}
+      ORDER BY RANDOM()
+      LIMIT ${sanitizedLimit}
+    `;
+  }
 
   if (!problems || problems.length === 0) {
     return { problems: [], count: 0 };

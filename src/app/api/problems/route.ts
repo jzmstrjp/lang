@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     const parsedLatest = latestParam !== null ? parseInt(latestParam, 10) : NaN;
     const latestCount =
       Number.isFinite(parsedLatest) && parsedLatest > 0 ? parsedLatest : undefined;
+    const groupByExpression = searchParams.get('groupByExpression') === 'true';
 
     const result = await fetchProblems({
       type,
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
       limit,
       includeNullDifficulty,
       latestCount,
+      groupByExpression,
     });
 
     return NextResponse.json(result);

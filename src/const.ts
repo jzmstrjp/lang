@@ -9,8 +9,11 @@ export const IMAGE_MODEL_SETTING = {
   quality: 'low',
 } as const satisfies Omit<ImageGenerateParams, 'prompt'>;
 
-// 1回で取得する問題数
-export const PROBLEM_FETCH_LIMIT = 10;
+// 1回で取得する問題数（5フレーズ × 3問）
+export const PROBLEM_FETCH_LIMIT = 15;
+// expression グルーピング取得時の設定
+export const EXPRESSION_FETCH_PHRASES = 5;
+export const EXPRESSION_FETCH_PER_PHRASE = 3;
 
 const HOST_NAME = 'xn--w8jtfrbw831dz9h.xn--sssu80k.dev';
 
