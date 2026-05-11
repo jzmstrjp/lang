@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
 type SceneImageProps = {
+  frameNumber: 1 | 2;
   src: string;
   alt: string;
   opacity?: 'low' | 'medium' | 'full';
@@ -16,36 +17,48 @@ type SceneImageProps = {
  * 縦横比: 500x750 (2:3)
  */
 export function SceneImage({
+  frameNumber,
   src,
   alt,
-  opacity = 'full',
   className = '',
   onLoad,
   sentence1,
   sentence2,
   isBlurred = false,
 }: SceneImageProps) {
-  const opacityClass =
-    opacity === 'low' ? 'opacity-30' : opacity === 'medium' ? 'opacity-50' : 'opacity-100';
-
   return (
-    <div className={`relative w-[500px] max-w-full sm:mt-2 mx-auto ${isBlurred ? 'blur-sm' : ''}`}>
-      <Image
-        src={src}
-        alt={alt}
-        width={500}
-        height={750}
-        className={`w-full h-auto object-contain ${opacityClass} ${className}`}
-        style={{
-          maskImage:
-            'linear-gradient(to bottom, black 0%, black 48.7%, transparent 48.7%, transparent 51.3%, black 51.3%, black 100%)',
-          WebkitMaskImage:
-            'linear-gradient(to bottom, black 0%, black 48.7%, transparent 48.7%, transparent 51.3%, black 51.3%, black 100%)',
-        }}
-        priority
-        unoptimized
-        onLoad={onLoad}
-      />
+    <div
+      className={`relative w-[1000px] max-w-full aspect-[4/3] mx-auto ${isBlurred ? 'blur-sm' : ''}`}
+    >
+      <div
+        className={`absolute top-0 left-0 w-full h-full transition duration-200 ${className} ${frameNumber === 1 ? '' : 'brightness-50 portrait:[transform:scale(0.4)_translateY(-120%)] portrait:[transform-origin:top_center] landscape:[transform:scale(0.4)_translateX(-110%)] landscape:[transform-origin:center_left]'} overflow-hidden`}
+      >
+        <Image
+          src={src}
+          alt={alt}
+          width={500}
+          height={750}
+          className={`w-full h-auto object-contain scale-[1.02] origin-top`}
+          priority
+          unoptimized
+          onLoad={onLoad}
+        />
+      </div>
+
+      <div
+        className={`absolute top-0 left-0 w-full h-full transition duration-200 ${className} ${frameNumber === 2 ? '' : 'brightness-50 portrait:[transform:scale(0.4)_translateY(120%)] portrait:[transform-origin:bottom_center] landscape:[transform:scale(0.4)_translateX(110%)] landscape:[transform-origin:center_right]'} overflow-hidden`}
+      >
+        <Image
+          src={src}
+          alt={alt}
+          width={500}
+          height={750}
+          className={`w-full h-auto object-contain absolute bottom-0 left-0 scale-[1.02] origin-bottom`}
+          priority
+          unoptimized
+          onLoad={onLoad}
+        />
+      </div>
 
       {/* sentence1: 区切り棒の上あたり */}
       {sentence1 && (

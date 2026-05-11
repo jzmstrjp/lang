@@ -238,6 +238,7 @@ export default function PromptTestClient() {
                   <h3 className="text-lg font-semibold text-purple-800 mb-2">生成された画像</h3>
                   <div className="flex justify-center">
                     <SceneImage
+                      frameNumber={1}
                       src={assets.composite}
                       alt="Generated scene illustration"
                       opacity="full"

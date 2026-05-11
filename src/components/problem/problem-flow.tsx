@@ -45,7 +45,10 @@ type ClientPhase = {
       kind: 'scene-entry';
     }
   | {
-      kind: 'scene-ready';
+      kind: 'playing-sentence';
+    }
+  | {
+      kind: 'playing-reply';
     }
   | {
       kind: 'quiz';
@@ -259,7 +262,7 @@ function ProblemFlowInner({
         const shouldSkipImage = !sceneImage || isImageHiddenMode;
         if (shouldSkipImage) {
           setPhase({
-            kind: 'scene-ready',
+            kind: 'playing-sentence',
             problem: phase.problem,
           });
         }
@@ -299,7 +302,7 @@ function ProblemFlowInner({
         currentProblem.incorrectOptions,
       );
 
-    if (phase.kind === 'scene-entry' || phase.kind === 'scene-ready') {
+    if (phase.kind === 'playing-reply') {
       setPhase({
         kind: 'quiz',
         problem: phase.problem,
@@ -886,7 +889,7 @@ function ProblemFlowInner({
     setPhase((prev) => {
       if (prev.kind !== 'scene-entry') return prev;
       return {
-        kind: 'scene-ready',
+        kind: 'playing-sentence',
         problem: prev.problem,
       };
     });
@@ -921,8 +924,9 @@ function ProblemFlowInner({
           scenePrompt={phase.problem.scenePrompt}
         />
       )}
-      {phase.kind === 'scene-ready' && (
-        <SceneReadyView
+      {(phase.kind === 'playing-sentence' || phase.kind === 'playing-reply') && (
+        <PlayingView
+          frameNumber={phase.kind === 'playing-sentence' ? 1 : 2}
           sceneImage={sceneImage}
           place={phase.problem.place}
           isHidden={isImageHiddenMode}
@@ -971,7 +975,12 @@ function ProblemFlowInner({
         onEnded={() => {
           setAudioBusy(false);
           if (phase.kind === 'quiz' || phase.kind === 'correct') return;
-          // scene-entry/scene-ready時のみ、返答音声を続けて再生
+          // playing-sentence時のみ、返答音声を続けて再生
+          if (phase.kind !== 'playing-sentence') return;
+          setPhase({
+            kind: 'playing-reply',
+            problem: phase.problem,
+          });
           const replyAudioRef =
             phaseSetting && phaseSetting.isEnglishMode
               ? englishReplyAudioRef
@@ -1072,7 +1081,7 @@ type StartButtonServerViewProps = {
 
 function StartButtonServerView({ onStart, disabled }: StartButtonServerViewProps) {
   return (
-    <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
+    <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/3]">
       <div className="absolute inset-0 flex items-center justify-center">
         <StartButton error={null} handleStart={onStart} disabled={disabled}>
           英語学習を始める
@@ -1106,8 +1115,9 @@ function StartButtonClientView({
   scenePrompt,
 }: StartButtonClientViewProps) {
   return (
-    <div className="relative w-[500px] max-w-full mx-auto aspect-[2/3]">
+    <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/3]">
       <SceneDisplay
+        frameNumber={1}
         imageUrl={sceneImage}
         place={place}
         isHidden={isHidden}
@@ -1147,6 +1157,7 @@ function SceneEntryView({
 }: SceneEntryViewProps) {
   return (
     <SceneDisplay
+      frameNumber={1}
       imageUrl={sceneImage}
       place={place}
       isHidden={isHidden}
@@ -1159,7 +1170,8 @@ function SceneEntryView({
   );
 }
 
-type SceneReadyViewProps = {
+type PlayingViewProps = {
+  frameNumber: 1 | 2;
   sceneImage: string | null;
   place: string;
   isHidden: boolean;
@@ -1168,16 +1180,18 @@ type SceneReadyViewProps = {
   scenePrompt?: string | null;
 };
 
-function SceneReadyView({
+function PlayingView({
+  frameNumber,
   sceneImage,
   place,
   isHidden,
   sentence1,
   sentence2,
   scenePrompt,
-}: SceneReadyViewProps) {
+}: PlayingViewProps) {
   return (
     <SceneDisplay
+      frameNumber={frameNumber}
       imageUrl={sceneImage}
       place={place}
       isHidden={isHidden}
@@ -1932,6 +1946,7 @@ function ScenePromptEditDialog({ defaultValue, onCancel, onSubmit }: ScenePrompt
 
 // 共通シーン表示コンポーネント
 function SceneDisplay({
+  frameNumber,
   imageUrl,
   place,
   isHidden,
@@ -1942,6 +1957,7 @@ function SceneDisplay({
   scenePrompt,
   isBlurred = false,
 }: {
+  frameNumber: 1 | 2;
   imageUrl: string | null;
   place: string;
   isHidden: boolean;
@@ -1957,6 +1973,7 @@ function SceneDisplay({
       <section>
         <figure className="flex w-full justify-center">
           <SceneImage
+            frameNumber={frameNumber}
             src={imageUrl}
             alt={scenePrompt ?? '英語と日本語のセリフを並べた2コマシーン'}
             opacity={opacity}
