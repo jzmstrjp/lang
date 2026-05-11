@@ -165,7 +165,7 @@ const senderNameMap: Record<VoiceType, string> = {
 };
 const receiverNameMap: Record<VoiceType, string> = {
   male: 'リュウセイ',
-  female: 'レナ',
+  female: 'アカリ',
 };
 
 const senderFaceDirectionMap = [
