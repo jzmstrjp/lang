@@ -25,10 +25,13 @@ function ensureApiKey() {
 export async function generateImage(prompt: string): Promise<string> {
   ensureApiKey();
 
-  const image = await openai.images.generate({
-    ...IMAGE_MODEL_SETTING,
-    prompt,
-  });
+  const image = await openai.images.generate(
+    {
+      ...IMAGE_MODEL_SETTING,
+      prompt,
+    },
+    { timeout: IMAGE_GENERATION_TIMEOUT_MS },
+  );
 
   const first = image.data?.[0];
   if (!first) {
@@ -48,16 +51,22 @@ export async function generateImage(prompt: string): Promise<string> {
   throw new Error('Failed to generate image');
 }
 
+/** 画像生成1件あたりのタイムアウト（ms） */
+const IMAGE_GENERATION_TIMEOUT_MS = 3 * 60 * 1000; // 3分
+
 /**
  * 画像を生成してBufferを返す（アップロードは別途実行）
  */
 export async function generateImageBuffer(prompt: string): Promise<Buffer> {
   ensureApiKey();
 
-  const image = await openai.images.generate({
-    ...IMAGE_MODEL_SETTING,
-    prompt,
-  });
+  const image = await openai.images.generate(
+    {
+      ...IMAGE_MODEL_SETTING,
+      prompt,
+    },
+    { timeout: IMAGE_GENERATION_TIMEOUT_MS },
+  );
 
   const first = image.data?.[0];
   if (!first) {
@@ -125,12 +134,15 @@ export async function generateImageWithCharactersBuffer(
     return new File([new Uint8Array(buffer)], `character-${index}.png`, { type: 'image/png' });
   });
 
-  const image = await openai.images.edit({
-    ...IMAGE_MODEL_SETTING,
-    image: imageFiles,
-    prompt: scenePrompt,
-    quality: 'medium',
-  });
+  const image = await openai.images.edit(
+    {
+      ...IMAGE_MODEL_SETTING,
+      image: imageFiles,
+      prompt: scenePrompt,
+      quality: 'medium',
+    },
+    { timeout: IMAGE_GENERATION_TIMEOUT_MS },
+  );
 
   const first = image.data?.[0];
   if (!first) {
