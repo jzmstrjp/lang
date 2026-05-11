@@ -160,9 +160,11 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
 const createEnglishReply = async ({
   sentence,
   voice,
+  wordCountLength,
 }: {
   sentence: EnglishSentenceResult;
   voice: Voice;
+  wordCountLength: ProblemLength;
 }): Promise<string | null> => {
   const prompt = `
   ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）が、${sentence.who}（${voiceMap[voice]}）から「${sentence.englishSentence}」と話しかけられました。
@@ -170,6 +172,9 @@ const createEnglishReply = async ({
   英文法は正確に、文法の間違いがないようにしてください。
   最初に自然な相槌や感嘆詞を入れてください。（例: I see, Oh, OK, Sure, I understand, I agree, Good, Thanks）
   簡潔な内容で、不要に話題を広げず、10語以内を目安に作成してください。
+  ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
+  （悪い例1: OK, I’ll do it. 悪い例2: Got it, I’ll check.）
+  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）
 
 【シーン】
 - いつ: ${sentence.when}
@@ -767,7 +772,7 @@ async function generateForPhrase(
     return null;
   }
 
-  const englishReply = await createEnglishReply({ sentence, voice });
+  const englishReply = await createEnglishReply({ sentence, voice, wordCountLength });
   if (!englishReply) {
     console.log('  ⚠️ スキップ（返答生成失敗）');
     return null;
@@ -841,12 +846,13 @@ const main = async () => {
 
   // --- モードに応じてワードリスト・appConfig キー・ファイルパスを決定 ---
   const isKidsOnly = mode === 'kids';
+  const isAll = mode === 'all';
   const activeWordList = isKidsOnly ? kidsWords : words;
   const activeWordsFilePath = isKidsOnly ? 'docs/kids_words.ts' : 'docs/words.ts';
   const latestUsedWordKey = isKidsOnly ? 'LATEST_USED_WORD_KIDS' : 'LATEST_USED_WORD';
 
   // --- 使用ワード数 ---
-  const maxWords = activeWordList.length;
+  const maxWords = isAll ? Math.max(words.length, kidsWords.length) : activeWordList.length;
   const countAnswer = await ask(rl, `\n何ワード使用しますか？ [最大: ${maxWords}]: `);
   rl.close();
 
@@ -865,6 +871,26 @@ const main = async () => {
     return parsed;
   })();
 
+  // --- allモード: kids_wordsとwordsから独立して選択 ---
+  let selectedKidsWords: string[] = [];
+  if (isAll) {
+    const kidsStartAfter = await getLatestUsedWord('LATEST_USED_WORD_KIDS');
+    if (kidsStartAfter) {
+      console.error(`📍 LATEST_USED_WORD_KIDS: "${kidsStartAfter}"`);
+    } else {
+      console.error(`📍 LATEST_USED_WORD_KIDS: 未設定（先頭から使用）`);
+    }
+    const kidsStartIndex = resolveStartIndex(kidsStartAfter, kidsWords);
+    selectedKidsWords = kidsWords.slice(kidsStartIndex, kidsStartIndex + wordCount);
+    if (selectedKidsWords.length === 0) {
+      console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
+    } else if (selectedKidsWords.length < wordCount) {
+      console.error(
+        `⚠️ 要求語数 ${wordCount} に対し、kids_words の終端まで ${selectedKidsWords.length} 語のみ使用します。`,
+      );
+    }
+  }
+
   // --- LATEST_USED_WORD から開始位置を決定 ---
   const startAfter = await getLatestUsedWord(latestUsedWordKey);
   if (startAfter) {
@@ -875,28 +901,25 @@ const main = async () => {
   const startIndex = resolveStartIndex(startAfter, activeWordList);
   const selectedWords = activeWordList.slice(startIndex, startIndex + wordCount);
 
-  if (selectedWords.length === 0) {
+  if (!isAll && selectedWords.length === 0) {
     console.error(
       `選択範囲にワードがありません。${latestUsedWordKey} の位置が末尾付近か、語数が0です。`,
     );
     return;
   }
-  if (selectedWords.length < wordCount) {
+  if (!isAll && selectedWords.length < wordCount) {
     console.error(
       `⚠️ 要求語数 ${wordCount} に対し、words の終端まで ${selectedWords.length} 語のみ使用します。`,
     );
   }
-
-  const lengths: ProblemLength[] =
-    mode === 'all'
-      ? [...ALL_PROBLEM_LENGTHS]
-      : mode === 'nonKids'
-        ? [...NON_KIDS_PROBLEM_LENGTHS]
-        : [mode];
+  if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
+    console.error(`選択範囲にワードがありません。`);
+    return;
+  }
 
   if (mode === 'all') {
     console.log(
-      `\n📌 全タイプモード: ${selectedWords.length}語 × 4タイプ × 3問 → 順に生成します\n`,
+      `\n📌 全タイプモード: kids_words ${selectedKidsWords.length}語（kids）+ words ${selectedWords.length}語（short/medium/long）× 3問 → 順に生成します\n`,
     );
   } else if (mode === 'nonKids') {
     console.log(
@@ -912,17 +935,51 @@ const main = async () => {
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
 
-  for (const phrase of selectedWords) {
-    for (const len of lengths) {
+  if (isAll) {
+    // kids は kids_words から
+    for (const phrase of selectedKidsWords) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
         const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
-        console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+        console.log(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences);
         if (seed) {
           usedSentences.push(seed.englishSentence);
           seedProblems.push(seed);
+        }
+      }
+    }
+    // short / medium / long は words から
+    for (const phrase of selectedWords) {
+      for (const len of NON_KIDS_PROBLEM_LENGTHS) {
+        const usedSentences: string[] = [];
+        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+          const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
+          const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+          console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          if (seed) {
+            usedSentences.push(seed.englishSentence);
+            seedProblems.push(seed);
+          }
+        }
+      }
+    }
+  } else {
+    const lengths: ProblemLength[] = mode === 'nonKids' ? [...NON_KIDS_PROBLEM_LENGTHS] : [mode as ProblemLength];
+    for (const phrase of selectedWords) {
+      for (const len of lengths) {
+        const usedSentences: string[] = [];
+        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+          const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
+          const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+          console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          if (seed) {
+            usedSentences.push(seed.englishSentence);
+            seedProblems.push(seed);
+          }
         }
       }
     }
@@ -934,16 +991,31 @@ const main = async () => {
   }
 
   const outRelativePath = `problemData/problem${getNextProblemNumber()}.ts`;
-  const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+  const allUsedWords = isAll ? [...selectedKidsWords, ...selectedWords] : selectedWords;
   const labelExpr =
-    selectedWords.length <= 3
-      ? selectedWords.join(', ')
-      : `${selectedWords.slice(0, 3).join(', ')} 他${selectedWords.length - 3}語`;
+    allUsedWords.length <= 3
+      ? allUsedWords.join(', ')
+      : `${allUsedWords.slice(0, 3).join(', ')} 他${allUsedWords.length - 3}語`;
   const wordCountLength: ProblemLength | 'all' | 'nonKids' =
     mode === 'all' ? 'all' : mode === 'nonKids' ? 'nonKids' : mode;
   writeProblemDataTsFile(seedProblems, outRelativePath, { expression: labelExpr, wordCountLength });
-  await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
-  removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
+
+  if (isAll) {
+    if (selectedKidsWords.length > 0) {
+      const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
+      await persistLatestUsedWordIfKnown('LATEST_USED_WORD_KIDS', lastKidsWord, kidsWords);
+      removeConsumedWordsThrough(lastKidsWord, kidsWords, 'docs/kids_words.ts');
+    }
+    if (selectedWords.length > 0) {
+      const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
+      await persistLatestUsedWordIfKnown('LATEST_USED_WORD', lastNonKidsWord, words);
+      removeConsumedWordsThrough(lastNonKidsWord, words, 'docs/words.ts');
+    }
+  } else {
+    const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+    await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
+    removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
+  }
 
   const modeLabel =
     mode === 'all'
@@ -952,7 +1024,7 @@ const main = async () => {
         ? 'short+medium+long（kids以外）'
         : mode;
   console.error(
-    `\n✅ 完了: 合計 ${seedProblems.length} 問 → ${outRelativePath}（モード: ${modeLabel}、使用ワード数: ${selectedWords.length}）`,
+    `\n✅ 完了: 合計 ${seedProblems.length} 問 → ${outRelativePath}（モード: ${modeLabel}、使用ワード数: ${allUsedWords.length}）`,
   );
 };
 
@@ -1045,9 +1117,26 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
 
   // --- モードに応じてワードリスト・appConfig キー・ファイルパスを決定 ---
   const isKidsOnly = opts.mode === 'kids';
+  const isAll = opts.mode === 'all';
   const activeWordList = isKidsOnly ? kidsWords : words;
   const activeWordsFilePath = isKidsOnly ? 'docs/kids_words.ts' : 'docs/words.ts';
   const latestUsedWordKey = isKidsOnly ? 'LATEST_USED_WORD_KIDS' : 'LATEST_USED_WORD';
+
+  // --- allモード: kids_wordsから独立してkids用ワードを選択 ---
+  let selectedKidsWords: string[] = [];
+  if (isAll) {
+    const kidsStartAfter = await getLatestUsedWord('LATEST_USED_WORD_KIDS');
+    if (kidsStartAfter) {
+      console.error(`📍 LATEST_USED_WORD_KIDS: "${kidsStartAfter}"`);
+    } else {
+      console.error(`📍 LATEST_USED_WORD_KIDS: 未設定（先頭から使用）`);
+    }
+    const kidsStartIndex = resolveStartIndex(kidsStartAfter, kidsWords);
+    selectedKidsWords = kidsWords.slice(kidsStartIndex, Math.min(kidsStartIndex + opts.wordCount, kidsWords.length));
+    if (selectedKidsWords.length === 0) {
+      console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
+    }
+  }
 
   const startAfter = await getLatestUsedWord(latestUsedWordKey);
   if (startAfter) {
@@ -1058,35 +1147,68 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   const startIndex = resolveStartIndex(startAfter, activeWordList);
   const end = Math.min(startIndex + opts.wordCount, activeWordList.length);
   const selectedWords = activeWordList.slice(startIndex, end);
-  if (selectedWords.length === 0) {
+
+  if (!isAll && selectedWords.length === 0) {
+    console.error('選択範囲にワードがありません。');
+    process.exitCode = 1;
+    return;
+  }
+  if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
     console.error('選択範囲にワードがありません。');
     process.exitCode = 1;
     return;
   }
 
-  const lengths: ProblemLength[] =
-    opts.mode === 'all'
-      ? ALL_PROBLEM_LENGTHS
-      : opts.mode === 'nonKids'
-        ? NON_KIDS_PROBLEM_LENGTHS
-        : [opts.mode];
-
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
+  const voices = ['male', 'female'] as const satisfies Voice[];
+  const hows = ['対面', '対面', '対面', '対面', '電話'] as const satisfies How[];
 
-  for (const phrase of selectedWords) {
-    for (const len of lengths) {
+  if (isAll) {
+    // kids は kids_words から
+    for (const phrase of selectedKidsWords) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-        const voices = ['male', 'female'] as const satisfies Voice[];
-        const hows = ['対面', '対面', '対面', '対面', '電話'] as const satisfies How[];
         const voice = voices[Math.floor(Math.random() * voices.length)];
         const how = hows[Math.floor(Math.random() * hows.length)];
-        console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+        console.error(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences);
         if (seed) {
           usedSentences.push(seed.englishSentence);
           seedProblems.push(seed);
+        }
+      }
+    }
+    // short / medium / long は words から
+    for (const phrase of selectedWords) {
+      for (const len of NON_KIDS_PROBLEM_LENGTHS) {
+        const usedSentences: string[] = [];
+        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+          const voice = voices[Math.floor(Math.random() * voices.length)];
+          const how = hows[Math.floor(Math.random() * hows.length)];
+          console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          if (seed) {
+            usedSentences.push(seed.englishSentence);
+            seedProblems.push(seed);
+          }
+        }
+      }
+    }
+  } else {
+    const lengths: ProblemLength[] = opts.mode === 'nonKids' ? NON_KIDS_PROBLEM_LENGTHS : [opts.mode as ProblemLength];
+    for (const phrase of selectedWords) {
+      for (const len of lengths) {
+        const usedSentences: string[] = [];
+        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+          const voice = voices[Math.floor(Math.random() * voices.length)];
+          const how = hows[Math.floor(Math.random() * hows.length)];
+          console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          if (seed) {
+            usedSentences.push(seed.englishSentence);
+            seedProblems.push(seed);
+          }
         }
       }
     }
@@ -1098,30 +1220,66 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     return;
   }
 
-  const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+  const allUsedWords = isAll ? [...selectedKidsWords, ...selectedWords] : selectedWords;
 
   if (opts.seed) {
-    await seedToDatabase(seedProblems, lastConsumedWord, latestUsedWordKey);
+    if (isAll) {
+      if (selectedKidsWords.length > 0) {
+        const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
+        await seedToDatabase(seedProblems.filter((p) => p.difficultyLevel === 1), lastKidsWord, 'LATEST_USED_WORD_KIDS');
+      }
+      if (selectedWords.length > 0) {
+        const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
+        await seedToDatabase(seedProblems.filter((p) => p.difficultyLevel !== 1), lastNonKidsWord, 'LATEST_USED_WORD');
+      }
+    } else {
+      const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+      await seedToDatabase(seedProblems, lastConsumedWord, latestUsedWordKey);
+    }
   } else {
     const outRelativePath = `problemData/problem${getNextProblemNumber()}.ts`;
     const labelExpr =
-      selectedWords.length <= 3
-        ? selectedWords.join(', ')
-        : `${selectedWords.slice(0, 3).join(', ')} 他${selectedWords.length - 3}語`;
+      allUsedWords.length <= 3
+        ? allUsedWords.join(', ')
+        : `${allUsedWords.slice(0, 3).join(', ')} 他${allUsedWords.length - 3}語`;
     writeProblemDataTsFile(seedProblems, outRelativePath, {
       expression: labelExpr,
       wordCountLength:
         opts.mode === 'all' ? 'all' : opts.mode === 'nonKids' ? 'nonKids' : opts.mode,
     });
-    await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
+    if (isAll) {
+      if (selectedKidsWords.length > 0) {
+        const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
+        await persistLatestUsedWordIfKnown('LATEST_USED_WORD_KIDS', lastKidsWord, kidsWords);
+      }
+      if (selectedWords.length > 0) {
+        const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
+        await persistLatestUsedWordIfKnown('LATEST_USED_WORD', lastNonKidsWord, words);
+      }
+    } else {
+      const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+      await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
+    }
   }
 
   if (!opts.noRemoveWords) {
-    removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
+    if (isAll) {
+      if (selectedKidsWords.length > 0) {
+        const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
+        removeConsumedWordsThrough(lastKidsWord, kidsWords, 'docs/kids_words.ts');
+      }
+      if (selectedWords.length > 0) {
+        const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
+        removeConsumedWordsThrough(lastNonKidsWord, words, 'docs/words.ts');
+      }
+    } else {
+      const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
+      removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
+    }
   }
 
   console.error(
-    `\n✅ 完了: 合計 ${seedProblems.length} 問（モード: ${opts.mode}、使用ワード数: ${selectedWords.length}）`,
+    `\n✅ 完了: 合計 ${seedProblems.length} 問（モード: ${opts.mode}、使用ワード数: ${allUsedWords.length}）`,
   );
 }
 
