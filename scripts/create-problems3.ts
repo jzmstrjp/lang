@@ -170,11 +170,11 @@ const createEnglishReply = async ({
   ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）が、${sentence.who}（${voiceMap[voice]}）から「${sentence.englishSentence}」と話しかけられました。
   自然な返答のセリフを英語で作成してください。
   英文法は正確に、文法の間違いがないようにしてください。
-  最初に自然な相槌や感嘆詞を入れてください。（例: I see, Oh, OK, Sure, I understand, I agree, Good, Thanks）
+  必要に応じて、最初に自然な相槌や感嘆詞を入れてください。（例: I see, Oh, OK, Sure, I understand, I agree, Good, Thanks）
   簡潔な内容で、不要に話題を広げず、10語以内を目安に作成してください。
-  ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
+  ${wordCountLength === 'medium' || wordCountLength === 'long' ? `ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
   （悪い例1: OK, I’ll do it. 悪い例2: Got it, I’ll check.）
-  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）
+  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）` : ''}
 
 【シーン】
 - いつ: ${sentence.when}
