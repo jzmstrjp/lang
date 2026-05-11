@@ -36,6 +36,7 @@ export default function PromptTestClient() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedType, setSelectedType] = useState<ProblemType>('all');
+  const [frameNumber, setFrameNumber] = useState<1 | 2>(1);
 
   const generateProblem = async (type: ProblemType, mode: GenerateMode) => {
     setLoading(true);
@@ -99,6 +100,7 @@ export default function PromptTestClient() {
 
     try {
       const englishAudio = new Audio(audioAssets.audio.english);
+      setFrameNumber(1);
       await new Promise<void>((resolve, reject) => {
         englishAudio.addEventListener('ended', () => resolve(), { once: true });
         englishAudio.addEventListener('error', () => reject(new Error('English audio failed')), {
@@ -110,6 +112,7 @@ export default function PromptTestClient() {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const japaneseAudio = new Audio(audioAssets.audio.japanese);
+      setFrameNumber(2);
       await new Promise<void>((resolve, reject) => {
         japaneseAudio.addEventListener('ended', () => resolve(), { once: true });
         japaneseAudio.addEventListener('error', () => reject(new Error('Japanese audio failed')), {
@@ -238,7 +241,7 @@ export default function PromptTestClient() {
                   <h3 className="text-lg font-semibold text-purple-800 mb-2">生成された画像</h3>
                   <div className="flex justify-center">
                     <SceneImage
-                      frameNumber={1}
+                      frameNumber={frameNumber}
                       src={assets.composite}
                       alt="Generated scene illustration"
                       opacity="full"
