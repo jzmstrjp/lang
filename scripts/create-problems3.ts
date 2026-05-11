@@ -172,9 +172,13 @@ const createEnglishReply = async ({
   英文法は正確に、文法の間違いがないようにしてください。
   必要に応じて、最初に自然な相槌や感嘆詞を入れてください。（例: I see, Oh, OK, Sure, I understand, I agree, Good, Thanks）
   簡潔な内容で、不要に話題を広げず、10語以内を目安に作成してください。
-  ${wordCountLength === 'kids' ? '' : `ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
+  ${
+    wordCountLength === 'kids'
+      ? ''
+      : `ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
   （悪い例1: OK, I’ll do it. 悪い例2: Got it, I’ll check.）
-  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）`}
+  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）`
+  }
 
 【シーン】
 - いつ: ${sentence.when}
@@ -747,7 +751,6 @@ async function enrichToSeedProblemData({
   };
 }
 
-const ALL_PROBLEM_LENGTHS: ProblemLength[] = ['kids', 'short', 'medium', 'long'];
 const NON_KIDS_PROBLEM_LENGTHS: ProblemLength[] = ['short', 'medium', 'long'];
 
 function ask(rl: readline.Interface, question: string): Promise<string> {
@@ -968,7 +971,8 @@ const main = async () => {
       }
     }
   } else {
-    const lengths: ProblemLength[] = mode === 'nonKids' ? [...NON_KIDS_PROBLEM_LENGTHS] : [mode as ProblemLength];
+    const lengths: ProblemLength[] =
+      mode === 'nonKids' ? [...NON_KIDS_PROBLEM_LENGTHS] : [mode as ProblemLength];
     for (const phrase of selectedWords) {
       for (const len of lengths) {
         const usedSentences: string[] = [];
@@ -1133,7 +1137,10 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
       console.error(`📍 LATEST_USED_WORD_KIDS: 未設定（先頭から使用）`);
     }
     const kidsStartIndex = resolveStartIndex(kidsStartAfter, kidsWords);
-    selectedKidsWords = kidsWords.slice(kidsStartIndex, Math.min(kidsStartIndex + opts.wordCount, kidsWords.length));
+    selectedKidsWords = kidsWords.slice(
+      kidsStartIndex,
+      Math.min(kidsStartIndex + opts.wordCount, kidsWords.length),
+    );
     if (selectedKidsWords.length === 0) {
       console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
     }
@@ -1197,7 +1204,8 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
       }
     }
   } else {
-    const lengths: ProblemLength[] = opts.mode === 'nonKids' ? NON_KIDS_PROBLEM_LENGTHS : [opts.mode as ProblemLength];
+    const lengths: ProblemLength[] =
+      opts.mode === 'nonKids' ? NON_KIDS_PROBLEM_LENGTHS : [opts.mode as ProblemLength];
     for (const phrase of selectedWords) {
       for (const len of lengths) {
         const usedSentences: string[] = [];
@@ -1227,11 +1235,19 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     if (isAll) {
       if (selectedKidsWords.length > 0) {
         const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
-        await seedToDatabase(seedProblems.filter((p) => p.difficultyLevel === 1), lastKidsWord, 'LATEST_USED_WORD_KIDS');
+        await seedToDatabase(
+          seedProblems.filter((p) => p.difficultyLevel === 1),
+          lastKidsWord,
+          'LATEST_USED_WORD_KIDS',
+        );
       }
       if (selectedWords.length > 0) {
         const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
-        await seedToDatabase(seedProblems.filter((p) => p.difficultyLevel !== 1), lastNonKidsWord, 'LATEST_USED_WORD');
+        await seedToDatabase(
+          seedProblems.filter((p) => p.difficultyLevel !== 1),
+          lastNonKidsWord,
+          'LATEST_USED_WORD',
+        );
       }
     } else {
       const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
