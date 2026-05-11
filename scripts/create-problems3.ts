@@ -172,9 +172,9 @@ const createEnglishReply = async ({
   英文法は正確に、文法の間違いがないようにしてください。
   必要に応じて、最初に自然な相槌や感嘆詞を入れてください。（例: I see, Oh, OK, Sure, I understand, I agree, Good, Thanks）
   簡潔な内容で、不要に話題を広げず、10語以内を目安に作成してください。
-  ${wordCountLength === 'medium' || wordCountLength === 'long' ? `ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
+  ${wordCountLength === 'kids' ? '' : `ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
   （悪い例1: OK, I’ll do it. 悪い例2: Got it, I’ll check.）
-  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）` : ''}
+  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）`}
 
 【シーン】
 - いつ: ${sentence.when}
@@ -234,6 +234,7 @@ const createJapaneseConversation = async ({
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
   英語に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
   相手のことを「○○さん」「XXXさん」などと伏せ字で翻訳せず「あなた」「君」もしくは「部長」などの呼び方を使ってください。
+  女性のセリフを「〜だわ」「〜なのよ」と翻訳するのは古臭いので禁止です。
 
 【シーン】
 - いつ: ${sentence.when}
