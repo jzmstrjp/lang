@@ -26,12 +26,12 @@ export function cdnUrl(path: string): string {
   return `${CDN_ORIGIN}/${p}`;
 }
 
-export const ENGLISH_REPLY_PROMPT_RULES = `受信者の返答。englishSentenceに対する、要点を押さえつつできるだけ短い回答であること。目安は8単語以内。englishReplyを読めばenglishSentenceの内容が想像できるように具体的に言及すること。できれば最初に感動詞や相槌が欲しい。
-  - 相手の目的や意図をenglishSentenceから読み取り、それを踏まえた自然な返答にすること。
-  - 例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
-  - 例: "Are you hungry?" に対して "Yes, I'm hungry. I want some pizza."
-  - 例: "It’s really cold today." に対して "Yeah, cold days like this are tough."
-  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と推測できるような内容にすること。ただしenglishSentenceの内容をほぼそのままオウム返ししたenglishReplyは禁止する。englishSentenceの主題となる単語を1つenglishReplyにも含める程度が良い。
+export const ENGLISH_REPLY_PROMPT_RULES = `受信者の返答。englishSentenceに対する簡潔な返答であること。目安は10単語以内。必要に応じて最初に相槌や感動詞が欲しい。
+  - 相手の目的・意図・感情・背景をしっかり受け取り、それを踏まえて自然に連想される返答にすること。無理に話題を広げる必要はない。
+  - 良い例: "Can you play the guitar?" に対して "Yeah, but I can only play a few songs."
+  - 良い例: "Are you hungry?" に対して "Yes. I want some pizza."
+  - 良い例: "It’s really cold today." に対して "Yeah, cold days like this are tough."
+  - 「こう返答したってことは、きっとこう話しかけられたんだろうな」と、元の文が推測できるような返答にすること。ただしenglishSentenceの内容をほぼそのままオウム返ししたenglishReplyは禁止する。
     - オウム返しで良くない例: "We will start using external vendors from now on."に対して"Oh, so that means you'll be using external vendors going forward?"と答えるのはほぼオウム返しなので良くない。
     - オウム返しで良くない例: "The new dress code policy takes effect starting next Monday."に対して"Whoa, so the dress code changes next week?"と答えるのはほぼオウム返しなので良くない。分かりきっていることを質問するな。
     - 自然に言及できている良い例: "We will start using external vendors from now on."に対して"I see. Which vendor will you be using?"と答えるのは自然に言及できていて良い。
