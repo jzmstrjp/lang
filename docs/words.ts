@@ -1,5 +1,4 @@
 export const words: string[] = [
-  'customer',
   'daily routine',
   'delicious',
   'do the laundry',
