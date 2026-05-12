@@ -1,9 +1,4 @@
 export const words: string[] = [
-  'daily routine',
-  'delicious',
-  'do the laundry',
-  'drop off',
-  'electric bill',
   'entrance',
   'exercise regularly',
   'fill out',

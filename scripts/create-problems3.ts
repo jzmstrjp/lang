@@ -106,8 +106,8 @@ const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { ho
   receiverWhere: '話しかける相手がいる場所',
   who: '話しかける人の役割',
   whom: '話しかける相手の役割',
-  why: '話しかけようと思ったきっかけ',
-  want: 'それを話すことでどうなりたいか',
+  why: 'きっかけ',
+  want: '求めること',
 };
 
 const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
@@ -552,7 +552,7 @@ ${japaneseSentence}
   - 文字数: 正解（${japaneseSentence.length}文字）と同じ
 
 2つ目: **明らかな間違い**
-  - 正解と微妙に違う話題。
+  - 正解と関連性がある話題だが、明らかに違う内容。
     - 例: 正解が「いつも夕飯は自分で作るの？」だとしたら「朝食はほとんど食べないの？」など
   - 文字数: 正解（${japaneseSentence.length}文字）と同じ
 

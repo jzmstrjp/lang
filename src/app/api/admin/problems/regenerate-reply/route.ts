@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     // englishReply を再生成
     const englishPrompt =
-      `「${problem.englishReply}」以外の返答を1つ作成してください。` +
+      `「${problem.englishReply}」とは異なる返答を1つ作成してください。` +
       buildEnglishReplyPrompt({
         who: problem.senderRole,
         whom: problem.receiverRole,

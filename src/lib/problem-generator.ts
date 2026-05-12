@@ -102,12 +102,9 @@ export function buildEnglishReplyPrompt({
   return `あなたは${whom}（${receiverGender}）です。英語ネイティブです。
 ${who}（${senderGender}）から「${englishSentence}」と話しかけられました。
 この時にあなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
+汎用的な返答でなく、この場面ならではの返答を作成してください。
+簡潔な内容で、10語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
-文脈に合った自然な相槌や感嘆詞を冒頭に入れてください。（例: I see, Oh, OK, No, Sure, I understand, I agree, Good, Thanks）
-簡潔な内容で、不要に話題を広げず、10語以内を目安に作成してください。
-ビジネスや事務手続きの場面であれば、求められたことに対して適切に生産的に返答してください。
-プライベートや雑談場面であれば、感情的に自然な返答にしてください。
-その中間であれば、バランスよく適切な返答にしてください。
 
 【シーン】
 ${when ? `- ${who}（${senderGender}）が話しかけたタイミング: ${when}` : ''}
@@ -122,29 +119,6 @@ ${whom}（${receiverGender}）は知らないかもしれない情報です。
 - ${who}（${senderGender}）が話しかけようと思ったきっかけ: ${why}`
     : ''
 }
-
-【重要】
-あなたのセリフだけ読んだ人でも相手の発言内容をなんとなく推測できるよう、さりげないヒントとなるセリフにしてください。
-
-【さりげないヒントの例】
-
-### 例1
-- 相手の発言: "I noticed there was a mistake with my salary on this month’s payslip."
-- NG（ヒントが弱すぎ。話題が全く推測できない）: "Oh, really? Let me check it."
-- NG（ヒントが露骨すぎ。相手の発言のキーワードをそのまま復唱している）: "Oh, I'm sorry about the salary error on your payslip. I'll fix it right away."
-- OK（さりげないヒントになっている。「給与明細まわりで何か問題が起きた話」だと推測できるが、具体的な誤りの内容までは特定できない）: "Oh, sorry about that. Let me pull up your payslip right away."
-
-### 例2
-- 相手の発言: "My family always gets together for dinner every Sunday night."
-- NG（ヒントが弱すぎ。何の話題に対するリアクションか全く推測できない汎用的な返答）: "Wow, that sounds nice!"
-- NG（ヒントが露骨すぎ。相手の発言のキーワードをそのまま復唱している）: "Oh, family dinner every Sunday night sounds wonderful!"
-- OK（さりげないヒントになっている。「家族の仲が良いエピソード」だと推測できるが、「日曜の夜に夕食」という具体までは特定できない）: "Oh, your family must be really close!"
-
-### 例3
-- 相手の発言: "I love your hairstyle today!"
-- NG（ヒントが弱すぎ。お礼として汎用的すぎて何に対する感謝か推測できない）: "Oh, thank you!"
-- NG（ヒントが露骨すぎ。相手の発言のキーワードをそのまま復唱している）: "Thanks for noticing my new hairstyle!"
-- OK（さりげないヒントになっている。「最近髪を切った話」だと推測できるが、「素敵だね」と褒められたのか・「変えた？」と気づかれたのかまでは特定できない）: "Thanks! I just got it cut yesterday."
 `;
 }
 
