@@ -52,20 +52,22 @@ const createEnglishSentencePrompt = ({
 }): string => {
   const usedBlock =
     usedSentences.length > 0
-      ? `\n以下の英文はすでに使用済みです。これらと被らない英文の台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n`
+      ? `\n以下の英文はすでに作成済みです。これらと被らない英文の台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n`
       : '';
   return `
 ${usedBlock}
-「${phrase}」というフレーズを使って、ある${voiceMap[voice]}がある${voiceMap[toggleVoice(voice)]}に${how}で話しかけるとしたら、どんな英文があり得えますか？
+
+「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんな英文があり得えますか？
+ネイティブが実際に会話で使うような、ごく自然な英文の台詞を作成してください。「${phrase}」というフレーズならではの英文を作成してください。
 ※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
-ネイティブが実際に会話で使うような、ごく自然な英文の台詞を作成してください。
-${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使うべし。' : ''}
+※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
+${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
 ${howNoteMap[how]}
 英文法は正確に、文法の間違いがないようにしてください。
 ${rule.min}語以上${rule.max}語以下の英文を作成してください。
 ${'note' in rule ? rule.note : ''}
-いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかも書いてください。
-この情報を元にAIが画像を作成できるほど具体的に書いてください。
+いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかもJSON形式で書いてください。
+JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
 why や want なしで englishSentence だけを読んでもある程度の状況が分かるように具体的な台詞にしてください。
 
 以下のJSON形式で必ず回答してください。
@@ -101,11 +103,11 @@ type EnglishSentenceResult = {
 const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { how: string } = {
   englishSentence: 'ここに英文が入る',
   how: '対面または電話',
-  when: 'いつ',
+  when: '話しかけるタイミング',
   where: '話しかける人がいる場所',
   receiverWhere: '話しかける相手がいる場所',
-  who: '話しかける人の役割',
-  whom: '話しかける相手の役割',
+  who: '話しかける人の役割（性別は記載不要）',
+  whom: '話しかける相手の役割（性別は記載不要）',
   why: 'きっかけ',
   want: '求めること',
 };
