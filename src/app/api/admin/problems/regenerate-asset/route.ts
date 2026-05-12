@@ -3,7 +3,11 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { generateSpeechBuffer } from '@/lib/audio-utils';
+import {
+  generateSpeechBuffer,
+  buildSenderVoiceInstruction,
+  buildReceiverVoiceInstruction,
+} from '@/lib/audio-utils';
 import { uploadAudioToR2, deleteFromR2ByUrl } from '@/lib/r2-client';
 import { generateAndUploadImageAsset } from '@/lib/problem-generator';
 import { cdnUrl } from '@/const';
@@ -54,6 +58,21 @@ export async function POST(request: Request) {
     const senderVoiceGender = problem.senderVoice as VoiceGender;
     const receiverVoiceGender = problem.receiverVoice as VoiceGender;
 
+    const senderVoiceInstruction = buildSenderVoiceInstruction({
+      senderRole: problem.senderRole,
+      senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
+      receiverRole: problem.receiverRole,
+      receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
+    });
+    const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+      senderRole: problem.senderRole,
+      senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
+      receiverRole: problem.receiverRole,
+      receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
+      englishSentence: problem.englishSentence,
+      englishReply: problem.englishReply ?? '',
+    });
+
     let newUrl: string;
     const updateData: Prisma.ProblemUpdateInput = {};
     const oldUrl: string | null = problem[field] ?? null;
@@ -92,8 +111,7 @@ export async function POST(request: Request) {
           problem.englishSentence,
           senderVoiceGender,
           'en',
-          problem.senderVoiceInstruction,
-          problem.senderRole,
+          senderVoiceInstruction,
         );
         newUrl = await uploadAudioToR2(audioBuffer, problemId, 'en', senderVoiceGender);
         updateData.audioEnUrl = newUrl;
@@ -112,8 +130,7 @@ export async function POST(request: Request) {
           problem.englishReply,
           receiverVoiceGender,
           'en',
-          problem.receiverVoiceInstruction,
-          problem.receiverRole,
+          receiverVoiceInstruction,
         );
         newUrl = await uploadAudioToR2(audioBuffer, problemId, 'en-reply', receiverVoiceGender);
         updateData.audioEnReplyUrl = newUrl;
@@ -126,8 +143,7 @@ export async function POST(request: Request) {
           problem.japaneseReply,
           receiverVoiceGender,
           'ja',
-          problem.receiverVoiceInstruction,
-          problem.receiverRole,
+          receiverVoiceInstruction,
         );
         newUrl = await uploadAudioToR2(audioBuffer, problemId, 'ja', receiverVoiceGender);
         updateData.audioJaUrl = newUrl;

@@ -304,7 +304,6 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
     senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
-    englishSentence: problem.englishSentence,
   });
   const receiverVoiceInstruction = buildReceiverVoiceInstruction({
     senderRole: problem.senderRole,
@@ -312,6 +311,7 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
     englishSentence: problem.englishSentence,
+    englishReply: problem.englishReply ?? '',
   });
 
   const audioPromises = [
@@ -320,14 +320,12 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
       voiceTypeToVoiceGender(problem.senderVoice),
       'en',
       senderVoiceInstruction,
-      problem.senderRole,
     ),
     generateSpeech(
       problem.japaneseReply,
       voiceTypeToVoiceGender(problem.receiverVoice),
       'ja',
       receiverVoiceInstruction,
-      problem.receiverRole,
     ),
   ];
 
@@ -339,7 +337,6 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
         voiceTypeToVoiceGender(problem.receiverVoice),
         'en',
         receiverVoiceInstruction,
-        problem.receiverRole,
       ),
     );
   }
@@ -375,7 +372,6 @@ export async function generateAndUploadAudioAssets(
     senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
-    englishSentence: problem.englishSentence,
   });
   const receiverVoiceInstruction = buildReceiverVoiceInstruction({
     senderRole: problem.senderRole,
@@ -383,6 +379,7 @@ export async function generateAndUploadAudioAssets(
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
     englishSentence: problem.englishSentence,
+    englishReply: problem.englishReply ?? '',
   });
 
   const audioBufferPromises = [
@@ -391,14 +388,12 @@ export async function generateAndUploadAudioAssets(
       voiceTypeToVoiceGender(problem.senderVoice),
       'en',
       senderVoiceInstruction,
-      problem.senderRole,
     ),
     generateSpeechBuffer(
       problem.japaneseReply,
       voiceTypeToVoiceGender(problem.receiverVoice),
       'ja',
       receiverVoiceInstruction,
-      problem.receiverRole,
     ),
   ];
 
@@ -410,7 +405,6 @@ export async function generateAndUploadAudioAssets(
         voiceTypeToVoiceGender(problem.receiverVoice),
         'en',
         receiverVoiceInstruction,
-        problem.receiverRole,
       ),
     );
   }

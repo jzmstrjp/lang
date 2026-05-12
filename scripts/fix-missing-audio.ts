@@ -137,7 +137,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
           receiverRole: problem.receiverRole,
           receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
-          englishSentence: problem.englishSentence,
         });
         const receiverVoiceInstruction = buildReceiverVoiceInstruction({
           senderRole: problem.senderRole,
@@ -145,6 +144,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           receiverRole: problem.receiverRole,
           receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
           englishSentence: problem.englishSentence,
+          englishReply: problem.englishReply ?? '',
         });
 
         if (needsEnglish && audioUtilsModule && r2ClientModule) {
@@ -154,7 +154,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
             senderVoiceGender,
             'en',
             senderVoiceInstruction,
-            problem.senderRole,
           );
           const englishUrl = await r2ClientModule.uploadAudioToR2(
             englishBuffer,
@@ -173,7 +172,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
             receiverVoiceGender,
             'ja',
             receiverVoiceInstruction,
-            problem.receiverRole,
           );
           const japaneseUrl = await r2ClientModule.uploadAudioToR2(
             japaneseBuffer,
@@ -194,7 +192,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
             receiverVoiceGender,
             'en',
             receiverVoiceInstruction,
-            problem.receiverRole,
           );
 
           const englishReplyAudioUrl = await r2ClientModule.uploadAudioToR2(

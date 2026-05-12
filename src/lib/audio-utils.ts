@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { config } from 'dotenv';
-import { uploadAudioToR2 } from './r2-client';
 import {
   getVoiceFromGender,
   getModelFromGenderAndLanguage,
@@ -24,10 +23,6 @@ function ensureApiKey() {
   }
 }
 
-function buildInstructions(instructions: string | null, role: string): string {
-  return `${instructions ? instructions + '。' : ''}この人は${role}です。${role}らしい口調で話してください。`;
-}
-
 export function buildSenderVoiceInstruction({
   senderRole,
   senderVoice,
@@ -38,11 +33,8 @@ export function buildSenderVoiceInstruction({
   senderVoice: '男性' | '女性';
   receiverRole: string;
   receiverVoice: '男性' | '女性';
-  englishSentence: string;
 }): string {
-  return `
-  ${senderRole}（${senderVoice}）が${receiverRole}（${receiverVoice}）に話しかける場面。
-  `;
+  return `${senderRole}（${senderVoice}）が${receiverRole}（${receiverVoice}）に話しかける場面。`;
 }
 
 export function buildReceiverVoiceInstruction({
@@ -51,16 +43,16 @@ export function buildReceiverVoiceInstruction({
   receiverRole,
   receiverVoice,
   englishSentence,
+  englishReply,
 }: {
   senderRole: string;
   senderVoice: '男性' | '女性';
   receiverRole: string;
   receiverVoice: '男性' | '女性';
   englishSentence: string;
+  englishReply: string;
 }): string {
-  return `
-  ${senderRole}（${senderVoice}）から「${englishSentence}」と話しかけられた${receiverRole}（${receiverVoice}）が返答する場面。
-  `;
+  return `${senderRole}（${senderVoice}）から「${englishSentence}」と話しかけられた${receiverRole}（${receiverVoice}）が「${englishReply}」と返答する場面。`;
 }
 
 // 音声設定は src/config/voice.ts で一元管理されるようになりました
@@ -74,7 +66,6 @@ export async function generateSpeech(
   speaker: VoiceGender,
   language: 'en' | 'ja',
   instructions: string | null,
-  role: string,
 ) {
   ensureApiKey();
 
@@ -86,7 +77,7 @@ export async function generateSpeech(
     voice,
     input,
     speed: TTS_CONFIG.speed,
-    instructions: buildInstructions(instructions, role),
+    instructions: instructions ?? undefined,
   });
 
   const arrayBuffer = await result.arrayBuffer();
@@ -102,7 +93,6 @@ export async function generateSpeechBuffer(
   speaker: VoiceGender,
   language: 'en' | 'ja',
   instructions: string | null,
-  role: string,
 ): Promise<Buffer> {
   ensureApiKey();
 
@@ -114,24 +104,9 @@ export async function generateSpeechBuffer(
     voice,
     input,
     speed: TTS_CONFIG.speed,
-    instructions: buildInstructions(instructions, role),
+    instructions: instructions ?? undefined,
   });
 
   const arrayBuffer = await result.arrayBuffer();
   return Buffer.from(arrayBuffer);
-}
-
-/**
- * 音声を生成してR2にアップロード（レガシー関数、後で削除予定）
- */
-export async function generateSpeechAndUploadToR2(
-  input: string,
-  speaker: VoiceGender,
-  problemId: string,
-  language: 'en' | 'ja',
-  instructions: string | null,
-  role: string,
-): Promise<string> {
-  const audioBuffer = await generateSpeechBuffer(input, speaker, language, instructions, role);
-  return uploadAudioToR2(audioBuffer, problemId, language, speaker);
 }
