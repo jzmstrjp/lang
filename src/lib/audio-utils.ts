@@ -28,6 +28,41 @@ function buildInstructions(instructions: string | null, role: string): string {
   return `${instructions ? instructions + '。' : ''}この人は${role}です。${role}らしい口調で話してください。`;
 }
 
+export function buildSenderVoiceInstruction({
+  senderRole,
+  senderVoice,
+  receiverRole,
+  receiverVoice,
+}: {
+  senderRole: string;
+  senderVoice: '男性' | '女性';
+  receiverRole: string;
+  receiverVoice: '男性' | '女性';
+  englishSentence: string;
+}): string {
+  return `
+  ${senderRole}（${senderVoice}）が${receiverRole}（${receiverVoice}）に話しかける場面。
+  `;
+}
+
+export function buildReceiverVoiceInstruction({
+  senderRole,
+  senderVoice,
+  receiverRole,
+  receiverVoice,
+  englishSentence,
+}: {
+  senderRole: string;
+  senderVoice: '男性' | '女性';
+  receiverRole: string;
+  receiverVoice: '男性' | '女性';
+  englishSentence: string;
+}): string {
+  return `
+  ${senderRole}（${senderVoice}）から「${englishSentence}」と話しかけられた${receiverRole}（${receiverVoice}）が返答する場面。
+  `;
+}
+
 // 音声設定は src/config/voice.ts で一元管理されるようになりました
 // この関数は後方互換性のために残していますが、新しいコードでは getVoiceFromGender を使用してください
 function speakerToVoice(speaker: VoiceGender) {

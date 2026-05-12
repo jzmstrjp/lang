@@ -1,7 +1,12 @@
 import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { generateSpeech, generateSpeechBuffer } from '@/lib/audio-utils';
+import {
+  generateSpeech,
+  generateSpeechBuffer,
+  buildSenderVoiceInstruction,
+  buildReceiverVoiceInstruction,
+} from '@/lib/audio-utils';
 import { generateImageBuffer, generateImageWithCharactersBuffer } from '@/lib/image-utils';
 import { uploadAudioToR2, uploadImageToR2 } from '@/lib/r2-client';
 import type { VoiceGender } from '@/config/voice';
@@ -294,19 +299,34 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
   japanese: string;
   englishReply?: string;
 }> {
+  const senderVoiceInstruction = buildSenderVoiceInstruction({
+    senderRole: problem.senderRole,
+    senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
+    receiverRole: problem.receiverRole,
+    receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
+    englishSentence: problem.englishSentence,
+  });
+  const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+    senderRole: problem.senderRole,
+    senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
+    receiverRole: problem.receiverRole,
+    receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
+    englishSentence: problem.englishSentence,
+  });
+
   const audioPromises = [
     generateSpeech(
       problem.englishSentence,
       voiceTypeToVoiceGender(problem.senderVoice),
       'en',
-      problem.senderVoiceInstruction ?? null,
+      senderVoiceInstruction,
       problem.senderRole,
     ),
     generateSpeech(
       problem.japaneseReply,
       voiceTypeToVoiceGender(problem.receiverVoice),
       'ja',
-      problem.receiverVoiceInstruction ?? null,
+      receiverVoiceInstruction,
       problem.receiverRole,
     ),
   ];
@@ -318,7 +338,7 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
         problem.englishReply,
         voiceTypeToVoiceGender(problem.receiverVoice),
         'en',
-        problem.receiverVoiceInstruction ?? null,
+        receiverVoiceInstruction,
         problem.receiverRole,
       ),
     );
@@ -350,19 +370,34 @@ export async function generateAndUploadAudioAssets(
   japanese: string;
   englishReply?: string;
 }> {
+  const senderVoiceInstruction = buildSenderVoiceInstruction({
+    senderRole: problem.senderRole,
+    senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
+    receiverRole: problem.receiverRole,
+    receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
+    englishSentence: problem.englishSentence,
+  });
+  const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+    senderRole: problem.senderRole,
+    senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
+    receiverRole: problem.receiverRole,
+    receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
+    englishSentence: problem.englishSentence,
+  });
+
   const audioBufferPromises = [
     generateSpeechBuffer(
       problem.englishSentence,
       voiceTypeToVoiceGender(problem.senderVoice),
       'en',
-      problem.senderVoiceInstruction ?? null,
+      senderVoiceInstruction,
       problem.senderRole,
     ),
     generateSpeechBuffer(
       problem.japaneseReply,
       voiceTypeToVoiceGender(problem.receiverVoice),
       'ja',
-      problem.receiverVoiceInstruction ?? null,
+      receiverVoiceInstruction,
       problem.receiverRole,
     ),
   ];
@@ -374,7 +409,7 @@ export async function generateAndUploadAudioAssets(
         problem.englishReply,
         voiceTypeToVoiceGender(problem.receiverVoice),
         'en',
-        problem.receiverVoiceInstruction ?? null,
+        receiverVoiceInstruction,
         problem.receiverRole,
       ),
     );
