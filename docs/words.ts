@@ -1,10 +1,4 @@
 export const words: string[] = [
-  'hair salon',
-  'have a cold',
-  'household chores',
-  'in advance',
-  'keep in touch',
-  'library card',
   'look for',
   'make a reservation',
   'medicine cabinet',

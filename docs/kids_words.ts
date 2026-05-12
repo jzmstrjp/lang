@@ -1,7 +1,4 @@
 export const words: string[] = [
-  'wait',
-  'wake up',
-  'balloon',
   'banana',
   'beach',
   'bear',
