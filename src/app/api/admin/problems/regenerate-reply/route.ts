@@ -5,11 +5,11 @@ import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import {
   TEXT_MODEL,
-  ENGLISH_REPLY_PROMPT_RULES,
   JAPANESE_TRANSLATION_RULES,
   TRANSLATION_FORMAT_RULES,
   TTS_READING_RULES,
 } from '@/const';
+import { buildEnglishReplyPrompt } from '@/lib/problem-generator';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -48,28 +48,17 @@ export async function POST(request: Request) {
     }
 
     // englishReply を再生成
-    const englishPrompt = `以下のシーン設定に基づいて、以下の英文（englishSentence）に対する自然な英語の返答を作成してください。
-
-【シーン情報】
-- 場所: ${problem.place}
-${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
-
-【送信者】
-- 役割: ${problem.senderRole}
-- 性別: ${problem.senderVoice === 'male' ? '男性' : '女性'}
-- 英文（englishSentence）: "${problem.englishSentence}"
-
-【受信者（返答する人）】
-- 役割: ${problem.receiverRole}
-- 性別: ${problem.receiverVoice === 'male' ? '男性' : '女性'}
-
-【重要な要件】
-- englishReply: ${ENGLISH_REPLY_PROMPT_RULES}
-- 自然な口語表現で、実際の会話らしくすること。
-- 文脈に合った適切な内容にすること。
-
-【重要】以下のJSON形式で必ず回答してください:
-
+    const englishPrompt =
+      `「${problem.englishReply}」以外の返答を1つ作成してください。` +
+      buildEnglishReplyPrompt({
+        who: problem.senderRole,
+        whom: problem.receiverRole,
+        senderGender: problem.senderVoice === 'male' ? '男性' : '女性',
+        receiverGender: problem.receiverVoice === 'male' ? '男性' : '女性',
+        englishSentence: problem.englishSentence,
+        where: problem.place,
+      }) +
+      `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json
 {
   "englishReply": "ここに返答の英文が入る。"

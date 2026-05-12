@@ -11,6 +11,7 @@ import { words } from '../docs/words';
 import { words as kidsWords } from '../docs/kids_words';
 import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
+import { buildEnglishReplyPrompt } from '@/lib/problem-generator';
 import type { SeedProblemData } from '@/types/problem';
 
 dotenv.config();
@@ -105,8 +106,8 @@ const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { ho
   receiverWhere: '話しかける相手がいる場所',
   who: '話しかける人の役割',
   whom: '話しかける相手の役割',
-  why: 'きっかけ',
-  want: 'どうなりたい',
+  why: '話しかけようと思ったきっかけ',
+  want: 'それを話すことでどうなりたいか',
 };
 
 const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
@@ -166,30 +167,20 @@ const createEnglishReply = async ({
   voice: Voice;
   wordCountLength: ProblemLength;
 }): Promise<string | null> => {
-  const prompt = `
-  ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）が、${sentence.who}（${voiceMap[voice]}）から「${sentence.englishSentence}」と話しかけられました。
-  自然な返答のセリフを英語で作成してください。
-  英文法は正確に、文法の間違いがないようにしてください。
-  必要に応じて、最初に自然な相槌や感嘆詞を入れてください。（例: I see, Oh, OK, Sure, I understand, I agree, Good, Thanks）
-  簡潔な内容で、不要に話題を広げず、10語以内を目安に作成してください。
-  ${
-    wordCountLength === 'kids'
-      ? ''
-      : `ただし、当たり障りのない汎用的な返答は避け、少しは具体性のある返答にしてください。
-  （悪い例1: OK, I’ll do it. 悪い例2: Got it, I’ll check.）
-  （良い例1: OK, I’ll call you back. 良い例2: Got it, I’ll check the contract.）`
-  }
-
-【シーン】
-- いつ: ${sentence.when}
-- どこで: ${sentence.where}
-
-【参考情報】
-${sentence.whom}（${voiceMap[toggleVoice(voice)]}）は知らないかもしれない情報です。
-- ${sentence.who}（${voiceMap[voice]}）が話しかけたきっかけ: ${sentence.why}
-
-英語の台詞のみを出力してください。JSONや説明は不要です。
-  `;
+  const prompt =
+    buildEnglishReplyPrompt({
+      who: sentence.who,
+      whom: sentence.whom,
+      senderGender: voiceMap[voice] as '男性' | '女性',
+      receiverGender: voiceMap[toggleVoice(voice)] as '男性' | '女性',
+      englishSentence: sentence.englishSentence,
+      when: sentence.when,
+      where: sentence.where,
+      why: sentence.why,
+    }) +
+    `
+【重要】英語の台詞のみを出力してください。JSONや説明は不要です。
+`;
 
   // console.log(prompt);
 
@@ -246,7 +237,7 @@ const createJapaneseConversation = async ({
 
 【参考情報】
 ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）は知らないかもしれない情報です。
-- ${sentence.who}（${voiceMap[voice]}）が話しかけたきっかけ: ${sentence.why}
+- ${sentence.who}（${voiceMap[voice]}）が話しかけようと思ったきっかけ: ${sentence.why}
 - ${sentence.who}（${voiceMap[voice]}）が話しかけた目的: ${sentence.want}
 
 ※あくまで参考情報です。英文に含まれていない内容は日本語訳に含めないでください。英文に含まれている内容のみを日本語に訳してください。

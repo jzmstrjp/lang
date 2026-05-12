@@ -1,5 +1,4 @@
 export const words: string[] = [
-  'hide',
   'hug',
   'kick',
   'lose',
