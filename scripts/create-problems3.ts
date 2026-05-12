@@ -7,8 +7,6 @@ import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
-import { words } from '../docs/words';
-import { words as kidsWords } from '../docs/kids_words';
 import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { buildEnglishReplyPrompt } from '@/lib/problem-generator';
@@ -163,11 +161,11 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
 const createEnglishReply = async ({
   sentence,
   voice,
-  wordCountLength,
+  _wordCountLength,
 }: {
   sentence: EnglishSentenceResult;
   voice: Voice;
-  wordCountLength: ProblemLength;
+  _wordCountLength: ProblemLength;
 }): Promise<string | null> => {
   const prompt =
     buildEnglishReplyPrompt({
@@ -312,118 +310,25 @@ const createEnglishSentence = async ({
   }
 };
 
-// ─── ファイル保存ユーティリティ ───────────────────────────────────────────────
+// ─── DB ユーティリティ ────────────────────────────────────────────────────────
 
-function resolveStartIndex(startAfter: string | null, wordList: string[]): number {
-  if (!startAfter) return 0;
-  const idx = wordList.indexOf(startAfter);
-  if (idx === -1) {
-    console.error(
-      `⚠️ LATEST_USED_WORD "${startAfter}" が words に見つかりません。先頭から使用します。`,
-    );
-    return 0;
-  }
-  return idx + 1;
-}
+const prismaClient = new PrismaClient({ log: ['error'] });
 
-async function getLatestUsedWord(key: string): Promise<string | null> {
-  if (!process.env.DATABASE_URL) return null;
-  const prisma = new PrismaClient({ log: ['error'] });
-  try {
-    const config = await prisma.appConfig.findUnique({ where: { key } });
-    return config?.value ?? null;
-  } catch (e) {
-    console.error(`⚠️ ${key} の取得に失敗しました:`, e instanceof Error ? e.message : e);
-    return null;
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-async function updateLatestUsedWord(key: string, word: string): Promise<void> {
-  if (!process.env.DATABASE_URL) {
-    console.error(`⚠️ DATABASE_URL が未設定のため ${key} を更新できません`);
-    return;
-  }
-  const prisma = new PrismaClient({ log: ['error'] });
-  try {
-    await prisma.appConfig.upsert({
-      where: { key },
-      update: { value: word },
-      create: { key, value: word },
-    });
-    console.error(`🔖 ${key} を "${word}" に更新しました`);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-async function persistLatestUsedWordIfKnown(
-  key: string,
-  word: string,
-  wordList: string[],
-): Promise<void> {
-  if (!wordList.includes(word)) {
-    console.error(`⚠️ ${key} を更新しません（語彙ファイルに含まれないため: "${word}"）`);
-    return;
-  }
-  try {
-    await updateLatestUsedWord(key, word);
-  } catch (e) {
-    console.error(`⚠️ ${key} の更新に失敗しました:`, e instanceof Error ? e.message : e);
-  }
-}
-
-function removeUsedWordsFromWordList(
-  wordsToRemove: readonly string[],
-  wordsFilePath: string,
-): void {
-  if (wordsToRemove.length === 0) return;
-  const wordsPath = path.join(process.cwd(), wordsFilePath);
-  if (!fs.existsSync(wordsPath)) {
-    console.error(`⚠️ 語彙ファイルが見つからないため削除をスキップします: ${wordsPath}`);
-    return;
-  }
-  const originalContent = fs.readFileSync(wordsPath, 'utf-8');
-  const lines = originalContent.split('\n');
-  const remainingWords = new Set(wordsToRemove);
-  const updatedLines = lines.filter((line) => {
-    const trimmed = line.trim();
-    const match = trimmed.match(/^(['"])(.+)\1,?\s*$/);
-    if (!match) return true;
-    const wordValue = match[2];
-    if (remainingWords.has(wordValue)) {
-      remainingWords.delete(wordValue);
-      return false;
-    }
-    return true;
+async function fetchWordsFromDB(isKids: boolean): Promise<string[]> {
+  const rows = await prismaClient.word.findMany({
+    where: { isKids },
+    orderBy: { createdAt: 'asc' },
+    select: { expression: true },
   });
-  if (remainingWords.size > 0) {
-    console.error(
-      `⚠️ 次の語彙は${wordsFilePath}で見つからず削除できませんでした: ${Array.from(remainingWords).join(', ')}`,
-    );
-  }
-  const updatedContent = updatedLines.join('\n');
-  if (updatedContent !== originalContent) {
-    fs.writeFileSync(wordsPath, updatedContent, 'utf-8');
-    console.error(`✅ ${wordsFilePath}から使用済み語彙を削除しました`);
-  }
+  return rows.map((r) => r.expression);
 }
 
-function removeConsumedWordsThrough(
-  lastWord: string,
-  wordList: string[],
-  wordsFilePath: string,
-): void {
-  const lastIdx = wordList.indexOf(lastWord);
-  if (lastIdx === -1) {
-    console.error(
-      `⚠️ "${lastWord}" が words 配列に見つからないため、${wordsFilePath} からの一括削除をスキップします`,
-    );
-    return;
-  }
-  console.error(`🧹 使用済み語彙を${wordsFilePath}から削除中...`);
-  removeUsedWordsFromWordList(wordList.slice(0, lastIdx + 1), wordsFilePath);
+async function deleteWordsFromDB(expressions: string[]): Promise<void> {
+  if (expressions.length === 0) return;
+  const result = await prismaClient.word.deleteMany({
+    where: { expression: { in: expressions } },
+  });
+  console.error(`🧹 使用済み語彙をDBから削除しました（${result.count}件）`);
 }
 
 function getNextProblemNumber(): number {
@@ -769,7 +674,11 @@ async function generateForPhrase(
     return null;
   }
 
-  const englishReply = await createEnglishReply({ sentence, voice, wordCountLength });
+  const englishReply = await createEnglishReply({
+    sentence,
+    voice,
+    _wordCountLength: wordCountLength,
+  });
   if (!englishReply) {
     console.log('  ⚠️ スキップ（返答生成失敗）');
     return null;
@@ -804,7 +713,6 @@ const main = async () => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   console.log('🚀 create-problems3（対話モード）');
-  console.log(`📚 docs/words の語数: ${words.length}個\n`);
 
   // --- 語数タイプ選択 ---
   console.log('\n語数タイプを選択してください:');
@@ -841,15 +749,21 @@ const main = async () => {
     mode = 'short';
   }
 
-  // --- モードに応じてワードリスト・appConfig キー・ファイルパスを決定 ---
+  // --- モードに応じてワードリストを決定 ---
   const isKidsOnly = mode === 'kids';
   const isAll = mode === 'all';
-  const activeWordList = isKidsOnly ? kidsWords : words;
-  const activeWordsFilePath = isKidsOnly ? 'docs/kids_words.ts' : 'docs/words.ts';
-  const latestUsedWordKey = isKidsOnly ? 'LATEST_USED_WORD_KIDS' : 'LATEST_USED_WORD';
+
+  // --- DBからワードを取得 ---
+  const [allNonKidsWords, allKidsWords] = await Promise.all([
+    isKidsOnly ? Promise.resolve([]) : fetchWordsFromDB(false),
+    isAll ? fetchWordsFromDB(true) : isKidsOnly ? fetchWordsFromDB(true) : Promise.resolve([]),
+  ]);
+  const activeWordList = isKidsOnly ? allKidsWords : allNonKidsWords;
 
   // --- 使用ワード数 ---
-  const maxWords = isAll ? Math.max(words.length, kidsWords.length) : activeWordList.length;
+  const maxWords = isAll
+    ? Math.max(allNonKidsWords.length, allKidsWords.length)
+    : activeWordList.length;
   const countAnswer = await ask(rl, `\n何ワード使用しますか？ [最大: ${maxWords}]: `);
   rl.close();
 
@@ -868,45 +782,34 @@ const main = async () => {
     return parsed;
   })();
 
-  // --- allモード: kids_wordsとwordsから独立して選択 ---
-  let selectedKidsWords: string[] = [];
-  if (isAll) {
-    const kidsStartAfter = await getLatestUsedWord('LATEST_USED_WORD_KIDS');
-    if (kidsStartAfter) {
-      console.error(`📍 LATEST_USED_WORD_KIDS: "${kidsStartAfter}"`);
-    } else {
-      console.error(`📍 LATEST_USED_WORD_KIDS: 未設定（先頭から使用）`);
-    }
-    const kidsStartIndex = resolveStartIndex(kidsStartAfter, kidsWords);
-    selectedKidsWords = kidsWords.slice(kidsStartIndex, kidsStartIndex + wordCount);
-    if (selectedKidsWords.length === 0) {
-      console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
-    } else if (selectedKidsWords.length < wordCount) {
-      console.error(
-        `⚠️ 要求語数 ${wordCount} に対し、kids_words の終端まで ${selectedKidsWords.length} 語のみ使用します。`,
-      );
-    }
-  }
-
-  // --- LATEST_USED_WORD から開始位置を決定 ---
-  const startAfter = await getLatestUsedWord(latestUsedWordKey);
-  if (startAfter) {
-    console.error(`📍 ${latestUsedWordKey}: "${startAfter}"`);
-  } else {
-    console.error(`📍 ${latestUsedWordKey}: 未設定（先頭から使用）`);
-  }
-  const startIndex = resolveStartIndex(startAfter, activeWordList);
-  const selectedWords = activeWordList.slice(startIndex, startIndex + wordCount);
-
-  if (!isAll && selectedWords.length === 0) {
+  // --- allモード: DBから先頭N件を取得 ---
+  const selectedKidsWords = isAll
+    ? allKidsWords.slice(0, wordCount)
+    : isKidsOnly
+      ? allKidsWords.slice(0, wordCount)
+      : [];
+  if (isAll && selectedKidsWords.length === 0) {
+    console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
+  } else if (isAll && selectedKidsWords.length < wordCount) {
     console.error(
-      `選択範囲にワードがありません。${latestUsedWordKey} の位置が末尾付近か、語数が0です。`,
+      `⚠️ 要求語数 ${wordCount} に対し、kids_words の終端まで ${selectedKidsWords.length} 語のみ使用します。`,
     );
+  }
+
+  // --- DBから先頭N件を取得（non-kids） ---
+  const selectedWords = isKidsOnly ? [] : allNonKidsWords.slice(0, wordCount);
+
+  if (!isAll && !isKidsOnly && selectedWords.length === 0) {
+    console.error(`選択範囲にワードがありません。DBにwordsが登録されていません。`);
     return;
   }
-  if (!isAll && selectedWords.length < wordCount) {
+  if (!isAll && isKidsOnly && selectedKidsWords.length === 0) {
+    console.error(`選択範囲にワードがありません。DBにkids_wordsが登録されていません。`);
+    return;
+  }
+  if (!isAll && !isKidsOnly && selectedWords.length < wordCount) {
     console.error(
-      `⚠️ 要求語数 ${wordCount} に対し、words の終端まで ${selectedWords.length} 語のみ使用します。`,
+      `⚠️ 要求語数 ${wordCount} に対し、DBに ${selectedWords.length} 語のみ残っています。`,
     );
   }
   if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
@@ -916,7 +819,7 @@ const main = async () => {
 
   if (mode === 'all') {
     console.log(
-      `\n📌 全タイプモード: kids_words ${selectedKidsWords.length}語（kids）+ words ${selectedWords.length}語（short/medium/long）× 3問 → 順に生成します\n`,
+      `\n📌 全タイプモード: kids ${selectedKidsWords.length}語 + non-kids ${selectedWords.length}語（short/medium/long）× 3問 → 順に生成します\n`,
     );
   } else if (mode === 'nonKids') {
     console.log(
@@ -925,7 +828,7 @@ const main = async () => {
   } else {
     const r = WORD_COUNT_RULES[mode];
     console.log(
-      `\n📌 ${mode} モード (${r.min}-${r.max}単語): ${selectedWords.length}語分を生成します\n`,
+      `\n📌 ${mode} モード (${r.min}-${r.max}単語): ${isKidsOnly ? selectedKidsWords.length : selectedWords.length}語分を生成します\n`,
     );
   }
 
@@ -999,20 +902,12 @@ const main = async () => {
   writeProblemDataTsFile(seedProblems, outRelativePath, { expression: labelExpr, wordCountLength });
 
   if (isAll) {
-    if (selectedKidsWords.length > 0) {
-      const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
-      await persistLatestUsedWordIfKnown('LATEST_USED_WORD_KIDS', lastKidsWord, kidsWords);
-      removeConsumedWordsThrough(lastKidsWord, kidsWords, 'docs/kids_words.ts');
-    }
-    if (selectedWords.length > 0) {
-      const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
-      await persistLatestUsedWordIfKnown('LATEST_USED_WORD', lastNonKidsWord, words);
-      removeConsumedWordsThrough(lastNonKidsWord, words, 'docs/words.ts');
-    }
+    if (selectedKidsWords.length > 0) await deleteWordsFromDB(selectedKidsWords);
+    if (selectedWords.length > 0) await deleteWordsFromDB(selectedWords);
+  } else if (isKidsOnly) {
+    await deleteWordsFromDB(selectedKidsWords);
   } else {
-    const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
-    await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
-    removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
+    await deleteWordsFromDB(selectedWords);
   }
 
   const modeLabel =
@@ -1031,11 +926,7 @@ const main = async () => {
 type ProblemLengthMode = ProblemLength | 'all' | 'nonKids';
 const BATCH_MODES = ['kids', 'short', 'medium', 'long', 'all', 'nonKids'] as const;
 
-async function seedToDatabase(
-  seedProblems: SeedProblemData[],
-  lastWord: string,
-  latestUsedWordKey: string,
-): Promise<void> {
+async function seedToDatabase(seedProblems: SeedProblemData[]): Promise<void> {
   const rawPrisma = new PrismaClient({ log: ['error'] });
   const acceleratedPrisma = rawPrisma.$extends(withAccelerate()) as unknown as PrismaClient;
   try {
@@ -1060,12 +951,6 @@ async function seedToDatabase(
     console.error(
       `✅ DB投入完了: ${result.count}件挿入 (重複スキップ: ${createData.length - result.count}件)`,
     );
-    await rawPrisma.appConfig.upsert({
-      where: { key: latestUsedWordKey },
-      update: { value: lastWord },
-      create: { key: latestUsedWordKey, value: lastWord },
-    });
-    console.error(`🔖 ${latestUsedWordKey} を "${lastWord}" に更新しました`);
   } finally {
     await rawPrisma.$disconnect();
   }
@@ -1113,41 +998,27 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     return;
   }
 
-  // --- モードに応じてワードリスト・appConfig キー・ファイルパスを決定 ---
+  // --- モードに応じてワードリストを決定 ---
   const isKidsOnly = opts.mode === 'kids';
   const isAll = opts.mode === 'all';
-  const activeWordList = isKidsOnly ? kidsWords : words;
-  const activeWordsFilePath = isKidsOnly ? 'docs/kids_words.ts' : 'docs/words.ts';
-  const latestUsedWordKey = isKidsOnly ? 'LATEST_USED_WORD_KIDS' : 'LATEST_USED_WORD';
 
-  // --- allモード: kids_wordsから独立してkids用ワードを選択 ---
-  let selectedKidsWords: string[] = [];
-  if (isAll) {
-    const kidsStartAfter = await getLatestUsedWord('LATEST_USED_WORD_KIDS');
-    if (kidsStartAfter) {
-      console.error(`📍 LATEST_USED_WORD_KIDS: "${kidsStartAfter}"`);
-    } else {
-      console.error(`📍 LATEST_USED_WORD_KIDS: 未設定（先頭から使用）`);
-    }
-    const kidsStartIndex = resolveStartIndex(kidsStartAfter, kidsWords);
-    selectedKidsWords = kidsWords.slice(
-      kidsStartIndex,
-      Math.min(kidsStartIndex + opts.wordCount, kidsWords.length),
-    );
-    if (selectedKidsWords.length === 0) {
-      console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
-    }
+  // --- DBからワードを取得 ---
+  const [allNonKidsWords, allKidsWordsForBatch] = await Promise.all([
+    isKidsOnly ? Promise.resolve([]) : fetchWordsFromDB(false),
+    isAll || isKidsOnly ? fetchWordsFromDB(true) : Promise.resolve([]),
+  ]);
+
+  // --- allモード: DBから先頭N件を取得 ---
+  const selectedKidsWords = isAll
+    ? allKidsWordsForBatch.slice(0, opts.wordCount)
+    : isKidsOnly
+      ? allKidsWordsForBatch.slice(0, opts.wordCount)
+      : [];
+  if ((isAll || isKidsOnly) && selectedKidsWords.length === 0) {
+    console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
   }
 
-  const startAfter = await getLatestUsedWord(latestUsedWordKey);
-  if (startAfter) {
-    console.error(`📍 ${latestUsedWordKey}: "${startAfter}"`);
-  } else {
-    console.error(`📍 ${latestUsedWordKey}: 未設定（先頭から使用）`);
-  }
-  const startIndex = resolveStartIndex(startAfter, activeWordList);
-  const end = Math.min(startIndex + opts.wordCount, activeWordList.length);
-  const selectedWords = activeWordList.slice(startIndex, end);
+  const selectedWords = isKidsOnly ? [] : allNonKidsWords.slice(0, opts.wordCount);
 
   if (!isAll && selectedWords.length === 0) {
     console.error('選択範囲にワードがありません。');
@@ -1227,24 +1098,17 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   if (opts.seed) {
     if (isAll) {
       if (selectedKidsWords.length > 0) {
-        const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
-        await seedToDatabase(
-          seedProblems.filter((p) => p.difficultyLevel === 1),
-          lastKidsWord,
-          'LATEST_USED_WORD_KIDS',
-        );
+        await seedToDatabase(seedProblems.filter((p) => p.difficultyLevel === 1));
+        if (!opts.noRemoveWords) await deleteWordsFromDB(selectedKidsWords);
       }
       if (selectedWords.length > 0) {
-        const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
-        await seedToDatabase(
-          seedProblems.filter((p) => p.difficultyLevel !== 1),
-          lastNonKidsWord,
-          'LATEST_USED_WORD',
-        );
+        await seedToDatabase(seedProblems.filter((p) => p.difficultyLevel !== 1));
+        if (!opts.noRemoveWords) await deleteWordsFromDB(selectedWords);
       }
     } else {
-      const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
-      await seedToDatabase(seedProblems, lastConsumedWord, latestUsedWordKey);
+      await seedToDatabase(seedProblems);
+      if (!opts.noRemoveWords)
+        await deleteWordsFromDB(isKidsOnly ? selectedKidsWords : selectedWords);
     }
   } else {
     const outRelativePath = `problemData/problem${getNextProblemNumber()}.ts`;
@@ -1258,33 +1122,13 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
         opts.mode === 'all' ? 'all' : opts.mode === 'nonKids' ? 'nonKids' : opts.mode,
     });
     if (isAll) {
-      if (selectedKidsWords.length > 0) {
-        const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
-        await persistLatestUsedWordIfKnown('LATEST_USED_WORD_KIDS', lastKidsWord, kidsWords);
-      }
-      if (selectedWords.length > 0) {
-        const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
-        await persistLatestUsedWordIfKnown('LATEST_USED_WORD', lastNonKidsWord, words);
-      }
+      if (selectedKidsWords.length > 0 && !opts.noRemoveWords)
+        await deleteWordsFromDB(selectedKidsWords);
+      if (selectedWords.length > 0 && !opts.noRemoveWords) await deleteWordsFromDB(selectedWords);
+    } else if (isKidsOnly) {
+      if (!opts.noRemoveWords) await deleteWordsFromDB(selectedKidsWords);
     } else {
-      const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
-      await persistLatestUsedWordIfKnown(latestUsedWordKey, lastConsumedWord, activeWordList);
-    }
-  }
-
-  if (!opts.noRemoveWords) {
-    if (isAll) {
-      if (selectedKidsWords.length > 0) {
-        const lastKidsWord = selectedKidsWords[selectedKidsWords.length - 1]!;
-        removeConsumedWordsThrough(lastKidsWord, kidsWords, 'docs/kids_words.ts');
-      }
-      if (selectedWords.length > 0) {
-        const lastNonKidsWord = selectedWords[selectedWords.length - 1]!;
-        removeConsumedWordsThrough(lastNonKidsWord, words, 'docs/words.ts');
-      }
-    } else {
-      const lastConsumedWord = selectedWords[selectedWords.length - 1]!;
-      removeConsumedWordsThrough(lastConsumedWord, activeWordList, activeWordsFilePath);
+      if (!opts.noRemoveWords) await deleteWordsFromDB(selectedWords);
     }
   }
 
@@ -1294,8 +1138,5 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
 }
 
 const batchOpts = parseBatchCliArgs();
-if (batchOpts) {
-  void runBatch(batchOpts);
-} else {
-  void main();
-}
+const entryFn = batchOpts ? runBatch(batchOpts) : main();
+entryFn.finally(() => prismaClient.$disconnect());

@@ -16,7 +16,7 @@ on:
           - kids
           - nonKids
       count:
-        description: '使用するワード数（docs/words.ts の先頭からの連続ではなく、LATEST_USED_WORD の次から）'
+        description: '使用するワード数（DBの words テーブルから先頭N件を取得）'
         required: false
         default: '5'
         type: string
@@ -91,7 +91,7 @@ jobs:
 
           echo "🚀 create-problems3 を開始します"
           echo "📌 モード: $INPUT_MODE / ワード数: $INPUT_COUNT"
-          echo "📍 LATEST_USED_WORD は DB から自動取得します"
+          echo "📍 DBの words テーブルから先頭 $INPUT_COUNT 件を取得します"
 
           SEED_FLAG=""
           if [ "$INPUT_SEED" = "true" ]; then

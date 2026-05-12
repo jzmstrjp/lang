@@ -56,10 +56,12 @@ model AdminUser {
   @@map("admin_users")
 }
 
-model AppConfig {
-  key       String   @id
-  value     String
-  updatedAt DateTime @updatedAt
+model Word {
+  id         String   @id @default(cuid())
+  expression String   @unique
+  isKids     Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-  @@map("app_configs")
+  @@index([isKids])
+  @@map("words")
 }
