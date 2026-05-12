@@ -1,11 +1,4 @@
 export const words: string[] = [
-  'kick',
-  'lose',
-  'paint',
-  'play catch',
-  'push',
-  'share',
-  'throw',
   'wait',
   'wake up',
   'balloon',

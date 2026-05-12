@@ -1,11 +1,4 @@
 export const words: string[] = [
-  'entrance',
-  'exercise regularly',
-  'fill out',
-  'fitness center',
-  'follow directions',
-  'get together',
-  'go grocery shopping',
   'hair salon',
   'have a cold',
   'household chores',
