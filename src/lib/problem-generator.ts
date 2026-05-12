@@ -1,6 +1,7 @@
 import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
+import OpenAI from 'openai';
 import {
   generateSpeech,
   generateSpeechBuffer,
@@ -19,6 +20,7 @@ import {
 import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
+import { TEXT_MODEL } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
@@ -227,10 +229,103 @@ const senderFaceDirectionMap = [
   ['左側', '右側'],
 ];
 
+type FrameRestrictions = {
+  frame1Not: string;
+  frame1Must: string;
+  frame2Not: string;
+  frame2Must: string;
+};
+
+/**
+ * 各コマで描くべきでない内容をAIで生成
+ */
+export async function generateFrameRestrictions(
+  problem: GeneratedProblem,
+): Promise<FrameRestrictions> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const prompt = `
+
+AIによる画像生成では、以下の問題が起こりがちである。
+- 「コーヒーをお願いします」というシーンなのに、既にテーブルに置かれたコーヒーが描かれてしまう（まだ注文したばかりなので、コーヒーは描かれるべきではない）
+- 「昨日、車を洗ったんだ」というシーンなのに、バケツや雑巾を持っている様子が描かれてしまう（洗車は昨日したことなので、バケツや雑巾は描かれるべきではない）
+
+これらの問題を解決するために「描くべきこと」と「描くべきではないこと」を説明した文章を作成してください。
+
+## 対象シーン
+- 場所: ${problem.place}
+- 1コマ目: ${problem.senderRole}（${getGenderInJapanese(problem.senderVoice)}）が「${problem.englishSentence}」と話しかけている場面
+- 2コマ目: ${problem.receiverRole}（${getGenderInJapanese(problem.receiverVoice)}）が「${problem.englishReply}」と返答している場面
+${problem.scenePrompt ? `- 背景: ${problem.scenePrompt}` : ''}
+
+## 例1
+- 場所: スーパーの近くの道
+- 1コマ目: 夫が「Did you buy bananas today?」と話しかけている場面
+- 2コマ目: 妻が「Yes, I picked some up earlier this afternoon.」と返答している場面
+- 背景: 電話での会話。夫は仕事帰りにスーパーの近くにいる。妻はすでに午後にバナナを買っている。
+
+\`\`\`json
+{
+  "frame1Not": "夫がバナナを持っている様子は描かない。",
+  "frame1Must": "奥の方に見えるスーパーを描く。",
+  "frame2Not": "今まさにスーパーでバナナを買っている様子は描かない。",
+  "frame2Must": "近くに置いてあるバナナを描く。"
+}
+\`\`\`
+
+## 例2
+- 場所: 自分のオフィスのデスク
+- 1コマ目: プロジェクトマネージャーが「Hi James, I'm calling to ask if you could help me look for the document I left in the conference room after yesterday's meeting.」と話しかけている場面
+- 2コマ目: 同じプロジェクトのメンバーが「Sure, I'll check the conference room right now.」と返答している場面
+- 背景: 電話での会話。書類は昨日の会議後に置き忘れたもの。
+
+\`\`\`json
+{
+  "frame1Not": "プロジェクトマネージャーは書類を持っていない。",
+  "frame1Must": "デスクにいるプロジェクトマネージャーを描く。",
+  "frame2Not": "ジェームズはまだ会議室にはいない。書類も持っていない。",
+  "frame2Must": "電話しているジェームズを描く。"
+}
+\`\`\`
+
+---
+
+【重要】
+以下のJSON形式で回答してください。
+
+\`\`\`json
+{
+  "frame1Not": "1コマ目で描くべきでない内容の説明文",
+  "frame1Must": "1コマ目で必ず描くべき内容の説明文",
+  "frame2Not": "2コマ目で描くべきでない内容の説明文",
+  "frame2Must": "2コマ目で必ず描くべき内容の説明文"
+}
+\`\`\``;
+
+  const response = await openai.responses.create({
+    model: TEXT_MODEL,
+    input: [{ role: 'user', content: prompt }],
+    temperature: 0.3,
+  });
+  const content = response.output_text ?? '';
+  const match = content.match(/```json\n([\s\S]*?)```/);
+  if (!match?.[1]) {
+    return {
+      frame1Not: 'これから起こるべきこと・まだ起こっていないことは描かないこと',
+      frame1Must: '話しかけている人物を描く',
+      frame2Not: 'これから起こるべきこと・まだ起こっていないことは描かないこと',
+      frame2Must: '返答している人物を描く',
+    };
+  }
+  return JSON.parse(match[1]) as FrameRestrictions;
+}
+
 /**
  * 画像プロンプトを生成
  */
-export function generateImagePrompt(problem: GeneratedProblem): string {
+export function generateImagePrompt(
+  problem: GeneratedProblem,
+  frameRestrictions?: FrameRestrictions,
+): string {
   const senderGenderText = getGenderInJapanese(problem.senderVoice);
   const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
 
@@ -284,10 +379,19 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 - 1つのコマの中に同じ人物を2回描画してはならない。
 - コマの周囲に枠線と余白を作らないこと。
 
+【描くべきこと】
+${
+  frameRestrictions
+    ? `- 1コマ目: ${frameRestrictions.frame1Must}\n- 2コマ目: ${frameRestrictions.frame2Must}`
+    : ''
+}
+
 【描かないこと】
-- 「コーヒーをお願いします」→コーヒーを注文したばかりのシーンなので、画像にはコーヒーを描くべきではない
-- 「公園に行こう」→行こうとしている段階なので、公園にいるシーンを描くべきではない
-- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと
+${
+  frameRestrictions
+    ? `- 1コマ目: ${frameRestrictions.frame1Not}\n- 2コマ目: ${frameRestrictions.frame2Not}`
+    : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
+}
 `;
 }
 
@@ -455,7 +559,8 @@ export async function generateAndUploadImageAsset(
   problem: GeneratedProblem,
   problemId: string,
 ): Promise<string> {
-  const imagePrompt = generateImagePrompt(problem);
+  const frameRestrictions = await generateFrameRestrictions(problem);
+  const imagePrompt = generateImagePrompt(problem, frameRestrictions);
   const imageBuffer = await generateImageBuffer(imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
 }
@@ -468,7 +573,8 @@ export async function generateAndUploadImageAssetWithCharacters(
   problemId: string,
   characterImages: Buffer[],
 ): Promise<string> {
-  const imagePrompt = generateImagePromptWithCharacters(problem);
+  const frameRestrictions = await generateFrameRestrictions(problem);
+  const imagePrompt = generateImagePromptWithCharacters(problem, frameRestrictions);
   const imageBuffer = await generateImageWithCharactersBuffer(characterImages, imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
 }
@@ -481,7 +587,8 @@ export async function generateAndUploadImageAssetWithAnimals(
   problemId: string,
   animalImages: Buffer[],
 ): Promise<string> {
-  const imagePrompt = generateImagePromptWithAnimals(problem);
+  const frameRestrictions = await generateFrameRestrictions(problem);
+  const imagePrompt = generateImagePromptWithAnimals(problem, frameRestrictions);
   const imageBuffer = await generateImageWithCharactersBuffer(animalImages, imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
 }
@@ -489,7 +596,10 @@ export async function generateAndUploadImageAssetWithAnimals(
 /**
  * キャラクター設定画像を使った画像生成用のプロンプトを生成
  */
-export function generateImagePromptWithCharacters(problem: GeneratedProblem): string {
+export function generateImagePromptWithCharacters(
+  problem: GeneratedProblem,
+  frameRestrictions?: FrameRestrictions,
+): string {
   const senderGenderText = getGenderInJapanese(problem.senderVoice);
   const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
 
@@ -558,17 +668,29 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 - キャラクター画像と異なる顔や服装にしてはならない。
 - ビデオ会議のシーンの場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
+【描くべきこと】
+${
+  frameRestrictions
+    ? `- 1コマ目: ${frameRestrictions.frame1Must}\n- 2コマ目: ${frameRestrictions.frame2Must}`
+    : ''
+}
+
 【描かないこと】
-- 「コーヒーをお願いします」→コーヒーを注文したばかりのシーンなので、画像にはコーヒーを描くべきではない
-- 「公園に行こう」→行こうとしている段階なので、公園にいるシーンを描くべきではない
-- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと
+${
+  frameRestrictions
+    ? `- 1コマ目: ${frameRestrictions.frame1Not}\n- 2コマ目: ${frameRestrictions.frame2Not}`
+    : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
+}
 `;
 }
 
 /**
  * 動物キャラクター用の画像プロンプトを生成
  */
-export function generateImagePromptWithAnimals(problem: GeneratedProblem): string {
+export function generateImagePromptWithAnimals(
+  problem: GeneratedProblem,
+  frameRestrictions?: FrameRestrictions,
+): string {
   // 動物の種類を性別で決定（male=黒猫、female=白猫）
   const senderAnimal = problem.senderVoice === 'male' ? '黒猫' : '白猫';
   const receiverAnimal = problem.receiverVoice === 'male' ? '黒猫' : '白猫';
@@ -639,9 +761,18 @@ ${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
 - 人間を描いてはならない（すべて猫です）。
 - 枠線は無し。
 
+【描くべきこと】
+${
+  frameRestrictions
+    ? `- 1コマ目: ${frameRestrictions.frame1Must}\n- 2コマ目: ${frameRestrictions.frame2Must}`
+    : ''
+}
+
 【描かないこと】
-- 「コーヒーをお願いします」→コーヒーを注文したばかりのシーンなので、画像にはコーヒーを描くべきではない
-- 「公園に行こう」→行こうとしている段階なので、公園にいるシーンを描くべきではない
-- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと
+${
+  frameRestrictions
+    ? `- 1コマ目: ${frameRestrictions.frame1Not}\n- 2コマ目: ${frameRestrictions.frame2Not}`
+    : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
+}
 `;
 }
