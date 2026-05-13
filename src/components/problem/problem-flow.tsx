@@ -564,6 +564,12 @@ function ProblemFlowInner({
     const englishSentence = currentProblem?.englishSentence;
     const japaneseSentence = currentProblem?.japaneseSentence;
     const scenePrompt = currentProblem?.scenePrompt;
+    const place = currentProblem?.place;
+    const senderRole = currentProblem?.senderRole;
+    const senderVoice = currentProblem?.senderVoice;
+    const englishReply = currentProblem?.englishReply;
+    const receiverRole = currentProblem?.receiverRole;
+    const receiverVoice = currentProblem?.receiverVoice;
 
     if (!targetProblemId || !englishSentence || !japaneseSentence) {
       return;
@@ -576,13 +582,23 @@ function ProblemFlowInner({
     setImprovingTranslation(true);
 
     try {
-      // AIで日本語訳を改善
+      // AIで日本語訳を改善（文脈情報を渡して高品質な翻訳を行う）
       const improveResponse = await fetch('/api/admin/problems/improve-translation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ englishSentence, japaneseSentence, scenePrompt }),
+        body: JSON.stringify({
+          englishSentence,
+          japaneseSentence,
+          scenePrompt,
+          place,
+          senderRole,
+          senderVoice,
+          englishReply,
+          receiverRole,
+          receiverVoice,
+        }),
       });
 
       if (!improveResponse.ok) {

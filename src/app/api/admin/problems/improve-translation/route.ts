@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL, JAPANESE_TRANSLATION_RULES } from '@/const';
+import { translateJapanese } from '@/lib/problem-generator';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -12,6 +12,12 @@ type RequestBody = {
   englishSentence?: string;
   japaneseSentence?: string;
   scenePrompt?: string | null;
+  place?: string;
+  senderRole?: string;
+  senderVoice?: string;
+  englishReply?: string;
+  receiverRole?: string;
+  receiverVoice?: string;
 };
 
 export async function POST(request: Request) {
@@ -24,7 +30,17 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as RequestBody;
-    const { englishSentence, japaneseSentence, scenePrompt } = body;
+    const {
+      englishSentence,
+      japaneseSentence,
+      scenePrompt,
+      place,
+      senderRole,
+      senderVoice,
+      englishReply,
+      receiverRole,
+      receiverVoice,
+    } = body;
 
     if (!englishSentence || typeof englishSentence !== 'string') {
       return NextResponse.json({ error: 'englishSentence が不正です。' }, { status: 400 });
@@ -38,48 +54,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OpenAI APIキーが設定されていません。' }, { status: 500 });
     }
 
-    const prompt = `${scenePrompt ? `【文脈】${scenePrompt}\n\n上記の文脈で` : ''}「${englishSentence}」という英文を、自然で質の高い日本語訳にしたいです。
-AIで読み上げるための日本語文です。リスニング用です。
-
-【翻訳ルール】
-${JAPANESE_TRANSLATION_RULES}
-
-重要: 日本語訳のテキストのみを出力してください。説明や解説は不要です。`;
-
-    const response = await openai.responses.create({
-      model: TEXT_MODEL,
-      input: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-    });
-
-    if (response.status === 'incomplete') {
-      const detail = response.incomplete_details?.reason ?? 'unknown';
-      console.error('[improve-translation] GPTレスポンスが不完全です', {
-        status: response.status,
-        detail,
-      });
-      return NextResponse.json({ error: `AI応答が不完全でした: ${detail}` }, { status: 500 });
+    if (!place || !senderRole || !senderVoice || !englishReply || !receiverRole || !receiverVoice) {
+      return NextResponse.json({ error: '文脈情報が不足しています。' }, { status: 400 });
     }
 
-    const improvedTranslation = response.output_text?.trim();
-
-    if (!improvedTranslation) {
-      console.error('[improve-translation] GPTレスポンスが空です', {
-        status: response.status,
-        hasOutput: !!response.output_text,
-      });
-      return NextResponse.json({ error: 'AI応答が空でした。' }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      improvedTranslation,
+    const improvedTranslation = await translateJapanese(openai, {
+      place,
+      scenePrompt: scenePrompt ?? null,
+      senderRole,
+      senderGender: senderVoice === 'male' ? '男性' : '女性',
+      englishSentence,
+      receiverRole,
+      receiverGender: receiverVoice === 'male' ? '男性' : '女性',
+      englishReply,
+      translate: 'sender',
     });
+
+    return NextResponse.json({ success: true, improvedTranslation });
   } catch (error) {
     console.error('[improve-translation] エラーが発生しました', error);
     return NextResponse.json({ error: '日本語訳の改善に失敗しました。' }, { status: 500 });

@@ -776,3 +776,130 @@ ${
 }
 `;
 }
+
+export type TranslateJapaneseParams = {
+  place: string;
+  scenePrompt: string | null;
+  senderRole: string;
+  senderGender: '男性' | '女性';
+  englishSentence: string;
+  receiverRole: string;
+  receiverGender: '男性' | '女性';
+  englishReply: string;
+  /** 翻訳対象: 'sender'=1コマ目、'receiver'=2コマ目 */
+  translate: 'sender' | 'receiver';
+};
+
+/**
+ * 英会話の片方の発話を、会話の文脈を踏まえて日本語に翻訳する。
+ * 1コマ目（送り手）・2コマ目（受け手）どちらの翻訳にも使用できる共通関数。
+ * エラー時は Error を throw する。
+ */
+export async function translateJapanese(
+  openai: OpenAI,
+  params: TranslateJapaneseParams,
+): Promise<string> {
+  const {
+    place,
+    scenePrompt,
+    senderRole,
+    senderGender,
+    englishSentence,
+    receiverRole,
+    receiverGender,
+    englishReply,
+    translate,
+  } = params;
+  const prompt = `
+  【翻訳すべき英文】
+  ${translate === 'sender' ? englishSentence : englishReply}
+
+  ${buildJapaneseConversationRules({
+    senderRole,
+    senderGender,
+    receiverRole,
+    receiverGender,
+    englishSentence,
+    englishReply,
+  })}
+
+【シーン情報】
+- 場所: ${place}
+${scenePrompt ? `- 文脈: ${scenePrompt}` : ''}
+
+【重要】以下のJSON形式で必ず回答してください:
+
+\`\`\`json
+{
+  "japanese": "ここに翻訳結果の日本語が入る。"
+}
+\`\`\``;
+
+  const response = await openai.responses.create({
+    model: TEXT_MODEL,
+    input: [{ role: 'user', content: prompt }],
+    temperature: 0.5,
+  });
+
+  if (response.status === 'incomplete') {
+    throw new Error('AI応答が不完全でした。');
+  }
+
+  const content = response.output_text;
+  if (!content) {
+    throw new Error('AI応答が空でした。');
+  }
+
+  const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
+  if (!jsonMatch?.[1]) {
+    throw new Error('AI応答のパースに失敗しました。');
+  }
+
+  const result = JSON.parse(jsonMatch[1]) as { japanese: string };
+  if (!result.japanese) {
+    throw new Error('japanese が取得できませんでした。');
+  }
+
+  return result.japanese.trim();
+}
+
+export type BuildJapaneseConversationRulesParams = {
+  senderRole: string;
+  senderGender: string;
+  receiverRole: string;
+  receiverGender: string;
+  englishSentence: string;
+  englishReply: string;
+  how?: string;
+};
+
+/**
+ * 日本語会話翻訳プロンプトの翻訳指示部分を組み立てる。
+ * create-problems3.ts などのスクリプトから利用する。
+ */
+export function buildJapaneseConversationRules(
+  params: BuildJapaneseConversationRulesParams,
+): string {
+  const {
+    senderRole,
+    senderGender,
+    receiverRole,
+    receiverGender,
+    englishSentence,
+    englishReply,
+    how,
+  } = params;
+  return `
+  ${how ? `- ${how}での会話です。` : ''}
+  ${senderRole}（${senderGender}）が「${englishSentence}」と話しかけ、
+  ${receiverRole}（${receiverGender}）が「${englishReply}」と返答しました。
+  この会話を自然な日本語のセリフに翻訳してください。
+  二人の関係性を考慮して、自然な口調のセリフに翻訳してください。
+  慣用句は単語通りに直訳せず、慣用句として翻訳してください。
+  元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
+  元の英文に含まれていない文脈情報は日本語訳に含めないでください。元の英文に含まれている内容のみを日本語に訳してください。
+  カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
+  機械音声で読み上げるための日本語文なので、括弧書きは含めないこと。最後は「。」または「？」で終わること。
+  相手のことを「○○さん」「XXXさん」などと伏せ字で翻訳せず「あなた」「君」もしくは「部長」などの呼び方を使ってください。
+  女性のセリフを「〜だわ」「〜なのよ」と翻訳するのは古臭いので禁止です。`;
+}

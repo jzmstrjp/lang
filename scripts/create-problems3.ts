@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
-import { buildEnglishReplyPrompt } from '@/lib/problem-generator';
+import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
 import type { SeedProblemData } from '@/types/problem';
 
 dotenv.config();
@@ -235,14 +235,15 @@ const createJapaneseConversation = async ({
   englishSentence: ${sentence.englishSentence}
   englishReply: ${englishReply}
   
-  ${sentence.who}（${voiceMap[voice]}）が${how}で「${sentence.englishSentence}」と話しかけ、
-  ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）が「${englishReply}」と返答しました。
-  この会話を自然な日本語のセリフに翻訳してください。
-  二人の関係性を考慮して、自然な口調のセリフに翻訳してください。
-  慣用句は単語通りに直訳せず、慣用句として翻訳してください。
-  英語に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
-  相手のことを「○○さん」「XXXさん」などと伏せ字で翻訳せず「あなた」「君」もしくは「部長」などの呼び方を使ってください。
-  女性のセリフを「〜だわ」「〜なのよ」と翻訳するのは古臭いので禁止です。
+  ${buildJapaneseConversationRules({
+    senderRole: sentence.who,
+    senderGender: voiceMap[voice],
+    receiverRole: sentence.whom,
+    receiverGender: voiceMap[toggleVoice(voice)],
+    englishSentence: sentence.englishSentence,
+    englishReply,
+    how,
+  })}
 
 【シーン】
 - いつ: ${sentence.when}
