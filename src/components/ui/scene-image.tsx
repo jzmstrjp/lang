@@ -43,6 +43,11 @@ export function SceneImage({
           unoptimized
           onLoad={onLoad}
         />
+        {sentence1 && (
+          <div className="md:text-3xl lg:text-4xl font-extrabold leading-[1.5] absolute bottom-[2%] left-[1%] right-[1%] text-center text-white p-1 text-shadow-[0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black]">
+            {sentence1}
+          </div>
+        )}
       </div>
 
       <div
@@ -58,21 +63,12 @@ export function SceneImage({
           unoptimized
           onLoad={onLoad}
         />
+        {sentence2 && (
+          <div className="md:text-3xl lg:text-4xl font-extrabold leading-[1.5] absolute bottom-[2%] left-[1%] right-[1%] text-center text-white p-1 text-shadow-[0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black]">
+            {sentence2}
+          </div>
+        )}
       </div>
-
-      {/* sentence1: 区切り棒の上あたり */}
-      {sentence1 && (
-        <div className="font-extrabold absolute left-[3%] right-[3%] text-center text-white p-1 bottom-[52%] text-shadow-[0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black]">
-          {sentence1}
-        </div>
-      )}
-
-      {/* sentence2: 画像の一番下 */}
-      {sentence2 && (
-        <div className="font-extrabold absolute bottom-[0.7%] left-[3%] right-[3%] text-center text-white p-1 text-shadow-[0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black]">
-          {sentence2}
-        </div>
-      )}
     </div>
   );
 }
