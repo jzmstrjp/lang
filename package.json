@@ -24,7 +24,8 @@
     "fix-missing-image:with-characters": "tsx scripts/fix-missing-image.ts --use-character-images",
     "fix-missing-image:with-animals": "tsx scripts/fix-missing-image.ts --use-animal-images",
     "check:image-coverage": "tsx scripts/check-image-coverage.ts",
-    "create:problems": "tsx scripts/create-problems3.ts"
+    "create:problems": "tsx scripts/create-problems3.ts",
+    "suggest:words": "tsx scripts/suggest-words.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.893.0",

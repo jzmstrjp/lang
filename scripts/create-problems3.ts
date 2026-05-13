@@ -323,6 +323,51 @@ async function fetchWordsFromDB(isKids: boolean): Promise<string[]> {
   return rows.map((r) => r.expression);
 }
 
+async function replenishWordsIfNeeded(
+  isKids: boolean,
+  currentWords: string[],
+  needed: number,
+): Promise<string[]> {
+  if (currentWords.length >= needed) return currentWords;
+
+  console.error(
+    `⚠️ ${isKids ? 'kids' : 'non-kids'} のワードが不足（${currentWords.length}件 < ${needed}件）。AI で補充します...`,
+  );
+
+  const { suggestWordsForCategory } = await import('@/lib/word-suggester');
+
+  const [existingExpressions, existingWords, sampleSentences] = await Promise.all([
+    prismaClient.problem
+      .findMany({ select: { expression: true }, where: { expression: { not: null } } })
+      .then((rows) => [...new Set(rows.map((r) => r.expression!).filter(Boolean))]),
+    prismaClient.word.findMany({ select: { expression: true, isKids: true } }),
+    prismaClient.$queryRaw<{ englishSentence: string }[]>`
+      SELECT "englishSentence" FROM problems ORDER BY RANDOM() LIMIT 100
+    `.then((rows) => rows.map((r) => r.englishSentence)),
+  ]);
+
+  const suggestions = await suggestWordsForCategory(
+    isKids,
+    existingExpressions,
+    existingWords,
+    sampleSentences,
+  );
+
+  if (suggestions.length === 0) {
+    console.error(`⚠️ AI による補充候補が0件でした。現在のワードのみで続行します。`);
+    return currentWords;
+  }
+
+  await prismaClient.word.createMany({
+    data: suggestions.map((expression) => ({ expression, isKids })),
+    skipDuplicates: true,
+  });
+  console.error(`✅ ${suggestions.length}件を DB に追加しました`);
+
+  // 改めてDBから取得し直す
+  return fetchWordsFromDB(isKids);
+}
+
 async function deleteWordsFromDB(expressions: string[]): Promise<void> {
   if (expressions.length === 0) return;
   const result = await prismaClient.word.deleteMany({
@@ -782,37 +827,28 @@ const main = async () => {
     return parsed;
   })();
 
-  // --- allモード: DBから先頭N件を取得 ---
-  const selectedKidsWords = isAll
-    ? allKidsWords.slice(0, wordCount)
-    : isKidsOnly
-      ? allKidsWords.slice(0, wordCount)
-      : [];
-  if (isAll && selectedKidsWords.length === 0) {
-    console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
-  } else if (isAll && selectedKidsWords.length < wordCount) {
-    console.error(
-      `⚠️ 要求語数 ${wordCount} に対し、kids_words の終端まで ${selectedKidsWords.length} 語のみ使用します。`,
-    );
-  }
+  // --- 必要数に満たない場合は AI で自動補充 ---
+  const replenishedKidsWords =
+    isAll || isKidsOnly
+      ? await replenishWordsIfNeeded(true, allKidsWords, wordCount)
+      : allKidsWords;
+  const replenishedNonKidsWords = !isKidsOnly
+    ? await replenishWordsIfNeeded(false, allNonKidsWords, wordCount)
+    : allNonKidsWords;
 
-  // --- DBから先頭N件を取得（non-kids） ---
-  const selectedWords = isKidsOnly ? [] : allNonKidsWords.slice(0, wordCount);
+  // --- 先頭N件を選択 ---
+  const selectedKidsWords = isAll || isKidsOnly ? replenishedKidsWords.slice(0, wordCount) : [];
+  const selectedWords = isKidsOnly ? [] : replenishedNonKidsWords.slice(0, wordCount);
 
-  if (!isAll && !isKidsOnly && selectedWords.length === 0) {
-    console.error(`選択範囲にワードがありません。DBにwordsが登録されていません。`);
+  if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
+    console.error(`選択範囲にワードがありません。`);
     return;
   }
   if (!isAll && isKidsOnly && selectedKidsWords.length === 0) {
-    console.error(`選択範囲にワードがありません。DBにkids_wordsが登録されていません。`);
+    console.error(`選択範囲にワードがありません。`);
     return;
   }
-  if (!isAll && !isKidsOnly && selectedWords.length < wordCount) {
-    console.error(
-      `⚠️ 要求語数 ${wordCount} に対し、DBに ${selectedWords.length} 語のみ残っています。`,
-    );
-  }
-  if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
+  if (!isAll && !isKidsOnly && selectedWords.length === 0) {
     console.error(`選択範囲にワードがありません。`);
     return;
   }
@@ -1008,24 +1044,31 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     isAll || isKidsOnly ? fetchWordsFromDB(true) : Promise.resolve([]),
   ]);
 
-  // --- allモード: DBから先頭N件を取得 ---
-  const selectedKidsWords = isAll
-    ? allKidsWordsForBatch.slice(0, opts.wordCount)
-    : isKidsOnly
-      ? allKidsWordsForBatch.slice(0, opts.wordCount)
-      : [];
-  if ((isAll || isKidsOnly) && selectedKidsWords.length === 0) {
-    console.error(`⚠️ kids_words の選択範囲にワードがありません。kidsタイプはスキップします。`);
-  }
+  // --- 必要数に満たない場合は AI で自動補充 ---
+  const replenishedKidsWords =
+    isAll || isKidsOnly
+      ? await replenishWordsIfNeeded(true, allKidsWordsForBatch, opts.wordCount)
+      : allKidsWordsForBatch;
+  const replenishedNonKidsWords = !isKidsOnly
+    ? await replenishWordsIfNeeded(false, allNonKidsWords, opts.wordCount)
+    : allNonKidsWords;
 
-  const selectedWords = isKidsOnly ? [] : allNonKidsWords.slice(0, opts.wordCount);
+  // --- 先頭N件を選択 ---
+  const selectedKidsWords =
+    isAll || isKidsOnly ? replenishedKidsWords.slice(0, opts.wordCount) : [];
+  const selectedWords = isKidsOnly ? [] : replenishedNonKidsWords.slice(0, opts.wordCount);
 
-  if (!isAll && selectedWords.length === 0) {
+  if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
     console.error('選択範囲にワードがありません。');
     process.exitCode = 1;
     return;
   }
-  if (isAll && selectedWords.length === 0 && selectedKidsWords.length === 0) {
+  if (!isAll && isKidsOnly && selectedKidsWords.length === 0) {
+    console.error('選択範囲にワードがありません。');
+    process.exitCode = 1;
+    return;
+  }
+  if (!isAll && !isKidsOnly && selectedWords.length === 0) {
     console.error('選択範囲にワードがありません。');
     process.exitCode = 1;
     return;
