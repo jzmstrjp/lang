@@ -1546,7 +1546,7 @@ function QuizOptionsSection({
                     type="button"
                     onClick={() => onSelectOption(index)}
                     onKeyDown={(e) => handleKeyDown(e, index)}
-                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40 focus:outline-none focus:border-[var(--primary)] focus:shadow-md focus:ring-2 focus:ring-[var(--primary)]/40`}
+                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40`}
                     disabled={isAudioBusy}
                   >
                     {option.text}
