@@ -1484,6 +1484,21 @@ function QuizOptionsSection({
   onRetry,
 }: QuizOptionsSectionProps) {
   const [editingIncorrectOptionKey, setEditingIncorrectOptionKey] = useState<string | null>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const total = phase.shuffledOptions.length;
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, index: number) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        buttonRefs.current[(index + 1) % total]?.focus();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        buttonRefs.current[(index - 1 + total) % total]?.focus();
+      }
+    },
+    [total],
+  );
 
   return (
     <section className="grid w-[500px] max-w-full max-w-full mx-auto pt-3">
@@ -1524,10 +1539,14 @@ function QuizOptionsSection({
                 <div className="relative">
                   <button
                     key={`${optionKey}-${index}-${isAudioBusy ? 'disabled' : 'enabled'}`}
+                    ref={(el) => {
+                      buttonRefs.current[index] = el;
+                    }}
                     autoFocus={index === 0}
                     type="button"
                     onClick={() => onSelectOption(index)}
-                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40`}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+                    className={`w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-4 text-left text-base font-medium text-[var(--text)] shadow-sm shadow-[var(--border)]/40 enabled:hover:border-[var(--primary)] enabled:hover:shadow-md enabled:active:translate-y-[1px] enabled:active:shadow-inner disabled:opacity-40 focus:outline-none focus:border-[var(--primary)] focus:shadow-md focus:ring-2 focus:ring-[var(--primary)]/40`}
                     disabled={isAudioBusy}
                   >
                     {option.text}
