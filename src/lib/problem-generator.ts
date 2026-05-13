@@ -821,6 +821,7 @@ export async function translateJapanese(
     receiverGender,
     englishSentence,
     englishReply,
+    translate,
   })}
 
 【シーン情報】
@@ -871,6 +872,8 @@ export type BuildJapaneseConversationRulesParams = {
   englishSentence: string;
   englishReply: string;
   how?: string;
+  /** 翻訳対象: 'sender'=送り手の発話、'receiver'=受け手の返答。省略時は会話全体を翻訳 */
+  translate?: 'sender' | 'receiver';
 };
 
 /**
@@ -888,12 +891,21 @@ export function buildJapaneseConversationRules(
     englishSentence,
     englishReply,
     how,
+    translate,
   } = params;
+
+  const targetDescription =
+    translate === 'sender'
+      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語のセリフに翻訳してください。`
+      : translate === 'receiver'
+        ? `この${receiverRole}（${receiverGender}）の「${englishReply}」を自然な日本語のセリフに翻訳してください。`
+        : 'この会話を自然な日本語のセリフに翻訳してください。';
+
   return `
   ${how ? `- ${how}での会話です。` : ''}
   ${senderRole}（${senderGender}）が「${englishSentence}」と話しかけ、
   ${receiverRole}（${receiverGender}）が「${englishReply}」と返答しました。
-  この会話を自然な日本語のセリフに翻訳してください。
+  ${targetDescription}
   二人の関係性を考慮して、自然な口調のセリフに翻訳してください。
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
   元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
