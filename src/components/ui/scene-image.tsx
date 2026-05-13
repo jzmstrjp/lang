@@ -31,7 +31,7 @@ export function SceneImage({
       className={`relative w-[1000px] max-w-full aspect-[4/3] mx-auto ${isBlurred ? 'blur-sm' : ''}`}
     >
       <div
-        className={`absolute top-0 left-0 w-full h-full transition duration-200 ${className} ${frameNumber === 1 ? '' : 'brightness-50 portrait:[transform:scale(0.4)_translateY(-120%)] portrait:[transform-origin:top_center] landscape:[transform:scale(0.4)_translateX(-110%)] landscape:[transform-origin:center_left]'} overflow-hidden`}
+        className={`absolute top-0 left-0 w-full h-full transition duration-200 ${className} ${frameNumber === 1 ? '' : 'brightness-50 portrait:[transform:scale(0.4)_translateY(-120%)] portrait:[transform-origin:top_center] landscape:[transform:scale(0.4)_translateX(-110%)] landscape:[transform-origin:center_left]'} ${frameNumber === 1 ? 'rounded-xl' : 'rounded-4xl'} overflow-hidden`}
       >
         <Image
           src={src}
@@ -51,7 +51,7 @@ export function SceneImage({
       </div>
 
       <div
-        className={`absolute top-0 left-0 w-full h-full transition duration-200 ${className} ${frameNumber === 2 ? '' : 'brightness-50 portrait:[transform:scale(0.4)_translateY(120%)] portrait:[transform-origin:bottom_center] landscape:[transform:scale(0.4)_translateX(110%)] landscape:[transform-origin:center_right]'} overflow-hidden`}
+        className={`absolute top-0 left-0 w-full h-full transition duration-200 ${className} ${frameNumber === 2 ? '' : 'brightness-50 portrait:[transform:scale(0.4)_translateY(120%)] portrait:[transform-origin:bottom_center] landscape:[transform:scale(0.4)_translateX(110%)] landscape:[transform-origin:center_right]'} ${frameNumber === 2 ? 'rounded-xl' : 'rounded-4xl'} overflow-hidden`}
       >
         <Image
           src={src}
