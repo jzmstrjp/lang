@@ -90,7 +90,7 @@ export default function RootLayout({
               <SettingsMenu />
             </div>
           </header>
-          <main className="mx-auto px-4 font-sans text-[var(--text)] sm:px-6">
+          <main className="mx-auto px-4 font-sans text-[var(--text)] sm:px-6 overflow-x-hidden">
             <div className="flex items-center justify-center min-h-[100dvh] py-12">{children}</div>
           </main>
           <Analytics />
