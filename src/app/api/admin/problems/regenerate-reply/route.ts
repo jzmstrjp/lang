@@ -3,12 +3,7 @@ import { OpenAI } from 'openai';
 import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import {
-  TEXT_MODEL,
-  JAPANESE_TRANSLATION_RULES,
-  TRANSLATION_FORMAT_RULES,
-  TTS_READING_RULES,
-} from '@/const';
+import { TEXT_MODEL, JAPANESE_TRANSLATION_RULES } from '@/const';
 import { buildEnglishReplyPrompt } from '@/lib/problem-generator';
 
 const openai = new OpenAI({
@@ -114,8 +109,6 @@ ${problem.scenePrompt ? `- 文脈: ${problem.scenePrompt}` : ''}
 
 【翻訳ルール】
 ${JAPANESE_TRANSLATION_RULES}
-${TRANSLATION_FORMAT_RULES}
-${TTS_READING_RULES}
 
 【重要】以下のJSON形式で必ず回答してください:
 
