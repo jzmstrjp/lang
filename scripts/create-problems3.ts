@@ -35,12 +35,24 @@ const howNoteMap: Record<How, string> = {
   電話: '電話なので、お互いに相手のことは見えません。',
 };
 
-const randomAdjectiveWords = [
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
+type PhraseCategory = 'business' | 'casual';
+
+async function classifyPhrase(phrase: string): Promise<PhraseCategory> {
+  const response = await openai.chat.completions.create({
+    model: TEXT_MODEL,
+    messages: [
+      {
+        role: 'user',
+        content: `以下のフレーズは「business」と「casual」のどちらに分類されますか？\n迷ったら「casual」にしてください。\n1単語のみ回答してください（"business" または "casual"）。\n\nフレーズ: 「${phrase}」`,
+      },
+    ],
+    max_tokens: 5,
+  });
+  const result = response.choices[0]?.message.content?.trim().toLowerCase() ?? 'casual';
+  return result === 'business' ? 'business' : 'casual';
+}
+
+const casualAdjectiveWords = [
   'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
   'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
   'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
@@ -48,18 +60,33 @@ const randomAdjectiveWords = [
   '心に刺さる感動的な台詞',
 ];
 
+const businessAdjectiveWords = [
+  'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
+  'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
+  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
+  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
+  '心に刺さる感動的な台詞',
+];
+
+function pickAdjectiveWord(category: PhraseCategory): string {
+  const list = category === 'business' ? businessAdjectiveWords : casualAdjectiveWords;
+  return list[Math.floor(Math.random() * list.length)]!;
+}
+
 const createEnglishSentencePrompt = ({
   phrase,
   voice,
   how,
   rule,
   usedSentences,
+  category,
 }: {
   phrase: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
   usedSentences: string[];
+  category: PhraseCategory;
 }): string => {
   const usedBlock =
     usedSentences.length > 0
@@ -69,7 +96,7 @@ const createEnglishSentencePrompt = ({
 ${usedBlock}
 
 「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんな英文があり得えますか？
-${randomAdjectiveWords[Math.floor(Math.random() * randomAdjectiveWords.length)]}を作成してください。「${phrase}」というフレーズならではの英文を作成してください。
+${pickAdjectiveWord(category)}を作成してください。「${phrase}」というフレーズならではの英文を作成してください。
 ※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 ※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
@@ -294,14 +321,16 @@ const createEnglishSentence = async ({
   how,
   rule,
   usedSentences = [],
+  category = 'casual',
 }: {
   phrase: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
   usedSentences?: string[];
+  category?: PhraseCategory;
 }): Promise<EnglishSentenceResult | null> => {
-  const prompt = createEnglishSentencePrompt({ phrase, voice, how, rule, usedSentences });
+  const prompt = createEnglishSentencePrompt({ phrase, voice, how, rule, usedSentences, category });
 
   try {
     const response = await openai.responses.create({
@@ -720,6 +749,7 @@ async function generateForPhrase(
   voice: Voice,
   how: How,
   usedSentences: string[] = [],
+  category: PhraseCategory = 'casual',
 ): Promise<SeedProblemData | null> {
   const sentence = await createEnglishSentence({
     phrase,
@@ -727,6 +757,7 @@ async function generateForPhrase(
     how,
     rule: WORD_COUNT_RULES[wordCountLength],
     usedSentences,
+    category,
   });
   if (!sentence) {
     console.log('  ⚠️ スキップ（英文生成失敗）');
@@ -886,29 +917,31 @@ const main = async () => {
   const PROBLEMS_PER_PHRASE = 3;
 
   if (isAll) {
-    // kids は kids_words から
+    // kids は kids_words から（casual 固定）
     for (const phrase of selectedKidsWords) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
         const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
         console.log(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences);
+        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences, 'casual');
         if (seed) {
           usedSentences.push(seed.englishSentence);
           seedProblems.push(seed);
         }
       }
     }
-    // short / medium / long は words から
+    // short / medium / long は words から（phrase ごとに1回分類）
     for (const phrase of selectedWords) {
+      const category = await classifyPhrase(phrase);
+      console.log(`\n📂 「${phrase}」→ ${category}`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
           const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
           console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
@@ -919,14 +952,17 @@ const main = async () => {
   } else {
     const lengths: ProblemLength[] =
       mode === 'nonKids' ? [...NON_KIDS_PROBLEM_LENGTHS] : [mode as ProblemLength];
-    for (const phrase of selectedWords) {
+    const isKidsMode = mode === 'kids';
+    for (const phrase of isKidsMode ? selectedKidsWords : selectedWords) {
+      const category: PhraseCategory = isKidsMode ? 'casual' : await classifyPhrase(phrase);
+      if (!isKidsMode) console.log(`\n📂 「${phrase}」→ ${category}`);
       for (const len of lengths) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
           const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
           console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
@@ -1094,29 +1130,31 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   const hows = ['対面', '対面', '対面', '対面', '電話'] as const satisfies How[];
 
   if (isAll) {
-    // kids は kids_words から
+    // kids は kids_words から（casual 固定）
     for (const phrase of selectedKidsWords) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice = voices[Math.floor(Math.random() * voices.length)];
         const how = hows[Math.floor(Math.random() * hows.length)];
         console.error(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences);
+        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences, 'casual');
         if (seed) {
           usedSentences.push(seed.englishSentence);
           seedProblems.push(seed);
         }
       }
     }
-    // short / medium / long は words から
+    // short / medium / long は words から（phrase ごとに1回分類）
     for (const phrase of selectedWords) {
+      const category = await classifyPhrase(phrase);
+      console.error(`\n📂 「${phrase}」→ ${category}`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice = voices[Math.floor(Math.random() * voices.length)];
           const how = hows[Math.floor(Math.random() * hows.length)];
           console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
@@ -1127,14 +1165,17 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   } else {
     const lengths: ProblemLength[] =
       opts.mode === 'nonKids' ? NON_KIDS_PROBLEM_LENGTHS : [opts.mode as ProblemLength];
-    for (const phrase of selectedWords) {
+    const isKidsMode = opts.mode === 'kids';
+    for (const phrase of isKidsMode ? selectedKidsWords : selectedWords) {
+      const category: PhraseCategory = isKidsMode ? 'casual' : await classifyPhrase(phrase);
+      if (!isKidsMode) console.error(`\n📂 「${phrase}」→ ${category}`);
       for (const len of lengths) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice = voices[Math.floor(Math.random() * voices.length)];
           const how = hows[Math.floor(Math.random() * hows.length)];
           console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences);
+          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
