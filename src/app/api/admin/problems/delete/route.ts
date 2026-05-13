@@ -29,6 +29,8 @@ export async function POST(request: Request) {
       where: { id: problemId },
       select: {
         id: true,
+        expression: true,
+        difficultyLevel: true,
         imageUrl: true,
         audioEnUrl: true,
         audioEnReplyUrl: true,
@@ -41,6 +43,22 @@ export async function POST(request: Request) {
     }
 
     await prisma.problem.delete({ where: { id: problemId } });
+
+    // 削除後に同じ expression の残り件数が 1 件になったら Word テーブルに戻す
+    // （groupByExpression の HAVING COUNT(*) >= 2 で出題対象外になるため）
+    if (record.expression) {
+      const remaining = await prisma.problem.count({
+        where: { expression: record.expression },
+      });
+      if (remaining === 1) {
+        const isKids = record.difficultyLevel === 1;
+        await prisma.word.upsert({
+          where: { expression: record.expression },
+          update: {},
+          create: { expression: record.expression, isKids },
+        });
+      }
+    }
 
     const assetUrls = [
       record.imageUrl,
