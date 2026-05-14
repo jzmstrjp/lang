@@ -87,14 +87,17 @@ const createEnglishSentenceOnlyPrompt = ({
   return `
 ${usedBlock}
 
-「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんな英文があり得えますか？
+「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんなシチュエーションでどんな英文があり得ますか？
 ${pickAdjectiveWord(category)}を1つ作成してください。
-※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
+いつ・どこで・誰が・何がきっかけで・誰に・何を求めて話しかけたのか、そのsituationも作成してください（シチュエーションは日本語1文で説明してください）
+現実によくあるようなシチュエーションを、5W1Hを省略せずに記述してください。
+（シチュエーションの例: 息子が学校に出掛けた後、母親が、家の玄関で、息子のカバンが置いてあることに気づき、取りに帰ってきて欲しくて、電話で息子に連絡した）
+※フレーズ内のS・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 ※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
 英文法は正確に、文法の間違いがないようにしてください。
 ${rule.min}語以上${rule.max}語以下の英文を作成してください。
-いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのか、そのcontextも含めて作成してください。
+
 ${'note' in rule ? rule.note : ''}
 ${howNoteMap[how]}
 
@@ -103,7 +106,7 @@ ${howNoteMap[how]}
 \`\`\`json
 {
   "englishSentence": "（作成した英文の台詞）",
-  "context": "（いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのかを日本語1文で説明）"
+  "situation": "（いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのかを日本語1文で説明）"
 }
 \`\`\`
   `;
@@ -123,12 +126,12 @@ const sceneInfoResultDefinition: SceneInfoResult = {
 
 const createSceneInfoPrompt = ({
   englishSentence,
-  context,
+  situation,
   voice,
   how,
 }: {
   englishSentence: string;
-  context: string;
+  situation: string;
   voice: Voice;
   how: How;
 }): string => {
@@ -146,7 +149,7 @@ const createSceneInfoPrompt = ({
 「${englishSentence}」
 
 【この英文のコンテキスト】
-${context}
+${situation}
 
 【条件】
 - 会話の手段: ${how}
@@ -390,16 +393,16 @@ const createEnglishSentence = async ({
 
     const sentenceJsonMatch = sentenceRaw.match(/```json\n([\s\S]*?)```/);
     if (!sentenceJsonMatch?.[1]) throw new Error('英文JSONが見つかりませんでした');
-    const { englishSentence, context } = JSON.parse(sentenceJsonMatch[1]) as {
+    const { englishSentence, situation } = JSON.parse(sentenceJsonMatch[1]) as {
       englishSentence: string;
-      context: string;
+      situation: string;
     };
 
     console.log(`  英文: ${englishSentence}`);
-    console.log(`  コンテキスト: ${context}`);
+    console.log(`  コンテキスト: ${situation}`);
 
     // 2回目: シーン情報を生成
-    const scenePrompt = createSceneInfoPrompt({ englishSentence, context, voice, how });
+    const scenePrompt = createSceneInfoPrompt({ englishSentence, situation, voice, how });
 
     const sceneResponse = await openai.responses.create({
       model: TEXT_MODEL,
