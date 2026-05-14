@@ -88,7 +88,7 @@ const createEnglishSentenceOnlyPrompt = ({
 ${usedBlock}
 
 「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんな英文があり得えますか？
-${pickAdjectiveWord(category)}を作成してください。
+${pickAdjectiveWord(category)}を1つ作成してください。
 ※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 ※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
@@ -98,7 +98,7 @@ ${rule.min}語以上${rule.max}語以下の英文を作成してください。
 ${'note' in rule ? rule.note : ''}
 ${howNoteMap[how]}
 
-【重要】英語の台詞のみを出力してください。説明や補足は不要です。
+【重要】英語の台詞のみを1つ出力してください。説明や補足は不要です。
   `;
 };
 
@@ -108,8 +108,8 @@ const sceneInfoResultDefinition: SceneInfoResult = {
   when: '話しかけたタイミング',
   where: '話しかける人がいる場所',
   receiverWhere: '話しかける相手がいる場所',
-  who: '話しかける人の役割（性別は記載不要）',
-  whom: '話しかける相手の役割（性別は記載不要）',
+  who: '話しかける人の役割（性別は記載しないこと）',
+  whom: '話しかける相手の役割（性別は記載しないこと）',
   why: '話しかけようと感じたきっかけ',
   want: '相手に期待すること',
 };
@@ -941,7 +941,7 @@ const main = async () => {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-        const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+        const how: How = hows[Math.floor(Math.random() * 2)];
         console.log(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
         const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences, 'casual');
         if (seed) {
@@ -958,7 +958,7 @@ const main = async () => {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-          const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+          const how: How = hows[Math.floor(Math.random() * 2)];
           console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
           const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
           if (seed) {
@@ -979,7 +979,7 @@ const main = async () => {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-          const how: How = (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
+          const how: How = hows[Math.floor(Math.random() * 2)];
           console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
           const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
           if (seed) {
@@ -1095,6 +1095,8 @@ function parseBatchCliArgs(): {
   return { mode, wordCount, seed, noRemoveWords };
 }
 
+const hows = ['対面', '対面', '対面', '対面', '対面', '電話'] as const satisfies How[];
+
 async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promise<void> {
   console.error('🚀 create-problems3（--batch / CI）');
   if (opts.seed && !process.env.DATABASE_URL) {
@@ -1146,7 +1148,6 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
   const voices = ['male', 'female'] as const satisfies Voice[];
-  const hows = ['対面', '対面', '対面', '対面', '電話'] as const satisfies How[];
 
   if (isAll) {
     // kids は kids_words から（casual 固定）

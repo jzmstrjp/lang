@@ -82,7 +82,6 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         audioEnReplyUrl: true,
         audioReady: true,
         place: true,
-        scenePrompt: true,
       },
       take: batchSize,
       orderBy: {
