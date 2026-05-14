@@ -73,7 +73,7 @@ ${howNoteMap[how]}
 
 \`\`\`json
 {
-  "englishSentence": "（作成した英文の台詞）",${includeJapaneseSentence ? '\n  "japaneseSentence": "（英文の自然な日本語訳）",' : ''}
+  "englishSentence": "（作成した英文の台詞）",${includeJapaneseSentence ? '\n  "japaneseSentence": "（英文の自然な日本語訳・カタカナ英語は禁止）",' : ''}
   "situation": "（いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのかを日本語1文で説明）"
 }
 \`\`\`
