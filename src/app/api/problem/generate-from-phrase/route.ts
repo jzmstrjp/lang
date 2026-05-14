@@ -85,8 +85,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `無効な type: ${type}` }, { status: 400 });
     }
 
-    const voice = body.voice ?? 'male';
-    const how = body.how ?? '対面';
+    const voice: Voice = body.voice ?? (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
+    const how: How = body.how ?? (['対面', '電話'] as const)[Math.floor(Math.random() * 2)];
     const additionalInstruction = body.additionalInstruction?.trim() ?? '';
 
     // GENERATE_COUNT件を順番に生成（usedSentencesで被りを防ぐ）
