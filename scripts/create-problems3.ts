@@ -65,7 +65,7 @@ function pickAdjectiveWord(category: PhraseCategory): string {
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
-const createEnglishSentencePrompt = ({
+const createEnglishSentenceOnlyPrompt = ({
   phrase,
   voice,
   how,
@@ -92,30 +92,68 @@ ${pickAdjectiveWord(category)}を作成してください。
 ※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 ※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
-${howNoteMap[how]}
 英文法は正確に、文法の間違いがないようにしてください。
 ${rule.min}語以上${rule.max}語以下の英文を作成してください。
+このセリフを読めばある程度の状況が分かるような具体的な台詞にしてください。
 ${'note' in rule ? rule.note : ''}
-いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかもJSON形式で書いてください。
-JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
-englishSentenceとそれ以外のプロパティが矛盾しないように自然なシーンにしてください。
-why や want なしで englishSentence だけを読んでもある程度の状況が分かるように具体的な台詞にしてください。
+${howNoteMap[how]}
+
+【重要】英語の台詞のみを出力してください。説明や補足は不要です。
+  `;
+};
+
+type SceneInfoResult = Omit<EnglishSentenceResult, 'englishSentence' | 'how'>;
+
+const sceneInfoResultDefinition: SceneInfoResult = {
+  when: '話しかけたタイミング',
+  where: '話しかける人がいる場所',
+  receiverWhere: '話しかける相手がいる場所',
+  who: '話しかける人の役割（性別は記載不要）',
+  whom: '話しかける相手の役割（性別は記載不要）',
+  why: '話しかけようと感じたきっかけ',
+  want: '相手に期待すること',
+};
+
+const createSceneInfoPrompt = ({
+  englishSentence,
+  voice,
+  how,
+}: {
+  englishSentence: string;
+  voice: Voice;
+  how: How;
+}): string => {
+  const samples = Object.values(englishSentenceResultSamples)
+    .map((sample) => {
+      const { englishSentence: _es, how: _how, ...scene } = sample;
+      return `英文が「${_es}」の場合:\n\`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\``;
+    })
+    .join('\n\n');
+
+  return `
+以下の英文について、いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかをJSON形式で書いてください。
+
+【英文】
+「${englishSentence}」
+
+【条件】
+- 会話の手段: ${how}
+- 話しかける人の性別: ${voiceMap[voice]}
+- 話しかけられる人の性別: ${voiceMap[toggleVoice(voice)]}
+- JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
+- englishSentenceと矛盾しないように自然なシーンにしてください。
+${howNoteMap[how] ? `- ${howNoteMap[how]}` : ''}
 
 以下のJSON形式で必ず回答してください。
 
 \`\`\`json
-${JSON.stringify(englishSentenceResultDifinition, null, 2)}
+${JSON.stringify(sceneInfoResultDefinition, null, 2)}
 \`\`\`
 
 ## 例
 以下の例をよく参考にしてください。
 
-${Object.entries(englishSentenceResultSamples)
-  .map(
-    ([key, sample]) =>
-      `フレーズが「${key}」の場合:\n\`\`\`json\n${JSON.stringify(sample, null, 2)}\n\`\`\``,
-  )
-  .join('\n\n')}
+${samples}
   `;
 };
 
@@ -129,18 +167,6 @@ type EnglishSentenceResult = {
   whom: string;
   why: string;
   want: string;
-};
-
-const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { how: string } = {
-  englishSentence: 'ここに英文が入る',
-  how: '対面または電話',
-  when: '話しかけたタイミング',
-  where: '話しかける人がいる場所',
-  receiverWhere: '話しかける相手がいる場所',
-  who: '話しかける人の役割（性別は記載不要）',
-  whom: '話しかける相手の役割（性別は記載不要）',
-  why: '話しかけようと感じたきっかけ',
-  want: '相手に期待すること',
 };
 
 const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
@@ -330,23 +356,45 @@ const createEnglishSentence = async ({
   usedSentences?: string[];
   category?: PhraseCategory;
 }): Promise<EnglishSentenceResult | null> => {
-  const prompt = createEnglishSentencePrompt({ phrase, voice, how, rule, usedSentences, category });
-
   try {
-    const response = await openai.responses.create({
+    // 1回目: 英文のみ生成
+    const sentencePrompt = createEnglishSentenceOnlyPrompt({
+      phrase,
+      voice,
+      how,
+      rule,
+      usedSentences,
+      category,
+    });
+
+    const sentenceResponse = await openai.responses.create({
       model: TEXT_MODEL,
-      input: [{ role: 'user', content: prompt }],
+      input: [{ role: 'user', content: sentencePrompt }],
       temperature: 0.7,
     });
 
-    const content = response.output_text;
-    if (!content) throw new Error('レスポンスが空です');
+    const englishSentence = sentenceResponse.output_text?.trim();
+    if (!englishSentence) throw new Error('英文レスポンスが空です');
 
-    const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
+    console.log(`  英文: ${englishSentence}`);
+
+    // 2回目: シーン情報を生成
+    const scenePrompt = createSceneInfoPrompt({ englishSentence, voice, how });
+
+    const sceneResponse = await openai.responses.create({
+      model: TEXT_MODEL,
+      input: [{ role: 'user', content: scenePrompt }],
+      temperature: 0.7,
+    });
+
+    const sceneContent = sceneResponse.output_text;
+    if (!sceneContent) throw new Error('シーン情報レスポンスが空です');
+
+    const jsonMatch = sceneContent.match(/```json\n([\s\S]*?)```/);
     if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
 
-    const parsed = JSON.parse(jsonMatch[1]) as EnglishSentenceResult;
-    return { ...parsed, how };
+    const scene = JSON.parse(jsonMatch[1]) as SceneInfoResult;
+    return { englishSentence, how, ...scene };
   } catch (e) {
     console.error('エラー:', e);
     return null;
