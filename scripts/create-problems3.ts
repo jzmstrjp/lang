@@ -20,6 +20,8 @@ import {
   toggleVoice,
   howNoteMap,
   buildEnglishSentenceOnlyPrompt,
+  hasThirdPerson,
+  buildThirdPersonNote,
 } from '@/lib/english-sentence-prompt';
 
 dotenv.config();
@@ -49,18 +51,26 @@ const sceneInfoResultDefinition: SceneInfoResult = {
   when: '話しかけたタイミング',
   where: '話しかける人がいる場所',
   receiverWhere: '話しかける相手がいる場所',
-  who: '話しかける人の役割（性別は記載しないこと）',
-  whom: '話しかける相手の役割（性別は記載しないこと）',
+  who: '話しかける人の役割（性別・個人名は記載しないこと）',
+  whom: '話しかける相手の役割（性別・個人名は記載しないこと）',
   why: '話しかけようと感じたきっかけ',
   want: '相手に期待すること',
 };
 
 const createSceneInfoPrompt = ({
+  senderName,
+  receiverName,
+  who,
+  whom,
   englishSentence,
   situation,
   voice,
   how,
 }: {
+  senderName: string;
+  receiverName: string;
+  who: string;
+  whom: string;
   englishSentence: string;
   situation: string;
   voice: Voice;
@@ -73,6 +83,10 @@ const createSceneInfoPrompt = ({
     })
     .join('\n\n');
 
+  const thirdPersonNote = hasThirdPerson(englishSentence)
+    ? `- ${buildThirdPersonNote(senderName, receiverName)}\n`
+    : '';
+
   return `
 以下の英文について、いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかをJSON形式で書いてください。
 
@@ -84,11 +98,11 @@ ${situation}
 
 【条件】
 - 会話の手段: ${how}
-- 話しかける人の性別: ${voiceMap[voice]}
-- 話しかけられる人の性別: ${voiceMap[toggleVoice(voice)]}
+- 話しかける人: ${senderName}（${who}・${voiceMap[voice]}）
+- 話しかけられる人: ${receiverName}（${whom}・${voiceMap[toggleVoice(voice)]}）
 - JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
 - englishSentenceおよびコンテキストと矛盾しないように自然なシーンにしてください。
-${howNoteMap[how] ? `- ${howNoteMap[how]}` : ''}
+${thirdPersonNote}${howNoteMap[how] ? `- ${howNoteMap[how]}` : ''}
 
 以下のJSON形式で必ず回答してください。
 
@@ -165,15 +179,21 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
 
 const createEnglishReply = async ({
   sentence,
+  senderName,
+  receiverName,
   voice,
   _wordCountLength,
 }: {
   sentence: EnglishSentenceResult;
+  senderName: string;
+  receiverName: string;
   voice: Voice;
   _wordCountLength: ProblemLength;
 }): Promise<string | null> => {
   const prompt =
     buildEnglishReplyPrompt({
+      senderName,
+      receiverName,
       who: sentence.who,
       whom: sentence.whom,
       senderGender: voiceMap[voice] as '男性' | '女性',
@@ -215,11 +235,15 @@ type JapaneseConversationResult = {
 
 const createJapaneseConversation = async ({
   sentence,
+  senderName,
+  receiverName,
   englishReply,
   voice,
   how,
 }: {
   sentence: EnglishSentenceResult;
+  senderName: string;
+  receiverName: string;
   englishReply: string;
   voice: Voice;
   how: How;
@@ -231,8 +255,10 @@ const createJapaneseConversation = async ({
   
   ${buildJapaneseConversationRules({
     senderRole: sentence.who,
+    senderName,
     senderGender: voiceMap[voice],
     receiverRole: sentence.whom,
+    receiverName,
     receiverGender: voiceMap[toggleVoice(voice)],
     englishSentence: sentence.englishSentence,
     englishReply,
@@ -241,6 +267,8 @@ const createJapaneseConversation = async ({
 
 【シーン情報】
 ${buildSceneText({
+  senderName: sentence.who,
+  receiverName: sentence.whom,
   how,
   senderWhen: sentence.when,
   place: sentence.where,
@@ -287,14 +315,53 @@ ${buildSceneText({
   }
 };
 
+const maleNames = [
+  'シンジ',
+  'ケン',
+  'カイト',
+  'リョウ',
+  'ユウキ',
+  'Liam',
+  'Noah',
+  'Ethan',
+  'Mason',
+  'Lucas',
+];
+
+const femaleNames = [
+  'アスカ',
+  'サクラ',
+  'レイ',
+  'アオイ',
+  'ユイ',
+  'Emma',
+  'Sophia',
+  'Chloe',
+  'Mia',
+  'Zoe',
+];
+
+const voiceNamesMap: Record<Voice, string[]> = {
+  male: maleNames,
+  female: femaleNames,
+};
+
+const getRandomVoiceName = (voice: Voice): string => {
+  return voiceNamesMap[voice][Math.floor(Math.random() * voiceNamesMap[voice].length)];
+};
+
 const createEnglishSentence = async ({
   phrase,
   voice,
+  who,
+  whom,
   how,
   rule,
   usedSentences = [],
   category = 'casual',
   additionalInstruction = '',
+  senderName,
+  receiverName,
 }: {
   phrase: string;
   voice: Voice;
@@ -303,6 +370,10 @@ const createEnglishSentence = async ({
   usedSentences?: string[];
   category?: PhraseCategory;
   additionalInstruction?: string;
+  senderName: string;
+  receiverName: string;
+  who: string;
+  whom: string;
 }): Promise<EnglishSentenceResult | null> => {
   try {
     // 1回目: 英文のみ生成
@@ -314,6 +385,8 @@ const createEnglishSentence = async ({
       usedSentences,
       category,
       additionalInstruction,
+      senderName,
+      receiverName,
     });
 
     const sentenceResponse = await openai.responses.create({
@@ -336,7 +409,16 @@ const createEnglishSentence = async ({
     console.log(`  コンテキスト: ${situation}`);
 
     // 2回目: シーン情報を生成
-    const scenePrompt = createSceneInfoPrompt({ englishSentence, situation, voice, how });
+    const scenePrompt = createSceneInfoPrompt({
+      senderName,
+      receiverName,
+      who,
+      whom,
+      englishSentence,
+      situation,
+      voice,
+      how,
+    });
 
     const sceneResponse = await openai.responses.create({
       model: TEXT_MODEL,
@@ -669,6 +751,8 @@ async function enrichToSeedProblemData({
   japaneseSentence,
   japaneseReply,
   voice,
+  senderName,
+  receiverName,
   expression,
   how,
   wordCountLength,
@@ -678,6 +762,8 @@ async function enrichToSeedProblemData({
   japaneseSentence: string;
   japaneseReply: string;
   voice: Voice;
+  senderName: string;
+  receiverName: string;
   expression: string;
   how: How;
   wordCountLength: ProblemLength;
@@ -696,8 +782,10 @@ async function enrichToSeedProblemData({
     place: sentence.where,
     senderRole,
     senderVoice,
+    senderName,
     receiverRole,
     receiverVoice,
+    receiverName,
     englishSentence: sentence.englishSentence,
     japaneseSentence,
     englishReply,
@@ -727,6 +815,9 @@ async function generateForPhrase(
   usedSentences: string[] = [],
   category: PhraseCategory = 'casual',
 ): Promise<SeedProblemData | null> {
+  const senderName = getRandomVoiceName(voice);
+  const receiverName = getRandomVoiceName(toggleVoice(voice));
+
   const sentence = await createEnglishSentence({
     phrase,
     voice,
@@ -734,6 +825,10 @@ async function generateForPhrase(
     rule: WORD_COUNT_RULES[wordCountLength],
     usedSentences,
     category,
+    senderName,
+    receiverName,
+    who: senderName,
+    whom: receiverName,
   });
   if (!sentence) {
     console.log('  ⚠️ スキップ（英文生成失敗）');
@@ -744,13 +839,22 @@ async function generateForPhrase(
     sentence,
     voice,
     _wordCountLength: wordCountLength,
+    senderName,
+    receiverName,
   });
   if (!englishReply) {
     console.log('  ⚠️ スキップ（返答生成失敗）');
     return null;
   }
 
-  const conversation = await createJapaneseConversation({ sentence, englishReply, voice, how });
+  const conversation = await createJapaneseConversation({
+    sentence,
+    senderName,
+    receiverName,
+    englishReply,
+    voice,
+    how,
+  });
   if (!conversation) {
     console.log('  ⚠️ スキップ（和訳生成失敗）');
     return null;
@@ -762,6 +866,8 @@ async function generateForPhrase(
     japaneseSentence: conversation.japaneseSentence,
     japaneseReply: conversation.japaneseReply,
     voice,
+    senderName,
+    receiverName,
     expression: phrase,
     how,
     wordCountLength,

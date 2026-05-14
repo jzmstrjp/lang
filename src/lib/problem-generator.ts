@@ -21,6 +21,7 @@ import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
+import { hasThirdPerson, buildThirdPersonNote } from '@/lib/english-sentence-prompt';
 import { TEXT_MODEL } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
@@ -87,6 +88,8 @@ function voiceTypeToVoiceGender(voiceType: VoiceType): VoiceGender {
  * create-problems3.ts スクリプトと regenerate-reply API の両方で共有する。
  */
 export type EnglishReplyPromptParams = {
+  senderName: string;
+  receiverName: string;
   who: string;
   whom: string;
   senderGender: '男性' | '女性';
@@ -100,6 +103,8 @@ export type EnglishReplyPromptParams = {
 };
 
 export function buildEnglishReplyPrompt({
+  senderName,
+  receiverName,
   who,
   whom,
   senderGender,
@@ -111,23 +116,23 @@ export function buildEnglishReplyPrompt({
   why,
   how,
 }: EnglishReplyPromptParams): string {
-  return `あなたは${whom}（${receiverGender}）です。英語ネイティブです。
-${who}（${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
+  return `あなたは${receiverName}（${whom}・${receiverGender}）です。英語ネイティブです。
+${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時にあなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
 汎用的な返答でなく、この場面ならではの返答を作成してください。
 簡潔な内容で、10語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
 【シーン】
-- ${who}（${senderGender}）が話しかけたタイミング: ${when}
-- ${who}（${senderGender}）がいる場所: ${where}
-- ${whom}（${receiverGender}）がいる場所: ${receiverPlace}
+- ${senderName}（${who}・${senderGender}）が話しかけたタイミング: ${when}
+- ${senderName}（${who}・${senderGender}）がいる場所: ${where}
+- ${receiverName}（${whom}・${receiverGender}）がいる場所: ${receiverPlace}
 
 このシーンであなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
 
 【参考情報】
-${whom}（${receiverGender}）は知らないかもしれない情報です。
-- ${who}（${senderGender}）が話しかけようと思ったきっかけ: ${why}
+${receiverName}（${whom}・${receiverGender}）は知らないかもしれない情報です。
+- ${senderName}（${who}・${senderGender}）が話しかけようと思ったきっかけ: ${why}
 `;
 }
 
@@ -148,10 +153,14 @@ function getGenderInJapanese(voiceType: VoiceType): '男性' | '女性' {
 /**
  * 問題タイプに応じて適切なファイルからランダムに1件の問題データを取得
  */
-async function getRandomProblemFromSeed(type?: ProblemLength): Promise<GeneratedProblem> {
+async function getRandomProblemFromSeed(
+  type?: ProblemLength,
+  excludeSentences?: string[],
+): Promise<GeneratedProblem> {
   const seedProblems = await loadSeedProblems();
   const isKids = type === 'kids';
   const kidsLevelRange = DIFFICULTY_LEVEL_RULES.kids;
+  const excludeSet = new Set(excludeSentences ?? []);
 
   const filteredProblems = type
     ? isKids
@@ -175,14 +184,21 @@ async function getRandomProblemFromSeed(type?: ProblemLength): Promise<Generated
         })
     : seedProblems;
 
-  if (filteredProblems.length === 0) {
+  const unseenProblems =
+    excludeSet.size > 0
+      ? filteredProblems.filter((p) => !excludeSet.has(p.englishSentence))
+      : filteredProblems;
+
+  const candidates = unseenProblems.length > 0 ? unseenProblems : filteredProblems;
+
+  if (candidates.length === 0) {
     throw new Error(
       `No seed problems found for type "${type}" within the configured word count range.`,
     );
   }
 
-  const randomIndex = Math.floor(Math.random() * filteredProblems.length);
-  const selectedProblem = filteredProblems[randomIndex];
+  const randomIndex = Math.floor(Math.random() * candidates.length);
+  const selectedProblem = candidates[randomIndex];
   const wordCount = countWords(selectedProblem.englishSentence);
 
   // GeneratedProblem形式に変換
@@ -196,8 +212,13 @@ async function getRandomProblemFromSeed(type?: ProblemLength): Promise<Generated
       ? selectedProblem.incorrectOptions
       : [],
     senderVoice: selectedProblem.senderVoice,
+    senderName:
+      selectedProblem.senderName ?? (selectedProblem.senderVoice === 'male' ? 'タカシ' : 'アカリ'),
     senderRole: selectedProblem.senderRole,
     receiverVoice: selectedProblem.receiverVoice,
+    receiverName:
+      selectedProblem.receiverName ??
+      (selectedProblem.receiverVoice === 'male' ? 'タカシ' : 'アカリ'),
     receiverRole: selectedProblem.receiverRole,
     place: selectedProblem.place,
     how: selectedProblem.how ?? '',
@@ -213,19 +234,13 @@ async function getRandomProblemFromSeed(type?: ProblemLength): Promise<Generated
 /**
  * 問題生成のメイン関数
  */
-export async function generateProblem(type?: ProblemLength): Promise<GeneratedProblem> {
+export async function generateProblem(
+  type?: ProblemLength,
+  excludeSentences?: string[],
+): Promise<GeneratedProblem> {
   // 問題タイプに応じて適切なファイルからランダムに1件取得
-  return await getRandomProblemFromSeed(type);
+  return await getRandomProblemFromSeed(type, excludeSentences);
 }
-
-const senderNameMap: Record<VoiceType, string> = {
-  male: 'Alexander',
-  female: 'Olivia',
-};
-const receiverNameMap: Record<VoiceType, string> = {
-  male: 'リュウセイ',
-  female: 'アカリ',
-};
 
 const senderFaceDirectionMap = [
   // ['真正面', '真正面'],
@@ -247,8 +262,12 @@ export async function generateFrameRestrictions(
   problem: GeneratedProblem,
 ): Promise<FrameRestrictions> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const thirdPersonNote =
+    hasThirdPerson(problem.englishSentence) || hasThirdPerson(problem.englishReply)
+      ? `${buildThirdPersonNote(problem.senderName, problem.receiverName)}\n`
+      : '';
   const prompt = `
-
+${thirdPersonNote}
 AIによる画像生成では、以下の問題が起こりがちである。
 - 「コーヒーをお願いします」というシーンなのに、既にテーブルに置かれたコーヒーが描かれてしまう（まだ注文したばかりなので、コーヒーは描かれるべきではない）
 - 「昨日、車を洗ったんだ」というシーンなのに、バケツや雑巾を持っている様子が描かれてしまう（洗車は昨日したことなので、バケツや雑巾は描かれるべきではない）
@@ -257,37 +276,37 @@ AIによる画像生成では、以下の問題が起こりがちである。
 
 ## 対象シーン
 - 場所: ${problem.place}
-- 1コマ目: ${problem.senderRole}（${getGenderInJapanese(problem.senderVoice)}）が「${problem.englishSentence}」と話しかけている場面
-- 2コマ目: ${problem.receiverRole}（${getGenderInJapanese(problem.receiverVoice)}）が「${problem.englishReply}」と返答している場面
+- 1コマ目: ${problem.senderName}（${problem.senderRole}・${getGenderInJapanese(problem.senderVoice)}）が「${problem.englishSentence}」と話しかけている場面
+- 2コマ目: ${problem.receiverName}（${problem.receiverRole}・${getGenderInJapanese(problem.receiverVoice)}）が「${problem.englishReply}」と返答している場面
 - シーン情報: ${buildSceneText(problem)}
 
 ## 例1
 - 場所: スーパーの近くの道
-- 1コマ目: 夫が「Did you buy bananas today?」と話しかけている場面
-- 2コマ目: 妻が「Yes, I picked some up earlier this afternoon.」と返答している場面
-- シーン情報: 電話での会話。夫は仕事帰りにスーパーの近くにいる。妻はすでに午後にバナナを買っている。
+- 1コマ目: タカシ（夫・男性）が「Did you buy bananas today?」と話しかけている場面
+- 2コマ目: アカリ（妻・女性）が「Yes, I picked some up earlier this afternoon.」と返答している場面
+- シーン情報: 電話での会話。タカシは仕事帰りにスーパーの近くにいる。アカリはすでに午後にバナナを買っている。
 
 \`\`\`json
 {
-  "frame1Not": "夫がバナナを持っている様子は描かない。",
+  "frame1Not": "タカシ（夫・男性）がバナナを持っている様子は描かない。",
   "frame1Must": "奥の方に見えるスーパーを描く。",
-  "frame2Not": "今まさにスーパーでバナナを買っている様子は描かない。",
+  "frame2Not": "アカリ（妻・女性）が今まさにスーパーでバナナを買っている様子は描かない。",
   "frame2Must": "近くに置いてあるバナナを描く。"
 }
 \`\`\`
 
 ## 例2
 - 場所: 自分のオフィスのデスク
-- 1コマ目: プロジェクトマネージャーが「Hi James, I'm calling to ask if you could help me look for the document I left in the conference room after yesterday's meeting.」と話しかけている場面
-- 2コマ目: 同じプロジェクトのメンバーが「Sure, I'll check the conference room right now.」と返答している場面
-- シーン情報: 電話での会話。書類は昨日の会議後に置き忘れたもの。
+- 1コマ目: アレクサンダー（プロジェクトマネージャー・男性）が「Hi Sarah, I'm calling to ask if you could help me look for the document I left in the conference room after yesterday's meeting.」と話しかけている場面
+- 2コマ目: サラ（同じプロジェクトのメンバー・女性）が「Sure, I'll check the conference room right now.」と返答している場面
+- シーン情報: 電話での会話。アレクサンダーは昨日の会議後に置き忘れた書類を探している。
 
 \`\`\`json
 {
-  "frame1Not": "プロジェクトマネージャーは書類を持っていない。",
-  "frame1Must": "デスクにいるプロジェクトマネージャーを描く。",
-  "frame2Not": "ジェームズはまだ会議室にはいない。書類も持っていない。",
-  "frame2Must": "電話しているジェームズを描く。"
+  "frame1Not": "アレクサンダー（プロジェクトマネージャー・男性）は書類を持っていない。",
+  "frame1Must": "自分のデスクで電話しているアレクサンダー（プロジェクトマネージャー・男性）を描く。",
+  "frame2Not": "アレクサンダー（プロジェクトマネージャー・男性）はまだ会議室にはいない。書類も持っていない。",
+  "frame2Must": "電話しているサラ（同じプロジェクトのメンバー・女性）を描く。"
 }
 \`\`\`
 
@@ -333,64 +352,46 @@ export function generateImagePrompt(
   const senderGenderText = getGenderInJapanese(problem.senderVoice);
   const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
 
-  const senderName = senderNameMap[problem.senderVoice];
-  const receiverName = receiverNameMap[problem.receiverVoice];
-
-  // const [senderFaceDirection, receiverFaceDirection] =
-  //   senderFaceDirectionMap[Math.floor(Math.random() * senderFaceDirectionMap.length)];
+  const senderName = problem.senderName;
+  const receiverName = problem.receiverName;
 
   return `上下半分に分割された写真を生成すること。
-上下のコマの高さは正確に同じであること。コマの周囲に枠線と余白を作らないこと。
+上下の高さは正確に同じであること。
 
 【重要】
-- 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
-
-【コマの高さ】
-上下のコマの高さは正確に同じであること。
-上下のコマの間に空白は不要です。
+- 上半分、下半分を通して、それぞれの人物の服装や髪型は変わらないこと。
 
 【登場人物】
 - 話しかける人（sender）
-  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌の持ち主。
+  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
 - 話しかけられて応答する人（receiver）
-  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌の持ち主。
-
-※ビデオ会議の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
+  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
 
 【シーン情報】
 ${buildSceneText(problem)}
 
-【1コマ目】
-- ${senderName}（${senderGenderText}）が「${problem.englishSentence}」と言っている。
-- ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
+【上半分】
+- ${senderName}（${problem.senderRole}・${senderGenderText}）が「${problem.englishSentence}」と言っている。
+- 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
-【2コマ目】
-- ${receiverName}（${receiverGenderText}）が「${problem.englishReply}」と返答している。1コマ目とは左右逆のアングルで描画すること。
-- ただし、吹き出しや台詞や字幕は描かないこと。写真だけで表現すること。
+【下半分】
+- ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」と返答している。上半分とは別のアングルで描画すること。
+- 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【備考】
-- 1コマ目、2コマ目が同じ場所だとしても、背景のアングルは変えるべきです。
-- 1コマ目、2コマ目を通して、それぞれの人物の服装や髪型は変わらないこと。
 - 生成AIっぽくない、自然な本物の写真を生成すること。
-
-## 重要
-- 上下のコマの高さは正確に同じであること。
-
-【禁止事項】
-- 1つのコマの中に同じ人物を2回描画してはならない。
-- コマの周囲に枠線と余白を作らないこと。
 
 【描くべきこと】
 ${
   frameRestrictions
-    ? `- 1コマ目: ${frameRestrictions.frame1Must}\n- 2コマ目: ${frameRestrictions.frame2Must}`
+    ? `- 上半分: ${frameRestrictions.frame1Must}\n- 下半分: ${frameRestrictions.frame2Must}`
     : ''
 }
 
 【描かないこと】
 ${
   frameRestrictions
-    ? `- 1コマ目: ${frameRestrictions.frame1Not}\n- 2コマ目: ${frameRestrictions.frame2Not}`
+    ? `- 上半分: ${frameRestrictions.frame1Not}\n- 下半分: ${frameRestrictions.frame2Not}`
     : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
 }
 `;
@@ -779,9 +780,11 @@ export type TranslateJapaneseParams = {
   senderWant: string;
   senderRole: string;
   senderGender: '男性' | '女性';
+  senderName: string;
   englishSentence: string;
   receiverRole: string;
   receiverGender: '男性' | '女性';
+  receiverName: string;
   englishReply: string;
   /** 翻訳対象: 'sender'=1コマ目、'receiver'=2コマ目 */
   translate: 'sender' | 'receiver';
@@ -804,9 +807,11 @@ export async function translateJapanese(
     senderWhy,
     senderWant,
     senderRole,
+    senderName,
     senderGender,
     englishSentence,
     receiverRole,
+    receiverName,
     receiverGender,
     englishReply,
     translate,
@@ -816,6 +821,8 @@ export async function translateJapanese(
   ${translate === 'sender' ? englishSentence : englishReply}
 
   ${buildJapaneseConversationRules({
+    senderName,
+    receiverName,
     senderRole,
     senderGender,
     receiverRole,
@@ -832,9 +839,11 @@ ${buildSceneText({
   senderWhen,
   place,
   senderRole,
+  senderName,
   senderVoice: senderGender === '男性' ? 'male' : 'female',
   receiverPlace,
   receiverRole,
+  receiverName,
   receiverVoice: receiverGender === '男性' ? 'male' : 'female',
   senderWhy,
   senderWant,
@@ -877,8 +886,10 @@ ${buildSceneText({
 }
 
 export type BuildJapaneseConversationRulesParams = {
+  senderName: string;
   senderRole: string;
   senderGender: string;
+  receiverName: string;
   receiverRole: string;
   receiverGender: string;
   englishSentence: string;
@@ -897,9 +908,11 @@ export function buildJapaneseConversationRules(
 ): string {
   const {
     senderRole,
+    senderName,
     senderGender,
     receiverRole,
     receiverGender,
+    receiverName,
     englishSentence,
     englishReply,
     how,
@@ -915,15 +928,15 @@ export function buildJapaneseConversationRules(
 
   return `
   ${how ? `- ${how}での会話です。` : ''}
-  ${senderRole}（${senderGender}）が「${englishSentence}」と話しかけ、
-  ${receiverRole}（${receiverGender}）が「${englishReply}」と返答しました。
+  ${senderName}（${senderRole}・${senderGender}）が「${englishSentence}」と話しかけ、
+  ${receiverName}（${receiverRole}・${receiverGender}）が「${englishReply}」と返答しました。
   ${targetDescription}
   二人の関係性を考慮して、自然な口調のセリフに翻訳してください。
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
   元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
   元の英文に含まれていない文脈情報は日本語訳に含めないでください。元の英文に含まれている内容のみを日本語に訳してください。
+  「誰が」という内容を省略しないでください。（例: "So nervous was she that she dropped her notes."であれば「あまりにも緊張してノートを落としちゃったんだよ。」ではなく「彼女、あまりにも緊張してノートを落としちゃったんだよ。」とすること。）
   カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
   機械音声で読み上げるための日本語文なので、括弧書きは含めないこと。最後は「。」または「？」で終わること。
-  相手のことを「○○さん」「XXXさん」などと伏せ字で翻訳せず「あなた」「君」もしくは「部長」などの呼び方を使ってください。
   女性のセリフを「〜だわ」「〜なのよ」と翻訳するのは古臭いので禁止です。`;
 }

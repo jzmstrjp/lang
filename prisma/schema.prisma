@@ -22,8 +22,10 @@ model Problem {
   imageUrl                 String?
   audioReady               Boolean   @default(false)
   senderVoice              VoiceType
+  senderName               String
   senderRole               String
   receiverVoice            VoiceType
+  receiverName             String
   receiverRole             String
   place                    String
   how                      String

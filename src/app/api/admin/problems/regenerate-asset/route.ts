@@ -90,8 +90,10 @@ export async function POST(request: Request) {
             ? problem.incorrectOptions
             : []) as string[],
           senderVoice: problem.senderVoice as 'male' | 'female',
+          senderName: problem.senderName,
           senderRole: problem.senderRole,
           receiverVoice: problem.receiverVoice as 'male' | 'female',
+          receiverName: problem.receiverName,
           receiverRole: problem.receiverRole,
           place: problem.place,
           how: problem.how,

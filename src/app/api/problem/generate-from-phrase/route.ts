@@ -27,10 +27,14 @@ async function generateOne(params: {
   situation: string;
   prompt: string;
 } | null> {
+  const senderName = params.voice === 'male' ? 'タカシ' : 'アカリ';
+  const receiverName = params.voice === 'male' ? 'アカリ' : 'タカシ';
   const prompt = buildEnglishSentenceOnlyPrompt({
     ...params,
     category: 'casual',
     includeJapaneseSentence: true,
+    senderName,
+    receiverName,
   });
 
   const response = await openai.chat.completions.create({

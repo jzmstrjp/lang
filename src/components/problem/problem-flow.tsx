@@ -754,6 +754,7 @@ function ProblemFlowInner({
             ...prevPhase,
             problem: {
               ...prevPhase.problem,
+              how: data.how ?? prevPhase.problem.how,
               senderWhen: data.senderWhen ?? prevPhase.problem.senderWhen,
               place: data.place ?? prevPhase.problem.place,
               receiverPlace: data.receiverPlace ?? prevPhase.problem.receiverPlace,
@@ -1048,6 +1049,7 @@ function ProblemFlowInner({
       {isSceneEditOpen && (
         <SceneEditDialog
           defaultValues={{
+            how: currentProblem.how ?? '',
             senderWhen: currentProblem.senderWhen,
             place: currentProblem.place,
             receiverPlace: currentProblem.receiverPlace,
@@ -1880,6 +1882,7 @@ function EditableIncorrectOption({
 }
 
 type SceneEditFormValues = {
+  how: string;
   senderWhen: string;
   place: string;
   receiverPlace: string;
@@ -1911,6 +1914,7 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
   });
 
   const fields: { name: keyof SceneEditFormValues; label: string }[] = [
+    { name: 'how', label: '方法' },
     { name: 'senderWhen', label: 'タイミング' },
     { name: 'senderRole', label: '話しかける人の役割' },
     { name: 'place', label: '話しかける人がいる場所' },

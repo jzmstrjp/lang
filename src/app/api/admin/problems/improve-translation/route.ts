@@ -18,9 +18,11 @@ type RequestBody = {
   senderWhy?: string;
   senderWant?: string;
   senderRole?: string;
+  senderName?: string;
   senderVoice?: string;
   englishReply?: string;
   receiverRole?: string;
+  receiverName?: string;
   receiverVoice?: string;
 };
 
@@ -39,6 +41,8 @@ export async function POST(request: Request) {
       japaneseSentence,
       how,
       senderWhen,
+      senderName,
+      receiverName,
       place,
       receiverPlace,
       senderWhy,
@@ -71,6 +75,8 @@ export async function POST(request: Request) {
       !senderWant ||
       !senderRole ||
       !senderVoice ||
+      !senderName ||
+      !receiverName ||
       !englishReply ||
       !receiverRole ||
       !receiverVoice
@@ -79,6 +85,8 @@ export async function POST(request: Request) {
     }
 
     const improvedTranslation = await translateJapanese(openai, {
+      senderName,
+      receiverName,
       place,
       how,
       senderWhen,

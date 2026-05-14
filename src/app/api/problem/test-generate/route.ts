@@ -118,14 +118,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '権限がありません。' }, { status: 403 });
     }
 
-    const body: GenerateRequest & { useCharacterImages?: boolean; useAnimalImages?: boolean } =
-      await req.json().catch(() => ({}));
+    const body: GenerateRequest & {
+      useCharacterImages?: boolean;
+      useAnimalImages?: boolean;
+      excludeSentences?: string[];
+    } = await req.json().catch(() => ({}));
 
     console.log('[test-generate] 問題生成開始');
 
     // 問題を生成（問題タイプを渡す）
     // body.typeがundefinedの場合はそのまま渡す（全問題から選択）
-    const problem = await generateProblem(body.type);
+    const problem = await generateProblem(body.type, body.excludeSentences);
 
     console.log('[test-generate] 問題生成完了、アセット生成開始');
 

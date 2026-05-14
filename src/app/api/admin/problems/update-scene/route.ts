@@ -6,6 +6,7 @@ import { isAdminEmail } from '@/lib/auth/admin';
 
 type RequestBody = {
   problemId?: string;
+  how?: string;
   senderWhen?: string;
   place?: string;
   receiverPlace?: string;
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as RequestBody;
     const {
       problemId,
+      how,
       senderWhen,
       place,
       receiverPlace,
@@ -41,6 +43,7 @@ export async function POST(request: Request) {
     }
 
     const data: Prisma.ProblemUpdateInput = {};
+    if (how !== undefined) data.how = how.trim();
     if (senderWhen !== undefined) data.senderWhen = senderWhen.trim();
     if (place !== undefined) data.place = place.trim();
     if (receiverPlace !== undefined) data.receiverPlace = receiverPlace.trim();
@@ -57,6 +60,7 @@ export async function POST(request: Request) {
       where: { id: problemId },
       data,
       select: {
+        how: true,
         senderWhen: true,
         place: true,
         receiverPlace: true,

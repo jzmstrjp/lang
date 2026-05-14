@@ -46,6 +46,8 @@ export async function POST(request: Request) {
     const englishPrompt =
       `「${problem.englishReply}」とは異なる返答を1つ作成してください。` +
       buildEnglishReplyPrompt({
+        senderName: problem.senderName,
+        receiverName: problem.receiverName,
         who: problem.senderRole,
         whom: problem.receiverRole,
         senderGender: problem.senderVoice === 'male' ? '男性' : '女性',
@@ -93,6 +95,8 @@ export async function POST(request: Request) {
 
     // japaneseReply を翻訳生成
     const newJapaneseReply = await translateJapanese(openai, {
+      senderName: problem.senderName,
+      receiverName: problem.receiverName,
       place: problem.place,
       how: problem.how,
       senderWhen: problem.senderWhen,

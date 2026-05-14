@@ -37,6 +37,7 @@ export default function PromptTestClient() {
   const [copied, setCopied] = useState(false);
   const [selectedType, setSelectedType] = useState<ProblemType>('all');
   const [frameNumber, setFrameNumber] = useState<1 | 2>(1);
+  const [seenSentences, setSeenSentences] = useState<Set<string>>(new Set());
 
   const generateProblem = async (type: ProblemType, mode: GenerateMode) => {
     setLoading(true);
@@ -54,6 +55,7 @@ export default function PromptTestClient() {
           withoutPicture: mode === 'withoutImage',
           useCharacterImages: mode === 'withCharacterImages',
           useAnimalImages: mode === 'withAnimalImages',
+          excludeSentences: Array.from(seenSentences),
         }),
       });
 
@@ -65,6 +67,7 @@ export default function PromptTestClient() {
       setProblem(data.problem);
       setAssets(data.assets);
       setOptions(data.options);
+      setSeenSentences((prev) => new Set([...prev, data.problem.englishSentence]));
 
       if (data.assets?.audio) {
         setTimeout(() => {
@@ -164,6 +167,19 @@ export default function PromptTestClient() {
               </div>
             </div>
 
+            <div className="flex flex-wrap gap-4 justify-center items-center">
+              {seenSentences.size > 0 && (
+                <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+                  <span>{seenSentences.size}件閲覧済み（重複なし）</span>
+                  <button
+                    onClick={() => setSeenSentences(new Set())}
+                    className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded transition-colors"
+                  >
+                    履歴リセット
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap gap-4 justify-center">
               <button
                 onClick={() => generateProblem(selectedType, 'withoutImage')}
@@ -274,11 +290,13 @@ export default function PromptTestClient() {
                   {problem.receiverPlace}
                 </p>
                 <p>
-                  <span className="font-semibold">話しかける人:</span> {problem.senderRole}（
+                  <span className="font-semibold">話しかける人:</span>
+                  {problem.senderName}（ {problem.senderRole}・
                   {problem.senderVoice === 'male' ? '男性' : '女性'}）
                 </p>
                 <p>
-                  <span className="font-semibold">話しかけられる人:</span> {problem.receiverRole}（
+                  <span className="font-semibold">話しかけられる人:</span>
+                  {problem.receiverName}（ {problem.receiverRole}・
                   {problem.receiverVoice === 'male' ? '男性' : '女性'}）
                 </p>
                 <p>
@@ -292,7 +310,8 @@ export default function PromptTestClient() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
                 <p className="text-xl text-blue-900 font-medium">
-                  {problem.senderRole}「{problem.japaneseSentence}」
+                  {problem.senderName}（{problem.senderRole}・
+                  {problem.senderVoice === 'male' ? '男性' : '女性'}）「{problem.japaneseSentence}」
                 </p>
                 <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
               </div>
@@ -300,7 +319,8 @@ export default function PromptTestClient() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-green-800 mb-2">日本語返答</h3>
                 <p className="text-xl text-green-900 font-medium">
-                  {problem.receiverRole}「{problem.japaneseReply}」
+                  {problem.receiverName}（{problem.receiverRole}・
+                  {problem.receiverVoice === 'male' ? '男性' : '女性'}）「{problem.japaneseReply}」
                 </p>
                 <p className="text-xl text-green-900 font-medium">{problem.englishReply}</p>
               </div>
