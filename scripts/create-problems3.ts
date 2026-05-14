@@ -94,11 +94,18 @@ ${pickAdjectiveWord(category)}を1つ作成してください。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
 英文法は正確に、文法の間違いがないようにしてください。
 ${rule.min}語以上${rule.max}語以下の英文を作成してください。
-このセリフを読めばある程度の状況が分かるような具体的な台詞にしてください。
+いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのか、そのcontextも含めて作成してください。
 ${'note' in rule ? rule.note : ''}
 ${howNoteMap[how]}
 
-【重要】英語の台詞のみを1つ出力してください。説明や補足は不要です。
+【重要】以下のJSON形式で出力してください。
+
+\`\`\`json
+{
+  "englishSentence": "（作成した英文の台詞）",
+  "context": "（いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのかを日本語1文で説明）"
+}
+\`\`\`
   `;
 };
 
@@ -116,10 +123,12 @@ const sceneInfoResultDefinition: SceneInfoResult = {
 
 const createSceneInfoPrompt = ({
   englishSentence,
+  context,
   voice,
   how,
 }: {
   englishSentence: string;
+  context: string;
   voice: Voice;
   how: How;
 }): string => {
@@ -136,12 +145,15 @@ const createSceneInfoPrompt = ({
 【英文】
 「${englishSentence}」
 
+【この英文のコンテキスト】
+${context}
+
 【条件】
 - 会話の手段: ${how}
 - 話しかける人の性別: ${voiceMap[voice]}
 - 話しかけられる人の性別: ${voiceMap[toggleVoice(voice)]}
 - JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
-- englishSentenceと矛盾しないように自然なシーンにしてください。
+- englishSentenceおよびコンテキストと矛盾しないように自然なシーンにしてください。
 ${howNoteMap[how] ? `- ${howNoteMap[how]}` : ''}
 
 以下のJSON形式で必ず回答してください。
@@ -373,13 +385,21 @@ const createEnglishSentence = async ({
       temperature: 0.7,
     });
 
-    const englishSentence = sentenceResponse.output_text?.trim();
-    if (!englishSentence) throw new Error('英文レスポンスが空です');
+    const sentenceRaw = sentenceResponse.output_text?.trim();
+    if (!sentenceRaw) throw new Error('英文レスポンスが空です');
+
+    const sentenceJsonMatch = sentenceRaw.match(/```json\n([\s\S]*?)```/);
+    if (!sentenceJsonMatch?.[1]) throw new Error('英文JSONが見つかりませんでした');
+    const { englishSentence, context } = JSON.parse(sentenceJsonMatch[1]) as {
+      englishSentence: string;
+      context: string;
+    };
 
     console.log(`  英文: ${englishSentence}`);
+    console.log(`  コンテキスト: ${context}`);
 
     // 2回目: シーン情報を生成
-    const scenePrompt = createSceneInfoPrompt({ englishSentence, voice, how });
+    const scenePrompt = createSceneInfoPrompt({ englishSentence, context, voice, how });
 
     const sceneResponse = await openai.responses.create({
       model: TEXT_MODEL,
