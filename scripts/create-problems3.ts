@@ -88,7 +88,7 @@ const createEnglishSentenceOnlyPrompt = ({
 ${usedBlock}
 
 「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんなシチュエーションでどんな英文があり得ますか？
-${pickAdjectiveWord(category)}を1つ作成してください。
+${pickAdjectiveWord(category)}を1つ作成してください。親切なセリフだったり、優しいセリフがいいです。
 いつ・どこで・誰が・何がきっかけで・誰に・何を求めて話しかけたのか、そのsituationも作成してください（シチュエーションは日本語1文で説明してください）
 現実によくあるような自然なシチュエーションにしてください。
 5W1Hを省略せずにシチュエーションを記述してください。
