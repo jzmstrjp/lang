@@ -147,6 +147,7 @@ function ProblemFlowInner({
   const [isImprovingTranslation, setImprovingTranslation] = useState(false);
   const [isRegeneratingReply, setRegeneratingReply] = useState(false);
   const [isAdminModalOpen, setAdminModalOpen] = useState(false);
+  const [isSceneEditOpen, setSceneEditOpen] = useState(false);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -729,6 +730,49 @@ function ProblemFlowInner({
     }
   };
 
+  const handleEditScene = async (
+    values: SceneEditFormValues,
+  ): Promise<{ ok: true } | { ok: false; message: string }> => {
+    const problemId = currentProblem?.id;
+    if (!problemId) return { ok: false, message: '問題が存在しません。' };
+
+    try {
+      const response = await fetch('/api/admin/problems/update-scene', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemId, ...values }),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        return { ok: false, message: data?.error ?? 'シーン情報の更新に失敗しました。' };
+      }
+
+      setPhase(
+        (prevPhase) =>
+          ({
+            ...prevPhase,
+            problem: {
+              ...prevPhase.problem,
+              senderWhen: data.senderWhen ?? prevPhase.problem.senderWhen,
+              place: data.place ?? prevPhase.problem.place,
+              receiverPlace: data.receiverPlace ?? prevPhase.problem.receiverPlace,
+              senderRole: data.senderRole ?? prevPhase.problem.senderRole,
+              receiverRole: data.receiverRole ?? prevPhase.problem.receiverRole,
+              senderWhy: data.senderWhy ?? prevPhase.problem.senderWhy,
+              senderWant: data.senderWant ?? prevPhase.problem.senderWant,
+            },
+          }) as Phase,
+      );
+
+      setSceneEditOpen(false);
+      return { ok: true };
+    } catch (error) {
+      console.error('[ProblemFlow] シーン情報更新エラー:', error);
+      return { ok: false, message: 'シーン情報の更新中にエラーが発生しました。' };
+    }
+  };
+
   const updateIncorrectOption = async (
     incorrectIndex: number,
     nextText: string,
@@ -984,6 +1028,10 @@ function ProblemFlowInner({
             isImprovingTranslation={isImprovingTranslation}
             isRegeneratingReply={isRegeneratingReply}
             regeneratingAssetRef={regeneratingAssetRef}
+            onEditScene={() => {
+              setAdminModalOpen(false);
+              setSceneEditOpen(true);
+            }}
             onRegenerateImage={handleRegenerateImage}
             onRegenerateAudioEn={handleRegenerateAudioEn}
             onRegenerateAudioEnReply={handleRegenerateAudioEnReply}
@@ -996,6 +1044,22 @@ function ProblemFlowInner({
           />
         ) : null}
       </Suspense>
+
+      {isSceneEditOpen && (
+        <SceneEditDialog
+          defaultValues={{
+            senderWhen: currentProblem.senderWhen,
+            place: currentProblem.place,
+            receiverPlace: currentProblem.receiverPlace,
+            senderRole: currentProblem.senderRole,
+            receiverRole: currentProblem.receiverRole,
+            senderWhy: currentProblem.senderWhy,
+            senderWant: currentProblem.senderWant,
+          }}
+          onCancel={() => setSceneEditOpen(false)}
+          onSubmit={handleEditScene}
+        />
+      )}
 
       <Suspense fallback={null}>
         <FixedAdminButton
@@ -1560,6 +1624,7 @@ type AdminProblemActionsProps = {
   isImprovingTranslation: boolean;
   isRegeneratingReply: boolean;
   regeneratingAssetRef: React.MutableRefObject<Record<RemovableField, boolean>>;
+  onEditScene: () => void;
   onRegenerateImage: () => void;
   onRegenerateAudioEn: () => void;
   onRegenerateAudioEnReply: () => void;
@@ -1577,6 +1642,7 @@ function AdminProblemActions({
   isImprovingTranslation,
   isRegeneratingReply,
   regeneratingAssetRef,
+  onEditScene,
   onRegenerateImage,
   onRegenerateAudioEn,
   onRegenerateAudioEnReply,
@@ -1619,6 +1685,13 @@ function AdminProblemActions({
       <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
         <div className="space-y-8">
           <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onEditScene}
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-scene-prompt)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-scene-prompt)]/30 transition enabled:hover:bg-[var(--admin-scene-prompt-hover)] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              シーン情報を編集する
+            </button>
             <button
               type="button"
               onClick={onRegenerateImage}
@@ -1803,6 +1876,106 @@ function EditableIncorrectOption({
         </p>
       )}
     </form>
+  );
+}
+
+type SceneEditFormValues = {
+  senderWhen: string;
+  place: string;
+  receiverPlace: string;
+  senderRole: string;
+  receiverRole: string;
+  senderWhy: string;
+  senderWant: string;
+};
+
+type SceneEditDialogProps = {
+  defaultValues: SceneEditFormValues;
+  onCancel: () => void;
+  onSubmit: (values: SceneEditFormValues) => Promise<{ ok: true } | { ok: false; message: string }>;
+};
+
+function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<SceneEditFormValues>({ defaultValues });
+
+  const submit = handleSubmit(async (values) => {
+    const result = await onSubmit(values);
+    if (!result.ok) {
+      setError('root', { type: 'manual', message: result.message });
+    }
+  });
+
+  const fields: { name: keyof SceneEditFormValues; label: string }[] = [
+    { name: 'senderWhen', label: 'いつ（タイミング）' },
+    { name: 'place', label: '話しかける人がいる場所' },
+    { name: 'receiverPlace', label: '話しかけられる人がいる場所' },
+    { name: 'senderRole', label: '話しかける人の役割' },
+    { name: 'receiverRole', label: '話しかけられる人の役割' },
+    { name: 'senderWhy', label: '何がきっかけで話しかけたか' },
+    { name: 'senderWant', label: '相手に何を求めているか' },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="シーン情報を編集"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !isSubmitting) onCancel();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && !isSubmitting) onCancel();
+      }}
+    >
+      <form
+        onSubmit={submit}
+        className="relative w-full max-w-lg rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40 overflow-y-auto max-h-[90dvh]"
+      >
+        <h2 className="mb-4 text-lg font-semibold text-[var(--text)]">シーン情報を編集</h2>
+        <div className="space-y-3">
+          {fields.map(({ name, label }) => (
+            <div key={name}>
+              <label className="mb-1 block text-xs font-medium text-[var(--text)]/60">
+                {label}
+              </label>
+              <textarea
+                {...register(name)}
+                disabled={isSubmitting}
+                rows={2}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--text)] shadow-sm resize-none disabled:opacity-50"
+                style={{ fieldSizing: 'content' } as React.CSSProperties}
+              />
+            </div>
+          ))}
+        </div>
+        {errors.root && (
+          <p className="mt-2 text-sm text-[var(--error-dark)]">{errors.root.message}</p>
+        )}
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
+          >
+            キャンセル
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-scene-prompt)] px-5 py-2 text-sm font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-scene-prompt)]/30 enabled:hover:bg-[var(--admin-scene-prompt-hover)] disabled:opacity-30"
+          >
+            {isSubmitting ? '保存中…' : '保存する'}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
