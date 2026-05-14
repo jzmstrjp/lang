@@ -33,7 +33,7 @@ const toggleVoice = (voice: Voice) => {
 
 const howNoteMap: Record<How, string> = {
   対面: '',
-  電話: '電話なので、お互いに相手のことは見えません。',
+  電話: '電話なので、お互いに相手のことは見えません。二人は別々の離れた場所にいます。',
 };
 
 type PhraseCategory = 'business' | 'casual';
