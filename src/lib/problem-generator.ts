@@ -92,9 +92,11 @@ export type EnglishReplyPromptParams = {
   senderGender: '男性' | '女性';
   receiverGender: '男性' | '女性';
   englishSentence: string;
-  when?: string;
+  when: string;
   where: string;
-  why?: string;
+  receiverPlace: string;
+  why: string;
+  how: string;
 };
 
 export function buildEnglishReplyPrompt({
@@ -105,28 +107,27 @@ export function buildEnglishReplyPrompt({
   englishSentence,
   when,
   where,
+  receiverPlace,
   why,
+  how,
 }: EnglishReplyPromptParams): string {
   return `あなたは${whom}（${receiverGender}）です。英語ネイティブです。
-${who}（${senderGender}）から「${englishSentence}」と話しかけられました。
+${who}（${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時にあなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
 汎用的な返答でなく、この場面ならではの返答を作成してください。
 簡潔な内容で、10語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
 【シーン】
-${when ? `- ${who}（${senderGender}）が話しかけたタイミング: ${when}` : ''}
+- ${who}（${senderGender}）が話しかけたタイミング: ${when}
 - ${who}（${senderGender}）がいる場所: ${where}
+- ${whom}（${receiverGender}）がいる場所: ${receiverPlace}
 
 このシーンであなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
 
-${
-  why
-    ? `【参考情報】
+【参考情報】
 ${whom}（${receiverGender}）は知らないかもしれない情報です。
-- ${who}（${senderGender}）が話しかけようと思ったきっかけ: ${why}`
-    : ''
-}
+- ${who}（${senderGender}）が話しかけようと思ったきっかけ: ${why}
 `;
 }
 

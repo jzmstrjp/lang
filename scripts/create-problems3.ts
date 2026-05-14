@@ -11,6 +11,7 @@ import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
 import type { SeedProblemData } from '@/types/problem';
+import { buildSceneText } from '@/lib/scene-utils';
 
 dotenv.config();
 
@@ -216,7 +217,9 @@ const createEnglishReply = async ({
       englishSentence: sentence.englishSentence,
       when: sentence.when,
       where: sentence.where,
+      receiverPlace: sentence.receiverWhere,
       why: sentence.why,
+      how: sentence.how,
     }) +
     `
 【重要】英語の台詞のみを出力してください。JSONや説明は不要です。
@@ -272,16 +275,21 @@ const createJapaneseConversation = async ({
     how,
   })}
 
-【シーン】
-- いつ: ${sentence.when}
-- どこで: ${sentence.where}
+【シーン情報】
+${buildSceneText({
+  how,
+  senderWhen: sentence.when,
+  place: sentence.where,
+  senderRole: sentence.who,
+  senderVoice: voice,
+  receiverPlace: sentence.receiverWhere,
+  receiverRole: sentence.whom,
+  receiverVoice: toggleVoice(voice),
+  senderWhy: sentence.why,
+  senderWant: sentence.want,
+})}
 
-【参考情報】
-${sentence.whom}（${voiceMap[toggleVoice(voice)]}）は知らないかもしれない情報です。
-- ${sentence.who}（${voiceMap[voice]}）が話しかけようと思ったきっかけ: ${sentence.why}
-- ${sentence.who}（${voiceMap[voice]}）が相手に期待すること: ${sentence.want}
-
-※あくまで参考情報です。英文に含まれていない内容は日本語訳に含めないでください。英文に含まれている内容のみを日本語に訳してください。
+※元の英文に含まれていない内容は日本語訳に含めないでください。元の英文に含まれている内容のみを日本語に訳してください。
 
 以下のJSON形式で必ず回答してください。
 

@@ -52,6 +52,10 @@ export async function POST(request: Request) {
         receiverGender: problem.receiverVoice === 'male' ? '男性' : '女性',
         englishSentence: problem.englishSentence,
         where: problem.place,
+        receiverPlace: problem.receiverPlace,
+        why: problem.senderWhy,
+        how: problem.how,
+        when: problem.senderWhen,
       }) +
       `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json
