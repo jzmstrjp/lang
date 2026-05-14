@@ -1911,13 +1911,13 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
   });
 
   const fields: { name: keyof SceneEditFormValues; label: string }[] = [
-    { name: 'senderWhen', label: 'いつ（タイミング）' },
-    { name: 'place', label: '話しかける人がいる場所' },
-    { name: 'receiverPlace', label: '話しかけられる人がいる場所' },
+    { name: 'senderWhen', label: 'タイミング' },
     { name: 'senderRole', label: '話しかける人の役割' },
-    { name: 'receiverRole', label: '話しかけられる人の役割' },
+    { name: 'place', label: '話しかける人がいる場所' },
     { name: 'senderWhy', label: '何がきっかけで話しかけたか' },
     { name: 'senderWant', label: '相手に何を求めているか' },
+    { name: 'receiverRole', label: '話しかけられる人の役割' },
+    { name: 'receiverPlace', label: '話しかけられる人がいる場所' },
   ];
 
   return (

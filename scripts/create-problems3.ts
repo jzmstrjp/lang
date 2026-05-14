@@ -56,7 +56,7 @@ async function classifyPhrase(phrase: string): Promise<PhraseCategory> {
 const casualAdjectiveWords = ['ネイティブが実際に会話で使うような、ごく自然な英文の台詞'] as const;
 
 const businessAdjectiveWords = [
-  'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
+  // 'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
   'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
 ] as const;
 

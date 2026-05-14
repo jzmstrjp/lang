@@ -6,7 +6,7 @@ on:
       mode:
         description: '語数タイプ（docs/words から LATEST に続き N 語を処理）'
         required: true
-        default: 'nonKids'
+        default: 'all'
         type: choice
         options:
           - short
@@ -18,13 +18,8 @@ on:
       count:
         description: '使用するワード数（DBの words テーブルから先頭N件を取得）'
         required: false
-        default: '5'
+        default: '3'
         type: string
-      seed:
-        description: '生成後に DB へ直接投入する（problemData ファイルは作らない）'
-        required: false
-        default: true
-        type: boolean
 
 jobs:
   create-and-seed:
@@ -87,25 +82,17 @@ jobs:
         run: |
           INPUT_MODE="${{ github.event.inputs.mode }}"
           INPUT_COUNT="${{ github.event.inputs.count || '5' }}"
-          INPUT_SEED="${{ github.event.inputs.seed }}"
 
           echo "🚀 create-problems3 を開始します"
           echo "📌 モード: $INPUT_MODE / ワード数: $INPUT_COUNT"
           echo "📍 DBの words テーブルから先頭 $INPUT_COUNT 件を取得します"
-
-          SEED_FLAG=""
-          if [ "$INPUT_SEED" = "true" ]; then
-            SEED_FLAG="--seed"
-            echo "🌱 DB 直接投入モード（--seed）"
-          else
-            echo "💾 problemData にファイル出力（db:seed は手動）"
-          fi
+          echo "🌱 DB 直接投入モード（--seed）"
 
           NODE_ENV=production npx tsx scripts/create-problems3.ts \
             --batch \
             --mode="$INPUT_MODE" \
             --count="$INPUT_COUNT" \
-            $SEED_FLAG
+            --seed
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
@@ -117,7 +104,7 @@ jobs:
           echo "🎊 ================================================"
           echo "📌 モード: ${{ github.event.inputs.mode }}"
           echo "📊 ワード数: ${{ github.event.inputs.count || '5' }}"
-          echo "🌱 DB投入: ${{ github.event.inputs.seed }}"
+          echo "🌱 DB投入: true"
           echo ""
 
   fix-audio:
