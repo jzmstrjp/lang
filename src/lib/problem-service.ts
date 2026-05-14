@@ -90,7 +90,10 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   const hasSearch = trimmedSearch && trimmedSearch.length > 0;
 
   // WHERE句を構築
-  const whereClauses: Prisma.Sql[] = [Prisma.sql`"audioReady" = true`];
+  const whereClauses: Prisma.Sql[] = [
+    Prisma.sql`"audioReady" = true`,
+    Prisma.sql`"imageUrl" IS NOT NULL`,
+  ];
 
   // typeが指定されている場合は単語数でフィルタ
   if (type) {
