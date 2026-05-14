@@ -1,0 +1,78 @@
+name: word テーブル リフレッシュ
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: 'englishSentence のサンプル件数（suggest-words.ts --sample=N）'
+        required: false
+        default: '100'
+        type: string
+
+jobs:
+  refresh-words:
+    name: word テーブル全件削除 → AI で再投入
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set environment variables
+        run: |
+          echo "PRISMA_CLIENT_DISABLE_PREPARED_STATEMENTS=true" >> $GITHUB_ENV
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "NODE_ENV=production" >> $GITHUB_ENV
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Validate required secrets
+        run: |
+          REQUIRED_SECRETS=(
+            "OPENAI_API_KEY"
+            "DATABASE_URL"
+          )
+          MISSING_SECRETS=()
+          for secret in "${REQUIRED_SECRETS[@]}"; do
+            if [ -z "${!secret}" ]; then
+              MISSING_SECRETS+=("$secret")
+            fi
+          done
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ すべての必要なシークレットが設定されています"
+          else
+            echo "❌ 以下のシークレットが設定されていません:"
+            printf '  - %s\n' "${MISSING_SECRETS[@]}"
+            exit 1
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: word テーブル全件削除 → AI で再投入
+        run: |
+          SAMPLE="${{ github.event.inputs.sample || '100' }}"
+          echo "🤖 suggest-words.ts --save --clear --sample=$SAMPLE を実行します..."
+          NODE_ENV=production npx tsx scripts/suggest-words.ts --save --clear --sample="$SAMPLE"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: サマリー
+        run: |
+          echo ""
+          echo "🎊 ================================================"
+          echo "🎉 word テーブルのリフレッシュが完了しました"
+          echo "🎊 ================================================"
+          echo "📊 サンプル件数: ${{ github.event.inputs.sample || '100' }}"
+          echo ""

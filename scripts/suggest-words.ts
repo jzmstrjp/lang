@@ -7,6 +7,7 @@
  *   tsx scripts/suggest-words.ts              # dry run（提案のみ表示）
  *   tsx scripts/suggest-words.ts --save       # DB に保存
  *   tsx scripts/suggest-words.ts --sample=50  # englishSentence のサンプル件数を指定（デフォルト: 100）
+ *   tsx scripts/suggest-words.ts --save --clear  # word テーブルを全件削除してから保存
  */
 
 import dotenv from 'dotenv';
@@ -19,12 +20,13 @@ const prisma = new PrismaClient({ log: ['error'] });
 
 // ─── CLI 引数 ─────────────────────────────────────────────────────────────────
 
-function parseArgs(): { save: boolean; sampleCount: number } {
+function parseArgs(): { save: boolean; clear: boolean; sampleCount: number } {
   const args = process.argv.slice(2);
   const save = args.includes('--save');
+  const clear = args.includes('--clear');
   const sampleArg = args.find((a) => a.startsWith('--sample='));
   const sampleCount = sampleArg ? parseInt(sampleArg.slice('--sample='.length), 10) : 100;
-  return { save, sampleCount };
+  return { save, clear, sampleCount };
 }
 
 // ─── DB からデータ取得 ────────────────────────────────────────────────────────
@@ -50,7 +52,13 @@ async function fetchSampleSentences(count: number): Promise<string[]> {
 // ─── メイン ──────────────────────────────────────────────────────────────────
 
 async function main() {
-  const { save, sampleCount } = parseArgs();
+  const { save, clear, sampleCount } = parseArgs();
+
+  if (clear && save) {
+    console.log(`🗑️ word テーブルを全件削除中...`);
+    const deleted = await prisma.word.deleteMany({});
+    console.log(`  - 削除完了: ${deleted.count}件`);
+  }
 
   console.log(`🔍 DB からデータを取得中...`);
   const [existingExpressions, existingWords, sampleSentences] = await Promise.all([
