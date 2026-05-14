@@ -38,6 +38,7 @@ ${
     : `- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
 - ビジネス・旅行・日常生活など幅広いシーンに対応`
 }
+- 全体の約1/3は「comfort word」にすること。comfort word とは、"cozy", "hug", "comfort food", "snuggle", "warmth", "heartfelt", "grateful", "cherish", "soothe", "gentle" のような、温かみ・安心感・やさしさを連想させる語彙・表現。
 - 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個（合計 90個程度）
 
 ## 出力形式（JSON）

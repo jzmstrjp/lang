@@ -12,31 +12,21 @@ import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
+import {
+  type Voice,
+  type How,
+  type PhraseCategory,
+  voiceMap,
+  toggleVoice,
+  howNoteMap,
+  buildEnglishSentenceOnlyPrompt,
+} from '@/lib/english-sentence-prompt';
 
 dotenv.config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-type Voice = 'male' | 'female';
-type How = '対面' | '電話';
-
-const voiceMap: Record<Voice, string> = {
-  male: '男性',
-  female: '女性',
-};
-
-const toggleVoice = (voice: Voice) => {
-  return voice === 'male' ? 'female' : 'male';
-};
-
-const howNoteMap: Record<How, string> = {
-  対面: '',
-  電話: '電話なので、お互いに相手のことは見えません。二人は別々の離れた場所にいます。',
-};
-
-type PhraseCategory = 'business' | 'casual';
 
 async function classifyPhrase(phrase: string): Promise<PhraseCategory> {
   const response = await openai.chat.completions.create({
@@ -52,67 +42,6 @@ async function classifyPhrase(phrase: string): Promise<PhraseCategory> {
   const result = response.choices[0]?.message.content?.trim().toLowerCase() ?? 'casual';
   return result === 'business' ? 'business' : 'casual';
 }
-
-const casualAdjectiveWords = ['ネイティブが実際に会話で使うような、ごく自然な英文の台詞'] as const;
-
-const businessAdjectiveWords = [
-  // 'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-] as const;
-
-function pickAdjectiveWord(category: PhraseCategory): string {
-  const list = category === 'business' ? businessAdjectiveWords : casualAdjectiveWords;
-  return list[Math.floor(Math.random() * list.length)]!;
-}
-
-const createEnglishSentenceOnlyPrompt = ({
-  phrase,
-  voice,
-  how,
-  rule,
-  usedSentences,
-  category,
-}: {
-  phrase: string;
-  voice: Voice;
-  how: How;
-  rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
-  usedSentences: string[];
-  category: PhraseCategory;
-}): string => {
-  const usedBlock =
-    usedSentences.length > 0
-      ? `\n以下の英文はすでに作成済みです。これらと被らない英文の台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n`
-      : '';
-  return `
-${usedBlock}
-
-「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんなシチュエーションでどんな英文があり得ますか？
-${pickAdjectiveWord(category)}を1つ作成してください。親切なセリフだったり、優しいセリフがいいです。
-いつ・どこで・誰が・何がきっかけで・誰に・何を求めて話しかけたのか、そのsituationも作成してください（シチュエーションは日本語1文で説明してください）
-現実によくあるような自然なシチュエーションにしてください。
-5W1Hを省略せずにシチュエーションを記述してください。
-（シチュエーションの例: 息子が学校に出掛けた後、母親が、家の玄関で、息子のカバンが置いてあることに気づき、取りに帰ってきて欲しくて、電話で息子に連絡した）
-※フレーズ内のS・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
-※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
-${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
-英文法は正確に、文法の間違いがないようにしてください。
-シチュエーション抜きで英語の台詞だけ読んでもある程度の状況が分かるような台詞にしてください。
-${rule.min}語以上${rule.max}語以下の英文を作成してください。
-
-${'note' in rule ? rule.note : ''}
-${howNoteMap[how]}
-
-【重要】以下のJSON形式で出力してください。
-
-\`\`\`json
-{
-  "englishSentence": "（作成した英文の台詞）",
-  "situation": "（いつ・どこで・何がきっかけで・誰が・誰に・何を求めて話しかけたのかを日本語1文で説明）"
-}
-\`\`\`
-  `;
-};
 
 type SceneInfoResult = Omit<EnglishSentenceResult, 'englishSentence' | 'how'>;
 
@@ -365,6 +294,7 @@ const createEnglishSentence = async ({
   rule,
   usedSentences = [],
   category = 'casual',
+  additionalInstruction = '',
 }: {
   phrase: string;
   voice: Voice;
@@ -372,16 +302,18 @@ const createEnglishSentence = async ({
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
   usedSentences?: string[];
   category?: PhraseCategory;
+  additionalInstruction?: string;
 }): Promise<EnglishSentenceResult | null> => {
   try {
     // 1回目: 英文のみ生成
-    const sentencePrompt = createEnglishSentenceOnlyPrompt({
+    const sentencePrompt = buildEnglishSentenceOnlyPrompt({
       phrase,
       voice,
       how,
       rule,
       usedSentences,
       category,
+      additionalInstruction,
     });
 
     const sentenceResponse = await openai.responses.create({
