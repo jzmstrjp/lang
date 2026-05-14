@@ -32,9 +32,8 @@ function parseArgs(): { save: boolean; sampleCount: number } {
 async function fetchExistingExpressions(): Promise<string[]> {
   const rows = await prisma.problem.findMany({
     select: { expression: true },
-    where: { expression: { not: null } },
   });
-  return [...new Set(rows.map((r) => r.expression!).filter(Boolean))];
+  return [...new Set(rows.map((r) => r.expression))];
 }
 
 async function fetchExistingWords(): Promise<{ expression: string; isKids: boolean }[]> {

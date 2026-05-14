@@ -258,9 +258,35 @@ export default function PromptTestClient() {
                 </div>
               </div>
 
-              <div className="bg-orange-50 border border-orange-200 rounded p-3">
-                <span className="font-semibold text-orange-800">ストーリー:</span>
-                <p className="text-orange-700">{problem.scenePrompt}</p>
+              <div className="bg-orange-50 border border-orange-200 rounded p-3 space-y-1 text-sm text-orange-700">
+                <p>
+                  <span className="font-semibold">会話の手段:</span> {problem.how}
+                </p>
+                <p>
+                  <span className="font-semibold">話しかけたタイミング:</span> {problem.senderWhen}
+                </p>
+                <p>
+                  <span className="font-semibold">話しかける人の場所（1コマ目）:</span>{' '}
+                  {problem.place}
+                </p>
+                <p>
+                  <span className="font-semibold">話しかけられる人の場所（2コマ目）:</span>{' '}
+                  {problem.receiverPlace}
+                </p>
+                <p>
+                  <span className="font-semibold">話しかける人:</span> {problem.senderRole}（
+                  {problem.senderVoice === 'male' ? '男性' : '女性'}）
+                </p>
+                <p>
+                  <span className="font-semibold">話しかけられる人:</span> {problem.receiverRole}（
+                  {problem.receiverVoice === 'male' ? '男性' : '女性'}）
+                </p>
+                <p>
+                  <span className="font-semibold">話しかけたきっかけ:</span> {problem.senderWhy}
+                </p>
+                <p>
+                  <span className="font-semibold">相手に期待すること:</span> {problem.senderWant}
+                </p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -269,7 +295,6 @@ export default function PromptTestClient() {
                   {problem.senderRole}「{problem.japaneseSentence}」
                 </p>
                 <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
-                <p className="mt-2 text-sm text-blue-500">{problem.senderVoiceInstruction}</p>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -278,7 +303,6 @@ export default function PromptTestClient() {
                   {problem.receiverRole}「{problem.japaneseReply}」
                 </p>
                 <p className="text-xl text-green-900 font-medium">{problem.englishReply}</p>
-                <p className="mt-2 text-sm text-green-500">{problem.receiverVoiceInstruction}</p>
               </div>
 
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">

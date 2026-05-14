@@ -94,11 +94,13 @@ export async function POST(request: Request) {
           receiverVoice: problem.receiverVoice as 'male' | 'female',
           receiverRole: problem.receiverRole,
           place: problem.place,
-          scenePrompt: problem.scenePrompt,
-          senderVoiceInstruction: problem.senderVoiceInstruction,
-          receiverVoiceInstruction: problem.receiverVoiceInstruction,
+          how: problem.how,
+          senderWhen: problem.senderWhen,
+          receiverPlace: problem.receiverPlace,
+          senderWhy: problem.senderWhy,
+          senderWant: problem.senderWant,
           difficultyLevel: problem.difficultyLevel ?? null,
-          expression: problem.expression ?? null,
+          expression: problem.expression,
         };
         newUrl = await generateAndUploadImageAsset(generatedProblem, problemId);
         updateData.imageUrl = newUrl;

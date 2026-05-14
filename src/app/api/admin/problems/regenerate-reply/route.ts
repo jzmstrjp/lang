@@ -90,7 +90,11 @@ export async function POST(request: Request) {
     // japaneseReply を翻訳生成
     const newJapaneseReply = await translateJapanese(openai, {
       place: problem.place,
-      scenePrompt: problem.scenePrompt,
+      how: problem.how,
+      senderWhen: problem.senderWhen,
+      receiverPlace: problem.receiverPlace,
+      senderWhy: problem.senderWhy,
+      senderWant: problem.senderWant,
       senderRole: problem.senderRole,
       senderGender: problem.senderVoice === 'male' ? '男性' : '女性',
       englishSentence: problem.englishSentence,

@@ -20,6 +20,7 @@ import {
 import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
+import { buildSceneText } from '@/lib/scene-utils';
 import { TEXT_MODEL } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
@@ -198,11 +199,13 @@ async function getRandomProblemFromSeed(type?: ProblemLength): Promise<Generated
     receiverVoice: selectedProblem.receiverVoice,
     receiverRole: selectedProblem.receiverRole,
     place: selectedProblem.place,
-    scenePrompt: selectedProblem.scenePrompt || null,
-    senderVoiceInstruction: selectedProblem.senderVoiceInstruction ?? null,
-    receiverVoiceInstruction: selectedProblem.receiverVoiceInstruction ?? null,
+    how: selectedProblem.how ?? '',
+    senderWhen: selectedProblem.senderWhen ?? '',
+    receiverPlace: selectedProblem.receiverPlace ?? '',
+    senderWhy: selectedProblem.senderWhy ?? '',
+    senderWant: selectedProblem.senderWant ?? '',
     difficultyLevel: null,
-    expression: selectedProblem.expression ?? null,
+    expression: selectedProblem.expression ?? '',
   };
 }
 
@@ -255,13 +258,13 @@ AIによる画像生成では、以下の問題が起こりがちである。
 - 場所: ${problem.place}
 - 1コマ目: ${problem.senderRole}（${getGenderInJapanese(problem.senderVoice)}）が「${problem.englishSentence}」と話しかけている場面
 - 2コマ目: ${problem.receiverRole}（${getGenderInJapanese(problem.receiverVoice)}）が「${problem.englishReply}」と返答している場面
-${problem.scenePrompt ? `- 背景: ${problem.scenePrompt}` : ''}
+- シーン情報: ${buildSceneText(problem)}
 
 ## 例1
 - 場所: スーパーの近くの道
 - 1コマ目: 夫が「Did you buy bananas today?」と話しかけている場面
 - 2コマ目: 妻が「Yes, I picked some up earlier this afternoon.」と返答している場面
-- 背景: 電話での会話。夫は仕事帰りにスーパーの近くにいる。妻はすでに午後にバナナを買っている。
+- シーン情報: 電話での会話。夫は仕事帰りにスーパーの近くにいる。妻はすでに午後にバナナを買っている。
 
 \`\`\`json
 {
@@ -276,7 +279,7 @@ ${problem.scenePrompt ? `- 背景: ${problem.scenePrompt}` : ''}
 - 場所: 自分のオフィスのデスク
 - 1コマ目: プロジェクトマネージャーが「Hi James, I'm calling to ask if you could help me look for the document I left in the conference room after yesterday's meeting.」と話しかけている場面
 - 2コマ目: 同じプロジェクトのメンバーが「Sure, I'll check the conference room right now.」と返答している場面
-- 背景: 電話での会話。書類は昨日の会議後に置き忘れたもの。
+- シーン情報: 電話での会話。書類は昨日の会議後に置き忘れたもの。
 
 \`\`\`json
 {
@@ -345,9 +348,6 @@ export function generateImagePrompt(
 上下のコマの高さは正確に同じであること。
 上下のコマの間に空白は不要です。
 
-【場所】
-${problem.place}
-
 【登場人物】
 - 話しかける人（sender）
   - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデルやアイドルのような絶世の美貌の持ち主。
@@ -356,8 +356,8 @@ ${problem.place}
 
 ※ビデオ会議の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
-【全体のストーリー】
-${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
+【シーン情報】
+${buildSceneText(problem)}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が「${problem.englishSentence}」と言っている。
@@ -632,18 +632,14 @@ export function generateImagePromptWithCharacters(
 上下のコマの間に空白は不要です。
 枠線も不要です。
 
-【場所】
-${problem.place}
-
 【登場人物】
 - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。
 
 ※ビデオ会議の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
-【ストーリー】
-${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
-これを2コマに分けて描いてください。
+【シーン情報】
+${buildSceneText(problem)}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている。
@@ -718,9 +714,6 @@ export function generateImagePromptWithAnimals(
 上下の画像の間に空白はゼロ。
 周りの余白もゼロ。枠線は禁止。
 
-【場所】
-${problem.place}
-
 【登場キャラクター】
 - 話しかける猫（sender）
   - ${senderName}（${senderAnimal}）・・・${problem.senderRole}として行動する猫。
@@ -730,9 +723,8 @@ ${problem.place}
 猫ちゃんたちは人間のように働いたりできます。
 猫ちゃんたちはいついかなる時も真顔で無表情です。真剣に、愚かで拙い行動をします。
 
-【ストーリー】
-${problem.scenePrompt ? `- ${problem.scenePrompt}` : ''}
-これを前半後半として上下に分割して描いてください。
+【シーン情報】
+${buildSceneText(problem)}
 
 【上半分の画像】
 - ${senderName}（${senderAnimal}）は画像の${receiverFaceDirection}にいて、${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている。
@@ -779,7 +771,11 @@ ${
 
 export type TranslateJapaneseParams = {
   place: string;
-  scenePrompt: string | null;
+  how: string;
+  senderWhen: string;
+  receiverPlace: string;
+  senderWhy: string;
+  senderWant: string;
   senderRole: string;
   senderGender: '男性' | '女性';
   englishSentence: string;
@@ -801,7 +797,11 @@ export async function translateJapanese(
 ): Promise<string> {
   const {
     place,
-    scenePrompt,
+    how,
+    senderWhen,
+    receiverPlace,
+    senderWhy,
+    senderWant,
     senderRole,
     senderGender,
     englishSentence,
@@ -822,11 +822,22 @@ export async function translateJapanese(
     englishSentence,
     englishReply,
     translate,
+    how,
   })}
 
 【シーン情報】
-- 場所: ${place}
-${scenePrompt ? `- 文脈: ${scenePrompt}` : ''}
+${buildSceneText({
+  how,
+  senderWhen,
+  place,
+  senderRole,
+  senderVoice: senderGender === '男性' ? 'male' : 'female',
+  receiverPlace,
+  receiverRole,
+  receiverVoice: receiverGender === '男性' ? 'male' : 'female',
+  senderWhy,
+  senderWant,
+})}
 
 【重要】以下のJSON形式で必ず回答してください:
 
@@ -871,7 +882,7 @@ export type BuildJapaneseConversationRulesParams = {
   receiverGender: string;
   englishSentence: string;
   englishReply: string;
-  how?: string;
+  how: string;
   /** 翻訳対象: 'sender'=送り手の発話、'receiver'=受け手の返答。省略時は会話全体を翻訳 */
   translate?: 'sender' | 'receiver';
 };

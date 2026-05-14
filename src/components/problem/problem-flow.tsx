@@ -147,10 +147,6 @@ function ProblemFlowInner({
   const [isImprovingTranslation, setImprovingTranslation] = useState(false);
   const [isRegeneratingReply, setRegeneratingReply] = useState(false);
   const [isAdminModalOpen, setAdminModalOpen] = useState(false);
-  const [scenePromptEdit, setScenePromptEdit] = useState<{
-    problemId: string;
-    defaultValue: string;
-  } | null>(null);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -407,69 +403,6 @@ function ProblemFlowInner({
     }
   };
 
-  const handleOpenScenePromptEdit = () => {
-    if (typeof window === 'undefined') return;
-
-    const targetProblemId = currentProblem?.id;
-    if (!targetProblemId) return;
-
-    setAdminModalOpen(false);
-    setScenePromptEdit({
-      problemId: targetProblemId,
-      defaultValue: currentProblem?.scenePrompt ?? '',
-    });
-  };
-
-  const handleSubmitScenePrompt = async (
-    newScenePrompt: string,
-  ): Promise<{ ok: true } | { ok: false; message: string }> => {
-    const targetProblemId = currentProblem?.id;
-    if (!targetProblemId) {
-      return { ok: false, message: '問題が存在しません。' };
-    }
-
-    const currentScenePrompt = currentProblem?.scenePrompt ?? '';
-
-    if (newScenePrompt.trim() === currentScenePrompt.trim()) {
-      return { ok: true };
-    }
-
-    try {
-      const updateResponse = await fetch('/api/admin/problems/update-scene-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ problemId: targetProblemId, scenePrompt: newScenePrompt }),
-      });
-
-      if (!updateResponse.ok) {
-        const data = await updateResponse.json().catch(() => null);
-        return { ok: false, message: data?.error ?? 'シーン説明文の更新に失敗しました。' };
-      }
-
-      const updatedScenePrompt = newScenePrompt.trim() === '' ? null : newScenePrompt.trim();
-
-      setPhase(
-        (prev) =>
-          ({
-            ...prev,
-            problem: { ...prev.problem, scenePrompt: updatedScenePrompt },
-          }) as Phase,
-      );
-
-      setProblemQueue((prev) =>
-        prev.map((p) =>
-          p.id === targetProblemId
-            ? ({ ...p, scenePrompt: updatedScenePrompt } as ProblemWithAudio)
-            : p,
-        ),
-      );
-
-      return { ok: true };
-    } catch {
-      return { ok: false, message: 'シーン説明文の更新に失敗しました。' };
-    }
-  };
-
   const handleRegenerateImage = () =>
     handleRegenerateAsset('imageUrl', {
       confirmMessage: '2コマ画像を再生成しますか？',
@@ -563,8 +496,12 @@ function ProblemFlowInner({
     const targetProblemId = currentProblem?.id;
     const englishSentence = currentProblem?.englishSentence;
     const japaneseSentence = currentProblem?.japaneseSentence;
-    const scenePrompt = currentProblem?.scenePrompt;
     const place = currentProblem?.place;
+    const how = currentProblem?.how;
+    const senderWhen = currentProblem?.senderWhen;
+    const receiverPlace = currentProblem?.receiverPlace;
+    const senderWhy = currentProblem?.senderWhy;
+    const senderWant = currentProblem?.senderWant;
     const senderRole = currentProblem?.senderRole;
     const senderVoice = currentProblem?.senderVoice;
     const englishReply = currentProblem?.englishReply;
@@ -591,8 +528,12 @@ function ProblemFlowInner({
         body: JSON.stringify({
           englishSentence,
           japaneseSentence,
-          scenePrompt,
           place,
+          how,
+          senderWhen,
+          receiverPlace,
+          senderWhy,
+          senderWant,
           senderRole,
           senderVoice,
           englishReply,
@@ -926,7 +867,6 @@ function ProblemFlowInner({
           onStart={handleStart}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
-          scenePrompt={phase.problem.scenePrompt}
         />
       )}
       {phase.kind === 'scene-entry' && (
@@ -937,7 +877,6 @@ function ProblemFlowInner({
           onSceneReady={handleSceneImageLoad}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
-          scenePrompt={phase.problem.scenePrompt}
         />
       )}
       {(phase.kind === 'playing-sentence' || phase.kind === 'playing-reply') && (
@@ -948,7 +887,6 @@ function ProblemFlowInner({
           isHidden={isImageHiddenMode}
           sentence1={withSubtitle && phase.problem.japaneseSentence}
           sentence2={withSubtitle && phase.problem.japaneseReply}
-          scenePrompt={phase.problem.scenePrompt}
         />
       )}
       {phase.kind === 'quiz' && (
@@ -1046,7 +984,6 @@ function ProblemFlowInner({
             isImprovingTranslation={isImprovingTranslation}
             isRegeneratingReply={isRegeneratingReply}
             regeneratingAssetRef={regeneratingAssetRef}
-            onEditScenePrompt={handleOpenScenePromptEdit}
             onRegenerateImage={handleRegenerateImage}
             onRegenerateAudioEn={handleRegenerateAudioEn}
             onRegenerateAudioEnReply={handleRegenerateAudioEnReply}
@@ -1068,24 +1005,6 @@ function ProblemFlowInner({
           onCloseAdminModal={() => setAdminModalOpen(false)}
         />
       </Suspense>
-
-      {scenePromptEdit && (
-        <ScenePromptEditDialog
-          defaultValue={scenePromptEdit.defaultValue}
-          onCancel={() => {
-            setScenePromptEdit(null);
-            setAdminModalOpen(true);
-          }}
-          onSubmit={async (value) => {
-            const result = await handleSubmitScenePrompt(value);
-            if (result.ok) {
-              setScenePromptEdit(null);
-              setAdminModalOpen(true);
-            }
-            return result;
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -1116,7 +1035,6 @@ type StartButtonClientViewProps = {
   onStart: () => void;
   sentence1?: string;
   sentence2?: string;
-  scenePrompt?: string | null;
 };
 
 function StartButtonClientView({
@@ -1128,7 +1046,6 @@ function StartButtonClientView({
   onStart,
   sentence1,
   sentence2,
-  scenePrompt,
 }: StartButtonClientViewProps) {
   return (
     <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/3]">
@@ -1140,7 +1057,6 @@ function StartButtonClientView({
         opacity="medium"
         sentence1={sentence1}
         sentence2={sentence2}
-        scenePrompt={scenePrompt}
         isBlurred
       />
       <div className="absolute inset-0 flex items-center justify-center">
@@ -1159,7 +1075,6 @@ type SceneEntryViewProps = {
   onSceneReady: () => void;
   sentence1?: string;
   sentence2?: string;
-  scenePrompt?: string | null;
 };
 
 function SceneEntryView({
@@ -1169,7 +1084,6 @@ function SceneEntryView({
   onSceneReady,
   sentence1,
   sentence2,
-  scenePrompt,
 }: SceneEntryViewProps) {
   return (
     <SceneDisplay
@@ -1181,7 +1095,6 @@ function SceneEntryView({
       onImageLoad={onSceneReady}
       sentence1={sentence1}
       sentence2={sentence2}
-      scenePrompt={scenePrompt}
     />
   );
 }
@@ -1193,7 +1106,6 @@ type PlayingViewProps = {
   isHidden: boolean;
   sentence1?: string;
   sentence2?: string;
-  scenePrompt?: string | null;
 };
 
 function PlayingView({
@@ -1203,7 +1115,6 @@ function PlayingView({
   isHidden,
   sentence1,
   sentence2,
-  scenePrompt,
 }: PlayingViewProps) {
   return (
     <SceneDisplay
@@ -1214,7 +1125,6 @@ function PlayingView({
       opacity="full"
       sentence1={sentence1}
       sentence2={sentence2}
-      scenePrompt={scenePrompt}
     />
   );
 }
@@ -1650,7 +1560,6 @@ type AdminProblemActionsProps = {
   isImprovingTranslation: boolean;
   isRegeneratingReply: boolean;
   regeneratingAssetRef: React.MutableRefObject<Record<RemovableField, boolean>>;
-  onEditScenePrompt: () => void;
   onRegenerateImage: () => void;
   onRegenerateAudioEn: () => void;
   onRegenerateAudioEnReply: () => void;
@@ -1668,7 +1577,6 @@ function AdminProblemActions({
   isImprovingTranslation,
   isRegeneratingReply,
   regeneratingAssetRef,
-  onEditScenePrompt,
   onRegenerateImage,
   onRegenerateAudioEn,
   onRegenerateAudioEnReply,
@@ -1711,13 +1619,6 @@ function AdminProblemActions({
       <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
         <div className="space-y-8">
           <div className="space-y-3">
-            <button
-              type="button"
-              onClick={onEditScenePrompt}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--admin-scene-prompt)] px-6 py-3 text-base font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-scene-prompt)]/30 transition enabled:hover:bg-[var(--admin-scene-prompt-hover)] disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              シーン説明文を修正する
-            </button>
             <button
               type="button"
               onClick={onRegenerateImage}
@@ -1905,80 +1806,6 @@ function EditableIncorrectOption({
   );
 }
 
-type ScenePromptEditDialogProps = {
-  defaultValue: string;
-  onCancel: () => void;
-  onSubmit: (value: string) => Promise<{ ok: true } | { ok: false; message: string }>;
-};
-
-function ScenePromptEditDialog({ defaultValue, onCancel, onSubmit }: ScenePromptEditDialogProps) {
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<{ scenePrompt: string }>({
-    defaultValues: { scenePrompt: defaultValue },
-  });
-
-  const submit = handleSubmit(async ({ scenePrompt }) => {
-    const result = await onSubmit(scenePrompt);
-    if (!result.ok) {
-      setError('root', { type: 'manual', message: result.message });
-    }
-  });
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="シーン説明文を編集"
-      onClick={(event) => {
-        if (event.target === event.currentTarget && !isSubmitting) onCancel();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape' && !isSubmitting) onCancel();
-      }}
-    >
-      <form
-        onSubmit={submit}
-        className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40"
-      >
-        <h2 className="mb-2 text-lg font-semibold text-[var(--text)]">シーン説明文</h2>
-        <textarea
-          {...register('scenePrompt')}
-          autoFocus
-          disabled={isSubmitting}
-          rows={2}
-          className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base text-[var(--text)] shadow-sm resize-none disabled:opacity-50"
-          style={{ fieldSizing: 'content' } as React.CSSProperties}
-        />
-        {errors.root && (
-          <p className="mt-2 text-sm text-[var(--error-dark)]">{errors.root.message}</p>
-        )}
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text)] shadow-sm enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)] disabled:opacity-30"
-          >
-            キャンセル
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-full bg-[var(--admin-scene-prompt)] px-5 py-2 text-sm font-semibold text-[var(--primary-text)] shadow-lg shadow-[var(--admin-scene-prompt)]/30 enabled:hover:bg-[var(--admin-scene-prompt-hover)] disabled:opacity-30"
-          >
-            {isSubmitting ? '保存中…' : '保存する'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 // 共通シーン表示コンポーネント
 function SceneDisplay({
   frameNumber,
@@ -1989,7 +1816,6 @@ function SceneDisplay({
   onImageLoad,
   sentence1,
   sentence2,
-  scenePrompt,
   isBlurred = false,
 }: {
   frameNumber: 1 | 2;
@@ -2000,7 +1826,6 @@ function SceneDisplay({
   onImageLoad?: () => void;
   sentence1?: string;
   sentence2?: string;
-  scenePrompt?: string | null;
   isBlurred?: boolean;
 }) {
   if (imageUrl && !isHidden) {
@@ -2010,7 +1835,7 @@ function SceneDisplay({
           <SceneImage
             frameNumber={frameNumber}
             src={imageUrl}
-            alt={scenePrompt ?? '英語と日本語のセリフを並べた2コマシーン'}
+            alt={place}
             opacity={opacity}
             onLoad={onImageLoad}
             sentence1={sentence1}

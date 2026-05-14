@@ -115,7 +115,7 @@ ${JSON.stringify(englishSentenceResultDifinition, null, 2)}
 \`\`\`
 
 ## 例
-以下の例を参考にしてください。
+以下の例をよく参考にしてください。
 
 ${Object.entries(englishSentenceResultSamples)
   .map(
@@ -141,13 +141,13 @@ type EnglishSentenceResult = {
 const englishSentenceResultDifinition: Omit<EnglishSentenceResult, 'how'> & { how: string } = {
   englishSentence: 'ここに英文が入る',
   how: '対面または電話',
-  when: '話しかけるタイミング',
+  when: '話しかけたタイミング',
   where: '話しかける人がいる場所',
   receiverWhere: '話しかける相手がいる場所',
   who: '話しかける人の役割（性別は記載不要）',
   whom: '話しかける相手の役割（性別は記載不要）',
-  why: 'きっかけ',
-  want: '求めること',
+  why: '話しかけようと感じたきっかけ',
+  want: '相手に期待すること',
 };
 
 const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
@@ -279,7 +279,7 @@ const createJapaneseConversation = async ({
 【参考情報】
 ${sentence.whom}（${voiceMap[toggleVoice(voice)]}）は知らないかもしれない情報です。
 - ${sentence.who}（${voiceMap[voice]}）が話しかけようと思ったきっかけ: ${sentence.why}
-- ${sentence.who}（${voiceMap[voice]}）が話しかけた目的: ${sentence.want}
+- ${sentence.who}（${voiceMap[voice]}）が相手に期待すること: ${sentence.want}
 
 ※あくまで参考情報です。英文に含まれていない内容は日本語訳に含めないでください。英文に含まれている内容のみを日本語に訳してください。
 
@@ -381,8 +381,8 @@ async function replenishWordsIfNeeded(
 
   const [existingExpressions, existingWords, sampleSentences] = await Promise.all([
     prismaClient.problem
-      .findMany({ select: { expression: true }, where: { expression: { not: null } } })
-      .then((rows) => [...new Set(rows.map((r) => r.expression!).filter(Boolean))]),
+      .findMany({ select: { expression: true } })
+      .then((rows) => [...new Set(rows.map((r) => r.expression))]),
     prismaClient.word.findMany({ select: { expression: true, isKids: true } }),
     prismaClient.$queryRaw<{ englishSentence: string }[]>`
       SELECT "englishSentence" FROM problems ORDER BY RANDOM() LIMIT 100
@@ -454,23 +454,6 @@ export default problemData;
 `;
   fs.writeFileSync(abs, fileBody, 'utf8');
   console.log(`\n💾 ${outRelativePath} に保存しました（${seedProblems.length} 件）`);
-}
-
-// ─── シーンプロンプト生成 ────────────────────────────────────────────────────
-
-function createScenePrompt(data: {
-  when: string;
-  how: string;
-  sender: { role: string; voice: Voice; where: string; why: string; want: string };
-  receiver: { role: string; voice: Voice; where: string };
-}): string {
-  return `${data.how}。
-- タイミング: ${data.when}
-- ${data.sender.role}（${voiceMap[data.sender.voice]}）がいる場所（1コマ目）: ${data.sender.where}
-- ${data.receiver.role}（${voiceMap[data.receiver.voice]}）がいる場所（2コマ目）: ${data.receiver.where}
-- ${data.sender.role}（${voiceMap[data.sender.voice]}）が話しかける理由: ${data.sender.why}
-- ${data.sender.role}（${voiceMap[data.sender.voice]}）の期待すること: ${data.sender.want}
-`;
 }
 
 // ─── 誤答選択肢生成 ──────────────────────────────────────────────────────────
@@ -699,20 +682,6 @@ async function enrichToSeedProblemData({
   const senderVoice = voice;
   const receiverVoice = toggleVoice(voice);
 
-  const scenePrompt = createScenePrompt({
-    when: sentence.when,
-    how: `${how}での会話`,
-    sender: {
-      role: senderRole,
-      voice: senderVoice,
-      where: sentence.where,
-      why: sentence.why,
-      want: sentence.want,
-    },
-    receiver: { role: receiverRole, voice: receiverVoice, where: sentence.receiverWhere },
-  });
-  console.log(scenePrompt);
-
   const incorrectOptions = await createIncorrectOptions(japaneseSentence);
   if (!incorrectOptions) return null;
 
@@ -728,9 +697,11 @@ async function enrichToSeedProblemData({
     japaneseSentence,
     englishReply,
     japaneseReply,
-    scenePrompt,
-    senderVoiceInstruction: null,
-    receiverVoiceInstruction: null,
+    how,
+    senderWhen: sentence.when,
+    receiverPlace: sentence.receiverWhere,
+    senderWhy: sentence.why,
+    senderWant: sentence.want,
     incorrectOptions: adjustedOptions,
     difficultyLevel: wordCountLength === 'kids' ? 1 : null,
     expression,

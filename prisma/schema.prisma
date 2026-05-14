@@ -26,11 +26,13 @@ model Problem {
   receiverVoice            VoiceType
   receiverRole             String
   place                    String
-  scenePrompt              String?
-  senderVoiceInstruction   String?
-  receiverVoiceInstruction String?
+  how                      String
+  senderWhen               String
+  receiverPlace            String
+  senderWhy                String
+  senderWant               String
   difficultyLevel          Int?
-  expression               String?
+  expression               String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

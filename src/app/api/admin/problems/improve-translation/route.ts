@@ -11,8 +11,12 @@ const openai = new OpenAI({
 type RequestBody = {
   englishSentence?: string;
   japaneseSentence?: string;
-  scenePrompt?: string | null;
+  how?: string;
+  senderWhen?: string;
   place?: string;
+  receiverPlace?: string;
+  senderWhy?: string;
+  senderWant?: string;
   senderRole?: string;
   senderVoice?: string;
   englishReply?: string;
@@ -33,8 +37,12 @@ export async function POST(request: Request) {
     const {
       englishSentence,
       japaneseSentence,
-      scenePrompt,
+      how,
+      senderWhen,
       place,
+      receiverPlace,
+      senderWhy,
+      senderWant,
       senderRole,
       senderVoice,
       englishReply,
@@ -54,13 +62,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OpenAI APIキーが設定されていません。' }, { status: 500 });
     }
 
-    if (!place || !senderRole || !senderVoice || !englishReply || !receiverRole || !receiverVoice) {
+    if (
+      !place ||
+      !how ||
+      !senderWhen ||
+      !receiverPlace ||
+      !senderWhy ||
+      !senderWant ||
+      !senderRole ||
+      !senderVoice ||
+      !englishReply ||
+      !receiverRole ||
+      !receiverVoice
+    ) {
       return NextResponse.json({ error: '文脈情報が不足しています。' }, { status: 400 });
     }
 
     const improvedTranslation = await translateJapanese(openai, {
       place,
-      scenePrompt: scenePrompt ?? null,
+      how,
+      senderWhen,
+      receiverPlace,
+      senderWhy,
+      senderWant,
       senderRole,
       senderGender: senderVoice === 'male' ? '男性' : '女性',
       englishSentence,
