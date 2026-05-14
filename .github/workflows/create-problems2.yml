@@ -1,6 +1,8 @@
 name: 問題生成パイプライン
 
 on:
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -80,8 +82,8 @@ jobs:
       - name: 問題生成（--batch） & 任意で DB 投入
         id: create
         run: |
-          INPUT_MODE="${{ github.event.inputs.mode }}"
-          INPUT_COUNT="${{ github.event.inputs.count || '5' }}"
+          INPUT_MODE="${{ github.event.inputs.mode || 'all' }}"
+          INPUT_COUNT="${{ github.event.inputs.count || '3' }}"
 
           echo "🚀 create-problems3 を開始します"
           echo "📌 モード: $INPUT_MODE / ワード数: $INPUT_COUNT"
