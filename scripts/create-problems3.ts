@@ -53,21 +53,12 @@ async function classifyPhrase(phrase: string): Promise<PhraseCategory> {
   return result === 'business' ? 'business' : 'casual';
 }
 
-const casualAdjectiveWords = [
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  '心に刺さる感動的な台詞',
-];
+const casualAdjectiveWords = ['ネイティブが実際に会話で使うような、ごく自然な英文の台詞'] as const;
 
 const businessAdjectiveWords = [
   'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
-  'TOEICに出てきそうな、職場・ビジネスシーンでの自然な英文の台詞',
   'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
-  '心に刺さる感動的な台詞',
-];
+] as const;
 
 function pickAdjectiveWord(category: PhraseCategory): string {
   const list = category === 'business' ? businessAdjectiveWords : casualAdjectiveWords;
@@ -97,7 +88,7 @@ const createEnglishSentencePrompt = ({
 ${usedBlock}
 
 「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんな英文があり得えますか？
-${pickAdjectiveWord(category)}を作成してください。「${phrase}」というフレーズならではの英文を作成してください。
+${pickAdjectiveWord(category)}を作成してください。
 ※S・V・O などは、それぞれ実際の Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 ※話しかける人は${voiceMap[voice]}、話しかけられる人は${voiceMap[toggleVoice(voice)]}です。
 ${phrase.includes(' ') ? '指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として使ってください。' : ''}
@@ -107,6 +98,7 @@ ${rule.min}語以上${rule.max}語以下の英文を作成してください。
 ${'note' in rule ? rule.note : ''}
 いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかもJSON形式で書いてください。
 JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
+englishSentenceとそれ以外のプロパティが矛盾しないように自然なシーンにしてください。
 why や want なしで englishSentence だけを読んでもある程度の状況が分かるように具体的な台詞にしてください。
 
 以下のJSON形式で必ず回答してください。
