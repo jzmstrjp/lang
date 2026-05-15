@@ -357,10 +357,8 @@ export function generateImagePrompt(
 - 上半分、下半分を通して、それぞれの人物の服装や髪型は変わらないこと。
 
 【登場人物】
-- 話しかける人（sender）
-  - ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
-- 話しかけられて応答する人（receiver）
-  - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
 
 【シーン情報】
 ${buildSceneText(problem)}
