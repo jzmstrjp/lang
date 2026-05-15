@@ -504,9 +504,11 @@ function ProblemFlowInner({
     const senderWhy = currentProblem?.senderWhy;
     const senderWant = currentProblem?.senderWant;
     const senderRole = currentProblem?.senderRole;
+    const senderName = currentProblem?.senderName;
     const senderVoice = currentProblem?.senderVoice;
     const englishReply = currentProblem?.englishReply;
     const receiverRole = currentProblem?.receiverRole;
+    const receiverName = currentProblem?.receiverName;
     const receiverVoice = currentProblem?.receiverVoice;
 
     if (!targetProblemId || !englishSentence || !japaneseSentence) {
@@ -536,9 +538,11 @@ function ProblemFlowInner({
           senderWhy,
           senderWant,
           senderRole,
+          senderName,
           senderVoice,
           englishReply,
           receiverRole,
+          receiverName,
           receiverVoice,
         }),
       });
