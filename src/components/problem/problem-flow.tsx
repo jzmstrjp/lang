@@ -1086,7 +1086,7 @@ type StartButtonServerViewProps = {
 
 function StartButtonServerView({ onStart, disabled }: StartButtonServerViewProps) {
   return (
-    <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/3]">
+    <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/2.9]">
       <div className="absolute inset-0 flex items-center justify-center">
         <StartButton error={null} handleStart={onStart} disabled={disabled}>
           英語学習を始める
@@ -1118,7 +1118,7 @@ function StartButtonClientView({
   sentence2,
 }: StartButtonClientViewProps) {
   return (
-    <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/3]">
+    <div className="relative w-[1000px] max-w-full mx-auto aspect-[4/2.9]">
       <SceneDisplay
         frameNumber={1}
         imageUrl={sceneImage}
