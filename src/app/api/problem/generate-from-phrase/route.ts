@@ -6,9 +6,14 @@ import { TEXT_MODEL } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import {
   buildEnglishSentenceOnlyPrompt,
+  voiceMap,
+  toggleVoice,
   type Voice,
   type How,
 } from '@/lib/english-sentence-prompt';
+import { buildSceneInfoPrompt, type SceneInfo } from '@/lib/scene-info-prompt';
+import { buildJapaneseConversationRules } from '@/lib/problem-generator';
+import { buildSceneText } from '@/lib/scene-utils';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -22,44 +27,103 @@ async function generateOne(params: {
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
   additionalInstruction: string;
   usedSentences: string[];
-}): Promise<{
-  englishSentence: string;
-  japaneseSentence: string;
-  situation: string;
-  prompt: string;
-} | null> {
+}): Promise<{ scene: SceneInfo; japaneseSentence: string; prompt: string } | null> {
   const senderName = params.voice === 'male' ? 'タカシ' : 'アカリ';
   const receiverName = params.voice === 'male' ? 'アカリ' : 'タカシ';
-  const prompt = buildEnglishSentenceOnlyPrompt({
+
+  // 1回目: 英文のみ生成
+  const sentencePrompt = buildEnglishSentenceOnlyPrompt({
     ...params,
-    category: 'casual',
-    includeJapaneseSentence: true,
     senderName,
     receiverName,
   });
 
-  const response = await openai.chat.completions.create({
+  const sentenceResponse = await openai.chat.completions.create({
     model: TEXT_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: sentencePrompt }],
     temperature: 0.7,
   });
 
-  const raw = response.choices[0]?.message.content?.trim() ?? '';
-  const jsonMatch = raw.match(/```json\n([\s\S]*?)```/);
+  const sentenceRaw = sentenceResponse.choices[0]?.message.content?.trim() ?? '';
+  const englishSentence = sentenceRaw.replace(/^```[\w]*\n?|```$/g, '').trim();
+  if (!englishSentence) return null;
+
+  // 2回目: シーン情報を生成
+  const scenePrompt = buildSceneInfoPrompt({
+    senderName,
+    receiverName,
+    englishSentence,
+    voice: params.voice,
+    how: params.how,
+  });
+
+  const sceneResponse = await openai.chat.completions.create({
+    model: TEXT_MODEL,
+    messages: [{ role: 'user', content: scenePrompt }],
+    temperature: 0.7,
+  });
+
+  const sceneRaw = sceneResponse.choices[0]?.message.content?.trim() ?? '';
+  const jsonMatch = sceneRaw.match(/```json\n([\s\S]*?)```/);
   if (!jsonMatch?.[1]) return null;
 
-  const parsed = JSON.parse(jsonMatch[1]) as {
-    englishSentence: string;
-    japaneseSentence: string;
-    situation: string;
-  };
+  const scene = JSON.parse(jsonMatch[1]) as SceneInfo;
+  const fullScene: SceneInfo = { ...scene, englishSentence, how: params.how };
 
-  return {
-    englishSentence: parsed.englishSentence,
-    japaneseSentence: parsed.japaneseSentence,
-    situation: parsed.situation,
-    prompt,
-  };
+  // 3回目: 日本語訳を生成
+  const translatePrompt = `【翻訳すべき英文】
+${englishSentence}
+
+${buildJapaneseConversationRules({
+  senderName,
+  senderRole: scene.senderRole,
+  senderGender: voiceMap[params.voice],
+  receiverName,
+  receiverRole: scene.receiverRole,
+  receiverGender: voiceMap[toggleVoice(params.voice)],
+  englishSentence,
+  englishReply: '',
+  how: params.how,
+  translate: 'sender',
+})}
+
+【シーン情報】
+${buildSceneText({
+  how: params.how,
+  senderWhen: scene.when,
+  place: scene.where,
+  senderRole: scene.senderRole,
+  senderName,
+  senderVoice: params.voice === 'male' ? 'male' : 'female',
+  receiverPlace: scene.receiverWhere,
+  receiverRole: scene.receiverRole,
+  receiverName: scene.receiverName,
+  receiverVoice: params.voice === 'male' ? 'female' : 'male',
+  senderWhy: scene.why,
+  senderWant: scene.want,
+})}
+
+【重要】以下のJSON形式で必ず回答してください:
+
+\`\`\`json
+{
+  "japanese": "ここに翻訳結果の日本語が入る。"
+}
+\`\`\``;
+
+  const translateResponse = await openai.chat.completions.create({
+    model: TEXT_MODEL,
+    messages: [{ role: 'user', content: translatePrompt }],
+    temperature: 0.3,
+  });
+
+  const translateRaw = translateResponse.choices[0]?.message.content?.trim() ?? '';
+  const translateJsonMatch = translateRaw.match(/```json\n([\s\S]*?)```/);
+  const japaneseSentence = translateJsonMatch?.[1]
+    ? (JSON.parse(translateJsonMatch[1]) as { japanese: string }).japanese
+    : translateRaw;
+
+  return { scene: fullScene, japaneseSentence, prompt: sentencePrompt };
 }
 
 export async function POST(req: Request) {
@@ -97,14 +161,9 @@ export async function POST(req: Request) {
     const additionalInstruction = body.additionalInstruction?.trim() ?? '';
 
     // GENERATE_COUNT件を順番に生成（usedSentencesで被りを防ぐ）
-    const results: {
-      englishSentence: string;
-      japaneseSentence: string;
-      situation: string;
-      prompt: string;
-    }[] = [];
+    const rawResults: { scene: SceneInfo; japaneseSentence: string; prompt: string }[] = [];
     for (let i = 0; i < GENERATE_COUNT; i++) {
-      const usedSentences = results.map((r) => r.englishSentence);
+      const usedSentences = rawResults.map((r) => r.scene.englishSentence);
       const result = await generateOne({
         phrase,
         phraseJa,
@@ -114,10 +173,25 @@ export async function POST(req: Request) {
         additionalInstruction,
         usedSentences,
       });
-      if (result) results.push(result);
+      if (result) rawResults.push(result);
     }
 
-    return NextResponse.json({ results, prompt: results[0]?.prompt ?? '' });
+    const results = rawResults.map(({ scene, japaneseSentence }) => ({
+      englishSentence: scene.englishSentence,
+      japaneseSentence,
+      senderName: scene.senderName,
+      senderRole: scene.senderRole,
+      receiverName: scene.receiverName,
+      receiverRole: scene.receiverRole,
+      when: scene.when,
+      where: scene.where,
+      receiverWhere: scene.receiverWhere,
+      why: scene.why,
+      want: scene.want,
+      how: scene.how,
+    }));
+
+    return NextResponse.json({ results, prompt: rawResults.at(-1)?.prompt ?? '' });
   } catch (error) {
     console.error('[generate-from-phrase] error', error);
     return NextResponse.json(

@@ -6,7 +6,16 @@ import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 type PhraseTestItem = {
   englishSentence: string;
   japaneseSentence: string;
-  situation: string;
+  senderName: string;
+  senderRole: string;
+  receiverName: string;
+  receiverRole: string;
+  when: string;
+  where: string;
+  receiverWhere: string;
+  why: string;
+  want: string;
+  how: string;
 };
 
 type PhraseTestResult = {
@@ -173,11 +182,40 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                   #{i + 1}
                 </div>
                 <div className="px-5 py-4 space-y-3">
-                  <p className="text-lg font-bold text-[var(--text)]">{item.japaneseSentence}</p>
-                  <p className="text-base text-[var(--text-muted)]">{item.englishSentence}</p>
-                  <p className="text-sm text-[var(--text-muted)]/70 border-t border-[var(--border)] pt-3">
-                    {item.situation}
-                  </p>
+                  <p className="text-lg font-bold text-[var(--text)]">{item.englishSentence}</p>
+                  <p className="text-base text-[var(--text-muted)]">{item.japaneseSentence}</p>
+                  <div className="text-sm text-[var(--text-muted)] space-y-1 border-t border-[var(--border)] pt-3">
+                    <p>
+                      <span className="font-semibold">senderName:</span> {item.senderName}
+                    </p>
+                    <p>
+                      <span className="font-semibold">senderRole:</span> {item.senderRole}
+                    </p>
+                    <p>
+                      <span className="font-semibold">receiverName:</span> {item.receiverName}
+                    </p>
+                    <p>
+                      <span className="font-semibold">receiverRole:</span> {item.receiverRole}
+                    </p>
+                    <p>
+                      <span className="font-semibold">when:</span> {item.when}
+                    </p>
+                    <p>
+                      <span className="font-semibold">why:</span> {item.why}
+                    </p>
+                    <p>
+                      <span className="font-semibold">want:</span> {item.want}
+                    </p>
+                    <p>
+                      <span className="font-semibold">where:</span> {item.where}
+                    </p>
+                    <p>
+                      <span className="font-semibold">receiverWhere:</span> {item.receiverWhere}
+                    </p>
+                    <p>
+                      <span className="font-semibold">how:</span> {item.how}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}

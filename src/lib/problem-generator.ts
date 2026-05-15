@@ -21,7 +21,6 @@ import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
-import { hasThirdPerson, buildThirdPersonNote } from '@/lib/english-sentence-prompt';
 import { TEXT_MODEL } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
@@ -263,12 +262,7 @@ export async function generateFrameRestrictions(
   problem: GeneratedProblem,
 ): Promise<FrameRestrictions> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const thirdPersonNote =
-    hasThirdPerson(problem.englishSentence) || hasThirdPerson(problem.englishReply)
-      ? `${buildThirdPersonNote(problem.senderName, problem.receiverName)}\n`
-      : '';
   const prompt = `
-${thirdPersonNote}
 AIによる画像生成では、以下の問題が起こりがちである。
 - 「コーヒーをお願いします」というシーンなのに、既にテーブルに置かれたコーヒーが描かれてしまう（まだ注文したばかりなので、コーヒーは描かれるべきではない）
 - 「昨日、車を洗ったんだ」というシーンなのに、バケツや雑巾を持っている様子が描かれてしまう（洗車は昨日したことなので、バケツや雑巾は描かれるべきではない）
@@ -900,6 +894,11 @@ export type BuildJapaneseConversationRulesParams = {
   translate?: 'sender' | 'receiver';
 };
 
+const _sayName = [
+  '相手の名前を呼びかけたり、セリフの中に含めたりしてください。',
+  '可能であれば、相手の名前を文中に含めないでください。',
+] as const;
+
 /**
  * 日本語会話翻訳プロンプトの翻訳指示部分を組み立てる。
  * create-problems3.ts などのスクリプトから利用する。
@@ -932,10 +931,11 @@ export function buildJapaneseConversationRules(
   ${senderName}（${senderRole}・${senderGender}）が「${englishSentence}」と話しかけ、
   ${receiverName}（${receiverRole}・${receiverGender}）が「${englishReply}」と返答しました。
   ${targetDescription}
-  二人の関係性を考慮して、自然な口調のセリフに翻訳してください。
+  二人の関係性を考慮して、口調（敬語・タメ口）や呼び方（敬称・呼び捨て・役職呼び）を決めてください。
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
   元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
   元の英文に含まれていない文脈情報は日本語訳に含めないでください。元の英文に含まれている内容のみを日本語に訳してください。
+  代名詞を個人名に変換しないでください。
   「誰が」という内容を省略しないでください。（例: "So nervous was she that she dropped her notes."であれば「あまりにも緊張してノートを落としちゃったんだよ。」ではなく「彼女、あまりにも緊張してノートを落としちゃったんだよ。」とすること。）
   カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
   機械音声で読み上げるための日本語文なので、括弧書きは含めないこと。最後は「。」または「？」で終わること。

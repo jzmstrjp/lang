@@ -15,167 +15,17 @@ import { buildSceneText } from '@/lib/scene-utils';
 import {
   type Voice,
   type How,
-  type PhraseCategory,
   voiceMap,
   toggleVoice,
-  howNoteMap,
   buildEnglishSentenceOnlyPrompt,
-  hasThirdPerson,
-  buildThirdPersonNote,
 } from '@/lib/english-sentence-prompt';
+import { buildSceneInfoPrompt, type SceneInfo } from '@/lib/scene-info-prompt';
 
 dotenv.config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-async function classifyPhrase(phrase: string): Promise<PhraseCategory> {
-  const response = await openai.chat.completions.create({
-    model: TEXT_MODEL,
-    messages: [
-      {
-        role: 'user',
-        content: `以下のフレーズは「business」と「casual」のどちらに分類されますか？\n迷ったら「casual」にしてください。\n1単語のみ回答してください（"business" または "casual"）。\n\nフレーズ: 「${phrase}」`,
-      },
-    ],
-    max_tokens: 5,
-  });
-  const result = response.choices[0]?.message.content?.trim().toLowerCase() ?? 'casual';
-  return result === 'business' ? 'business' : 'casual';
-}
-
-type SceneInfoResult = Omit<EnglishSentenceResult, 'englishSentence' | 'how'>;
-
-const sceneInfoResultDefinition: SceneInfoResult = {
-  when: '話しかけたタイミング',
-  where: '話しかける人がいる場所',
-  receiverWhere: '話しかける相手がいる場所',
-  who: '話しかける人の役割（性別・個人名は記載しないこと）',
-  whom: '話しかける相手の役割（性別・個人名は記載しないこと）',
-  why: '話しかけようと感じたきっかけ（全員の個人名を明記すること）',
-  want: '相手に期待すること（全員の個人名を明記すること）',
-};
-
-const createSceneInfoPrompt = ({
-  senderName,
-  receiverName,
-  who,
-  whom,
-  englishSentence,
-  situation,
-  voice,
-  how,
-}: {
-  senderName: string;
-  receiverName: string;
-  who: string;
-  whom: string;
-  englishSentence: string;
-  situation: string;
-  voice: Voice;
-  how: How;
-}): string => {
-  const samples = Object.values(englishSentenceResultSamples)
-    .map((sample) => {
-      const { englishSentence: _es, how: _how, ...scene } = sample;
-      return `英文が「${_es}」の場合:\n\`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\``;
-    })
-    .join('\n\n');
-
-  const thirdPersonNote = hasThirdPerson(englishSentence)
-    ? `- ${buildThirdPersonNote(senderName, receiverName)}\n`
-    : '';
-
-  return `
-以下の英文について、いつ、どこで、誰が、誰に対して、何がきっかけで、どうなりたくてその台詞で話しかけるのかをJSON形式で書いてください。
-
-【英文】
-「${englishSentence}」
-
-【この英文のコンテキスト】
-${situation}
-
-【条件】
-- 会話の手段: ${how}
-- 話しかける人: ${senderName}（${who}・${voiceMap[voice]}）
-- 話しかけられる人: ${receiverName}（${whom}・${voiceMap[toggleVoice(voice)]}）
-- JSONの情報を元にAIが画像を作成できるように具体的に書いてください。
-- englishSentenceおよびコンテキストと矛盾しないように自然なシーンにしてください。
-${thirdPersonNote}${howNoteMap[how] ? `- ${howNoteMap[how]}` : ''}
-
-以下のJSON形式で必ず回答してください。
-
-\`\`\`json
-${JSON.stringify(sceneInfoResultDefinition, null, 2)}
-\`\`\`
-
-## 例
-以下の例をよく参考にしてください。
-
-${samples}
-  `;
-};
-
-type EnglishSentenceResult = {
-  englishSentence: string;
-  how: How;
-  when: string;
-  where: string;
-  receiverWhere: string;
-  who: string;
-  whom: string;
-  why: string;
-  want: string;
-};
-
-const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
-  'pass me the O': {
-    englishSentence: 'Could you please pass me the salt?',
-    how: '対面',
-    when: '夕食前の調理中',
-    where: 'キッチン',
-    receiverWhere: 'キッチン',
-    who: '夫',
-    whom: '妻',
-    why: '料理を作りたいが、塩が手元にない',
-    want: '妻（サラ）が塩を手元に持ってくれる',
-  },
-  'was I supposed to': {
-    englishSentence: 'Which floor was I supposed to go to again?',
-    how: '対面',
-    when: 'エスカレーターで移動中',
-    where: 'ショッピングモールのエスカレーター',
-    receiverWhere: 'ショッピングモールのエスカレーター',
-    who: '友人',
-    whom: '友人',
-    why: '目的の店が何階にあるのかを忘れてしまった',
-    want: '友人（マイク）が目的の店のフロアを教えてくれる',
-  },
-  'followed through': {
-    englishSentence: 'I heard Emma followed through on that difficult project.',
-    how: '対面',
-    when: '同僚と雑談している時',
-    where: 'オフィスの休憩スペース',
-    receiverWhere: 'オフィスの休憩スペース',
-    who: '同僚',
-    whom: '同僚',
-    why: '友人（エマ）の活躍を知って感心し、誰かに共有したくなった',
-    want: '同僚（タカシ）にも友人（エマ）の実績に感心してほしい',
-  },
-  'move forward': {
-    englishSentence:
-      "Hi, I'm calling because we'd like to formally move forward with a contract with your company.",
-    how: '電話',
-    when: 'IT会社の業務中',
-    where: '自分のデスク',
-    receiverWhere: 'パートナー企業のデスク',
-    who: 'システムエンジニア',
-    whom: 'パートナー企業の担当者',
-    why: 'パートナー企業のデイビッドが提案した内容を見て、正式に契約を結びたいと思った',
-    want: 'デイビッドの会社と正式な契約を締結する',
-  },
-};
 
 const createEnglishReply = async ({
   sentence,
@@ -184,7 +34,7 @@ const createEnglishReply = async ({
   voice,
   _wordCountLength,
 }: {
-  sentence: EnglishSentenceResult;
+  sentence: SceneInfo;
   senderName: string;
   receiverName: string;
   voice: Voice;
@@ -194,8 +44,8 @@ const createEnglishReply = async ({
     buildEnglishReplyPrompt({
       senderName,
       receiverName,
-      who: sentence.who,
-      whom: sentence.whom,
+      who: sentence.senderRole,
+      whom: sentence.receiverRole,
       senderGender: voiceMap[voice] as '男性' | '女性',
       receiverGender: voiceMap[toggleVoice(voice)] as '男性' | '女性',
       englishSentence: sentence.englishSentence,
@@ -241,7 +91,7 @@ const createJapaneseConversation = async ({
   voice,
   how,
 }: {
-  sentence: EnglishSentenceResult;
+  sentence: SceneInfo;
   senderName: string;
   receiverName: string;
   englishReply: string;
@@ -254,10 +104,10 @@ const createJapaneseConversation = async ({
   englishReply: ${englishReply}
   
   ${buildJapaneseConversationRules({
-    senderRole: sentence.who,
+    senderRole: sentence.senderRole,
     senderName,
     senderGender: voiceMap[voice],
-    receiverRole: sentence.whom,
+    receiverRole: sentence.receiverRole,
     receiverName,
     receiverGender: voiceMap[toggleVoice(voice)],
     englishSentence: sentence.englishSentence,
@@ -267,21 +117,19 @@ const createJapaneseConversation = async ({
 
 【シーン情報】
 ${buildSceneText({
-  senderName: sentence.who,
-  receiverName: sentence.whom,
+  senderName,
+  receiverName,
   how,
   senderWhen: sentence.when,
   place: sentence.where,
-  senderRole: sentence.who,
+  senderRole: sentence.senderRole,
   senderVoice: voice,
   receiverPlace: sentence.receiverWhere,
-  receiverRole: sentence.whom,
+  receiverRole: sentence.receiverRole,
   receiverVoice: toggleVoice(voice),
   senderWhy: sentence.why,
   senderWant: sentence.want,
 })}
-
-※元の英文に含まれていない情報は日本語訳に含めないでください。元の英文に含まれている情報のみを日本語に訳してください。
 
 以下のJSON形式で必ず回答してください。
 
@@ -394,12 +242,9 @@ const createEnglishSentence = async ({
   phrase,
   phraseJa,
   voice,
-  who,
-  whom,
   how,
   rule,
   usedSentences = [],
-  category = 'casual',
   additionalInstruction = '',
   senderName,
   receiverName,
@@ -410,13 +255,10 @@ const createEnglishSentence = async ({
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
   usedSentences?: string[];
-  category?: PhraseCategory;
   additionalInstruction?: string;
   senderName: string;
   receiverName: string;
-  who: string;
-  whom: string;
-}): Promise<EnglishSentenceResult | null> => {
+}): Promise<SceneInfo | null> => {
   try {
     // 1回目: 英文のみ生成
     const sentencePrompt = buildEnglishSentenceOnlyPrompt({
@@ -426,7 +268,6 @@ const createEnglishSentence = async ({
       how,
       rule,
       usedSentences,
-      category,
       additionalInstruction,
       senderName,
       receiverName,
@@ -441,24 +282,16 @@ const createEnglishSentence = async ({
     const sentenceRaw = sentenceResponse.output_text?.trim();
     if (!sentenceRaw) throw new Error('英文レスポンスが空です');
 
-    const sentenceJsonMatch = sentenceRaw.match(/```json\n([\s\S]*?)```/);
-    if (!sentenceJsonMatch?.[1]) throw new Error('英文JSONが見つかりませんでした');
-    const { englishSentence, situation } = JSON.parse(sentenceJsonMatch[1]) as {
-      englishSentence: string;
-      situation: string;
-    };
+    const englishSentence = sentenceRaw.replace(/^```[\w]*\n?|```$/g, '').trim();
+    if (!englishSentence) throw new Error('英文が見つかりませんでした');
 
     console.log(`  英文: ${englishSentence}`);
-    console.log(`  コンテキスト: ${situation}`);
 
     // 2回目: シーン情報を生成
-    const scenePrompt = createSceneInfoPrompt({
+    const scenePrompt = buildSceneInfoPrompt({
       senderName,
       receiverName,
-      who,
-      whom,
       englishSentence,
-      situation,
       voice,
       how,
     });
@@ -475,7 +308,7 @@ const createEnglishSentence = async ({
     const jsonMatch = sceneContent.match(/```json\n([\s\S]*?)```/);
     if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
 
-    const scene = JSON.parse(jsonMatch[1]) as SceneInfoResult;
+    const scene = JSON.parse(jsonMatch[1]) as Omit<SceneInfo, 'englishSentence' | 'how'>;
     return { englishSentence, how, ...scene };
   } catch (e) {
     console.error('エラー:', e);
@@ -810,7 +643,7 @@ async function enrichToSeedProblemData({
   how,
   wordCountLength,
 }: {
-  sentence: EnglishSentenceResult;
+  sentence: SceneInfo;
   englishReply: string;
   japaneseSentence: string;
   japaneseReply: string;
@@ -822,8 +655,8 @@ async function enrichToSeedProblemData({
   how: How;
   wordCountLength: ProblemLength;
 }): Promise<SeedProblemData | null> {
-  const senderRole = sentence.who;
-  const receiverRole = sentence.whom;
+  const senderRole = sentence.senderRole;
+  const receiverRole = sentence.receiverRole;
   const senderVoice = voice;
   const receiverVoice = toggleVoice(voice);
 
@@ -869,7 +702,6 @@ async function generateForPhrase(
   voice: Voice,
   how: How,
   usedSentences: string[] = [],
-  category: PhraseCategory = 'casual',
 ): Promise<SeedProblemData | null> {
   const senderName = getRandomVoiceName(voice);
   const receiverName = getRandomVoiceName(toggleVoice(voice));
@@ -881,11 +713,8 @@ async function generateForPhrase(
     how,
     rule: WORD_COUNT_RULES[wordCountLength],
     usedSentences,
-    category,
     senderName,
     receiverName,
-    who: senderName,
-    whom: receiverName,
   });
   if (!sentence) {
     console.log('  ⚠️ スキップ（英文生成失敗）');
@@ -1078,7 +907,6 @@ const main = async () => {
           voice,
           how,
           usedSentences,
-          'casual',
         );
         if (seed) {
           usedSentences.push(seed.englishSentence);
@@ -1088,8 +916,7 @@ const main = async () => {
     }
     // short / medium / long は words から（phrase ごとに1回分類）
     for (const word of selectedWords) {
-      const category = await classifyPhrase(word.expression);
-      console.log(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
+      console.log(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
@@ -1105,7 +932,6 @@ const main = async () => {
             voice,
             how,
             usedSentences,
-            category,
           );
           if (seed) {
             usedSentences.push(seed.englishSentence);
@@ -1119,11 +945,7 @@ const main = async () => {
       mode === 'nonKids' ? [...NON_KIDS_PROBLEM_LENGTHS] : [mode as ProblemLength];
     const isKidsMode = mode === 'kids';
     for (const word of isKidsMode ? selectedKidsWords : selectedWords) {
-      const category: PhraseCategory = isKidsMode
-        ? 'casual'
-        : await classifyPhrase(word.expression);
-      if (!isKidsMode)
-        console.log(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
+      if (!isKidsMode) console.log(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of lengths) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
@@ -1139,7 +961,6 @@ const main = async () => {
             voice,
             how,
             usedSentences,
-            category,
           );
           if (seed) {
             usedSentences.push(seed.englishSentence);
@@ -1329,7 +1150,6 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
           voice,
           how,
           usedSentences,
-          'casual',
         );
         if (seed) {
           usedSentences.push(seed.englishSentence);
@@ -1339,8 +1159,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     }
     // short / medium / long は words から（phrase ごとに1回分類）
     for (const word of selectedWords) {
-      const category = await classifyPhrase(word.expression);
-      console.error(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
+      console.error(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
@@ -1356,7 +1175,6 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
             voice,
             how,
             usedSentences,
-            category,
           );
           if (seed) {
             usedSentences.push(seed.englishSentence);
@@ -1370,11 +1188,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
       opts.mode === 'nonKids' ? NON_KIDS_PROBLEM_LENGTHS : [opts.mode as ProblemLength];
     const isKidsMode = opts.mode === 'kids';
     for (const word of isKidsMode ? selectedKidsWords : selectedWords) {
-      const category: PhraseCategory = isKidsMode
-        ? 'casual'
-        : await classifyPhrase(word.expression);
-      if (!isKidsMode)
-        console.error(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
+      if (!isKidsMode) console.error(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of lengths) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
@@ -1390,7 +1204,6 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
             voice,
             how,
             usedSentences,
-            category,
           );
           if (seed) {
             usedSentences.push(seed.englishSentence);
