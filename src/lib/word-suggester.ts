@@ -11,12 +11,23 @@ export async function suggestWordsForCategory(
 ): Promise<{ expression: string; expressionJa: string }[]> {
   const categoryLabel = isKids ? 'kids（子ども向け）' : 'non-kids（大人向け）';
 
-  const usedInCategory = new Set([
-    ...existingExpressions,
-    ...existingWords
-      .filter((w) => w.isKids === isKids)
-      .map((w) => `${w.expression}（${w.expressionJa}）`),
-  ]);
+  const usedFromWords = existingWords
+    .filter((w) => w.isKids === isKids)
+    .map((w) => ({ expression: w.expression, expressionJa: w.expressionJa }));
+
+  const usedFromProblemsOnly = existingExpressions.filter(
+    (e) => !usedFromWords.some((w) => w.expression === e),
+  );
+
+  const usedListText = [
+    ...usedFromProblemsOnly.map(
+      (e) => `フレーズ（expression）: ${e}\n日本語の意味（expressionJa）: （不明）`,
+    ),
+    ...usedFromWords.map(
+      (w) =>
+        `フレーズ（expression）: ${w.expression}\n日本語の意味（expressionJa）: ${w.expressionJa}`,
+    ),
+  ].join('\n----------\n');
 
   const prompt = `あなたは英語学習アプリの語彙設計者です。
 対象カテゴリ: **${categoryLabel}**
@@ -24,7 +35,7 @@ export async function suggestWordsForCategory(
 以下の情報をもとに、このカテゴリに追加すべき expression 候補を提案してください。
 
 ## すでに使用済みの expression（重複不可）
-${[...usedInCategory].join(', ')}
+${usedListText}
 
 ## 既存問題の英文サンプル（語彙レベル・傾向の参考）
 ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
