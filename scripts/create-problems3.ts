@@ -352,6 +352,7 @@ const getRandomVoiceName = (voice: Voice): string => {
 
 const createEnglishSentence = async ({
   phrase,
+  phraseJa,
   voice,
   who,
   whom,
@@ -364,6 +365,7 @@ const createEnglishSentence = async ({
   receiverName,
 }: {
   phrase: string;
+  phraseJa: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
@@ -379,6 +381,7 @@ const createEnglishSentence = async ({
     // 1回目: 英文のみ生成
     const sentencePrompt = buildEnglishSentenceOnlyPrompt({
       phrase,
+      phraseJa,
       voice,
       how,
       rule,
@@ -444,20 +447,22 @@ const createEnglishSentence = async ({
 
 const prismaClient = new PrismaClient({ log: ['error'] });
 
-async function fetchWordsFromDB(isKids: boolean): Promise<string[]> {
+async function fetchWordsFromDB(
+  isKids: boolean,
+): Promise<{ expression: string; expressionJa: string }[]> {
   const rows = await prismaClient.word.findMany({
     where: { isKids },
     orderBy: { createdAt: 'asc' },
-    select: { expression: true },
+    select: { expression: true, expressionJa: true },
   });
-  return rows.map((r) => r.expression);
+  return rows as { expression: string; expressionJa: string }[];
 }
 
 async function replenishWordsIfNeeded(
   isKids: boolean,
-  currentWords: string[],
+  currentWords: { expression: string; expressionJa: string }[],
   needed: number,
-): Promise<string[]> {
+): Promise<{ expression: string; expressionJa: string }[]> {
   if (currentWords.length >= needed) return currentWords;
 
   console.error(
@@ -470,7 +475,9 @@ async function replenishWordsIfNeeded(
     prismaClient.problem
       .findMany({ select: { expression: true } })
       .then((rows) => [...new Set(rows.map((r) => r.expression))]),
-    prismaClient.word.findMany({ select: { expression: true, isKids: true } }),
+    prismaClient.word.findMany({
+      select: { expression: true, expressionJa: true, isKids: true },
+    }) as Promise<{ expression: string; expressionJa: string; isKids: boolean }[]>,
     prismaClient.$queryRaw<{ englishSentence: string }[]>`
       SELECT "englishSentence" FROM problems ORDER BY RANDOM() LIMIT 100
     `.then((rows) => rows.map((r) => r.englishSentence)),
@@ -489,7 +496,7 @@ async function replenishWordsIfNeeded(
   }
 
   await prismaClient.word.createMany({
-    data: suggestions.map((expression) => ({ expression, isKids })),
+    data: suggestions.map(({ expression, expressionJa }) => ({ expression, expressionJa, isKids })),
     skipDuplicates: true,
   });
   console.error(`✅ ${suggestions.length}件を DB に追加しました`);
@@ -498,10 +505,14 @@ async function replenishWordsIfNeeded(
   return fetchWordsFromDB(isKids);
 }
 
-async function deleteWordsFromDB(expressions: string[]): Promise<void> {
-  if (expressions.length === 0) return;
+async function deleteWordsFromDB(
+  words: { expression: string; expressionJa: string }[],
+): Promise<void> {
+  if (words.length === 0) return;
   const result = await prismaClient.word.deleteMany({
-    where: { expression: { in: expressions } },
+    where: {
+      OR: words.map((w) => ({ expression: w.expression, expressionJa: w.expressionJa })),
+    },
   });
   console.error(`🧹 使用済み語彙をDBから削除しました（${result.count}件）`);
 }
@@ -754,6 +765,7 @@ async function enrichToSeedProblemData({
   senderName,
   receiverName,
   expression,
+  expressionJa,
   how,
   wordCountLength,
 }: {
@@ -765,6 +777,7 @@ async function enrichToSeedProblemData({
   senderName: string;
   receiverName: string;
   expression: string;
+  expressionJa: string;
   how: How;
   wordCountLength: ProblemLength;
 }): Promise<SeedProblemData | null> {
@@ -798,6 +811,7 @@ async function enrichToSeedProblemData({
     incorrectOptions: adjustedOptions,
     difficultyLevel: wordCountLength === 'kids' ? 1 : null,
     expression,
+    expressionJa,
   };
 }
 
@@ -809,6 +823,7 @@ function ask(rl: readline.Interface, question: string): Promise<string> {
 
 async function generateForPhrase(
   phrase: string,
+  phraseJa: string,
   wordCountLength: ProblemLength,
   voice: Voice,
   how: How,
@@ -820,6 +835,7 @@ async function generateForPhrase(
 
   const sentence = await createEnglishSentence({
     phrase,
+    phraseJa,
     voice,
     how,
     rule: WORD_COUNT_RULES[wordCountLength],
@@ -869,6 +885,7 @@ async function generateForPhrase(
     senderName,
     receiverName,
     expression: phrase,
+    expressionJa: phraseJa,
     how,
     wordCountLength,
   });
@@ -926,9 +943,14 @@ const main = async () => {
   const isAll = mode === 'all';
 
   // --- DBからワードを取得 ---
+  type WordEntry = { expression: string; expressionJa: string };
   const [allNonKidsWords, allKidsWords] = await Promise.all([
-    isKidsOnly ? Promise.resolve([]) : fetchWordsFromDB(false),
-    isAll ? fetchWordsFromDB(true) : isKidsOnly ? fetchWordsFromDB(true) : Promise.resolve([]),
+    isKidsOnly ? Promise.resolve([] as WordEntry[]) : fetchWordsFromDB(false),
+    isAll
+      ? fetchWordsFromDB(true)
+      : isKidsOnly
+        ? fetchWordsFromDB(true)
+        : Promise.resolve([] as WordEntry[]),
   ]);
   const activeWordList = isKidsOnly ? allKidsWords : allNonKidsWords;
 
@@ -1000,13 +1022,23 @@ const main = async () => {
 
   if (isAll) {
     // kids は kids_words から（casual 固定）
-    for (const phrase of selectedKidsWords) {
+    for (const word of selectedKidsWords) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
         const how: How = hows[Math.floor(Math.random() * 2)];
-        console.log(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences, 'casual');
+        console.log(
+          `\n── 「${word.expression}（${word.expressionJa}）」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+        );
+        const seed = await generateForPhrase(
+          word.expression,
+          word.expressionJa,
+          'kids',
+          voice,
+          how,
+          usedSentences,
+          'casual',
+        );
         if (seed) {
           usedSentences.push(seed.englishSentence);
           seedProblems.push(seed);
@@ -1014,16 +1046,26 @@ const main = async () => {
       }
     }
     // short / medium / long は words から（phrase ごとに1回分類）
-    for (const phrase of selectedWords) {
-      const category = await classifyPhrase(phrase);
-      console.log(`\n📂 「${phrase}」→ ${category}`);
+    for (const word of selectedWords) {
+      const category = await classifyPhrase(word.expression);
+      console.log(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
           const how: How = hows[Math.floor(Math.random() * 2)];
-          console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
+          console.log(
+            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+          );
+          const seed = await generateForPhrase(
+            word.expression,
+            word.expressionJa,
+            len,
+            voice,
+            how,
+            usedSentences,
+            category,
+          );
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
@@ -1035,16 +1077,29 @@ const main = async () => {
     const lengths: ProblemLength[] =
       mode === 'nonKids' ? [...NON_KIDS_PROBLEM_LENGTHS] : [mode as ProblemLength];
     const isKidsMode = mode === 'kids';
-    for (const phrase of isKidsMode ? selectedKidsWords : selectedWords) {
-      const category: PhraseCategory = isKidsMode ? 'casual' : await classifyPhrase(phrase);
-      if (!isKidsMode) console.log(`\n📂 「${phrase}」→ ${category}`);
+    for (const word of isKidsMode ? selectedKidsWords : selectedWords) {
+      const category: PhraseCategory = isKidsMode
+        ? 'casual'
+        : await classifyPhrase(word.expression);
+      if (!isKidsMode)
+        console.log(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
       for (const len of lengths) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
           const how: How = hows[Math.floor(Math.random() * 2)];
-          console.log(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
+          console.log(
+            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+          );
+          const seed = await generateForPhrase(
+            word.expression,
+            word.expressionJa,
+            len,
+            voice,
+            how,
+            usedSentences,
+            category,
+          );
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
@@ -1063,8 +1118,11 @@ const main = async () => {
   const allUsedWords = isAll ? [...selectedKidsWords, ...selectedWords] : selectedWords;
   const labelExpr =
     allUsedWords.length <= 3
-      ? allUsedWords.join(', ')
-      : `${allUsedWords.slice(0, 3).join(', ')} 他${allUsedWords.length - 3}語`;
+      ? allUsedWords.map((w) => `${w.expression}（${w.expressionJa}）`).join(', ')
+      : `${allUsedWords
+          .slice(0, 3)
+          .map((w) => w.expression)
+          .join(', ')} 他${allUsedWords.length - 3}語`;
   const wordCountLength: ProblemLength | 'all' | 'nonKids' =
     mode === 'all' ? 'all' : mode === 'nonKids' ? 'nonKids' : mode;
   writeProblemDataTsFile(seedProblems, outRelativePath, { expression: labelExpr, wordCountLength });
@@ -1173,9 +1231,10 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   const isAll = opts.mode === 'all';
 
   // --- DBからワードを取得 ---
+  type WordEntry = { expression: string; expressionJa: string };
   const [allNonKidsWords, allKidsWordsForBatch] = await Promise.all([
-    isKidsOnly ? Promise.resolve([]) : fetchWordsFromDB(false),
-    isAll || isKidsOnly ? fetchWordsFromDB(true) : Promise.resolve([]),
+    isKidsOnly ? Promise.resolve([] as WordEntry[]) : fetchWordsFromDB(false),
+    isAll || isKidsOnly ? fetchWordsFromDB(true) : Promise.resolve([] as WordEntry[]),
   ]);
 
   // --- 必要数に満たない場合は AI で自動補充 ---
@@ -1214,13 +1273,23 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
 
   if (isAll) {
     // kids は kids_words から（casual 固定）
-    for (const phrase of selectedKidsWords) {
+    for (const word of selectedKidsWords) {
       const usedSentences: string[] = [];
       for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
         const voice = voices[Math.floor(Math.random() * voices.length)];
         const how = hows[Math.floor(Math.random() * hows.length)];
-        console.error(`\n── 「${phrase}」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-        const seed = await generateForPhrase(phrase, 'kids', voice, how, usedSentences, 'casual');
+        console.error(
+          `\n── 「${word.expression}（${word.expressionJa}）」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+        );
+        const seed = await generateForPhrase(
+          word.expression,
+          word.expressionJa,
+          'kids',
+          voice,
+          how,
+          usedSentences,
+          'casual',
+        );
         if (seed) {
           usedSentences.push(seed.englishSentence);
           seedProblems.push(seed);
@@ -1228,16 +1297,26 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
       }
     }
     // short / medium / long は words から（phrase ごとに1回分類）
-    for (const phrase of selectedWords) {
-      const category = await classifyPhrase(phrase);
-      console.error(`\n📂 「${phrase}」→ ${category}`);
+    for (const word of selectedWords) {
+      const category = await classifyPhrase(word.expression);
+      console.error(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice = voices[Math.floor(Math.random() * voices.length)];
           const how = hows[Math.floor(Math.random() * hows.length)];
-          console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
+          console.error(
+            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+          );
+          const seed = await generateForPhrase(
+            word.expression,
+            word.expressionJa,
+            len,
+            voice,
+            how,
+            usedSentences,
+            category,
+          );
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);
@@ -1249,16 +1328,29 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     const lengths: ProblemLength[] =
       opts.mode === 'nonKids' ? NON_KIDS_PROBLEM_LENGTHS : [opts.mode as ProblemLength];
     const isKidsMode = opts.mode === 'kids';
-    for (const phrase of isKidsMode ? selectedKidsWords : selectedWords) {
-      const category: PhraseCategory = isKidsMode ? 'casual' : await classifyPhrase(phrase);
-      if (!isKidsMode) console.error(`\n📂 「${phrase}」→ ${category}`);
+    for (const word of isKidsMode ? selectedKidsWords : selectedWords) {
+      const category: PhraseCategory = isKidsMode
+        ? 'casual'
+        : await classifyPhrase(word.expression);
+      if (!isKidsMode)
+        console.error(`\n📂 「${word.expression}（${word.expressionJa}）」→ ${category}`);
       for (const len of lengths) {
         const usedSentences: string[] = [];
         for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
           const voice = voices[Math.floor(Math.random() * voices.length)];
           const how = hows[Math.floor(Math.random() * hows.length)];
-          console.error(`\n── 「${phrase}」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`);
-          const seed = await generateForPhrase(phrase, len, voice, how, usedSentences, category);
+          console.error(
+            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+          );
+          const seed = await generateForPhrase(
+            word.expression,
+            word.expressionJa,
+            len,
+            voice,
+            how,
+            usedSentences,
+            category,
+          );
           if (seed) {
             usedSentences.push(seed.englishSentence);
             seedProblems.push(seed);

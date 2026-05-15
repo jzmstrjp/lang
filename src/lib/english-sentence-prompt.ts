@@ -38,6 +38,7 @@ export function buildThirdPersonNote(senderName: string, receiverName: string): 
 
 export function buildEnglishSentenceOnlyPrompt({
   phrase,
+  phraseJa,
   voice,
   how,
   rule,
@@ -49,6 +50,7 @@ export function buildEnglishSentenceOnlyPrompt({
   receiverName,
 }: {
   phrase: string;
+  phraseJa: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
@@ -70,8 +72,8 @@ export function buildEnglishSentenceOnlyPrompt({
   return `
 ${usedBlock}
 
-「${phrase}」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんなシチュエーションでどんな英文が自然にあり得ますか？
-${thirdPersonNote}${pickAdjectiveWord(category)}を1つ作成してください。「${phrase}」というフレーズならではの台詞にしてください。
+「${phrase}（${phraseJa}）」というフレーズを使って、ある人が誰かに${how}で話しかけるとしたら、どんなシチュエーションでどんな英文が自然にあり得ますか？
+${thirdPersonNote}${pickAdjectiveWord(category)}を1つ作成してください。「${phrase}（${phraseJa}）」というフレーズならではの台詞にしてください。
 ${additionalInstruction ? additionalInstruction + '\n' : ''}
 いつ・どこで・誰が・何がきっかけで・誰に・何を求めて話しかけたのか、そのsituationも作成してください（シチュエーションは日本語1文で説明してください）
 現実によくあるような自然なシチュエーションにしてください。

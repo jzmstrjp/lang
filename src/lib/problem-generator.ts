@@ -228,6 +228,7 @@ async function getRandomProblemFromSeed(
     senderWant: selectedProblem.senderWant ?? '',
     difficultyLevel: null,
     expression: selectedProblem.expression ?? '',
+    expressionJa: selectedProblem.expressionJa ?? '',
   };
 }
 

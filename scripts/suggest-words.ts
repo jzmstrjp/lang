@@ -38,8 +38,12 @@ async function fetchExistingExpressions(): Promise<string[]> {
   return [...new Set(rows.map((r) => r.expression))];
 }
 
-async function fetchExistingWords(): Promise<{ expression: string; isKids: boolean }[]> {
-  return prisma.word.findMany({ select: { expression: true, isKids: true } });
+async function fetchExistingWords(): Promise<
+  { expression: string; expressionJa: string; isKids: boolean }[]
+> {
+  return prisma.word.findMany({
+    select: { expression: true, expressionJa: true, isKids: true },
+  }) as Promise<{ expression: string; expressionJa: string; isKids: boolean }[]>;
 }
 
 async function fetchSampleSentences(count: number): Promise<string[]> {
@@ -89,10 +93,18 @@ async function main() {
 
   console.log(`\n📋 提案された expression:\n`);
   console.log(`👶 kids（${kidsSuggestions.length}件）`);
-  console.log(kidsSuggestions.join(', '));
+  console.log(
+    kidsSuggestions
+      .map(({ expression, expressionJa }) => `${expression}（${expressionJa}）`)
+      .join(', '),
+  );
   console.log();
   console.log(`🧑 non-kids（${nonKidsSuggestions.length}件）`);
-  console.log(nonKidsSuggestions.join(', '));
+  console.log(
+    nonKidsSuggestions
+      .map(({ expression, expressionJa }) => `${expression}（${expressionJa}）`)
+      .join(', '),
+  );
 
   if (!save) {
     console.log('\nℹ️  dry run モードです。--save を付けると DB に保存します。');
@@ -100,8 +112,16 @@ async function main() {
   }
 
   const allSuggestions = [
-    ...kidsSuggestions.map((expression) => ({ expression, isKids: true })),
-    ...nonKidsSuggestions.map((expression) => ({ expression, isKids: false })),
+    ...kidsSuggestions.map(({ expression, expressionJa }) => ({
+      expression,
+      expressionJa,
+      isKids: true,
+    })),
+    ...nonKidsSuggestions.map(({ expression, expressionJa }) => ({
+      expression,
+      expressionJa,
+      isKids: false,
+    })),
   ];
 
   console.log('\n💾 DB に保存中...');

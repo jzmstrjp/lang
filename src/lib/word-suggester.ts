@@ -6,14 +6,16 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function suggestWordsForCategory(
   isKids: boolean,
   existingExpressions: string[],
-  existingWords: { expression: string; isKids: boolean }[],
+  existingWords: { expression: string; expressionJa: string; isKids: boolean }[],
   sampleSentences: string[],
-): Promise<string[]> {
+): Promise<{ expression: string; expressionJa: string }[]> {
   const categoryLabel = isKids ? 'kids（子ども向け）' : 'non-kids（大人向け）';
 
   const usedInCategory = new Set([
     ...existingExpressions,
-    ...existingWords.filter((w) => w.isKids === isKids).map((w) => w.expression),
+    ...existingWords
+      .filter((w) => w.isKids === isKids)
+      .map((w) => `${w.expression}（${w.expressionJa}）`),
   ]);
 
   const prompt = `あなたは英語学習アプリの語彙設計者です。
@@ -29,6 +31,7 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
 ## 提案ルール
 - 使用済み expression と重複しないこと
+  - ただし同じ単語でも意味（expressionJa）が異なれば別の expression として提案してよい（例: "play（遊ぶ）" と "play（からかう）" は別物）
 - 単語・イディオム単体で会話の軸になれるもの（例: "apologize", "give it a shot"）
 - イディオムは5語以内に収めること
 ${
@@ -42,18 +45,20 @@ ${
 - 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個（合計 90個程度）
 
 ## 出力形式（JSON）
-"words" キーに文字列の配列のみ返してください（説明などは不要）。
+"words" キーに { "expression": string, "expressionJa": string } のオブジェクト配列を返してください（説明などは不要）。
+- expression: 英語の単語・表現
+- expressionJa: 日本語の意味（1つだけ。「献身的な、専念した」のように複数書かない）
 
 例:
 {
   "words": [
-    "apologize",
-    "give it a shot",
-    "deadline",
-    "come up with",
-    "Rarely + auxiliary + S + V ~",
-    "Not only A but also B",
-    "no sooner ~ than ..."
+    { "expression": "apologize", "expressionJa": "謝罪する" },
+    { "expression": "give it a shot", "expressionJa": "試してみる" },
+    { "expression": "deadline", "expressionJa": "締め切り" },
+    { "expression": "come up with", "expressionJa": "思いつく" },
+    { "expression": "Rarely + auxiliary + S + V ~", "expressionJa": "めったに〜しない" },
+    { "expression": "Not only A but also B", "expressionJa": "AだけでなくBも" },
+    { "expression": "no sooner ~ than ...", "expressionJa": "〜するやいなや" }
   ]
 }`;
 
@@ -64,6 +69,6 @@ ${
   });
 
   const content = response.choices[0]?.message.content ?? '{"words":[]}';
-  const parsed = JSON.parse(content) as { words?: string[] };
-  return parsed.words ?? [];
+  const parsed = JSON.parse(content) as { words?: { expression: string; expressionJa: string }[] };
+  return (parsed.words ?? []).filter((w) => w.expression && w.expressionJa);
 }

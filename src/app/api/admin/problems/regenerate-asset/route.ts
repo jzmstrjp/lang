@@ -103,6 +103,7 @@ export async function POST(request: Request) {
           senderWant: problem.senderWant,
           difficultyLevel: problem.difficultyLevel ?? null,
           expression: problem.expression,
+          expressionJa: problem.expressionJa ?? '',
         };
         newUrl = await generateAndUploadImageAsset(generatedProblem, problemId);
         updateData.imageUrl = newUrl;

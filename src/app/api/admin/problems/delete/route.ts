@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       select: {
         id: true,
         expression: true,
+        expressionJa: true,
         difficultyLevel: true,
         imageUrl: true,
         audioEnUrl: true,
@@ -50,12 +51,17 @@ export async function POST(request: Request) {
       const remaining = await prisma.problem.count({
         where: { expression: record.expression },
       });
-      if (remaining === 1) {
+      if (remaining === 1 && record.expressionJa) {
         const isKids = record.difficultyLevel === 1;
         await prisma.word.upsert({
-          where: { expression: record.expression },
+          where: {
+            expression_expressionJa: {
+              expression: record.expression,
+              expressionJa: record.expressionJa,
+            },
+          },
           update: {},
-          create: { expression: record.expression, isKids },
+          create: { expression: record.expression, expressionJa: record.expressionJa, isKids },
         });
       }
     }

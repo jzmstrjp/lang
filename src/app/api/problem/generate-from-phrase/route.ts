@@ -16,6 +16,7 @@ const GENERATE_COUNT = 3;
 
 async function generateOne(params: {
   phrase: string;
+  phraseJa: string;
   voice: Voice;
   how: How;
   rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
@@ -72,6 +73,7 @@ export async function POST(req: Request) {
 
     const body = (await req.json().catch(() => ({}))) as {
       phrase?: string;
+      phraseJa?: string;
       additionalInstruction?: string;
       type?: ProblemLength;
       voice?: Voice;
@@ -82,6 +84,7 @@ export async function POST(req: Request) {
     if (!phrase) {
       return NextResponse.json({ error: 'phrase は必須です。' }, { status: 400 });
     }
+    const phraseJa = body.phraseJa?.trim() ?? '';
 
     const type = body.type ?? 'short';
     const rule = WORD_COUNT_RULES[type];
@@ -104,6 +107,7 @@ export async function POST(req: Request) {
       const usedSentences = results.map((r) => r.englishSentence);
       const result = await generateOne({
         phrase,
+        phraseJa,
         voice,
         how,
         rule,

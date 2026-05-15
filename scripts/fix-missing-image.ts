@@ -113,6 +113,7 @@ async function main(
         senderWant: true,
         difficultyLevel: true,
         expression: true,
+        expressionJa: true,
       },
       take: batchSize,
       orderBy: {
@@ -204,6 +205,7 @@ async function main(
           senderWant: problem.senderWant,
           difficultyLevel: problem.difficultyLevel ?? null,
           expression: problem.expression,
+          expressionJa: problem.expressionJa ?? '',
         };
 
         // 画像生成モードに応じて分岐
