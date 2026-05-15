@@ -758,6 +758,8 @@ function ProblemFlowInner({
             ...prevPhase,
             problem: {
               ...prevPhase.problem,
+              senderName: data.senderName ?? prevPhase.problem.senderName,
+              receiverName: data.receiverName ?? prevPhase.problem.receiverName,
               how: data.how ?? prevPhase.problem.how,
               senderWhen: data.senderWhen ?? prevPhase.problem.senderWhen,
               place: data.place ?? prevPhase.problem.place,
@@ -1053,6 +1055,8 @@ function ProblemFlowInner({
       {isSceneEditOpen && (
         <SceneEditDialog
           defaultValues={{
+            senderName: currentProblem.senderName,
+            receiverName: currentProblem.receiverName,
             how: currentProblem.how ?? '',
             senderWhen: currentProblem.senderWhen,
             place: currentProblem.place,
@@ -1886,6 +1890,8 @@ function EditableIncorrectOption({
 }
 
 type SceneEditFormValues = {
+  senderName: string;
+  receiverName: string;
   how: string;
   senderWhen: string;
   place: string;
@@ -1917,16 +1923,14 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
     }
   });
 
-  const fields: { name: keyof SceneEditFormValues; label: string }[] = [
-    { name: 'how', label: '方法' },
-    { name: 'senderWhen', label: 'タイミング' },
-    { name: 'senderRole', label: '話しかける人の役割' },
-    { name: 'place', label: '話しかける人がいる場所' },
-    { name: 'senderWhy', label: '何がきっかけで話しかけたか' },
-    { name: 'senderWant', label: '相手に何を求めているか' },
-    { name: 'receiverRole', label: '話しかけられる人の役割' },
-    { name: 'receiverPlace', label: '話しかけられる人がいる場所' },
-  ];
+  const textareaClass =
+    'w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--text)] shadow-sm resize-none disabled:opacity-50';
+  const inputClass =
+    'w-28 rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--text)] shadow-sm disabled:opacity-50';
+  const labelClass = 'mb-1 block text-xs font-medium text-[var(--text)]/60';
+  const sectionClass = 'space-y-3';
+  const sectionTitleClass = 'text-sm font-semibold text-[var(--text)]';
+  const textareaStyle = { fieldSizing: 'content' } as React.CSSProperties;
 
   return (
     <div
@@ -1945,22 +1949,147 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
         onSubmit={submit}
         className="relative w-full max-w-lg rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40 overflow-y-auto max-h-[90dvh]"
       >
-        <h2 className="mb-4 text-lg font-semibold text-[var(--text)]">シーン情報を編集</h2>
-        <div className="space-y-3">
-          {fields.map(({ name, label }) => (
-            <div key={name}>
-              <label className="mb-1 block text-xs font-medium text-[var(--text)]/60">
-                {label}
+        <div className="space-y-4">
+          {/* 共通 */}
+          <div className={sectionClass}>
+            <h2 className={sectionTitleClass}>共通</h2>
+            <div>
+              <label htmlFor="scene-how" className={labelClass}>
+                方法
               </label>
               <textarea
-                {...register(name)}
+                id="scene-how"
+                {...register('how')}
                 disabled={isSubmitting}
                 rows={2}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--text)] shadow-sm resize-none disabled:opacity-50"
-                style={{ fieldSizing: 'content' } as React.CSSProperties}
+                className={textareaClass}
+                style={textareaStyle}
               />
             </div>
-          ))}
+            <div>
+              <label htmlFor="scene-sender-when" className={labelClass}>
+                タイミング
+              </label>
+              <textarea
+                id="scene-sender-when"
+                {...register('senderWhen')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+          </div>
+
+          {/* 話しかける人 */}
+          <div className={sectionClass}>
+            <h2 className={sectionTitleClass}>話しかける人</h2>
+            <div>
+              <label htmlFor="scene-sender-name" className={labelClass}>
+                名前
+              </label>
+              <input
+                id="scene-sender-name"
+                {...register('senderName')}
+                disabled={isSubmitting}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-sender-role" className={labelClass}>
+                役割
+              </label>
+              <textarea
+                id="scene-sender-role"
+                {...register('senderRole')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-place" className={labelClass}>
+                いる場所
+              </label>
+              <textarea
+                id="scene-place"
+                {...register('place')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-sender-why" className={labelClass}>
+                何がきっかけで話しかけたか
+              </label>
+              <textarea
+                id="scene-sender-why"
+                {...register('senderWhy')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-sender-want" className={labelClass}>
+                相手に何を求めているか
+              </label>
+              <textarea
+                id="scene-sender-want"
+                {...register('senderWant')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+          </div>
+
+          {/* 話しかけられる人 */}
+          <div className={sectionClass}>
+            <h2 className={sectionTitleClass}>話しかけられる人</h2>
+            <div>
+              <label htmlFor="scene-receiver-name" className={labelClass}>
+                名前
+              </label>
+              <input
+                id="scene-receiver-name"
+                {...register('receiverName')}
+                disabled={isSubmitting}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-receiver-role" className={labelClass}>
+                役割
+              </label>
+              <textarea
+                id="scene-receiver-role"
+                {...register('receiverRole')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-receiver-place" className={labelClass}>
+                いる場所
+              </label>
+              <textarea
+                id="scene-receiver-place"
+                {...register('receiverPlace')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+          </div>
         </div>
         {errors.root && (
           <p className="mt-2 text-sm text-[var(--error-dark)]">{errors.root.message}</p>
