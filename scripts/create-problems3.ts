@@ -53,8 +53,8 @@ const sceneInfoResultDefinition: SceneInfoResult = {
   receiverWhere: '話しかける相手がいる場所',
   who: '話しかける人の役割（性別・個人名は記載しないこと）',
   whom: '話しかける相手の役割（性別・個人名は記載しないこと）',
-  why: '話しかけようと感じたきっかけ',
-  want: '相手に期待すること',
+  why: '話しかけようと感じたきっかけ（全員の個人名を明記すること）',
+  want: '相手に期待すること（全員の個人名を明記すること）',
 };
 
 const createSceneInfoPrompt = ({
@@ -139,7 +139,7 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
     who: '夫',
     whom: '妻',
     why: '料理を作りたいが、塩が手元にない',
-    want: '妻が塩を手元に持ってくれる',
+    want: '妻（サラ）が塩を手元に持ってくれる',
   },
   'was I supposed to': {
     englishSentence: 'Which floor was I supposed to go to again?',
@@ -150,7 +150,7 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
     who: '友人',
     whom: '友人',
     why: '目的の店が何階にあるのかを忘れてしまった',
-    want: '相手が目的の店のフロアを教えてくれる',
+    want: '友人（マイク）が目的の店のフロアを教えてくれる',
   },
   'followed through': {
     englishSentence: 'I heard Emma followed through on that difficult project.',
@@ -160,8 +160,8 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
     receiverWhere: 'オフィスの休憩スペース',
     who: '同僚',
     whom: '同僚',
-    why: 'エマの活躍を知って感心し、誰かに共有したくなった',
-    want: '相手にも、エマの実績に感心してほしい',
+    why: '友人（エマ）の活躍を知って感心し、誰かに共有したくなった',
+    want: '同僚（タカシ）にも友人（エマ）の実績に感心してほしい',
   },
   'move forward': {
     englishSentence:
@@ -172,8 +172,8 @@ const englishSentenceResultSamples: Record<string, EnglishSentenceResult> = {
     receiverWhere: 'パートナー企業のデスク',
     who: 'システムエンジニア',
     whom: 'パートナー企業の担当者',
-    why: 'パートナー企業の提案内容を見て、正式に契約を結びたいと思った',
-    want: '相手と正式な契約を締結する',
+    why: 'パートナー企業のデイビッドが提案した内容を見て、正式に契約を結びたいと思った',
+    want: 'デイビッドの会社と正式な契約を締結する',
   },
 };
 

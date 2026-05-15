@@ -152,19 +152,19 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
       SELECT p.*
       FROM "problems" p
       JOIN (
-        SELECT "expression", "expression_ja"
+        SELECT "expression", "expressionJa"
         FROM "problems"
         WHERE ${whereClause}
           AND "expression" IS NOT NULL
-        GROUP BY "expression", "expression_ja"
+        GROUP BY "expression", "expressionJa"
         HAVING COUNT(*) >= 2
         ORDER BY RANDOM()
         LIMIT ${phrases}
       ) AS chosen
         ON p."expression" = chosen."expression"
-        AND (p."expression_ja" = chosen."expression_ja" OR (p."expression_ja" IS NULL AND chosen."expression_ja" IS NULL))
+        AND (p."expressionJa" = chosen."expressionJa" OR (p."expressionJa" IS NULL AND chosen."expressionJa" IS NULL))
       WHERE ${whereClause}
-      ORDER BY p."expression", p."expression_ja", RANDOM()
+      ORDER BY p."expression", p."expressionJa", RANDOM()
     `;
     // 各 expression + expressionJa の組み合わせから最大 perPhrase 件に絞る（SQLの都合で超過する場合があるため）
     const seen = new Map<string, number>();
