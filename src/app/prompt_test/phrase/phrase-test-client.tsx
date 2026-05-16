@@ -171,7 +171,7 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                     <div className="rounded-xl bg-[var(--border)]/20 border border-[var(--border)] p-3 space-y-1">
                       <p className="text-xs font-semibold text-[var(--text-muted)]">
                         {item.receiverName}（{item.receiverRole}・
-                        {item.voice === 'male' ? '男性' : '女性'}）
+                        {item.voice === 'male' ? '女性' : '男性'}）
                       </p>
                       <p className="text-lg font-bold text-[var(--text)]">{item.japaneseReply}</p>
                       <p className="text-sm text-[var(--text-muted)]">{item.englishReply}</p>

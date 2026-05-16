@@ -121,7 +121,7 @@ export function buildEnglishReplyPrompt({
 }: EnglishReplyPromptParams): string {
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
-この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答のセリフを英語で1つ作成してください。
+この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
 「Okay, I understand.」などの汎用的な返答でなく、この場面ならではの返答を作成してください。
 簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
@@ -142,7 +142,7 @@ ${buildSceneText({
   senderWant: want,
 })}
 
-このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答のセリフを英語で作成してください。
+このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答の口語文を英語で作成してください。
 `;
 }
 
@@ -946,10 +946,10 @@ export function buildJapaneseConversationRules(
 
   const targetDescription =
     translate === 'sender'
-      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語のセリフに翻訳してください。`
+      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語の口語文に翻訳してください。`
       : translate === 'receiver'
-        ? `この${receiverRole}（${receiverGender}）の「${englishReply}」を自然な日本語のセリフに翻訳してください。`
-        : 'この会話を自然な日本語のセリフに翻訳してください。';
+        ? `この${receiverRole}（${receiverGender}）の「${englishReply}」を自然な日本語の口語文に翻訳してください。`
+        : 'この会話を自然な日本語の口語文に翻訳してください。';
 
   return `
   ${how ? `- ${how}での会話です。` : ''}

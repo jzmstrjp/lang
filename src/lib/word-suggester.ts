@@ -41,18 +41,27 @@ ${usedListText}
 ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
 ## 提案ルール
-- 使用済み expression と重複しないこと
+- 使用済み expression と重複しないこと（今回の提案リスト内でも重複不可）
   - ただし同じ単語でも意味（expressionJa）が異なれば別の expression として提案してよい（例: "play（遊ぶ）" と "play（からかう）" は別物）
 - 単語・イディオム単体で会話の軸になれるもの（例: "apologize", "give it a shot"）
 - イディオムは5語以内に収めること
 ${
   isKids
     ? `- 小中学生レベルの平易な語彙（例: "share", "help out", "excited"）
-- 子どもの日常生活・学校・家族に関連するものが望ましい`
+- 子どもの日常生活・学校・家族に関連するものが望ましい
+- 副詞は日常会話で自然に使えるものに限定（例: really, carefully, together, slowly, quietly, quickly, nicely）
+  - 避けるべき副詞の例: gratefully（フォーマル・スピーチ調）
+- 感謝・気持ち系の形容詞はカジュアルなものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
+- 感謝表現はカジュアルなものに限定（appreciate は可。gratefully / receive / understanding などフォーマル語は避ける）`
     : `- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
 - ビジネス・旅行・日常生活など幅広いシーンに対応`
 }
-- 全体の約1/3は「comfort word」にすること。comfort word とは、"cozy", "hug", "comfort food", "snuggle", "warmth", "heartfelt", "grateful", "cherish", "soothe", "gentle" のような、温かみ・安心感・やさしさを連想させる語彙・表現。
+- 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
+${
+  isKids
+    ? `  - kids向け comfort word の例: "hug", "cozy", "snuggle", "gentle", "kind", "warm", "cheerful", "thankful", "smile", "together"`
+    : `  - non-kids向け comfort word の例: "cozy", "warmth", "heartfelt", "grateful", "cherish", "soothe", "serene", "comfort", "healing", "empathy"`
+}
 - 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個（合計 90個程度）
 
 ## 出力形式（JSON）

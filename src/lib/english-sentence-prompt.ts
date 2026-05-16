@@ -16,9 +16,11 @@ export const howNoteMap = {
   電話: '電話なので、お互いに相手のことは見えません。二人は別々の離れた場所にいます。',
 } as const satisfies Record<How, string>;
 
-const casualAdjectiveWords = ['ネイティブが実際に会話で使うような、ごく自然な英文の台詞'] as const;
+const casualAdjectiveWords = [
+  'ネイティブが実際に会話で使うような、ごく自然な英語の口語文',
+] as const;
 const businessAdjectiveWords = [
-  'ネイティブが実際に会話で使うような、ごく自然な英文の台詞',
+  'ネイティブが実際に会話で使うような、ごく自然な英語の口語文',
 ] as const;
 
 export function pickAdjectiveWord(category: PhraseCategory): string {
@@ -79,23 +81,23 @@ export function buildEnglishSentenceOnlyPrompt({
     .join('\n');
 
   return `
-「${phrase}${phraseJa ? `（${phraseJa}）` : ''}」というフレーズを使って、現実世界で誰もが一度は聞いたことがあるような自然な英語のセリフを1つ作ってください。
-${how}で誰かに話しかけるセリフです。質問・依頼・意見・お気持ちなどです。
+「${phrase}${phraseJa ? `（${phraseJa}）` : ''}」というフレーズを使って、現実世界で誰もが一度は聞いたことがあるような自然な英語の口語文を1つ作ってください。
+${how}で誰かに話しかける口語文です。質問・依頼・意見・お気持ちなどです。
 
 現実にありそうなシチュエーションにしてください。
-英語ネイティブが聞いても違和感のないセリフにしてください。
-英語の文法として確実に正しいセリフにしてください。
+英語ネイティブが聞いても違和感のない口語文にしてください。
+英語の文法として確実に正しい口語文にしてください。
 ${'note' in rule ? `- ${rule.note}` : ''}
 フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
-具体的な状況や情景が浮かぶような具体的なセリフにしてください。
+具体的な状況や情景が浮かぶような具体的な口語文にしてください。
 
-${rule.min}語以上${rule.max}語以下のセリフにしてください。
+${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
 相手の名前は${receiverName}。${receiverGenderLabel}です。
 ${Math.random() > 0.2 ? 'ただし、英文の中で相手の名前を呼びかけないでください。' : ''}
 ${notes ? `【注意】\n${notes}\n` : ''}
 
 ${usedBlock}
-【重要】英語のセリフのみを出力してください。JSONや説明は不要です。
+【重要】英語の口語文のみを出力してください。JSONや説明は不要です。
 `;
 }
