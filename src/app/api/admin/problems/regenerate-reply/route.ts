@@ -44,7 +44,6 @@ export async function POST(request: Request) {
 
     // englishReply を再生成
     const englishPrompt =
-      `「${problem.englishReply}」とは異なる返答を1つ作成してください。` +
       buildEnglishReplyPrompt({
         senderName: problem.senderName,
         receiverName: problem.receiverName,
@@ -60,6 +59,7 @@ export async function POST(request: Request) {
         when: problem.senderWhen,
         want: problem.senderWant,
         isKids: problem.difficultyLevel === 1,
+        oldReply: problem.englishReply,
       }) +
       `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json

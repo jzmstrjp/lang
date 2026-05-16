@@ -100,6 +100,7 @@ export async function POST(request: Request) {
       receiverGender: receiverVoice === 'male' ? '男性' : '女性',
       englishReply,
       translate: 'sender',
+      japanese: japaneseSentence,
     });
 
     return NextResponse.json({ success: true, improvedTranslation });
