@@ -94,7 +94,7 @@ ${how}での会話を想定しています。
 ${rule.min}語以上${rule.max}語以下のセリフにしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
 相手の名前は${receiverName}。${receiverGenderLabel}です。
-${Math.random() > 0.3 ? '冒頭で相手の名前を呼びかけないでください。' : '相手の名前を呼びかけたり、セリフの中に含めたりしてください。'}
+${Math.random() > 0.1 ? '冒頭で相手の名前を呼びかけないでください。' : '相手の名前を呼びかけたり、セリフの中に含めたりしてください。'}
 ${notes ? `【注意】\n${notes}\n` : ''}
 
 ${usedBlock}
