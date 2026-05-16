@@ -3,8 +3,9 @@ export type ProblemLength = 'kids' | 'short' | 'medium' | 'long';
 export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
-    max: 7,
-    sentenceNote: '子ども向け学習コンテンツなので、ごくシンプルな、短めのセリフにしてください。',
+    max: 6,
+    sentenceNote:
+      '子ども向け学習コンテンツです。ごくシンプルな文法で、短めのセリフにしてください。',
     sceneNote: '学校や家庭など日常生活のシーンにしてください。ビジネスのシーンは避けてください。',
   },
   short: {

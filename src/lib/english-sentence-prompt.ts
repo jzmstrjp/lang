@@ -74,18 +74,18 @@ export function buildEnglishSentenceOnlyPrompt({
     idiomNote,
     howNoteMap[how],
     buildThirdPersonNote(phrase, senderName, receiverName),
-    'note' in rule ? `- ${rule.note}` : '',
   ]
     .filter(Boolean)
     .join('\n');
 
   return `
 「${phrase}${phraseJa ? `（${phraseJa}）` : ''}」というフレーズを使って、現実世界で誰もが一度は聞いたことがあるような自然な英語のセリフを1つ作ってください。
-${how}で誰かに話しかけるセリフです。
+${how}で誰かに話しかけるセリフです。質問・依頼・意見・お気持ちなどです。
 
 現実にありそうなシチュエーションにしてください。
 英語ネイティブが聞いても違和感のないセリフにしてください。
 英語の文法として確実に正しいセリフにしてください。
+${'note' in rule ? `- ${rule.note}` : ''}
 フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 具体的な状況や情景が浮かぶような具体的なセリフにしてください。
 

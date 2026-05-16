@@ -74,8 +74,13 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         japaneseReply: true,
         englishReply: true,
         senderVoice: true,
+        senderName: true,
         senderRole: true,
+        senderWhy: true,
+        senderWhen: true,
+        senderWant: true,
         receiverVoice: true,
+        receiverName: true,
         receiverRole: true,
         audioEnUrl: true,
         audioJaUrl: true,
@@ -132,18 +137,26 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         const receiverVoiceGender = problem.receiverVoice as VoiceGender;
 
         const senderVoiceInstruction = buildSenderVoiceInstruction({
+          senderName: problem.senderName,
+          receiverName: problem.receiverName,
           senderRole: problem.senderRole,
           senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
           receiverRole: problem.receiverRole,
           receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
+          why: problem.senderWhy,
+          when: problem.senderWhen,
+          want: problem.senderWant,
         });
         const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+          senderName: problem.senderName,
+          receiverName: problem.receiverName,
           senderRole: problem.senderRole,
           senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
           receiverRole: problem.receiverRole,
           receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
           englishSentence: problem.englishSentence,
           englishReply: problem.englishReply ?? '',
+          when: problem.senderWhen,
         });
 
         if (needsEnglish && audioUtilsModule && r2ClientModule) {

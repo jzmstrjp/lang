@@ -59,18 +59,26 @@ export async function POST(request: Request) {
     const receiverVoiceGender = problem.receiverVoice as VoiceGender;
 
     const senderVoiceInstruction = buildSenderVoiceInstruction({
+      senderName: problem.senderName,
+      receiverName: problem.receiverName,
       senderRole: problem.senderRole,
       senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
       receiverRole: problem.receiverRole,
       receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
+      why: problem.senderWhy,
+      when: problem.senderWhen,
+      want: problem.senderWant,
     });
     const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+      senderName: problem.senderName,
+      receiverName: problem.receiverName,
       senderRole: problem.senderRole,
       senderVoice: senderVoiceGender === 'male' ? '男性' : '女性',
       receiverRole: problem.receiverRole,
       receiverVoice: receiverVoiceGender === 'male' ? '男性' : '女性',
       englishSentence: problem.englishSentence,
       englishReply: problem.englishReply ?? '',
+      when: problem.senderWhen,
     });
 
     let newUrl: string;

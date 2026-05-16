@@ -24,35 +24,57 @@ function ensureApiKey() {
 }
 
 export function buildSenderVoiceInstruction({
+  senderName,
+  receiverName,
   senderRole,
   senderVoice,
   receiverRole,
   receiverVoice,
+  why,
+  when,
+  want,
 }: {
+  senderName: string;
+  receiverName: string;
   senderRole: string;
   senderVoice: '男性' | '女性';
   receiverRole: string;
   receiverVoice: '男性' | '女性';
+  why: string;
+  when: string;
+  want: string;
 }): string {
-  return `${senderRole}（${senderVoice}）が${receiverRole}（${receiverVoice}）に話しかける場面。`;
+  const base = `${senderName}（${senderRole}・${senderVoice}）が${receiverName}（${receiverRole}・${receiverVoice}）に話しかける場面。`;
+  const context = [`タイミング: ${when}`, `きっかけ: ${why}`, `期待: ${want}`]
+    .filter(Boolean)
+    .join('\n');
+  return context ? `${base}\n${context}` : base;
 }
 
 export function buildReceiverVoiceInstruction({
+  senderName,
+  receiverName,
   senderRole,
   senderVoice,
   receiverRole,
   receiverVoice,
   englishSentence,
   englishReply,
+  when,
 }: {
+  senderName: string;
+  receiverName: string;
   senderRole: string;
   senderVoice: '男性' | '女性';
   receiverRole: string;
   receiverVoice: '男性' | '女性';
   englishSentence: string;
   englishReply: string;
+  when: string;
 }): string {
-  return `${senderRole}（${senderVoice}）から「${englishSentence}」と話しかけられた${receiverRole}（${receiverVoice}）が「${englishReply}」と返答する場面。`;
+  const base = `${senderName}（${senderRole}・${senderVoice}）から「${englishSentence}」と話しかけられた${receiverName}（${receiverRole}・${receiverVoice}）が「${englishReply}」と返答する場面。`;
+  const context = [`タイミング: ${when}`].filter(Boolean).join('\n');
+  return context ? `${base}\n${context}` : base;
 }
 
 // 音声設定は src/config/voice.ts で一元管理されるようになりました

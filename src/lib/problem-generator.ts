@@ -100,6 +100,7 @@ export type EnglishReplyPromptParams = {
   why: string;
   how: string;
   want: string;
+  isKids?: boolean;
 };
 
 export function buildEnglishReplyPrompt({
@@ -116,12 +117,13 @@ export function buildEnglishReplyPrompt({
   why,
   how,
   want,
+  isKids = false,
 }: EnglishReplyPromptParams): string {
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答のセリフを英語で1つ作成してください。
 「Okay, I understand.」などの汎用的な返答でなく、この場面ならではの返答を作成してください。
-簡潔な内容で、10語以内を目安に作成してください。
+簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
 【シーン情報】
@@ -408,18 +410,26 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
   englishReply?: string;
 }> {
   const senderVoiceInstruction = buildSenderVoiceInstruction({
+    senderName: problem.senderName,
+    receiverName: problem.receiverName,
     senderRole: problem.senderRole,
     senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
+    why: problem.senderWhy,
+    when: problem.senderWhen,
+    want: problem.senderWant,
   });
   const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+    senderName: problem.senderName,
+    receiverName: problem.receiverName,
     senderRole: problem.senderRole,
     senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
     englishSentence: problem.englishSentence,
     englishReply: problem.englishReply ?? '',
+    when: problem.senderWhen,
   });
 
   const audioPromises = [
@@ -476,18 +486,26 @@ export async function generateAndUploadAudioAssets(
   englishReply?: string;
 }> {
   const senderVoiceInstruction = buildSenderVoiceInstruction({
+    senderName: problem.senderName,
+    receiverName: problem.receiverName,
     senderRole: problem.senderRole,
     senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
+    why: problem.senderWhy,
+    when: problem.senderWhen,
+    want: problem.senderWant,
   });
   const receiverVoiceInstruction = buildReceiverVoiceInstruction({
+    senderName: problem.senderName,
+    receiverName: problem.receiverName,
     senderRole: problem.senderRole,
     senderVoice: problem.senderVoice === 'male' ? '男性' : '女性',
     receiverRole: problem.receiverRole,
     receiverVoice: problem.receiverVoice === 'male' ? '男性' : '女性',
     englishSentence: problem.englishSentence,
     englishReply: problem.englishReply ?? '',
+    when: problem.senderWhen,
   });
 
   const audioBufferPromises = [

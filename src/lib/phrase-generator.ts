@@ -181,11 +181,13 @@ export async function createEnglishReply(
     senderName,
     receiverName,
     voice,
+    isKids,
   }: {
     sentence: SceneInfo;
     senderName: string;
     receiverName: string;
     voice: Voice;
+    isKids: boolean;
   },
 ): Promise<string | null> {
   const prompt =
@@ -203,6 +205,7 @@ export async function createEnglishReply(
       why: sentence.why,
       how: sentence.how,
       want: sentence.want,
+      isKids,
     }) +
     `
 【重要】英語の台詞のみを出力してください。JSONや説明は不要です。
@@ -352,6 +355,7 @@ export async function generateForPhrase(
     voice,
     senderName,
     receiverName,
+    isKids: wordCountLength === 'kids',
   });
   if (!englishReply) return null;
 
