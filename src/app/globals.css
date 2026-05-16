@@ -275,3 +275,9 @@ button:focus {
   outline: 2px solid #00d0ff;
   outline-offset: 2px;
 }
+
+@media (pointer: coarse) {
+  button:focus {
+    outline: none;
+  }
+}
