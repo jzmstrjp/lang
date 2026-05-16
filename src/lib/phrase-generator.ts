@@ -11,6 +11,7 @@ import {
 } from '@/lib/english-sentence-prompt';
 import { buildSceneInfoPrompt, type SceneInfo } from '@/lib/scene-info-prompt';
 import { TEXT_MODEL_RICH_SCENE, TEXT_MODEL_QUICK } from '@/const';
+import { checkEnglishSentenceQuality } from '@/lib/english-sentence-quality-check';
 
 export type { Voice, How } from '@/lib/english-sentence-prompt';
 export type { SceneInfo } from '@/lib/scene-info-prompt';
@@ -104,6 +105,7 @@ export async function createEnglishSentence(
     voice,
     how,
     rule,
+    wordCountLength,
     usedSentences = [],
     additionalInstruction = '',
     senderName,
@@ -114,6 +116,7 @@ export async function createEnglishSentence(
     voice: Voice;
     how: How;
     rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
+    wordCountLength: ProblemLength;
     usedSentences?: string[];
     additionalInstruction?: string;
     senderName: string;
@@ -144,6 +147,23 @@ export async function createEnglishSentence(
 
     const englishSentence = sentenceRaw.replace(/^```[\w]*\n?|```$/g, '').trim();
     if (!englishSentence) throw new Error('英文が見つかりませんでした');
+
+    const qualityResult = await checkEnglishSentenceQuality(openai, {
+      expression: phrase,
+      wordCountLength,
+      prompt: sentencePrompt,
+      englishSentence,
+    });
+
+    if (!qualityResult.isOk) {
+      console.error(`  ❌ 品質チェック不合格: ${qualityResult.reason}`);
+      if (qualityResult.correctSentenceDraft) {
+        console.error(`     代替案: ${qualityResult.correctSentenceDraft}`);
+      }
+      return null;
+    }
+
+    console.error(`  ✅ 品質チェック合格`);
 
     const scenePrompt = buildSceneInfoPrompt({
       senderName,
@@ -343,6 +363,7 @@ export async function generateForPhrase(
     voice,
     how,
     rule: WORD_COUNT_RULES[wordCountLength],
+    wordCountLength,
     usedSentences,
     additionalInstruction,
     senderName,

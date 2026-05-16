@@ -72,3 +72,20 @@ model Word {
   @@index([isKids])
   @@map("words")
 }
+
+model EnglishSentenceQualityLog {
+  id                  String   @id @default(cuid())
+  expression          String
+  wordCountLength     String
+  prompt              String
+  englishSentence     String
+  isOk                Boolean
+  reason              String
+  correctSentenceDraft String?
+
+  createdAt DateTime @default(now())
+
+  @@index([expression])
+  @@index([isOk])
+  @@map("english_sentence_quality_logs")
+}
