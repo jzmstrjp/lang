@@ -59,6 +59,7 @@ export async function POST(request: Request) {
         how: problem.how,
         when: problem.senderWhen,
         want: problem.senderWant,
+        isKids: problem.difficultyLevel === 1,
       }) +
       `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json
