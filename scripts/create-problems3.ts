@@ -7,314 +7,17 @@ import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
-import { TEXT_MODEL_1, TEXT_MODEL_2 } from '@/const';
+import { TEXT_MODEL_QUICK } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
-import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
 import type { SeedProblemData } from '@/types/problem';
-import { buildSceneText } from '@/lib/scene-utils';
-import {
-  type Voice,
-  type How,
-  voiceMap,
-  toggleVoice,
-  buildEnglishSentenceOnlyPrompt,
-} from '@/lib/english-sentence-prompt';
-import { buildSceneInfoPrompt, type SceneInfo } from '@/lib/scene-info-prompt';
+import { type Voice, type How, type SceneInfo, generateForPhrase } from '@/lib/phrase-generator';
+import { toggleVoice } from '@/lib/english-sentence-prompt';
 
 dotenv.config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const createEnglishReply = async ({
-  sentence,
-  senderName,
-  receiverName,
-  voice,
-  _wordCountLength,
-}: {
-  sentence: SceneInfo;
-  senderName: string;
-  receiverName: string;
-  voice: Voice;
-  _wordCountLength: ProblemLength;
-}): Promise<string | null> => {
-  const prompt =
-    buildEnglishReplyPrompt({
-      senderName,
-      receiverName,
-      who: sentence.senderRole,
-      whom: sentence.receiverRole,
-      senderGender: voiceMap[voice] as '男性' | '女性',
-      receiverGender: voiceMap[toggleVoice(voice)] as '男性' | '女性',
-      englishSentence: sentence.englishSentence,
-      when: sentence.when,
-      where: sentence.where,
-      receiverPlace: sentence.receiverWhere,
-      why: sentence.why,
-      how: sentence.how,
-    }) +
-    `
-【重要】英語の台詞のみを出力してください。JSONや説明は不要です。
-`;
-
-  // console.log(prompt);
-
-  try {
-    const response = await openai.responses.create({
-      model: TEXT_MODEL_1,
-      input: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    });
-
-    const content = response.output_text?.trim();
-    if (!content) throw new Error('レスポンスが空です');
-
-    return content;
-  } catch (e) {
-    console.error('エラー:', e);
-    return null;
-  }
-};
-
-type JapaneseConversationResult = {
-  japaneseSentence: string;
-  japaneseReply: string;
-};
-
-const createJapaneseConversation = async ({
-  sentence,
-  senderName,
-  receiverName,
-  englishReply,
-  voice,
-  how,
-}: {
-  sentence: SceneInfo;
-  senderName: string;
-  receiverName: string;
-  englishReply: string;
-  voice: Voice;
-  how: How;
-}): Promise<JapaneseConversationResult | null> => {
-  const prompt = `
-  【翻訳すべき英文】
-  englishSentence: ${sentence.englishSentence}
-  englishReply: ${englishReply}
-  
-  ${buildJapaneseConversationRules({
-    senderRole: sentence.senderRole,
-    senderName,
-    senderGender: voiceMap[voice],
-    receiverRole: sentence.receiverRole,
-    receiverName,
-    receiverGender: voiceMap[toggleVoice(voice)],
-    englishSentence: sentence.englishSentence,
-    englishReply,
-    how,
-  })}
-
-【シーン情報】
-${buildSceneText({
-  senderName,
-  receiverName,
-  how,
-  senderWhen: sentence.when,
-  place: sentence.where,
-  senderRole: sentence.senderRole,
-  senderVoice: voice,
-  receiverPlace: sentence.receiverWhere,
-  receiverRole: sentence.receiverRole,
-  receiverVoice: toggleVoice(voice),
-  senderWhy: sentence.why,
-  senderWant: sentence.want,
-})}
-
-以下のJSON形式で必ず回答してください。
-
-\`\`\`json
-{
-  "japaneseSentence": "発言の日本語訳",
-  "japaneseReply": "返答の日本語訳"
-}
-\`\`\`
-  `;
-
-  // console.log(prompt);
-
-  try {
-    const response = await openai.responses.create({
-      model: TEXT_MODEL_2,
-      input: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-    });
-
-    const content = response.output_text;
-    if (!content) throw new Error('レスポンスが空です');
-
-    const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
-    if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
-
-    return JSON.parse(jsonMatch[1]) as JapaneseConversationResult;
-  } catch (e) {
-    console.error('エラー:', e);
-    return null;
-  }
-};
-
-const maleNames = [
-  'シンジ',
-  'ケン',
-  'カイト',
-  'リョウ',
-  'ユウキ',
-  'タカシ',
-  'ハルト',
-  'ソウタ',
-  'コウキ',
-  'ダイスケ',
-  'ナオキ',
-  'ショウ',
-  'ヒロキ',
-  'ツバサ',
-  'レン',
-  'リアム',
-  'ノア',
-  'イーサン',
-  'メイソン',
-  'ルーカス',
-  'オリバー',
-  'ジェームズ',
-  'ベンジャミン',
-  'ヘンリー',
-  'アレクサンダー',
-  'ウィリアム',
-  'セバスチャン',
-  'ジャック',
-  'オーウェン',
-  'ダニエル',
-];
-
-const femaleNames = [
-  'アスカ',
-  'サクラ',
-  'レイ',
-  'アオイ',
-  'ユイ',
-  'ハナ',
-  'ミサト',
-  'リナ',
-  'ナナ',
-  'サツキ',
-  'コトネ',
-  'アカリ',
-  'ノゾミ',
-  'ユナ',
-  'ユズキ',
-  'エマ',
-  'ソフィア',
-  'クロエ',
-  'ミア',
-  'ミオ',
-  'オリビア',
-  'エヴァ',
-  'イザベラ',
-  'シャーロット',
-  'アメリア',
-  'ハーパー',
-  'エブリン',
-  'ルナ',
-  'リリー',
-  'グレース',
-];
-
-const voiceNamesMap: Record<Voice, string[]> = {
-  male: maleNames,
-  female: femaleNames,
-};
-
-const getRandomVoiceName = (voice: Voice): string => {
-  return voiceNamesMap[voice][Math.floor(Math.random() * voiceNamesMap[voice].length)];
-};
-
-const createEnglishSentence = async ({
-  phrase,
-  phraseJa,
-  voice,
-  how,
-  rule,
-  usedSentences = [],
-  additionalInstruction = '',
-  senderName,
-  receiverName,
-}: {
-  phrase: string;
-  phraseJa: string;
-  voice: Voice;
-  how: How;
-  rule: (typeof WORD_COUNT_RULES)[keyof typeof WORD_COUNT_RULES];
-  usedSentences?: string[];
-  additionalInstruction?: string;
-  senderName: string;
-  receiverName: string;
-}): Promise<SceneInfo | null> => {
-  try {
-    // 1回目: 英文のみ生成
-    const sentencePrompt = buildEnglishSentenceOnlyPrompt({
-      phrase,
-      phraseJa,
-      voice,
-      how,
-      rule,
-      usedSentences,
-      additionalInstruction,
-      senderName,
-      receiverName,
-    });
-
-    const sentenceResponse = await openai.responses.create({
-      model: TEXT_MODEL_1,
-      input: [{ role: 'user', content: sentencePrompt }],
-      temperature: 0.7,
-    });
-
-    const sentenceRaw = sentenceResponse.output_text?.trim();
-    if (!sentenceRaw) throw new Error('英文レスポンスが空です');
-
-    const englishSentence = sentenceRaw.replace(/^```[\w]*\n?|```$/g, '').trim();
-    if (!englishSentence) throw new Error('英文が見つかりませんでした');
-
-    console.log(`  英文: ${englishSentence}`);
-
-    // 2回目: シーン情報を生成
-    const scenePrompt = buildSceneInfoPrompt({
-      senderName,
-      receiverName,
-      englishSentence,
-      voice,
-      how,
-    });
-
-    const sceneResponse = await openai.responses.create({
-      model: TEXT_MODEL_1,
-      input: [{ role: 'user', content: scenePrompt }],
-      temperature: 0.7,
-    });
-
-    const sceneContent = sceneResponse.output_text;
-    if (!sceneContent) throw new Error('シーン情報レスポンスが空です');
-
-    const jsonMatch = sceneContent.match(/```json\n([\s\S]*?)```/);
-    if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
-
-    const scene = JSON.parse(jsonMatch[1]) as Omit<SceneInfo, 'englishSentence' | 'how'>;
-    return { englishSentence, how, ...scene };
-  } catch (e) {
-    console.error('エラー:', e);
-    return null;
-  }
-};
 
 // ─── DB ユーティリティ ────────────────────────────────────────────────────────
 
@@ -528,7 +231,7 @@ ${japaneseSentence}
 
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL_2,
+      model: TEXT_MODEL_QUICK,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
@@ -555,7 +258,7 @@ async function extendShortOption(originalText: string, targetLength: number): Pr
   if (additionalChars <= 0) return originalText;
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL_2,
+      model: TEXT_MODEL_QUICK,
       input: [
         {
           role: 'user',
@@ -580,7 +283,7 @@ async function shortenLongOption(originalText: string, targetLength: number): Pr
   if (charsToRemove <= 0) return originalText;
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL_2,
+      model: TEXT_MODEL_QUICK,
       input: [
         {
           role: 'user',
@@ -694,7 +397,7 @@ function ask(rl: readline.Interface, question: string): Promise<string> {
   return new Promise((resolve) => rl.question(question, (ans) => resolve(ans.trim())));
 }
 
-async function generateForPhrase(
+async function generateForPhraseToSeed(
   phrase: string,
   phraseJa: string,
   wordCountLength: ProblemLength,
@@ -702,57 +405,41 @@ async function generateForPhrase(
   how: How,
   usedSentences: string[] = [],
 ): Promise<SeedProblemData | null> {
-  const senderName = getRandomVoiceName(voice);
-  const receiverName = getRandomVoiceName(toggleVoice(voice));
-
-  const sentence = await createEnglishSentence({
+  const result = await generateForPhrase(openai, {
     phrase,
     phraseJa,
+    wordCountLength,
     voice,
     how,
-    rule: WORD_COUNT_RULES[wordCountLength],
     usedSentences,
-    senderName,
-    receiverName,
   });
-  if (!sentence) {
-    console.log('  ⚠️ スキップ（英文生成失敗）');
+  if (!result) {
+    console.log('  ⚠️ スキップ（生成失敗）');
     return null;
   }
 
-  const englishReply = await createEnglishReply({
-    sentence,
-    voice,
-    _wordCountLength: wordCountLength,
-    senderName,
-    receiverName,
-  });
-  if (!englishReply) {
-    console.log('  ⚠️ スキップ（返答生成失敗）');
-    return null;
-  }
-
-  const conversation = await createJapaneseConversation({
-    sentence,
-    senderName,
-    receiverName,
-    englishReply,
-    voice,
-    how,
-  });
-  if (!conversation) {
-    console.log('  ⚠️ スキップ（和訳生成失敗）');
-    return null;
-  }
+  const sentence: SceneInfo = {
+    englishSentence: result.englishSentence,
+    senderName: result.senderName,
+    senderRole: result.senderRole,
+    receiverName: result.receiverName,
+    receiverRole: result.receiverRole,
+    when: result.when,
+    where: result.where,
+    receiverWhere: result.receiverWhere,
+    why: result.why,
+    want: result.want,
+    how: result.how,
+  };
 
   const seed = await enrichToSeedProblemData({
     sentence,
-    englishReply,
-    japaneseSentence: conversation.japaneseSentence,
-    japaneseReply: conversation.japaneseReply,
+    englishReply: result.englishReply,
+    japaneseSentence: result.japaneseSentence,
+    japaneseReply: result.japaneseReply,
     voice,
-    senderName,
-    receiverName,
+    senderName: result.senderName,
+    receiverName: result.receiverName,
     expression: phrase,
     expressionJa: phraseJa,
     how,
@@ -763,7 +450,7 @@ async function generateForPhrase(
     return null;
   }
 
-  console.log(`  ✅ "${sentence.englishSentence}"`);
+  console.log(`  ✅ "${result.englishSentence}"`);
   return seed;
 }
 
@@ -899,7 +586,7 @@ const main = async () => {
         console.log(
           `\n── 「${word.expression}（${word.expressionJa}）」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
         );
-        const seed = await generateForPhrase(
+        const seed = await generateForPhraseToSeed(
           word.expression,
           word.expressionJa,
           'kids',
@@ -924,7 +611,7 @@ const main = async () => {
           console.log(
             `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
           );
-          const seed = await generateForPhrase(
+          const seed = await generateForPhraseToSeed(
             word.expression,
             word.expressionJa,
             len,
@@ -953,7 +640,7 @@ const main = async () => {
           console.log(
             `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
           );
-          const seed = await generateForPhrase(
+          const seed = await generateForPhraseToSeed(
             word.expression,
             word.expressionJa,
             len,
@@ -1142,7 +829,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
         console.error(
           `\n── 「${word.expression}（${word.expressionJa}）」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
         );
-        const seed = await generateForPhrase(
+        const seed = await generateForPhraseToSeed(
           word.expression,
           word.expressionJa,
           'kids',
@@ -1167,7 +854,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
           console.error(
             `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
           );
-          const seed = await generateForPhrase(
+          const seed = await generateForPhraseToSeed(
             word.expression,
             word.expressionJa,
             len,
@@ -1196,7 +883,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
           console.error(
             `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
           );
-          const seed = await generateForPhrase(
+          const seed = await generateForPhraseToSeed(
             word.expression,
             word.expressionJa,
             len,

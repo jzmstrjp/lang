@@ -21,7 +21,7 @@ import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
-import { TEXT_MODEL_1, TEXT_MODEL_2 } from '@/const';
+import { TEXT_MODEL_RICH_SCENE, TEXT_MODEL_QUICK } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
@@ -99,6 +99,7 @@ export type EnglishReplyPromptParams = {
   receiverPlace: string;
   why: string;
   how: string;
+  want: string;
 };
 
 export function buildEnglishReplyPrompt({
@@ -114,24 +115,33 @@ export function buildEnglishReplyPrompt({
   receiverPlace,
   why,
   how,
+  want,
 }: EnglishReplyPromptParams): string {
-  return `あなたは${receiverName}（${whom}・${receiverGender}）です。英語ネイティブです。
+  return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
-この時にあなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
+この時に${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答のセリフを英語で作成してください。
+現実世界で誰もが一度は見たことがあるような自然なストーリーになるように英語のセリフを1つ作ってください。
 汎用的な返答でなく、この場面ならではの返答を作成してください。
 簡潔な内容で、10語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
-【シーン】
-- ${senderName}（${who}・${senderGender}）が話しかけたタイミング: ${when}
-- ${senderName}（${who}・${senderGender}）がいる場所: ${where}
-- ${receiverName}（${whom}・${receiverGender}）がいる場所: ${receiverPlace}
+【シーン情報】
+${buildSceneText({
+  senderName,
+  receiverName,
+  how,
+  senderWhen: when,
+  place: where,
+  senderRole: who,
+  senderVoice: senderGender === '男性' ? 'male' : 'female',
+  receiverPlace: receiverPlace,
+  receiverRole: whom,
+  receiverVoice: receiverGender === '男性' ? 'male' : 'female',
+  senderWhy: why,
+  senderWant: want,
+})}
 
-このシーンであなたが返すであろう、ごく自然な返答のセリフを英語で作成してください。
-
-【参考情報】
-${receiverName}（${whom}・${receiverGender}）は知らないかもしれない情報です。
-- ${senderName}（${who}・${senderGender}）が話しかけようと思ったきっかけ: ${why}
+このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答のセリフを英語で作成してください。
 `;
 }
 
@@ -320,7 +330,7 @@ AIによる画像生成では、以下の問題が起こりがちである。
 \`\`\``;
 
   const response = await openai.responses.create({
-    model: TEXT_MODEL_1,
+    model: TEXT_MODEL_RICH_SCENE,
     input: [{ role: 'user', content: prompt }],
     temperature: 0.3,
   });
@@ -851,7 +861,7 @@ ${buildSceneText({
 \`\`\``;
 
   const response = await openai.responses.create({
-    model: TEXT_MODEL_2,
+    model: TEXT_MODEL_QUICK,
     input: [{ role: 'user', content: prompt }],
     temperature: 0.5,
   });

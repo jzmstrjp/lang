@@ -1,8 +1,8 @@
 import type { ImageGenerateParams } from 'openai/resources/images';
 import type { ChatModel } from 'openai/resources/shared';
 
-export const TEXT_MODEL_1: ChatModel = 'gpt-4.1';
-export const TEXT_MODEL_2: ChatModel = 'gpt-4.1';
+export const TEXT_MODEL_RICH_SCENE: ChatModel = 'gpt-4.1';
+export const TEXT_MODEL_QUICK: ChatModel = 'gpt-4.1';
 
 export const IMAGE_MODEL_SETTING = {
   model: 'gpt-image-2',

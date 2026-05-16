@@ -3,7 +3,7 @@ import { OpenAI } from 'openai';
 import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL_1 } from '@/const';
+import { TEXT_MODEL_RICH_SCENE } from '@/const';
 import { buildEnglishReplyPrompt, translateJapanese } from '@/lib/problem-generator';
 
 const openai = new OpenAI({
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
         why: problem.senderWhy,
         how: problem.how,
         when: problem.senderWhen,
+        want: problem.senderWant,
       }) +
       `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
 \`\`\``;
 
     const englishResponse = await openai.responses.create({
-      model: TEXT_MODEL_1,
+      model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: englishPrompt }],
       temperature: 0.9,
     });

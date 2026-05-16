@@ -2,43 +2,25 @@
 
 import { useState } from 'react';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
-
-type PhraseTestItem = {
-  englishSentence: string;
-  japaneseSentence: string;
-  senderName: string;
-  senderRole: string;
-  receiverName: string;
-  receiverRole: string;
-  when: string;
-  where: string;
-  receiverWhere: string;
-  why: string;
-  want: string;
-  how: string;
-};
+import type { GenerateForPhraseResult } from '@/lib/phrase-generator';
 
 type PhraseTestResult = {
-  results: PhraseTestItem[];
-  prompt: string;
+  results: GenerateForPhraseResult[];
 };
 
 export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase?: string }) {
   const [phrase, setPhrase] = useState(defaultPhrase);
   const [additionalInstruction, setAdditionalInstruction] = useState('');
-  const FIXED_SUFFIX = 'セリフにしてください';
   const [selectedType, setSelectedType] = useState<ProblemLength>('short');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PhraseTestResult | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
 
   const generate = async () => {
     if (!phrase.trim()) return;
     setLoading(true);
     setError(null);
     setResult(null);
-    setShowPrompt(false);
 
     try {
       const response = await fetch('/api/problem/generate-from-phrase', {
@@ -46,9 +28,7 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phrase: phrase.trim(),
-          additionalInstruction: [additionalInstruction.trim(), FIXED_SUFFIX]
-            .filter(Boolean)
-            .join(''),
+          additionalInstruction: additionalInstruction.trim(),
           type: selectedType,
         }),
       });
@@ -102,22 +82,16 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
               htmlFor="additional-instruction"
               className="block text-base font-semibold text-[var(--text)] mb-2"
             >
-              追加指示{' '}
-              <span className="text-sm font-normal text-[var(--text-muted)]">
-                （末尾に「セリフにしてください」が自動で付きます）
-              </span>
+              追加指示
             </label>
-            <div className="flex items-center gap-2">
-              <input
-                id="additional-instruction"
-                type="text"
-                value={additionalInstruction}
-                onChange={(e) => setAdditionalInstruction(e.target.value)}
-                placeholder=""
-                className="flex-1 px-4 py-3 text-base border-2 border-[var(--border)] rounded-xl bg-[var(--background)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-              />
-              <span className="text-base text-[var(--text)] whitespace-nowrap">{FIXED_SUFFIX}</span>
-            </div>
+            <input
+              id="additional-instruction"
+              type="text"
+              value={additionalInstruction}
+              onChange={(e) => setAdditionalInstruction(e.target.value)}
+              placeholder=""
+              className="w-full px-4 py-3 text-base border-2 border-[var(--border)] rounded-xl bg-[var(--background)] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            />
           </div>
 
           {/* 問題の長さ + 生成ボタン */}
@@ -182,8 +156,25 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                   #{i + 1}
                 </div>
                 <div className="px-5 py-4 space-y-3">
-                  <p className="text-lg font-bold text-[var(--text)]">{item.englishSentence}</p>
-                  <p className="text-base text-[var(--text-muted)]">{item.japaneseSentence}</p>
+                  {/* 会話 */}
+                  <div className="space-y-2">
+                    <div className="rounded-xl bg-[var(--background)] border border-[var(--border)] p-3 space-y-1">
+                      <p className="text-xs font-semibold text-[var(--text-muted)]">
+                        {item.senderName} →
+                      </p>
+                      <p className="text-lg font-bold text-[var(--text)]">{item.englishSentence}</p>
+                      <p className="text-sm text-[var(--text-muted)]">{item.japaneseSentence}</p>
+                    </div>
+                    <div className="rounded-xl bg-[var(--border)]/20 border border-[var(--border)] p-3 space-y-1">
+                      <p className="text-xs font-semibold text-[var(--text-muted)]">
+                        ← {item.receiverName}
+                      </p>
+                      <p className="text-lg font-bold text-[var(--text)]">{item.englishReply}</p>
+                      <p className="text-sm text-[var(--text-muted)]">{item.japaneseReply}</p>
+                    </div>
+                  </div>
+
+                  {/* シーン情報 */}
                   <div className="text-sm text-[var(--text-muted)] space-y-1 border-t border-[var(--border)] pt-3">
                     <p>
                       <span className="font-semibold">senderName:</span> {item.senderName}
@@ -215,24 +206,13 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                     <p>
                       <span className="font-semibold">how:</span> {item.how}
                     </p>
+                    <p>
+                      <span className="font-semibold">voice:</span> {item.voice}
+                    </p>
                   </div>
                 </div>
               </div>
             ))}
-
-            <div className="pt-2">
-              <button
-                onClick={() => setShowPrompt((v) => !v)}
-                className="text-sm text-[var(--text-muted)] underline underline-offset-2 hover:text-[var(--text)] transition-colors"
-              >
-                {showPrompt ? 'プロンプトを隠す' : '送信したプロンプトを確認'}
-              </button>
-              {showPrompt && (
-                <pre className="mt-3 text-xs bg-[var(--border)]/20 border border-[var(--border)] rounded-xl p-4 whitespace-pre-wrap text-[var(--text-muted)] leading-relaxed">
-                  {result.prompt}
-                </pre>
-              )}
-            </div>
           </div>
         )}
       </div>
