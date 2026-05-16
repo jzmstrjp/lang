@@ -35,79 +35,65 @@ export type GenerateForPhraseResult = {
   voice: Voice;
 };
 
-const maleNames = [
-  'シンジ',
+const maleNamesJapanese = [
   'ケン',
-  'カイト',
-  'リョウ',
-  'ユウキ',
+  'シンジ',
+  'リョウタ',
   'タカシ',
-  'ハルト',
-  'ソウタ',
-  'コウキ',
-  'ダイスケ',
+  'ユウト',
+  'アキラ',
   'ナオキ',
-  'ショウ',
-  'ヒロキ',
-  'ツバサ',
-  'レン',
-  'リアム',
-  'ノア',
-  'イーサン',
-  'メイソン',
+  'ショウタ',
+  'ヒロ',
+  'ユウキ',
+] as const;
+
+const maleNamesEnglish = [
   'ルーカス',
-  'オリバー',
   'ジェームズ',
-  'ベンジャミン',
-  'ヘンリー',
   'アレクサンダー',
   'ウィリアム',
-  'セバスチャン',
   'ジャック',
-  'オーウェン',
   'ダニエル',
-];
+  'ライアン',
+  'イーサン',
+  'ノア',
+  'セバスチャン',
+] as const;
 
-const femaleNames = [
-  'アスカ',
+const femaleNamesJapanese = [
   'サクラ',
   'レイ',
-  'アオイ',
+  'アスカ',
   'ユイ',
   'ハナ',
-  'ミサト',
-  'リナ',
-  'ナナ',
-  'サツキ',
-  'コトネ',
-  'アカリ',
-  'ノゾミ',
-  'ユナ',
-  'ユズキ',
+  'ユウコ',
+  'カナ',
+  'ミオ',
+  'レナ',
+  'ユキ',
+] as const;
+
+const femaleNamesEnglish = [
   'エマ',
   'ソフィア',
   'クロエ',
   'ミア',
-  'ミオ',
   'オリビア',
   'エヴァ',
-  'イザベラ',
   'シャーロット',
-  'アメリア',
-  'ハーパー',
-  'エブリン',
   'ルナ',
   'リリー',
-  'グレース',
-];
+  'マリア',
+] as const;
 
-const voiceNamesMap: Record<Voice, string[]> = {
-  male: maleNames,
-  female: femaleNames,
-};
+const voiceNamesMap = {
+  male: { japanese: maleNamesJapanese, english: maleNamesEnglish },
+  female: { japanese: femaleNamesJapanese, english: femaleNamesEnglish },
+} as const;
 
-export const getRandomVoiceName = (voice: Voice): string => {
-  return voiceNamesMap[voice][Math.floor(Math.random() * voiceNamesMap[voice].length)]!;
+export const getRandomVoiceName = (voice: Voice, type: 'japanese' | 'english'): string => {
+  return voiceNamesMap[voice][type][Math.floor(Math.random() * voiceNamesMap[voice][type].length)]!;
 };
 
 export async function createEnglishSentence(
@@ -165,6 +151,7 @@ export async function createEnglishSentence(
       englishSentence,
       voice,
       how,
+      sceneNote: 'sceneNote' in rule ? rule.sceneNote : undefined,
     });
 
     const sceneResponse = await openai.responses.create({
@@ -344,8 +331,8 @@ export async function generateForPhrase(
     usedSentences?: string[];
   },
 ): Promise<GenerateForPhraseResult | null> {
-  const senderName = getRandomVoiceName(voice);
-  const receiverName = getRandomVoiceName(toggleVoice(voice));
+  const senderName = getRandomVoiceName(voice, 'japanese');
+  const receiverName = getRandomVoiceName(toggleVoice(voice), 'english');
 
   const sentence = await createEnglishSentence(openai, {
     phrase,

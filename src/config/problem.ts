@@ -4,20 +4,24 @@ export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
     max: 7,
-    note: '子供が勉強するための英文。複雑な文法は使わないこと。',
+    sentenceNote: '子ども向け学習コンテンツなので、ごくシンプルな、短めのセリフにしてください。',
+    sceneNote: '学校や家庭など日常生活のシーンにしてください。ビジネスのシーンは避けてください。',
   },
   short: {
     min: 3,
     max: 9,
-    note: '指定されたワード以外は、中学生でも分かりそうな語彙で作成すること。',
+    sentenceNote: '指定されたワード以外は、中学生でも分かりそうな語彙で作成すること。',
   },
   medium: { min: 10, max: 15 },
   long: {
     min: 16,
     max: 30,
-    note: '1つの文を無理に長くせずとも、複数の文に分けても良い。',
+    sentenceNote: '1つの文を無理に長くせずとも、複数の文に分けても良い。',
   },
-} as const satisfies Record<ProblemLength, { min: number; max: number; note?: string }>;
+} as const satisfies Record<
+  ProblemLength,
+  { min: number; max: number; sentenceNote?: string; sceneNote?: string }
+>;
 
 export const VALID_DIFFICULTY_LEVELS = [
   'kids',

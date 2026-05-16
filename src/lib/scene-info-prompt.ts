@@ -102,12 +102,14 @@ export function buildSceneInfoPrompt({
   englishSentence,
   voice,
   how,
+  sceneNote,
 }: {
   senderName: string;
   receiverName: string;
   englishSentence: string;
   voice: Voice;
   how: How;
+  sceneNote?: string;
 }): string {
   const samplesBlock = samples
     .map((sample) => {
@@ -118,6 +120,7 @@ export function buildSceneInfoPrompt({
 
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
+  const sceneNoteBlock = sceneNote ? `\n${sceneNote}\n` : '';
 
   return `${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
 何かに対するリアクションではなく、${senderName}から話しかけました。
@@ -127,7 +130,7 @@ export function buildSceneInfoPrompt({
 そして、各項目を矛盾の無いように埋めてください。
 
 ${phoneNote}
-${buildThirdPersonNote(englishSentence, senderName, receiverName)}
+${sceneNoteBlock}${buildThirdPersonNote(englishSentence, senderName, receiverName)}
 【重要】
 以下のJSON形式で必ず回答してください。
 人物の個人名は全てカタカナで書くこと。

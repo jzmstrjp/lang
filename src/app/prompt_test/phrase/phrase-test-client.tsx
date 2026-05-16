@@ -152,62 +152,42 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                 key={i}
                 className="bg-[var(--card)] rounded-2xl overflow-hidden border border-[var(--border)]"
               >
-                <div className="px-5 py-2 bg-[var(--border)]/30 text-xs font-semibold text-[var(--text-muted)] tracking-wider">
-                  #{i + 1}
+                <div className="px-5 py-2 bg-[var(--border)]/30 font-semibold text-[var(--text-muted)] tracking-wider">
+                  #{i + 1} {item.how}・{item.where} → {item.receiverWhere}
                 </div>
                 <div className="px-5 py-4 space-y-3">
                   {/* 会話 */}
                   <div className="space-y-2">
                     <div className="rounded-xl bg-[var(--background)] border border-[var(--border)] p-3 space-y-1">
                       <p className="text-xs font-semibold text-[var(--text-muted)]">
-                        {item.senderName} →
+                        {item.senderName}（{item.senderRole}・
+                        {item.voice === 'male' ? '男性' : '女性'}）
                       </p>
-                      <p className="text-lg font-bold text-[var(--text)]">{item.englishSentence}</p>
-                      <p className="text-sm text-[var(--text-muted)]">{item.japaneseSentence}</p>
+                      <p className="text-lg font-bold text-[var(--text)]">
+                        {item.japaneseSentence}
+                      </p>
+                      <p className="text-sm text-[var(--text-muted)]">{item.englishSentence}</p>
                     </div>
                     <div className="rounded-xl bg-[var(--border)]/20 border border-[var(--border)] p-3 space-y-1">
                       <p className="text-xs font-semibold text-[var(--text-muted)]">
-                        ← {item.receiverName}
+                        {item.receiverName}（{item.receiverRole}・
+                        {item.voice === 'male' ? '男性' : '女性'}）
                       </p>
-                      <p className="text-lg font-bold text-[var(--text)]">{item.englishReply}</p>
-                      <p className="text-sm text-[var(--text-muted)]">{item.japaneseReply}</p>
+                      <p className="text-lg font-bold text-[var(--text)]">{item.japaneseReply}</p>
+                      <p className="text-sm text-[var(--text-muted)]">{item.englishReply}</p>
                     </div>
                   </div>
 
                   {/* シーン情報 */}
                   <div className="text-sm text-[var(--text-muted)] space-y-1 border-t border-[var(--border)] pt-3">
                     <p>
-                      <span className="font-semibold">senderName:</span> {item.senderName}
+                      <span className="font-semibold">タイミング:</span> {item.when}
                     </p>
                     <p>
-                      <span className="font-semibold">senderRole:</span> {item.senderRole}
+                      <span className="font-semibold">きっかけ:</span> {item.why}
                     </p>
                     <p>
-                      <span className="font-semibold">receiverName:</span> {item.receiverName}
-                    </p>
-                    <p>
-                      <span className="font-semibold">receiverRole:</span> {item.receiverRole}
-                    </p>
-                    <p>
-                      <span className="font-semibold">when:</span> {item.when}
-                    </p>
-                    <p>
-                      <span className="font-semibold">why:</span> {item.why}
-                    </p>
-                    <p>
-                      <span className="font-semibold">want:</span> {item.want}
-                    </p>
-                    <p>
-                      <span className="font-semibold">where:</span> {item.where}
-                    </p>
-                    <p>
-                      <span className="font-semibold">receiverWhere:</span> {item.receiverWhere}
-                    </p>
-                    <p>
-                      <span className="font-semibold">how:</span> {item.how}
-                    </p>
-                    <p>
-                      <span className="font-semibold">voice:</span> {item.voice}
+                      <span className="font-semibold">期待:</span> {item.want}
                     </p>
                   </div>
                 </div>
