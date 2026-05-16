@@ -30,14 +30,14 @@ const buildSceneInfoResultDefinition = (
   englishSentence,
   how,
   senderName,
-  senderRole: `${senderName}の立場`,
+  senderRole: `${senderName}の立場（最大10文字程度で簡潔に）`,
   receiverName,
-  receiverRole: `${senderName}は${receiverName}にとってどんな相手か（${senderName}の〇〇、という形式で書くこと）`,
-  when: `${senderName}が${receiverName}に上記のセリフを言ったタイミング`,
-  why: `${senderName}がそのセリフを言おうと感じたきっかけ（登場人物は、第三者も含めて全て個人名で書くこと）`,
-  want: `${senderName}が${receiverName}に何を求めてそのセリフを言ったのか（登場人物は、第三者も含めて全て個人名で書くこと）`,
-  where: `${senderName}がいる場所（登場人物は、第三者も含めて全て個人名で書くこと）`,
-  receiverWhere: `${receiverName}がいる場所（登場人物は、第三者も含めて全て個人名で書くこと）`,
+  receiverRole: `${senderName}は${receiverName}にとってどんな相手か（${senderName}の〇〇、という形式で書くこと・最大15文字程度で簡潔に）`,
+  when: `${senderName}が${receiverName}に上記のセリフを言ったタイミング。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）20文字程度で簡潔に。`,
+  why: `${senderName}がそのセリフを言おうと感じたきっかけ。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）40文字程度で簡潔に。`,
+  want: `${senderName}が${receiverName}に何を求めてそのセリフを言ったのか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）40文字程度で簡潔に。`,
+  where: `${senderName}がいる場所（ここには個人名は書かないこと・最大10文字程度で簡潔に）`,
+  receiverWhere: `${receiverName}がいる場所。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大10文字程度で簡潔に。`,
 });
 
 const samples: SceneInfo[] = [
@@ -117,19 +117,20 @@ export function buildSceneInfoPrompt({
     .join('\n\n');
 
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
-  const howLabel = how === '電話' ? '電話' : '対面';
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
 
   return `あなたは${senderName}（${voiceMap[voice]}）です。
-${receiverName}（${receiverGenderLabel}）に対して${howLabel}「${englishSentence}」と話しかけました。
+${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
+何かに対するリアクションではなく、あなたから話しかけました。
 
-あなたの職業はなんですか？
+あなたの立場や職業はなんですか？
 ${receiverName}とはどんな関係ですか？
 これはどんなタイミングで、どこで言ったセリフですか？
 何がきっかけで、${receiverName}に何を求めてこのセリフを言いましたか？
 矛盾のない、現実にあるようなシーンを考えてください。${phoneNote}
 ${buildThirdPersonNote(englishSentence, senderName, receiverName)}
 以下のJSON形式で必ず回答してください。
+人物の個人名は全てカタカナで書くこと。
 
 \`\`\`json
 ${JSON.stringify(buildSceneInfoResultDefinition(englishSentence, how, senderName, receiverName), null, 2)}

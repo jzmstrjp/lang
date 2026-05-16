@@ -21,7 +21,7 @@ import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL_1, TEXT_MODEL_2 } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
@@ -320,7 +320,7 @@ AIによる画像生成では、以下の問題が起こりがちである。
 \`\`\``;
 
   const response = await openai.responses.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_1,
     input: [{ role: 'user', content: prompt }],
     temperature: 0.3,
   });
@@ -851,7 +851,7 @@ ${buildSceneText({
 \`\`\``;
 
   const response = await openai.responses.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_2,
     input: [{ role: 'user', content: prompt }],
     temperature: 0.5,
   });

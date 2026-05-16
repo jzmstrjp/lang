@@ -7,7 +7,7 @@ import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL_1, TEXT_MODEL_2 } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
 import type { SeedProblemData } from '@/types/problem';
@@ -63,7 +63,7 @@ const createEnglishReply = async ({
 
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_1,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
@@ -145,7 +145,7 @@ ${buildSceneText({
 
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_2,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.3,
     });
@@ -216,7 +216,7 @@ const femaleNames = [
   'ソフィア',
   'クロエ',
   'ミア',
-  '',
+  'ミオ',
   'オリビア',
   'エヴァ',
   'イザベラ',
@@ -274,7 +274,7 @@ const createEnglishSentence = async ({
     });
 
     const sentenceResponse = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_1,
       input: [{ role: 'user', content: sentencePrompt }],
       temperature: 0.7,
     });
@@ -297,7 +297,7 @@ const createEnglishSentence = async ({
     });
 
     const sceneResponse = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_1,
       input: [{ role: 'user', content: scenePrompt }],
       temperature: 0.7,
     });
@@ -528,7 +528,7 @@ ${japaneseSentence}
 
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_2,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
@@ -555,7 +555,7 @@ async function extendShortOption(originalText: string, targetLength: number): Pr
   if (additionalChars <= 0) return originalText;
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_2,
       input: [
         {
           role: 'user',
@@ -580,7 +580,7 @@ async function shortenLongOption(originalText: string, targetLength: number): Pr
   if (charsToRemove <= 0) return originalText;
   try {
     const response = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_2,
       input: [
         {
           role: 'user',

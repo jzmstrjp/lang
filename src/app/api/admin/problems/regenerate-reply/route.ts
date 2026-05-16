@@ -3,7 +3,7 @@ import { OpenAI } from 'openai';
 import { prisma } from '@/lib/prisma';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL_1 } from '@/const';
 import { buildEnglishReplyPrompt, translateJapanese } from '@/lib/problem-generator';
 
 const openai = new OpenAI({
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 \`\`\``;
 
     const englishResponse = await openai.responses.create({
-      model: TEXT_MODEL,
+      model: TEXT_MODEL_1,
       input: [{ role: 'user', content: englishPrompt }],
       temperature: 0.9,
     });

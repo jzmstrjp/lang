@@ -61,7 +61,7 @@ export function buildEnglishSentenceOnlyPrompt({
 }): string {
   const usedBlock =
     usedSentences.length > 0
-      ? `以下の英文はすでに作成済みです。これらと被らない英文の台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n\n`
+      ? `以下の英文とは異なるシーンでの台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n\n`
       : '';
   const genderLabel = voiceMap[voice];
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
@@ -83,6 +83,7 @@ export function buildEnglishSentenceOnlyPrompt({
 ${genderLabel}です。英語ネイティブです。
 
 あなたが「${phrase}${phraseJa ? `（${phraseJa}）` : ''}」というフレーズを使って${how}で誰かに話しかけるとしたら、どんなセリフになりますか？
+何かに対するリアクションではなく、あなたから話しかけるシーンです。
 
 現実で言いそうな自然なセリフを教えてください。
 英語の文法として正しいセリフにしてください。

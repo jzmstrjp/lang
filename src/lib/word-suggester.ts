@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL_1 } from '@/const';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -74,7 +74,7 @@ ${
 }`;
 
   const response = await openai.chat.completions.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_1,
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
   });

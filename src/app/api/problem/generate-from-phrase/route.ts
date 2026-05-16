@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { TEXT_MODEL } from '@/const';
+import { TEXT_MODEL_1, TEXT_MODEL_2 } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import {
   buildEnglishSentenceOnlyPrompt,
@@ -39,7 +39,7 @@ async function generateOne(params: {
   });
 
   const sentenceResponse = await openai.chat.completions.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_1,
     messages: [{ role: 'user', content: sentencePrompt }],
     temperature: 0.7,
   });
@@ -58,7 +58,7 @@ async function generateOne(params: {
   });
 
   const sceneResponse = await openai.chat.completions.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_1,
     messages: [{ role: 'user', content: scenePrompt }],
     temperature: 0.7,
   });
@@ -112,7 +112,7 @@ ${buildSceneText({
 \`\`\``;
 
   const translateResponse = await openai.chat.completions.create({
-    model: TEXT_MODEL,
+    model: TEXT_MODEL_2,
     messages: [{ role: 'user', content: translatePrompt }],
     temperature: 0.3,
   });
