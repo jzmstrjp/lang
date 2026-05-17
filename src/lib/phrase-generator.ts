@@ -156,14 +156,13 @@ export async function createEnglishSentence(
     });
 
     if (!qualityResult.isOk) {
-      console.error(`  ❌ 品質チェック不合格: ${qualityResult.reason}`);
+      console.error(`  ❌ 品質チェック不合格: "${englishSentence}"`);
+      console.error(`     理由: ${qualityResult.reason}`);
       if (qualityResult.correctSentenceDraft) {
         console.error(`     代替案: ${qualityResult.correctSentenceDraft}`);
       }
       return null;
     }
-
-    console.error(`  ✅ 品質チェック合格`);
 
     const scenePrompt = buildSceneInfoPrompt({
       senderName,

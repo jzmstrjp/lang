@@ -437,6 +437,8 @@ async function generateForPhraseToSeed(
     how: result.how,
   };
 
+  console.log(`  ✅ 品質チェック合格: "${result.englishSentence}"`);
+
   const seed = await enrichToSeedProblemData({
     sentence,
     englishReply: result.englishReply,
@@ -455,7 +457,6 @@ async function generateForPhraseToSeed(
     return null;
   }
 
-  console.log(`  ✅ "${result.englishSentence}"`);
   return seed;
 }
 
@@ -588,6 +589,9 @@ const main = async () => {
   ): Promise<void> {
     const phraseSeedsForLen: SeedProblemData[] = [];
     const usedSentences: string[] = [];
+    let passCount = 0;
+    let failCount = 0;
+
     for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
       const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
       const how: How = hows[Math.floor(Math.random() * 2)];
@@ -605,14 +609,22 @@ const main = async () => {
       if (seed) {
         usedSentences.push(seed.englishSentence);
         phraseSeedsForLen.push(seed);
+        passCount++;
+      } else {
+        failCount++;
       }
     }
+
+    const label = `「${word.expression}」/ ${len}`;
     if (phraseSeedsForLen.length < MIN_PASS_COUNT) {
       console.log(
-        `  ⏭️ 「${word.expression}」/ ${len}: 合格${phraseSeedsForLen.length}問 < ${MIN_PASS_COUNT}問のため全てスキップ`,
+        `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格 → ⏭️ スキップ（${MIN_PASS_COUNT}問未満）`,
       );
       return;
     }
+    console.log(
+      `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格${failCount > 0 ? `（${failCount}問不合格）` : ''} → ✅ 採用`,
+    );
     for (const seed of phraseSeedsForLen) seedProblems.push(seed);
   }
 
