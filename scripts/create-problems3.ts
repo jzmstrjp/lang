@@ -813,56 +813,65 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
 
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
+  const MIN_PASS_COUNT = 2;
   const voices = ['male', 'female'] as const satisfies Voice[];
 
-  if (isAll) {
-    // kids は kids_words から（casual 固定）
-    for (const word of selectedKidsWords) {
-      const usedSentences: string[] = [];
-      for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-        const voice = voices[Math.floor(Math.random() * voices.length)];
-        const how = hows[Math.floor(Math.random() * hows.length)];
-        console.error(
-          `\n── 「${word.expression}（${word.expressionJa}）」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
-        );
-        const seed = await generateForPhraseToSeed(
-          word.expression,
-          word.expressionJa,
-          'kids',
-          voice,
-          how,
-          usedSentences,
-        );
-        if (seed) {
-          usedSentences.push(seed.englishSentence);
-          seedProblems.push(seed);
-        }
+  async function generateForLenBatch(
+    word: { expression: string; expressionJa: string },
+    len: ProblemLength,
+  ): Promise<void> {
+    const phraseSeedsForLen: SeedProblemData[] = [];
+    const usedSentences: string[] = [];
+    let passCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+      const voice = voices[Math.floor(Math.random() * voices.length)];
+      const how = hows[Math.floor(Math.random() * hows.length)];
+      console.error(
+        `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+      );
+      const seed = await generateForPhraseToSeed(
+        word.expression,
+        word.expressionJa,
+        len,
+        voice,
+        how,
+        usedSentences,
+      );
+      if (seed) {
+        usedSentences.push(seed.englishSentence);
+        phraseSeedsForLen.push(seed);
+        passCount++;
+      } else {
+        failCount++;
       }
     }
-    // short / medium / long は words から（phrase ごとに1回分類）
+
+    const label = `「${word.expression}」/ ${len}`;
+    if (phraseSeedsForLen.length < MIN_PASS_COUNT) {
+      console.error(
+        `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格 → ⏭️ スキップ（${MIN_PASS_COUNT}問未満）`,
+      );
+      return;
+    }
+    console.error(
+      `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格${failCount > 0 ? `（${failCount}問不合格）` : ''} → ✅ 採用`,
+    );
+    for (const seed of phraseSeedsForLen) seedProblems.push(seed);
+  }
+
+  if (isAll) {
+    // kids は kids_words から
+    for (const word of selectedKidsWords) {
+      console.error(`\n📂 「${word.expression}（${word.expressionJa}）」`);
+      await generateForLenBatch(word, 'kids');
+    }
+    // short / medium / long は words から
     for (const word of selectedWords) {
       console.error(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
-        const usedSentences: string[] = [];
-        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-          const voice = voices[Math.floor(Math.random() * voices.length)];
-          const how = hows[Math.floor(Math.random() * hows.length)];
-          console.error(
-            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
-          );
-          const seed = await generateForPhraseToSeed(
-            word.expression,
-            word.expressionJa,
-            len,
-            voice,
-            how,
-            usedSentences,
-          );
-          if (seed) {
-            usedSentences.push(seed.englishSentence);
-            seedProblems.push(seed);
-          }
-        }
+        await generateForLenBatch(word, len);
       }
     }
   } else {
@@ -872,26 +881,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
     for (const word of isKidsMode ? selectedKidsWords : selectedWords) {
       if (!isKidsMode) console.error(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of lengths) {
-        const usedSentences: string[] = [];
-        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-          const voice = voices[Math.floor(Math.random() * voices.length)];
-          const how = hows[Math.floor(Math.random() * hows.length)];
-          console.error(
-            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
-          );
-          const seed = await generateForPhraseToSeed(
-            word.expression,
-            word.expressionJa,
-            len,
-            voice,
-            how,
-            usedSentences,
-          );
-          if (seed) {
-            usedSentences.push(seed.englishSentence);
-            seedProblems.push(seed);
-          }
-        }
+        await generateForLenBatch(word, len);
       }
     }
   }
