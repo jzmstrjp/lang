@@ -12,6 +12,7 @@ import {
 import { buildSceneInfoPrompt, type SceneInfo } from '@/lib/scene-info-prompt';
 import { TEXT_MODEL_RICH_SCENE, TEXT_MODEL_QUICK } from '@/const';
 import { checkEnglishSentenceQuality } from '@/lib/english-sentence-quality-check';
+import { recordTokenUsage } from '@/lib/token-usage-tracker';
 
 export type { Voice, How } from '@/lib/english-sentence-prompt';
 export type { SceneInfo } from '@/lib/scene-info-prompt';
@@ -141,6 +142,7 @@ export async function createEnglishSentence(
       input: [{ role: 'user', content: sentencePrompt }],
       temperature: 0.7,
     });
+    recordTokenUsage('英文生成', sentenceResponse.usage);
 
     const sentenceRaw = sentenceResponse.output_text?.trim();
     if (!sentenceRaw) throw new Error('英文レスポンスが空です');
@@ -178,6 +180,7 @@ export async function createEnglishSentence(
       input: [{ role: 'user', content: scenePrompt }],
       temperature: 0.7,
     });
+    recordTokenUsage('シーン情報生成', sceneResponse.usage);
 
     const sceneContent = sceneResponse.output_text;
     if (!sceneContent) throw new Error('シーン情報レスポンスが空です');
@@ -236,6 +239,7 @@ export async function createEnglishReply(
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
+    recordTokenUsage('返答英文生成', response.usage);
 
     const content = response.output_text?.trim();
     if (!content) throw new Error('レスポンスが空です');
@@ -319,6 +323,7 @@ ${buildSceneText({
       input: [{ role: 'user', content: prompt }],
       temperature: 0.3,
     });
+    recordTokenUsage('日本語翻訳', response.usage);
 
     const content = response.output_text;
     if (!content) throw new Error('レスポンスが空です');

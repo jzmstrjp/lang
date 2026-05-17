@@ -12,6 +12,7 @@ import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import type { SeedProblemData } from '@/types/problem';
 import { type Voice, type How, type SceneInfo, generateForPhrase } from '@/lib/phrase-generator';
 import { toggleVoice } from '@/lib/english-sentence-prompt';
+import { recordTokenUsage, printTokenUsageSummary } from '@/lib/token-usage-tracker';
 
 dotenv.config();
 
@@ -235,6 +236,7 @@ ${japaneseSentence}
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
+    recordTokenUsage('誤答選択肢生成', response.usage);
     const content = response.output_text;
     if (!content) throw new Error('レスポンスが空です');
     const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
@@ -267,6 +269,7 @@ async function extendShortOption(originalText: string, targetLength: number): Pr
       ],
       temperature: 0.7,
     });
+    recordTokenUsage('誤答長さ調整(伸ばす)', response.usage);
     const result = response.output_text?.trim() ?? originalText;
     if (result.length > originalText.length) {
       console.log(`  ✅ 選択肢を伸ばしました（${originalText.length}文字 → ${result.length}文字）`);
@@ -292,6 +295,7 @@ async function shortenLongOption(originalText: string, targetLength: number): Pr
       ],
       temperature: 0.7,
     });
+    recordTokenUsage('誤答長さ調整(縮める)', response.usage);
     const result = response.output_text?.trim() ?? originalText;
     if (result.length < originalText.length) {
       console.log(`  ✅ 選択肢を縮めました（${originalText.length}文字 → ${result.length}文字）`);
@@ -689,6 +693,7 @@ const main = async () => {
   console.error(
     `\n✅ 完了: 合計 ${seedProblems.length} 問 → ${outRelativePath}（モード: ${modeLabel}、使用ワード数: ${allUsedWords.length}）`,
   );
+  printTokenUsageSummary();
 };
 
 // ─── --batch / CI 用 ──────────────────────────────────────────────────────────
@@ -934,6 +939,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   console.error(
     `\n✅ 完了: 合計 ${seedProblems.length} 問（モード: ${opts.mode}、使用ワード数: ${allUsedWords.length}）`,
   );
+  printTokenUsageSummary();
 }
 
 const batchOpts = parseBatchCliArgs();

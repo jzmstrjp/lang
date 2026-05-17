@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import { TEXT_MODEL_RICH_SCENE } from '@/const';
+import { recordTokenUsage } from '@/lib/token-usage-tracker';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -88,6 +89,11 @@ ${
     model: TEXT_MODEL_RICH_SCENE,
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
+  });
+  recordTokenUsage('ワード補充(AI提案)', {
+    input_tokens: response.usage?.prompt_tokens,
+    output_tokens: response.usage?.completion_tokens,
+    input_tokens_details: { cached_tokens: response.usage?.prompt_tokens_details?.cached_tokens },
   });
 
   const content = response.choices[0]?.message.content ?? '{"words":[]}';

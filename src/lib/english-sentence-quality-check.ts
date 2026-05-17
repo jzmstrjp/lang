@@ -2,6 +2,7 @@ import { OpenAI } from 'openai';
 import { prisma } from '@/lib/prisma';
 import { TEXT_MODEL_QUICK } from '@/const';
 import type { ProblemLength } from '@/config/problem';
+import { recordTokenUsage } from '@/lib/token-usage-tracker';
 
 export type QualityCheckResult =
   | { isOk: true }
@@ -64,6 +65,7 @@ export async function checkEnglishSentenceQuality(
     input: [{ role: 'user', content: checkPrompt }],
     temperature: 0.1,
   });
+  recordTokenUsage('品質チェック', response.usage);
 
   const content = response.output_text?.trim();
   if (!content) throw new Error('品質チェックレスポンスが空です');
