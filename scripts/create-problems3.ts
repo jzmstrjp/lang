@@ -340,8 +340,9 @@ async function adjustIncorrectOptionsLength(
   return [...opts, shortened];
 }
 
-// ─── 1問分をまとめて SeedProblemData に変換 ──────────────────────────────────
+const randomItem = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
+// ─── 1問分をまとめて SeedProblemData に変換 ──────────────────────────────────
 async function enrichToSeedProblemData({
   sentence,
   englishReply,
@@ -380,7 +381,6 @@ async function enrichToSeedProblemData({
   const baseAppearanceMale = process.env.APPEARANCE_MALE ?? null;
   const baseAppearanceFemale = process.env.APPEARANCE_FEMALE ?? null;
 
-  const randomItem = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
   const appearanceMale = baseAppearanceMale
     ? `${baseAppearanceMale}${randomItem(appearanceTypeMap.male)}`
     : null;
