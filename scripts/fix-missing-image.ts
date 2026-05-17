@@ -129,6 +129,7 @@ async function main(
     }
 
     console.log(`📊 ${problemsWithMissingImage.length}件のレコードが見つかりました。`);
+    console.log('🔄 バッチ処理を開始します（画像生成 → 一括DB更新）');
 
     const totalStartTime = Date.now();
     let successCount = 0;
