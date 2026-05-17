@@ -580,55 +580,53 @@ const main = async () => {
 
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
+  const MIN_PASS_COUNT = 2;
 
-  if (isAll) {
-    // kids は kids_words から（casual 固定）
-    for (const word of selectedKidsWords) {
-      const usedSentences: string[] = [];
-      for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-        const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-        const how: How = hows[Math.floor(Math.random() * 2)];
-        console.log(
-          `\n── 「${word.expression}（${word.expressionJa}）」 / kids (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
-        );
-        const seed = await generateForPhraseToSeed(
-          word.expression,
-          word.expressionJa,
-          'kids',
-          voice,
-          how,
-          usedSentences,
-        );
-        if (seed) {
-          usedSentences.push(seed.englishSentence);
-          seedProblems.push(seed);
-        }
+  async function generateForLen(
+    word: { expression: string; expressionJa: string },
+    len: ProblemLength,
+  ): Promise<void> {
+    const phraseSeedsForLen: SeedProblemData[] = [];
+    const usedSentences: string[] = [];
+    for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
+      const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
+      const how: How = hows[Math.floor(Math.random() * 2)];
+      console.log(
+        `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
+      );
+      const seed = await generateForPhraseToSeed(
+        word.expression,
+        word.expressionJa,
+        len,
+        voice,
+        how,
+        usedSentences,
+      );
+      if (seed) {
+        usedSentences.push(seed.englishSentence);
+        phraseSeedsForLen.push(seed);
       }
     }
-    // short / medium / long は words から（phrase ごとに1回分類）
+    if (phraseSeedsForLen.length < MIN_PASS_COUNT) {
+      console.log(
+        `  ⏭️ 「${word.expression}」/ ${len}: 合格${phraseSeedsForLen.length}問 < ${MIN_PASS_COUNT}問のため全てスキップ`,
+      );
+      return;
+    }
+    for (const seed of phraseSeedsForLen) seedProblems.push(seed);
+  }
+
+  if (isAll) {
+    // kids は kids_words から
+    for (const word of selectedKidsWords) {
+      console.log(`\n📂 「${word.expression}（${word.expressionJa}）」`);
+      await generateForLen(word, 'kids');
+    }
+    // short / medium / long は words から
     for (const word of selectedWords) {
       console.log(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of NON_KIDS_PROBLEM_LENGTHS) {
-        const usedSentences: string[] = [];
-        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-          const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-          const how: How = hows[Math.floor(Math.random() * 2)];
-          console.log(
-            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
-          );
-          const seed = await generateForPhraseToSeed(
-            word.expression,
-            word.expressionJa,
-            len,
-            voice,
-            how,
-            usedSentences,
-          );
-          if (seed) {
-            usedSentences.push(seed.englishSentence);
-            seedProblems.push(seed);
-          }
-        }
+        await generateForLen(word, len);
       }
     }
   } else {
@@ -638,26 +636,7 @@ const main = async () => {
     for (const word of isKidsMode ? selectedKidsWords : selectedWords) {
       if (!isKidsMode) console.log(`\n📂 「${word.expression}（${word.expressionJa}）」`);
       for (const len of lengths) {
-        const usedSentences: string[] = [];
-        for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
-          const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-          const how: How = hows[Math.floor(Math.random() * 2)];
-          console.log(
-            `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
-          );
-          const seed = await generateForPhraseToSeed(
-            word.expression,
-            word.expressionJa,
-            len,
-            voice,
-            how,
-            usedSentences,
-          );
-          if (seed) {
-            usedSentences.push(seed.englishSentence);
-            seedProblems.push(seed);
-          }
-        }
+        await generateForLen(word, len);
       }
     }
   }
