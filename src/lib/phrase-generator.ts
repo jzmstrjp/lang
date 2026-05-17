@@ -141,6 +141,8 @@ export async function createEnglishSentence(
       model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: sentencePrompt }],
       temperature: 0.7,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'english-sentence-v1',
     });
     recordTokenUsage('英文生成', sentenceResponse.usage);
 
@@ -179,6 +181,8 @@ export async function createEnglishSentence(
       model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: scenePrompt }],
       temperature: 0.7,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'scene-info-v1',
     });
     recordTokenUsage('シーン情報生成', sceneResponse.usage);
 
@@ -238,6 +242,8 @@ export async function createEnglishReply(
       model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'english-reply-v1',
     });
     recordTokenUsage('返答英文生成', response.usage);
 
@@ -322,6 +328,8 @@ ${buildSceneText({
       model: TEXT_MODEL_QUICK,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.3,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'japanese-conversation-v1',
     });
     recordTokenUsage('日本語翻訳', response.usage);
 

@@ -94,7 +94,7 @@ ${'note' in rule ? `- ${rule.note}` : ''}
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
 相手の名前は${receiverName}。${receiverGenderLabel}です。
-${Math.random() > 0.2 ? 'ただし、英文の中で相手の名前を呼びかけないでください。' : ''}
+特に必要なければ、英文の中で相手の名前を呼びかけないでください。（呼びかけた方が自然な場合は呼びかけてください）
 ${notes ? `【注意】\n${notes}\n` : ''}
 
 ${usedBlock}

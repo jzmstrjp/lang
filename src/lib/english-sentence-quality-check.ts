@@ -8,27 +8,24 @@ export type QualityCheckResult =
   | { isOk: true }
   | { isOk: false; reason: string; correctSentenceDraft: string | null };
 
-function buildQualityCheckPrompt(prompt: string, englishSentence: string): string {
-  return `
-あなたは英語ネイティブスピーカーの視点で、英語学習アプリ用の口語文の品質を審査する専門家です。
-
-以下の【生成プロセス】に従って英文が生成されました。
-生成された英文がネイティブの自然な口語として高品質かどうかを判定してください。
-
----
-【判定対象の英文】
-${englishSentence}
----
-【生成プロセス（プロンプト全文）】
-${prompt}
----
+function buildQualityCheckPrompt(
+  englishSentence: string,
+  expression: string,
+  wordCountLength: ProblemLength,
+): string {
+  return `あなたは英語ネイティブスピーカーの視点で、英語学習アプリ用の口語文の品質を審査する専門家です。
 
 以下の観点で審査してください：
 - ネイティブが実際に口語会話で使う自然な表現か
 - 文法的に正確か
-- 指定されたフレーズが慣用句・口語表現として適切に使われているか
-- 語数制約・kids/adult 設定と内容が釣り合っているか
-- 指定プロンプト全体の条件に対して誠実に応えられているか（フレーズが無理やり当てはめられていないか）
+- 指定フレーズが慣用句・口語表現として適切に使われているか（文字通りの意味で使っていないか）
+- 語数制約（${wordCountLength}）と内容が釣り合っているか
+- フレーズが不自然に無理やり当てはめられていないか
+
+---
+【指定フレーズ】${expression}
+【判定対象の英文】${englishSentence}
+---
 
 以下のJSON形式で必ず回答してください。reason は日本語で50文字以内。
 
@@ -58,12 +55,14 @@ export async function checkEnglishSentenceQuality(
     englishSentence: string;
   },
 ): Promise<QualityCheckResult> {
-  const checkPrompt = buildQualityCheckPrompt(prompt, englishSentence);
+  const checkPrompt = buildQualityCheckPrompt(englishSentence, expression, wordCountLength);
 
   const response = await openai.responses.create({
     model: TEXT_MODEL_QUICK,
     input: [{ role: 'user', content: checkPrompt }],
     temperature: 0.1,
+    prompt_cache_retention: '24h',
+    prompt_cache_key: 'quality-check-v1',
   });
   recordTokenUsage('品質チェック', response.usage);
 

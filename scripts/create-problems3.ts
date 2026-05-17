@@ -235,6 +235,8 @@ ${japaneseSentence}
       model: TEXT_MODEL_QUICK,
       input: [{ role: 'user', content: prompt }],
       temperature: 0.7,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'incorrect-options-v1',
     });
     recordTokenUsage('誤答選択肢生成', response.usage);
     const content = response.output_text;
@@ -268,6 +270,8 @@ async function extendShortOption(originalText: string, targetLength: number): Pr
         },
       ],
       temperature: 0.7,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'option-extend-v1',
     });
     recordTokenUsage('誤答長さ調整(伸ばす)', response.usage);
     const result = response.output_text?.trim() ?? originalText;
@@ -294,6 +298,8 @@ async function shortenLongOption(originalText: string, targetLength: number): Pr
         },
       ],
       temperature: 0.7,
+      prompt_cache_retention: '24h',
+      prompt_cache_key: 'option-shorten-v1',
     });
     recordTokenUsage('誤答長さ調整(縮める)', response.usage);
     const result = response.output_text?.trim() ?? originalText;

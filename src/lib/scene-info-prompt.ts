@@ -96,6 +96,28 @@ const samples: SceneInfo[] = [
   },
 ];
 
+// サンプルは固定テキストとして事前にビルドしておく（Prompt Caching の prefix として先頭に置くため）
+const SAMPLES_BLOCK: string = samples
+  .map((sample) => {
+    const { englishSentence: _es, how: _how, ...scene } = sample;
+    return `英文が「${_es}」の場合:\n\`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\``;
+  })
+  .join('\n\n');
+
+const SCENE_INFO_PREAMBLE = `あなたは英語学習アプリのシーン設計者です。
+与えられた英文のセリフに対して、自然でリアルな背景情報をJSON形式で作成してください。
+
+## 出力ルール
+- 各項目を矛盾なく埋めること
+- 何かに対するリアクションではなく、送り手から話しかけた状況にすること
+- 現実世界で誰もが一度は見たことがあるようなシーンにすること
+- 人物の個人名は全てカタカナで書くこと
+
+## 出力例
+以下の例をよく参考にしてください。
+
+${SAMPLES_BLOCK}`;
+
 export function buildSceneInfoPrompt({
   senderName,
   receiverName,
@@ -111,37 +133,20 @@ export function buildSceneInfoPrompt({
   how: How;
   sceneNote?: string;
 }): string {
-  const samplesBlock = samples
-    .map((sample) => {
-      const { englishSentence: _es, how: _how, ...scene } = sample;
-      return `英文が「${_es}」の場合:\n\`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\``;
-    })
-    .join('\n\n');
-
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
   const sceneNoteBlock = sceneNote ? `\n${sceneNote}\n` : '';
 
-  return `${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
-何かに対するリアクションではなく、${senderName}から話しかけました。
+  return `${SCENE_INFO_PREAMBLE}
 
-このセリフの背景の情報を作成してください。
-「${englishSentence}」というセリフとごく自然にマッチする、現実世界で誰もが一度は見たことがあるようなシーンを考えてください。
-そして、各項目を矛盾の無いように埋めてください。
-
+## 今回のお題
+${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
 ${phoneNote}
 ${sceneNoteBlock}${buildThirdPersonNote(englishSentence, senderName, receiverName)}
-【重要】
-以下のJSON形式で必ず回答してください。
-人物の個人名は全てカタカナで書くこと。
+【重要】以下のJSON形式で必ず回答してください。
 
 \`\`\`json
 ${JSON.stringify(buildSceneInfoResultDefinition(englishSentence, how, senderName, receiverName), null, 2)}
 \`\`\`
-
-## 例
-以下の例をよく参考にしてください。
-
-${samplesBlock}
 `;
 }
