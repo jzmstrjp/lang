@@ -121,6 +121,8 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          APPEARANCE_MALE: ${{ vars.APPEARANCE_MALE }}
+          APPEARANCE_FEMALE: ${{ vars.APPEARANCE_FEMALE }}
 
       - name: Wait for cleanup
         if: steps.check_missing.outputs.should_run == 'true'

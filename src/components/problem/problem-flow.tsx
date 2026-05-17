@@ -768,6 +768,8 @@ function ProblemFlowInner({
               receiverRole: data.receiverRole ?? prevPhase.problem.receiverRole,
               senderWhy: data.senderWhy ?? prevPhase.problem.senderWhy,
               senderWant: data.senderWant ?? prevPhase.problem.senderWant,
+              senderAppearance: data.senderAppearance ?? prevPhase.problem.senderAppearance,
+              receiverAppearance: data.receiverAppearance ?? prevPhase.problem.receiverAppearance,
             },
           }) as Phase,
       );
@@ -1065,6 +1067,8 @@ function ProblemFlowInner({
             receiverRole: currentProblem.receiverRole,
             senderWhy: currentProblem.senderWhy,
             senderWant: currentProblem.senderWant,
+            senderAppearance: currentProblem.senderAppearance ?? '',
+            receiverAppearance: currentProblem.receiverAppearance ?? '',
           }}
           onCancel={() => setSceneEditOpen(false)}
           onSubmit={handleEditScene}
@@ -1900,6 +1904,8 @@ type SceneEditFormValues = {
   receiverRole: string;
   senderWhy: string;
   senderWant: string;
+  senderAppearance: string;
+  receiverAppearance: string;
 };
 
 type SceneEditDialogProps = {
@@ -2047,6 +2053,19 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
                 style={textareaStyle}
               />
             </div>
+            <div>
+              <label htmlFor="scene-sender-appearance" className={labelClass}>
+                外見
+              </label>
+              <textarea
+                id="scene-sender-appearance"
+                {...register('senderAppearance')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
           </div>
 
           {/* 話しかけられる人 */}
@@ -2083,6 +2102,19 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
               <textarea
                 id="scene-receiver-place"
                 {...register('receiverPlace')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-receiver-appearance" className={labelClass}>
+                外見
+              </label>
+              <textarea
+                id="scene-receiver-appearance"
+                {...register('receiverAppearance')}
                 disabled={isSubmitting}
                 rows={2}
                 className={textareaClass}

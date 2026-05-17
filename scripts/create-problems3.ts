@@ -367,14 +367,19 @@ async function enrichToSeedProblemData({
 
   const adjustedOptions = await adjustIncorrectOptionsLength(incorrectOptions, japaneseSentence);
 
+  const appearanceMale = process.env.APPEARANCE_MALE ?? null;
+  const appearanceFemale = process.env.APPEARANCE_FEMALE ?? null;
+
   return {
     place: sentence.where,
     senderRole,
     senderVoice,
     senderName,
+    senderAppearance: senderVoice === 'male' ? appearanceMale : appearanceFemale,
     receiverRole,
     receiverVoice,
     receiverName,
+    receiverAppearance: receiverVoice === 'male' ? appearanceMale : appearanceFemale,
     englishSentence: sentence.englishSentence,
     japaneseSentence,
     englishReply,

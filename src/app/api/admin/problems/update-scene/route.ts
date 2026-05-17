@@ -14,6 +14,8 @@ type RequestBody = {
   receiverRole?: string;
   senderWhy?: string;
   senderWant?: string;
+  senderAppearance?: string;
+  receiverAppearance?: string;
 };
 
 export async function POST(request: Request) {
@@ -36,6 +38,8 @@ export async function POST(request: Request) {
       receiverRole,
       senderWhy,
       senderWant,
+      senderAppearance,
+      receiverAppearance,
     } = body;
 
     if (!problemId || typeof problemId !== 'string') {
@@ -51,6 +55,9 @@ export async function POST(request: Request) {
     if (receiverRole !== undefined) data.receiverRole = receiverRole.trim();
     if (senderWhy !== undefined) data.senderWhy = senderWhy.trim();
     if (senderWant !== undefined) data.senderWant = senderWant.trim();
+    if (senderAppearance !== undefined) data.senderAppearance = senderAppearance.trim() || null;
+    if (receiverAppearance !== undefined)
+      data.receiverAppearance = receiverAppearance.trim() || null;
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: '更新するフィールドがありません。' }, { status: 400 });
@@ -68,6 +75,8 @@ export async function POST(request: Request) {
         receiverRole: true,
         senderWhy: true,
         senderWant: true,
+        senderAppearance: true,
+        receiverAppearance: true,
       },
     });
 

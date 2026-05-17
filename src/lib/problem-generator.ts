@@ -243,6 +243,8 @@ async function getRandomProblemFromSeed(
     difficultyLevel: null,
     expression: selectedProblem.expression ?? '',
     expressionJa: selectedProblem.expressionJa ?? '',
+    senderAppearance: selectedProblem.senderAppearance ?? null,
+    receiverAppearance: selectedProblem.receiverAppearance ?? null,
   };
 }
 
@@ -365,6 +367,15 @@ export function generateImagePrompt(
   const senderName = problem.senderName;
   const receiverName = problem.receiverName;
 
+  const appearanceMale = process.env.APPEARANCE_MALE ?? '';
+  const appearanceFemale = process.env.APPEARANCE_FEMALE ?? '';
+  const senderAppearance =
+    problem.senderAppearance ??
+    (problem.senderVoice === 'male' ? appearanceMale : appearanceFemale);
+  const receiverAppearance =
+    problem.receiverAppearance ??
+    (problem.receiverVoice === 'male' ? appearanceMale : appearanceFemale);
+
   return `上下半分に分割された写真を生成すること。
 上下の高さは正確に同じであること。
 
@@ -372,20 +383,20 @@ export function generateImagePrompt(
 - 上半分、下半分を通して、それぞれの人物の服装や髪型は変わらないこと。
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。${problem.senderAppearance}
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。${problem.receiverAppearance}
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。${senderAppearance}
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。${receiverAppearance}
 
 【シーン情報】
 ${buildSceneText(problem)}
 
 【上半分】
 - ${senderName}（${problem.senderRole}・${senderGenderText}）が「${problem.englishSentence}」と言っている。
-- ${senderName}は${problem.senderAppearance}
+- ${senderName}は${senderAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【下半分】
 - ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」と返答している。上半分とは別のアングルで描画すること。
-- ${receiverName}は${problem.receiverAppearance}
+- ${receiverName}は${receiverAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【備考】
@@ -928,11 +939,6 @@ export type BuildJapaneseConversationRulesParams = {
   /** 翻訳対象: 'sender'=送り手の発話、'receiver'=受け手の返答。省略時は会話全体を翻訳 */
   translate?: 'sender' | 'receiver';
 };
-
-const _sayName = [
-  '相手の名前を呼びかけたり、セリフの中に含めたりしてください。',
-  '可能であれば、相手の名前を文中に含めないでください。',
-] as const;
 
 /**
  * 日本語会話翻訳プロンプトの翻訳指示部分を組み立てる。
