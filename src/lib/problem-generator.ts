@@ -380,10 +380,12 @@ ${buildSceneText(problem)}
 
 【上半分】
 - ${senderName}（${problem.senderRole}・${senderGenderText}）が「${problem.englishSentence}」と言っている。
+- ${senderName}は、服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【下半分】
 - ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」と返答している。上半分とは別のアングルで描画すること。
+- ${receiverName}は、服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美貌の持ち主。
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【備考】
