@@ -129,15 +129,13 @@ async function main(
     }
 
     console.log(`📊 ${problemsWithMissingImage.length}件のレコードが見つかりました。`);
-    console.log('🔄 バッチ処理を開始します（画像生成 → 一括DB更新）');
 
     const totalStartTime = Date.now();
     let successCount = 0;
     let errorCount = 0;
 
-    // フェーズ1: すべての画像を生成・アップロード
-    console.log('\n📸 フェーズ1: 画像生成・アップロード');
-    const updates: Array<{ id: string; imageUrl: string }> = [];
+    // 画像生成・アップロード → 即時DB更新 → 即時CDNウォームアップ
+    console.log('\n📸 画像生成・アップロード・DB更新・CDNウォームアップ');
 
     // キャラクター画像を使用する場合は事前に読み込み
     let characterImages: Buffer[] | undefined;
@@ -232,44 +230,24 @@ async function main(
 
         console.log(`   ✅ 画像アップロード完了: ${imageUrl}`);
 
-        // 更新リストに追加
-        updates.push({ id: problem.id, imageUrl });
+        // アップロード直後にDBを更新（CIが途中で止まっても保存済み分は失われない）
+        await prisma.problem.update({
+          where: { id: problem.id },
+          data: { imageUrl },
+        });
+        console.log(`   💾 DB更新完了`);
 
+        // DB更新直後にCDNウォームアップ（fix-missing-audio.tsと同じ方式）
+        await warmupMultipleCDNUrls([cdnUrl(imageUrl)]);
+        console.log(`   🔥 CDNウォームアップ完了`);
+
+        successCount++;
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`   🎉 画像生成完了 (${duration}秒)`);
+        console.log(`   🎉 完了 (${duration}秒)`);
       } catch (error) {
         errorCount++;
-        console.error(`   ❌ レコード ${problem.id} の画像生成中にエラーが発生:`, error);
+        console.error(`   ❌ レコード ${problem.id} の処理中にエラーが発生:`, error);
         // エラーが発生しても他のレコードの処理を続行
-      }
-    }
-
-    // フェーズ2: トランザクションで一括DB更新
-    if (updates.length > 0) {
-      console.log(`\n💾 フェーズ2: データベース一括更新（${updates.length}件）`);
-      try {
-        await prisma.$transaction(
-          updates.map(({ id, imageUrl }) =>
-            prisma.problem.update({
-              where: { id },
-              data: { imageUrl },
-            }),
-          ),
-        );
-
-        console.log(`   ✅ ${updates.length}件のレコードを一括更新しました`);
-        successCount = updates.length;
-
-        // フェーズ3: CDNウォームアップ
-        console.log('\n🔥 フェーズ3: CDNウォームアップ');
-        const imageUrls = updates.map((u) => cdnUrl(u.imageUrl));
-        await warmupMultipleCDNUrls(imageUrls);
-        console.log(`   ✅ ${imageUrls.length}件のURLをウォームアップしました`);
-      } catch (error) {
-        console.error('   ❌ データベース一括更新中にエラーが発生:', error);
-        // DB更新に失敗した場合、画像生成は成功しているのでerrorCountには加算しない
-        // ただし、successCountは0のまま
-        throw error;
       }
     }
 
