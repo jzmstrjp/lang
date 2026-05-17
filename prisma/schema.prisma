@@ -55,6 +55,13 @@ enum VoiceType {
   female
 }
 
+enum ProblemLength {
+  kids
+  short
+  medium
+  long
+}
+
 model AdminUser {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -64,14 +71,16 @@ model AdminUser {
 }
 
 model Word {
-  id         String   @id @default(cuid())
+  id           String         @id @default(cuid())
   expression   String
   expressionJa String
-  isKids       Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  isKids       Boolean        @default(false)
+  targetLength ProblemLength?
+  createdAt    DateTime       @default(now())
 
   @@unique([expression, expressionJa])
   @@index([isKids])
+  @@index([targetLength])
   @@map("words")
 }
 
