@@ -10,6 +10,27 @@ export const IMAGE_MODEL_SETTING = {
   quality: 'low',
 } as const satisfies Omit<ImageGenerateParams, 'prompt'>;
 
+export const appearanceTypeMap = {
+  male: [
+    '爽やかな感じ。',
+    '王道な感じ。',
+    '塩顔な感じ。',
+    '色気ある感じ。',
+    '優しそうな感じ。',
+    '知的な感じ。',
+    'ワイルドな感じ。',
+    '上品な感じ。',
+  ],
+  female: [
+    '清楚な感じ。',
+    '可愛い感じ。',
+    '美人な感じ。',
+    '色気ある感じ。',
+    '爽やかな感じ。',
+    'お姉さんな感じ。',
+  ],
+} as const;
+
 // 1回で取得する問題数（5フレーズ × 2問）
 export const PROBLEM_FETCH_LIMIT = 10;
 // expression グルーピング取得時の設定

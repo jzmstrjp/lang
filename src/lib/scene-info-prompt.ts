@@ -118,6 +118,11 @@ const SCENE_INFO_PREAMBLE = `あなたは英語学習アプリのシーン設計
 
 ${SAMPLES_BLOCK}`;
 
+export type SceneInfoPromptMessages = {
+  system: string;
+  user: string;
+};
+
 export function buildSceneInfoPrompt({
   senderName,
   receiverName,
@@ -132,14 +137,12 @@ export function buildSceneInfoPrompt({
   voice: Voice;
   how: How;
   sceneNote?: string;
-}): string {
+}): SceneInfoPromptMessages {
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
   const sceneNoteBlock = sceneNote ? `\n${sceneNote}\n` : '';
 
-  return `${SCENE_INFO_PREAMBLE}
-
-## 今回のお題
+  const user = `## 今回のお題
 ${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
 ${phoneNote}
 ${sceneNoteBlock}${buildThirdPersonNote(englishSentence, senderName, receiverName)}
@@ -149,4 +152,6 @@ ${sceneNoteBlock}${buildThirdPersonNote(englishSentence, senderName, receiverNam
 ${JSON.stringify(buildSceneInfoResultDefinition(englishSentence, how, senderName, receiverName), null, 2)}
 \`\`\`
 `;
+
+  return { system: SCENE_INFO_PREAMBLE, user };
 }

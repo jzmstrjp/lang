@@ -7,7 +7,7 @@ import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
-import { TEXT_MODEL_QUICK } from '@/const';
+import { TEXT_MODEL_QUICK, appearanceTypeMap } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import type { SeedProblemData } from '@/types/problem';
 import { type Voice, type How, type SceneInfo, generateForPhrase } from '@/lib/phrase-generator';
@@ -377,8 +377,16 @@ async function enrichToSeedProblemData({
 
   const adjustedOptions = await adjustIncorrectOptionsLength(incorrectOptions, japaneseSentence);
 
-  const appearanceMale = process.env.APPEARANCE_MALE ?? null;
-  const appearanceFemale = process.env.APPEARANCE_FEMALE ?? null;
+  const baseAppearanceMale = process.env.APPEARANCE_MALE ?? null;
+  const baseAppearanceFemale = process.env.APPEARANCE_FEMALE ?? null;
+
+  const randomItem = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  const appearanceMale = baseAppearanceMale
+    ? `${baseAppearanceMale}${randomItem(appearanceTypeMap.male)}`
+    : null;
+  const appearanceFemale = baseAppearanceFemale
+    ? `${baseAppearanceFemale}${randomItem(appearanceTypeMap.female)}`
+    : null;
 
   return {
     place: sentence.where,

@@ -179,7 +179,8 @@ export async function createEnglishSentence(
 
     const sceneResponse = await openai.responses.create({
       model: TEXT_MODEL_RICH_SCENE,
-      input: [{ role: 'user', content: scenePrompt }],
+      instructions: scenePrompt.system,
+      input: scenePrompt.user,
       temperature: 0.7,
       prompt_cache_retention: '24h',
       prompt_cache_key: 'scene-info-v1',
