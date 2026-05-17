@@ -10,6 +10,11 @@ export const IMAGE_MODEL_SETTING = {
   quality: 'low',
 } as const satisfies Omit<ImageGenerateParams, 'prompt'>;
 
+export const APPEARANCE = {
+  male: '服装や髪型は普通だが、俳優・モデル・アイドルのような絶世のイケメン。',
+  female: '服装や髪型は普通だが、俳優・モデル・アイドルのような絶世の美女。',
+} as const;
+
 // 1回で取得する問題数（5フレーズ × 2問）
 export const PROBLEM_FETCH_LIMIT = 10;
 // expression グルーピング取得時の設定
