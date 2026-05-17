@@ -21,7 +21,7 @@ import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
-import { TEXT_MODEL_RICH_SCENE, TEXT_MODEL_QUICK, APPEARANCE } from '@/const';
+import { TEXT_MODEL_RICH_SCENE, TEXT_MODEL_QUICK } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
@@ -372,20 +372,20 @@ export function generateImagePrompt(
 - 上半分、下半分を通して、それぞれの人物の服装や髪型は変わらないこと。
 
 【登場人物】
-- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。${APPEARANCE[problem.senderVoice]}
-- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。${APPEARANCE[problem.receiverVoice]}
+- ${senderName}（${senderGenderText}）・・・${problem.senderRole}。${problem.senderAppearance}
+- ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。${problem.receiverAppearance}
 
 【シーン情報】
 ${buildSceneText(problem)}
 
 【上半分】
 - ${senderName}（${problem.senderRole}・${senderGenderText}）が「${problem.englishSentence}」と言っている。
-- ${senderName}は${APPEARANCE[problem.senderVoice]}
+- ${senderName}は${problem.senderAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【下半分】
 - ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」と返答している。上半分とは別のアングルで描画すること。
-- ${receiverName}は${APPEARANCE[problem.receiverVoice]}
+- ${receiverName}は${problem.receiverAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【備考】
