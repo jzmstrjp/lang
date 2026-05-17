@@ -45,6 +45,8 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
   - ただし同じ単語でも意味（expressionJa）が異なれば別の expression として提案してよい（例: "play（遊ぶ）" と "play（からかう）" は別物）
 - 単語・イディオム単体で会話の軸になれるもの（例: "apologize", "give it a shot"）
 - イディオムは5語以内に収めること
+- **ネイティブが日常の口語会話で実際に使う表現に限定すること**
+  - フォーマル語・書き言葉は避けること（例: accompany→come with, inquire→ask, consult→talk to, assist→help, commence→start）
 ${
   isKids
     ? `- 小中学生レベルの平易な語彙（例: "share", "help out", "excited"）
@@ -76,9 +78,9 @@ ${
     { "expression": "give it a shot", "expressionJa": "試してみる" },
     { "expression": "deadline", "expressionJa": "締め切り" },
     { "expression": "come up with", "expressionJa": "思いつく" },
-    { "expression": "Rarely + auxiliary + S + V ~", "expressionJa": "めったに〜しない" },
-    { "expression": "Not only A but also B", "expressionJa": "AだけでなくBも" },
-    { "expression": "no sooner ~ than ...", "expressionJa": "〜するやいなや" }
+    { "expression": "no wonder", "expressionJa": "〜なのは当然だ" },
+    { "expression": "count on", "expressionJa": "頼りにする" },
+    { "expression": "run into", "expressionJa": "偶然会う" }
   ]
 }`;
 
