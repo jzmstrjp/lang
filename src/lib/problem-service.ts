@@ -176,8 +176,9 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
       return true;
     });
 
-    // expression1, expression2, expression1, expression2 の交互順に並び替え
-    // フィルタ後は [ex1_p1, ex1_p2, ex2_p1, ex2_p2] の順なので転置する
+    // 交互順に並び替え（問題数が多いグループを先頭にすることで末尾の連続を防ぐ）
+    // 例: [3問, 2問] → ex1,ex2,ex1,ex2,ex1
+    //     [2問, 3問] → ex2,ex1,ex2,ex1,ex2（多い方を先頭に）
     const grouped = new Map<string, ProblemWithAudio[]>();
     for (const p of problems) {
       const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
@@ -185,7 +186,8 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
       group.push(p);
       grouped.set(key, group);
     }
-    const groups = Array.from(grouped.values());
+    // 問題数が多いグループを先頭に並べる
+    const groups = Array.from(grouped.values()).toSorted((a, b) => b.length - a.length);
     const maxPerGroup = Math.max(...groups.map((g) => g.length));
     const interleaved: ProblemWithAudio[] = [];
     for (let i = 0; i < maxPerGroup; i++) {
