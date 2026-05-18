@@ -55,9 +55,11 @@ ${
 - 副詞は日常会話で自然に使えるものに限定（例: really, carefully, together, slowly, quietly, quickly, nicely）
   - 避けるべき副詞の例: gratefully（フォーマル・スピーチ調）
 - 感謝・気持ち系の形容詞はカジュアルなものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
-- 感謝表現はカジュアルなものに限定（appreciate は可。gratefully / receive / understanding などフォーマル語は避ける）`
+- 感謝表現はカジュアルなものに限定（appreciate は可。gratefully / receive / understanding などフォーマル語は避ける）
+- 接続詞・接続副詞・群前置詞はカジュアルで平易なもの（例: unless, because of, even though, as soon as, so that）`
     : `- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
-- ビジネス・旅行・日常生活など幅広いシーンに対応`
+- ビジネス・旅行・日常生活など幅広いシーンに対応
+- 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
 }
 - 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
 ${
@@ -65,7 +67,7 @@ ${
     ? `  - kids向け comfort word の例: "hug", "cozy", "snuggle", "gentle", "kind", "warm", "cheerful", "thankful", "smile", "together"`
     : `  - non-kids向け comfort word の例: "cozy", "warmth", "heartfelt", "grateful", "cherish", "soothe", "serene", "comfort", "healing", "empathy"`
 }
-- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個（合計 90個程度）
+- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個・接続詞/接続副詞/群前置詞 10個（合計 100個程度）
 
 ## 出力形式（JSON）
 "words" キーに { "expression": string, "expressionJa": string } のオブジェクト配列を返してください（説明などは不要）。
