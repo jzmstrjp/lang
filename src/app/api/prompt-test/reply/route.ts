@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     const englishResponse = await openai.responses.create({
       model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: englishPrompt }],
-      temperature: 0.9,
+      temperature: 0.1,
     });
 
     if (englishResponse.status === 'incomplete') {
