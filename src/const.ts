@@ -31,10 +31,10 @@ export const appearanceTypeMap = {
   ],
 } as const;
 
-// 1回で取得する問題数（5フレーズ × 2問）
-export const PROBLEM_FETCH_LIMIT = 10;
+// 1回で取得する問題数（2フレーズ × 2問）
+export const PROBLEM_FETCH_LIMIT = 4;
 // expression グルーピング取得時の設定
-export const EXPRESSION_FETCH_PHRASES = 5;
+export const EXPRESSION_FETCH_PHRASES = 2;
 export const EXPRESSION_FETCH_PER_PHRASE = 2;
 
 const HOST_NAME = 'xn--w8jtfrbw831dz9h.xn--sssu80k.dev';

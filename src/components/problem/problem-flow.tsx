@@ -17,11 +17,7 @@ import { useForm } from 'react-hook-form';
 import { ProblemWithAudio } from '@/app/api/problems/route';
 import { SceneImage } from '@/components/ui/scene-image';
 import { StartButton } from '@/components/ui/start-button';
-import {
-  shuffleArray,
-  shuffleOptionsWithCorrectIndex,
-  type ShuffledQuizOption,
-} from '@/lib/shuffle-utils';
+import { shuffleOptionsWithCorrectIndex, type ShuffledQuizOption } from '@/lib/shuffle-utils';
 import { ALLOWED_SHARE_COUNTS, CDN_ORIGIN } from '@/const';
 import { ArrowLeft, ExternalLink, Pencil, RotateCw, Wrench, X } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -216,7 +212,7 @@ function ProblemFlowInner({
         }
 
         setProblemQueue((prev) => {
-          const newQueue = [...prev, ...shuffleArray(data.problems)];
+          const newQueue = [...prev, ...data.problems];
           lastQueueLengthRef.current = newQueue.length;
           return newQueue;
         });

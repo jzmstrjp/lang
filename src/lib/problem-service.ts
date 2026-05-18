@@ -175,6 +175,25 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
       seen.set(key, count + 1);
       return true;
     });
+
+    // expression1, expression2, expression1, expression2 の交互順に並び替え
+    // フィルタ後は [ex1_p1, ex1_p2, ex2_p1, ex2_p2] の順なので転置する
+    const grouped = new Map<string, ProblemWithAudio[]>();
+    for (const p of problems) {
+      const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
+      const group = grouped.get(key) ?? [];
+      group.push(p);
+      grouped.set(key, group);
+    }
+    const groups = Array.from(grouped.values());
+    const maxPerGroup = Math.max(...groups.map((g) => g.length));
+    const interleaved: ProblemWithAudio[] = [];
+    for (let i = 0; i < maxPerGroup; i++) {
+      for (const group of groups) {
+        if (i < group.length) interleaved.push(group[i]!);
+      }
+    }
+    problems = interleaved;
   } else if (latestCount !== undefined) {
     // 最新N件から絞り込んでランダム取得
     problems = await prisma.$queryRaw<ProblemWithAudio[]>`
