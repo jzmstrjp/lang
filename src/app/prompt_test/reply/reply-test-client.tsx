@@ -55,6 +55,7 @@ export default function ReplyTestClient({ defaultScene }: { defaultScene?: Defau
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReplyResult | null>(null);
+  const [senderVisible, setSenderVisible] = useState(false);
 
   const generate = async () => {
     setLoading(true);
@@ -96,6 +97,7 @@ export default function ReplyTestClient({ defaultScene }: { defaultScene?: Defau
             <button
               onClick={() => {
                 setResult(null);
+                setSenderVisible(false);
                 router.refresh();
               }}
               className="px-5 py-2 text-sm font-semibold border-2 border-[var(--border)] rounded-xl text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors"
@@ -107,14 +109,24 @@ export default function ReplyTestClient({ defaultScene }: { defaultScene?: Defau
           {/* 会話 */}
           <div className="space-y-2">
             {/* 送り手 */}
-            <div className="rounded-xl bg-[var(--background)] border border-[var(--border)] p-3 space-y-1">
+            <button
+              type="button"
+              onClick={() => setSenderVisible(true)}
+              className="w-full text-left rounded-xl bg-[var(--background)] border border-[var(--border)] p-3 space-y-1 cursor-pointer hover:border-[var(--primary)]/50 transition-colors"
+            >
               <p className="text-xs font-semibold text-[var(--text-muted)]">
                 {scene.senderName}（{scene.senderRole}・
                 {scene.senderVoice === 'male' ? '男性' : '女性'}）@ {scene.place}
               </p>
-              <p className="text-lg font-bold text-[var(--text)]">{scene.japaneseSentence}</p>
-              <p className="text-sm text-[var(--text-muted)]">{scene.englishSentence}</p>
-            </div>
+              {senderVisible ? (
+                <>
+                  <p className="text-lg font-bold text-[var(--text)]">{scene.japaneseSentence}</p>
+                  <p className="text-sm text-[var(--text-muted)]">{scene.englishSentence}</p>
+                </>
+              ) : (
+                <p className="text-sm text-[var(--text-muted)] select-none">タップして表示</p>
+              )}
+            </button>
 
             {/* 受け手：既存 */}
             <div className="rounded-xl bg-[var(--border)]/20 border border-[var(--border)] p-3 space-y-1">
