@@ -24,6 +24,7 @@ type RequestBody = {
   isKids?: boolean;
   additionalInstruction?: string;
   englishReply?: string;
+  currentReply?: string;
 };
 
 export async function POST(request: Request) {
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
       senderWant,
       isKids = false,
       additionalInstruction,
+      currentReply,
     } = body;
 
     if (
@@ -96,6 +98,7 @@ export async function POST(request: Request) {
         want: senderWant,
         isKids,
         additionalInstruction: additionalInstruction?.trim() || undefined,
+        currentReply: currentReply?.trim() || undefined,
       }) +
       `\n【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json

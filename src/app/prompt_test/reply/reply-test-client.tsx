@@ -52,6 +52,7 @@ export default function ReplyTestClient({ defaultScene }: { defaultScene?: Defau
   const router = useRouter();
   const scene = defaultScene ?? DEFAULT_SCENE;
   const [additionalInstruction, setAdditionalInstruction] = useState('');
+  const [improveMode, setImproveMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReplyResult | null>(null);
@@ -66,7 +67,11 @@ export default function ReplyTestClient({ defaultScene }: { defaultScene?: Defau
       const response = await fetch('/api/prompt-test/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...scene, additionalInstruction: additionalInstruction.trim() }),
+        body: JSON.stringify({
+          ...scene,
+          additionalInstruction: additionalInstruction.trim(),
+          currentReply: improveMode ? scene.englishReply : undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -180,13 +185,24 @@ export default function ReplyTestClient({ defaultScene }: { defaultScene?: Defau
             />
           </div>
 
-          <button
-            onClick={() => void generate()}
-            disabled={loading || !scene.englishSentence.trim()}
-            className="w-full px-8 py-3 text-base font-semibold bg-[var(--primary)] text-[var(--primary-text)] rounded-xl hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? '生成中...' : '返答を生成'}
-          </button>
+          <div className="flex items-center justify-between gap-4">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--text-muted)]">
+              <input
+                type="checkbox"
+                checked={improveMode}
+                onChange={(e) => setImproveMode(e.target.checked)}
+                className="w-4 h-4 accent-[var(--primary)] cursor-pointer"
+              />
+              改善モード
+            </label>
+            <button
+              onClick={() => void generate()}
+              disabled={loading || !scene.englishSentence.trim()}
+              className="flex-1 px-8 py-3 text-base font-semibold bg-[var(--primary)] text-[var(--primary-text)] rounded-xl hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? '生成中...' : '返答を生成'}
+            </button>
+          </div>
         </div>
 
         {/* エラー */}
