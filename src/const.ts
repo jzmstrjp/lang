@@ -34,7 +34,7 @@ export const appearanceTypeMap = {
 // 1回で取得するフレーズ数
 export const EXPRESSION_FETCH_PHRASES = 2;
 // 1回で取得するフレーズごとの問題数
-export const EXPRESSION_FETCH_PER_PHRASE = 2;
+export const EXPRESSION_FETCH_PER_PHRASE = 3;
 // 1回で取得する総問題数（フレーズ数 × 問題数）
 export const PROBLEM_FETCH_LIMIT = EXPRESSION_FETCH_PHRASES * EXPRESSION_FETCH_PER_PHRASE;
 
