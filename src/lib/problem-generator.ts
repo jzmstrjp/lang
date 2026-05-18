@@ -127,7 +127,7 @@ export function buildEnglishReplyPrompt({
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
 「Okay, I understand.」などの汎用的な返答でなく、この場面ならではの返答を作成してください。
-後述の「シーン情報」をハッキリと想起させる会話にしてください。
+後述の「シーン情報」を自然と想起させる会話にしてください。
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
