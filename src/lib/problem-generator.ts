@@ -132,7 +132,7 @@ ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
-${currentReply ? `このシーンでは「${currentReply}」という返答は不自然です。「${currentReply}」とは異なる返答を作成してください。` : ''}
+${currentReply ? `「${currentReply}」以外の返答を作成してください。` : ''}
 
 【シーン情報】
 ${buildSceneText({
@@ -865,7 +865,7 @@ export async function translateJapanese(
   【翻訳すべき英文】
   ${translate === 'sender' ? englishSentence : englishReply}¥
 
-  ${japanese ? `この文脈では「${japanese}」という翻訳は不自然です。シーン情報をしっかりと理解し「${japanese}」とは異なる翻訳を作成してください。` : ''}
+  ${japanese ? `「${japanese}」以外の翻訳を作成してください。` : ''}
 
   ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 
