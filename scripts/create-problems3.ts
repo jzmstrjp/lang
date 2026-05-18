@@ -186,7 +186,7 @@ const SILLY_OPTION_WORDS = [
   'そろばん',
 ];
 
-async function createIncorrectOptions(japaneseSentence: string): Promise<string[] | null> {
+export async function createIncorrectOptions(japaneseSentence: string): Promise<string[] | null> {
   console.log(`  🎯 誤答選択肢を生成中...`);
 
   const sillyWord = SILLY_OPTION_WORDS[Math.floor(Math.random() * SILLY_OPTION_WORDS.length)];
@@ -213,7 +213,8 @@ ${japaneseSentence}
   - 文字数: 正解（${japaneseSentence.length}文字）と同じ
 
 【重要ルール】
-- 文字数が全然足りないのは禁止。少し冗長な言い回しにしてでも（${japaneseSentence.length}文字）と同じ文字数にすること。
+- 文字数が ${japaneseSentence.length}文字 より全然足りないのは禁止。少し冗長な言い回しにしてでも ${japaneseSentence.length}文字 にすること。
+- 文字数が ${japaneseSentence.length}文字 より多すぎるのも禁止。意味が通る範囲で単語を削って ${japaneseSentence.length}文字 にすること。
 - 正解の日本語文が疑問文の場合、3つとも全て疑問文を生成すること
 - 正解の文と似たような意味に取れる文は作らないこと。（それではクイズにならないため）
 - 3つとも、バラバラの単語から始まる文であること。ただし頭に「まずは」「実は」「ちなみに」「ところで」などを加えて誤魔化すのは禁止。自然に別の単語から始まる文を作ること。
