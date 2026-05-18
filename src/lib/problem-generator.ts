@@ -101,7 +101,8 @@ export type EnglishReplyPromptParams = {
   how: string;
   want: string;
   isKids?: boolean;
-  oldReply?: string;
+  currentReply?: string;
+  additionalInstruction?: string;
 };
 
 export function buildEnglishReplyPrompt({
@@ -119,12 +120,14 @@ export function buildEnglishReplyPrompt({
   how,
   want,
   isKids = false,
-  oldReply,
+  currentReply,
+  additionalInstruction,
 }: EnglishReplyPromptParams): string {
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
 「Okay, I understand.」などの汎用的な返答でなく、この場面ならではの返答を作成してください。
+${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
@@ -144,7 +147,7 @@ ${buildSceneText({
   senderWant: want,
 })}
 
-${oldReply ? `このシーンでは「${oldReply}」という返答は不自然です。シーン情報をしっかりと理解し「${oldReply}」とは異なる返答を作成してください。` : ''}
+${currentReply ? `このシーンでは「${currentReply}」という返答は不自然です。シーン情報をしっかりと理解し「${currentReply}」とは異なる返答を作成してください。` : ''}
 
 このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答の口語文を英語で作成してください。
 `;
@@ -826,6 +829,7 @@ export type TranslateJapaneseParams = {
   /** 翻訳対象: 'sender'=1コマ目、'receiver'=2コマ目 */
   translate: 'sender' | 'receiver';
   japanese?: string;
+  additionalInstruction?: string;
 };
 
 /**
@@ -854,12 +858,15 @@ export async function translateJapanese(
     englishReply,
     translate,
     japanese,
+    additionalInstruction,
   } = params;
   const prompt = `
   【翻訳すべき英文】
   ${translate === 'sender' ? englishSentence : englishReply}¥
 
   ${japanese ? `この文脈では「${japanese}」という翻訳は不自然です。シーン情報をしっかりと理解し「${japanese}」とは異なる翻訳を作成してください。` : ''}
+
+  ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 
   ${buildJapaneseConversationRules({
     senderName,
