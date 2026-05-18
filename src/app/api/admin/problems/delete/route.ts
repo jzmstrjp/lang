@@ -45,25 +45,17 @@ export async function POST(request: Request) {
 
     await prisma.problem.delete({ where: { id: problemId } });
 
-    // 削除後に同じ expression の残り件数が 1 件になったら Word テーブルに戻す
-    // （groupByExpression の HAVING COUNT(*) >= 2 で出題対象外になるため）
-    if (record.expression) {
-      const remaining = await prisma.problem.count({
-        where: { expression: record.expression },
+    // 削除後の同じ expression・expressionJa・difficultyLevel の残り件数を返す
+    // （words への追加はフロント側で確認してから行う）
+    let remainingCount: number | null = null;
+    if (record.expression && record.expressionJa) {
+      remainingCount = await prisma.problem.count({
+        where: {
+          expression: record.expression,
+          expressionJa: record.expressionJa,
+          difficultyLevel: record.difficultyLevel,
+        },
       });
-      if (remaining === 1 && record.expressionJa) {
-        const isKids = record.difficultyLevel === 1;
-        await prisma.word.upsert({
-          where: {
-            expression_expressionJa: {
-              expression: record.expression,
-              expressionJa: record.expressionJa,
-            },
-          },
-          update: {},
-          create: { expression: record.expression, expressionJa: record.expressionJa, isKids },
-        });
-      }
     }
 
     const assetUrls = [
@@ -77,7 +69,13 @@ export async function POST(request: Request) {
       await deleteMultipleFromR2(assetUrls);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      remainingCount,
+      expression: record.expression ?? null,
+      expressionJa: record.expressionJa ?? null,
+      difficultyLevel: record.difficultyLevel ?? null,
+    });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: '指定された問題が見つかりません。' }, { status: 404 });

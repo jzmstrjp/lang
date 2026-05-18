@@ -323,7 +323,7 @@ function ProblemFlowInner({
 
     if (!nextProblemData) {
       // キューが空の場合はエラー状態にする
-      console.error('[ProblemFlow] 問題キューが空です');
+      console.warn('[ProblemFlow] 問題キューが空です');
       setPhase({
         kind: 'start-button-client',
         error: '次の問題がありません',
@@ -456,13 +456,51 @@ function ProblemFlowInner({
         body: JSON.stringify({ problemId: targetProblemId }),
       });
 
+      const deleteData = (await response.json().catch(() => null)) as {
+        success: boolean;
+        remainingCount: number | null;
+        expression: string | null;
+        expressionJa: string | null;
+        difficultyLevel: number | null;
+        error?: string;
+      } | null;
+
       if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        const message = data?.error ?? '問題の削除に失敗しました。';
+        const message = deleteData?.error ?? '問題の削除に失敗しました。';
         window.alert(message);
         return;
       }
 
+      // 残り件数が少なくなった場合、words への追加を先に確認する（次の問題遷移より前に行う）
+      if (
+        deleteData?.remainingCount !== null &&
+        deleteData?.remainingCount !== undefined &&
+        deleteData.remainingCount <= 1 &&
+        deleteData.expression &&
+        deleteData.expressionJa
+      ) {
+        const shouldAddToWords = window.confirm(
+          `「${deleteData.expression}」という表現の問題が${deleteData.remainingCount}問以下になりました。\nwordsに追加しますか？`,
+        );
+        if (shouldAddToWords) {
+          const isKids = deleteData.difficultyLevel === 1;
+          const addResponse = await fetch('/api/admin/words/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              expression: deleteData.expression,
+              expressionJa: deleteData.expressionJa,
+              isKids,
+            }),
+          });
+          if (!addResponse.ok) {
+            const addData = await addResponse.json().catch(() => null);
+            window.alert(addData?.error ?? 'words への追加に失敗しました。');
+          }
+        }
+      }
+
+      // 次の問題へ遷移
       if (phase.kind === 'start-button-server') {
         const updatedQueue = problemQueue.filter((problem) => problem.id !== targetProblemId);
         setProblemQueue(updatedQueue);
@@ -473,10 +511,9 @@ function ProblemFlowInner({
           error: nextProblemData ? null : '次の問題がありません',
           problem: nextProblemData ?? phase.problem,
         });
-        return;
+      } else {
+        handleNextProblem();
       }
-
-      handleNextProblem();
     } catch (error) {
       console.error('[ProblemFlow] 問題削除エラー:', error);
       window.alert('問題の削除に失敗しました。');
