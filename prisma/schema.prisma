@@ -78,7 +78,8 @@ model Word {
   targetLength ProblemLength?
   createdAt    DateTime       @default(now())
 
-  @@unique([expression, expressionJa])
+  @@unique([expression, expressionJa, isKids])
+  @@unique([expression, expressionJa, targetLength])
   @@index([isKids])
   @@index([targetLength])
   @@map("words")
