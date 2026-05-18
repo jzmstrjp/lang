@@ -126,11 +126,12 @@ export function buildEnglishReplyPrompt({
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
-「Okay, I understand.」などの汎用的な返答でなく、この場面ならではの返答を作成してください。
-後述の「シーン情報」を自然と想起させる会話にしてください。
+${senderName}の言葉をしっかりと受け止め、自然と相槌を打ち、汎用的な返答ではなくこの場面ならではの返答を作成してください。「Okay, I understand.」などの汎用的な返答は禁止します。
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
+
+${currentReply ? `このシーンでは「${currentReply}」という返答は不自然です。「${currentReply}」とは異なる返答を作成してください。` : ''}
 
 【シーン情報】
 ${buildSceneText({
@@ -147,8 +148,6 @@ ${buildSceneText({
   senderWhy: why,
   senderWant: want,
 })}
-
-${currentReply ? `このシーンでは「${currentReply}」という返答は不自然です。シーン情報をしっかりと理解し「${currentReply}」とは異なる返答を作成してください。` : ''}
 
 このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答の口語文を英語で作成してください。
 `;
