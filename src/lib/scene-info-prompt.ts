@@ -50,7 +50,7 @@ const samples: SceneInfo[] = [
     receiverRole: 'シンジの恋人',
     when: '仕事終わりに二人で海沿いを歩いていた夕方',
     why: '曇り空だったのに、急に雲の隙間から夕日が強く差し込んで海と街全体が赤く染まったから',
-    want: 'エマにも同じ景色を見て、一緒にその瞬間を共有してほしかったから',
+    want: 'エマにも同じ景色を見て、一緒にその瞬間を共有できる',
     where: '港の防波堤沿いの歩道',
     receiverWhere: 'シンジの隣',
   },
@@ -78,7 +78,7 @@ const samples: SceneInfo[] = [
     where: 'オフィスの休憩スペース',
     receiverWhere: 'オフィスの休憩スペース',
     why: '友人（エマ）の活躍を知って感心し、誰かに共有したくなった',
-    want: 'タカシにもエマの実績に感心してほしい',
+    want: 'タカシがエマの実績に感心してくれる',
   },
   {
     englishSentence:
@@ -108,7 +108,7 @@ const kidsSamples: SceneInfo[] = [
     where: '学校の校庭',
     receiverWhere: 'ケンタの隣',
     why: 'サクラがサッカーボールを持っているのを見て、好きなのかが気になったから',
-    want: 'サクラがサッカー好きか知りたい',
+    want: 'サクラがサッカー好きかを知れる',
   },
   {
     englishSentence: 'Can I borrow your eraser?',
@@ -121,20 +121,20 @@ const kidsSamples: SceneInfo[] = [
     where: '教室の自分の席',
     receiverWhere: 'ケンジの隣の席',
     why: '間違えた文字を消したいのに自分の消しゴムが見つからなかったから',
-    want: 'エミリーに消しゴムを貸してもらいたい',
+    want: 'エミリーが自分の消しゴムを貸してくれる',
   },
   {
     englishSentence: 'Are you free after school?',
     how: '対面',
     senderName: 'アオイ',
     senderRole: '高校生',
-    receiverName: 'タナカ',
+    receiverName: 'マサシ',
     receiverRole: 'アオイの担任の先生',
     when: '授業後に廊下で先生に声をかけた時',
     where: '教室の廊下',
     receiverWhere: 'アオイの前',
     why: '進路について相談したいことがあったから',
-    want: 'タナカ先生に放課後に時間を作ってもらい、進路の相談をしたい',
+    want: 'マサシ先生に放課後に時間を作ってもらい、進路の相談ができる',
   },
   {
     englishSentence: 'I need help with this.',
@@ -147,7 +147,7 @@ const kidsSamples: SceneInfo[] = [
     where: 'リビング',
     receiverWhere: 'ユウキの隣',
     why: '数学の問題が解けなくて困っていたから',
-    want: 'ヨシコに問題の解き方を教えてほしい',
+    want: '母ヨシコが問題の解き方を教えてくれる',
   },
 ];
 
