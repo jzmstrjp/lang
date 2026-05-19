@@ -230,7 +230,7 @@ export async function createIncorrectOptions(japaneseSentence: string): Promise<
 
 【正解の日本語文】（${japaneseSentence.length}文字）
 ${japaneseSentence}
-【1つ目に使うワード】${sillyWord}`;
+【1つ目の誤答選択肢に使うワード】${sillyWord}`;
 
   try {
     const response = await openai.responses.create({
