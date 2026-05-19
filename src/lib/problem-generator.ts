@@ -939,8 +939,7 @@ export function buildJapaneseConversationRules(
 
   const targetDescription =
     translate === 'sender'
-      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語の口語文に翻訳してください。
-できれば翻訳時に「${expression}」の意味（${expressionJa}）を省略しないでください。`
+      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語の口語文に翻訳してください。`
       : translate === 'receiver'
         ? `この${receiverRole}（${receiverGender}）の「${englishReply}」を自然な日本語の口語文に翻訳してください。`
         : 'この会話を自然な日本語の口語文に翻訳してください。';
@@ -953,6 +952,7 @@ export function buildJapaneseConversationRules(
   ${targetDescription}
   二人の関係性を考慮して、口調（敬語・タメ口）や呼び方（敬称・呼び捨て・役職呼び）を決めてください。
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
+  日本人が読んだときに「${expression}」の意味（${expressionJa}）を誤解なく理解できるように翻訳してください。
   外国人名は全てカタカナに翻訳してください。
   元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
   元の英文に含まれていない背景の情報は日本語訳に含めず、元の英文に含まれている内容のみを日本語に翻訳してください。
