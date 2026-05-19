@@ -111,17 +111,17 @@ const kidsSamples: SceneInfo[] = [
     want: 'ルーカスと一緒にサッカーをして遊びたい',
   },
   {
-    englishSentence: 'Can I borrow your eraser?',
+    englishSentence: 'Are you free after school?',
     how: '対面',
-    senderName: 'ハナ',
-    senderRole: '中学生',
-    receiverName: 'ソフィア',
-    receiverRole: 'ハナのクラスメイト',
-    when: '授業中に問題を解いていた時',
-    where: '教室の自分の席',
-    receiverWhere: 'ハナの隣の席',
-    why: '間違えた文字を消したいのに自分の消しゴムが見つからなかったから',
-    want: 'ソフィアに消しゴムを貸してもらいたい',
+    senderName: 'リョウ',
+    senderRole: '高校生',
+    receiverName: 'サトウ',
+    receiverRole: 'リョウの担任の先生',
+    when: '授業後に廊下で先生に声をかけた時',
+    where: '教室の廊下',
+    receiverWhere: 'リョウの前',
+    why: '進路について相談したいことがあったから',
+    want: 'サトウ先生に放課後に時間を作ってもらい、進路の相談をしたい',
   },
   {
     englishSentence: "Let's play outside!",
@@ -181,8 +181,8 @@ const SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
 ${SAMPLES_BLOCK}`;
 
 const KIDS_SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
-- 登場人物は中学生〜高校生にすること
-- 友人・恋愛・部活・放課後・家族など中高生らしい話題・シーンにすること
+- 登場人物は主に中学生〜高校生だが、親・先生・先輩・後輩・バイト先の人なども登場してよい
+- 友人・恋愛・部活・放課後・家族・趣味など幅広いシーンにすること
 - 幼稚園児や小学校低学年を想起させるような幼い話題（砂遊び・おもちゃ・絵本・ロボット工作など）は避けること
 - ビジネスや大人の職場のシーンも避けること
 
