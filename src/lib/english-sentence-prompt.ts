@@ -99,7 +99,7 @@ ${how}で誰かに話しかける口語文です。質問・依頼・意見・�
 英語の文法として確実に正しい口語文にしてください。
 ${sentenceNote ? `- ${sentenceNote}` : ''}
 ${kidsConstraint}フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
-具体的な状況や情景が浮かぶような具体的な口語文にしてください。
+${isKids ? '具体的な状況が浮かぶような口語文にしてください。（OK例: "Water, please.", "I\'m so hungry!" / NG例: "Sounds good.", "Me too."）' : '具体的な状況や情景が浮かぶような具体的な口語文にしてください。（例: "I like your jacket!"）'}
 
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
