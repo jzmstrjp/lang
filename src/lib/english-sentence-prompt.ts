@@ -83,23 +83,18 @@ export function buildEnglishSentenceOnlyPrompt({
     .join('\n');
 
   const sentenceNote = 'sentenceNote' in rule ? rule.sentenceNote : undefined;
-  const kidsConstraint = isKids
-    ? `文法はできる限りシンプルにしてください。
-使ってよい構文の例: "Do you ~?", "Can I ~?", "Let's ~!", "I like ~.", "I want ~.", "Are you ~?", "Please ~."
-避けるべき複雑な構文の例: "couldn't help but ~", "You always make me ~", "I ended up ~ing"
-`
-    : '';
 
   return `
 「${phrase}${phraseJa ? `（${phraseJa}）` : ''}」というフレーズを使って、現実世界で誰もが一度は聞いたことがあるような自然な英語の口語文を1つ作ってください。
-${how}で誰かに話しかける口語文です。質問・依頼・意見・お気持ちなどです。
+${how}で誰かに話しかける口語文です。質問・依頼・意見・褒めたり叱ったり・お気持ちなどです。
+何かに対する返答やリアクションではなく、話しかける内容です。（"Sounds good.", "Me too."などはリアクションなのでNGです）
 
 現実にありそうなシチュエーションにしてください。
 英語ネイティブが聞いても違和感のない口語文にしてください。
 英語の文法として確実に正しい口語文にしてください。
 ${sentenceNote ? `- ${sentenceNote}` : ''}
-${kidsConstraint}フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
-${isKids ? '具体的な状況が浮かぶような口語文にしてください。（OK例: "Water, please.", "I\'m so hungry!", "Can you play with me?" / NG例: "Sounds good.", "Me too.", "Can you wash this?", "Can you take it?"）目的語が代名詞で不明なのはNGです。' : '具体的な状況や情景が浮かぶような具体的な口語文にしてください。（例: "I like your jacket!"）'}
+フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
+${isKids ? '期待する結果や質問の意図が具体的に伝わる口語文にしてください。（OK例: "Water, please.（水が欲しい）", "I\'m so hungry!（空腹で何か食べたい）", "Can you play with me?（遊びに行ってほしい）" / NG例: "Can you wash this?（具体的に何を洗って欲しいのか分からない）", "Can you take it?（何を持ってくるのか分からない）"）目的語が代名詞だと目的が不明確になるのでNGです。' : '具体的な状況や情景が浮かぶような具体的な口語文にしてください。（例: "I like your jacket!"）'}
 
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
