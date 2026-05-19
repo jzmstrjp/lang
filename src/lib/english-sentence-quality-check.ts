@@ -8,11 +8,7 @@ export type QualityCheckResult =
   | { isOk: true }
   | { isOk: false; reason: string; correctSentenceDraft: string | null };
 
-function buildQualityCheckPrompt(
-  englishSentence: string,
-  expression: string,
-  wordCountLength: ProblemLength,
-): string {
+function buildQualityCheckPrompt(englishSentence: string, expression: string): string {
   const idiomCheck = expression.includes(' ')
     ? '- 指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として適切に使われているか\n'
     : '';
@@ -57,7 +53,7 @@ export async function checkEnglishSentenceQuality(
     englishSentence: string;
   },
 ): Promise<QualityCheckResult> {
-  const checkPrompt = buildQualityCheckPrompt(englishSentence, expression, wordCountLength);
+  const checkPrompt = buildQualityCheckPrompt(englishSentence, expression);
 
   const response = await openai.responses.create({
     model: TEXT_MODEL_QUICK,
