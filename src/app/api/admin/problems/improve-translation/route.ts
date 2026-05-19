@@ -24,6 +24,8 @@ type RequestBody = {
   receiverRole?: string;
   receiverName?: string;
   receiverVoice?: string;
+  expression?: string;
+  expressionJa?: string;
 };
 
 export async function POST(request: Request) {
@@ -52,6 +54,8 @@ export async function POST(request: Request) {
       englishReply,
       receiverRole,
       receiverVoice,
+      expression,
+      expressionJa,
     } = body;
 
     if (!englishSentence || typeof englishSentence !== 'string') {
@@ -101,6 +105,8 @@ export async function POST(request: Request) {
       englishReply,
       translate: 'sender',
       japanese: japaneseSentence,
+      expression: expression ?? '',
+      expressionJa: expressionJa ?? '',
     });
 
     return NextResponse.json({ success: true, improvedTranslation });

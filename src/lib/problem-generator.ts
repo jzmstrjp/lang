@@ -803,6 +803,8 @@ export type TranslateJapaneseParams = {
   translate: 'sender' | 'receiver';
   japanese?: string;
   additionalInstruction?: string;
+  expression: string;
+  expressionJa: string;
 };
 
 /**
@@ -832,6 +834,8 @@ export async function translateJapanese(
     translate,
     japanese,
     additionalInstruction,
+    expression,
+    expressionJa,
   } = params;
   const prompt = `
   【翻訳すべき英文】
@@ -853,6 +857,8 @@ export async function translateJapanese(
     translate,
     how,
     when: senderWhen,
+    expression,
+    expressionJa,
   })}
 
 【重要】以下のJSON形式で必ず回答してください:
@@ -904,6 +910,8 @@ export type BuildJapaneseConversationRulesParams = {
   /** 翻訳対象: 'sender'=送り手の発話、'receiver'=受け手の返答。省略時は会話全体を翻訳 */
   translate?: 'sender' | 'receiver';
   when: string;
+  expression: string;
+  expressionJa: string;
 };
 
 /**
@@ -925,11 +933,14 @@ export function buildJapaneseConversationRules(
     how,
     translate,
     when,
+    expression,
+    expressionJa,
   } = params;
 
   const targetDescription =
     translate === 'sender'
-      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語の口語文に翻訳してください。`
+      ? `この${senderRole}（${senderGender}）の「${englishSentence}」を自然な日本語の口語文に翻訳してください。
+できれば翻訳時に「${expression}」の意味（${expressionJa}）を省略しないでください。`
       : translate === 'receiver'
         ? `この${receiverRole}（${receiverGender}）の「${englishReply}」を自然な日本語の口語文に翻訳してください。`
         : 'この会話を自然な日本語の口語文に翻訳してください。';

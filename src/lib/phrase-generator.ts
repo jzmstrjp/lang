@@ -16,6 +16,11 @@ import { recordTokenUsage } from '@/lib/token-usage-tracker';
 export type { Voice, How } from '@/lib/english-sentence-prompt';
 export type { SceneInfo } from '@/lib/scene-info-prompt';
 
+export type SceneInfoWithExpression = SceneInfo & {
+  expression: string;
+  expressionJa: string;
+};
+
 export const HOWS: How[] = ['対面', '対面', '電話'];
 
 export type GenerateForPhraseResult = {
@@ -122,7 +127,7 @@ export async function createEnglishSentence(
     senderName: string;
     receiverName: string;
   },
-): Promise<SceneInfo | null> {
+): Promise<SceneInfoWithExpression | null> {
   try {
     const sentencePrompt = buildEnglishSentenceOnlyPrompt({
       phrase,
@@ -195,7 +200,7 @@ export async function createEnglishSentence(
     if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
 
     const scene = JSON.parse(jsonMatch[1]) as Omit<SceneInfo, 'englishSentence' | 'how'>;
-    return { englishSentence, how, ...scene };
+    return { englishSentence, how, expression: phrase, expressionJa: phraseJa, ...scene };
   } catch (e) {
     console.error('createEnglishSentence エラー:', e);
     return null;
@@ -211,7 +216,7 @@ export async function createEnglishReply(
     voice,
     isKids,
   }: {
-    sentence: SceneInfo;
+    sentence: SceneInfoWithExpression;
     senderName: string;
     receiverName: string;
     voice: Voice;
@@ -274,7 +279,7 @@ export async function createJapaneseConversation(
     voice,
     how,
   }: {
-    sentence: SceneInfo;
+    sentence: SceneInfoWithExpression;
     senderName: string;
     receiverName: string;
     englishReply: string;
@@ -298,6 +303,8 @@ export async function createJapaneseConversation(
     englishReply,
     how,
     when: sentence.when,
+    expression: sentence.expression,
+    expressionJa: sentence.expressionJa,
   })}
 
 以下のJSON形式で必ず回答してください。

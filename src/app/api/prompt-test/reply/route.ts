@@ -25,6 +25,8 @@ type RequestBody = {
   additionalInstruction?: string;
   englishReply?: string;
   currentReply?: string;
+  expression?: string;
+  expressionJa?: string;
 };
 
 export async function POST(request: Request) {
@@ -58,6 +60,8 @@ export async function POST(request: Request) {
       isKids = false,
       additionalInstruction,
       currentReply,
+      expression,
+      expressionJa,
     } = body;
 
     if (
@@ -150,6 +154,8 @@ export async function POST(request: Request) {
       receiverGender,
       englishReply,
       translate: 'receiver',
+      expression: expression ?? '',
+      expressionJa: expressionJa ?? '',
     });
 
     return NextResponse.json({ englishReply, japaneseReply });

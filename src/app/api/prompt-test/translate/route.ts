@@ -23,6 +23,8 @@ type RequestBody = {
   senderWant?: string;
   translate?: 'sender' | 'receiver';
   additionalInstruction?: string;
+  expression?: string;
+  expressionJa?: string;
 };
 
 export async function POST(request: Request) {
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
       senderWant,
       translate = 'sender',
       additionalInstruction,
+      expression,
+      expressionJa,
     } = body;
 
     if (
@@ -97,6 +101,8 @@ export async function POST(request: Request) {
       englishReply,
       translate,
       additionalInstruction: additionalInstruction?.trim() || undefined,
+      expression: expression ?? '',
+      expressionJa: expressionJa ?? '',
     });
 
     return NextResponse.json({
