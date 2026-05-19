@@ -113,12 +113,12 @@ export function buildEnglishReplyPrompt({
   senderGender,
   receiverGender,
   englishSentence,
-  when: _when,
-  where: _where,
-  receiverPlace: _receiverPlace,
-  why: _why,
+  when,
+  where,
+  receiverPlace,
+  why,
   how,
-  want: _want,
+  want,
   isKids = false,
   currentReply,
   additionalInstruction,
@@ -133,6 +133,24 @@ ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 英文法は正確に、文法の間違いがないようにしてください。
 
 ${currentReply ? `「${currentReply}」と同じ方向性の感情で、別パターンの返答を作成してください。` : ''}
+
+【シーン情報】
+${buildSceneText({
+  senderName,
+  receiverName,
+  how,
+  senderWhen: when,
+  place: where,
+  senderRole: who,
+  senderVoice: senderGender === '男性' ? 'male' : 'female',
+  receiverPlace: receiverPlace,
+  receiverRole: whom,
+  receiverVoice: receiverGender === '男性' ? 'male' : 'female',
+  senderWhy: why,
+  senderWant: want,
+})}
+
+このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答の口語文を英語で作成してください。
 `;
 }
 
