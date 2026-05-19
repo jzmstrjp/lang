@@ -47,12 +47,11 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 ${
   isKids
     ? `- **日本人なら誰でも知っているような、中学英語レベルの基本単語・表現に限定すること**
-- 補助的な語なしでは使えない単語はNG（例: "figure" → "figure out" がないと不自然なのでNG。"figure out" としてイディオムで登録すること）
-- イディオムは3語以内に収めること（例: "give up", "wake up", "look forward to"）
-- 返答する場面でなく、話しかける場面で使われそうな単語・フレーズが好ましい。いかにも返答っぽいフレーズはNG（NG例: "of course", "all right"）
   - OK例: "play", "like", "eat", "sleep", "happy", "sad", "big", "fast", "friend", "school", "help", "run", "fun"
   - NG例: "giggle"（日本人には馴染みが薄い）, "belongings"（難しい）, "peek"（馴染みが薄い）, "softly"（副詞として馴染みが薄い）, "snuggle"（馴染みが薄い）, "cozy"（馴染みが薄い）
-- 子どもが日常で頻繁に使う基本動詞・形容詞を積極的に含めること（例: play, like, love, want, need, know, think, try, make, go, come, get, give, take, put, eat, drink, sleep, help, watch, read, draw, sing, dance）
+- 補助的な語なしでは使えない単語はNG（例: "figure" → "figure out" でないと不自然なのでNG。"figure out" としてイディオムで登録すること）
+- イディオムは3語以内に収めること（例: "give up", "wake up", "look forward to"）
+- 子どもでも理解可能な基本動詞・形容詞を積極的に含めること（例: play, like, love, want, need, know, think, try, make, go, come, get, give, take, put, eat, drink, sleep, help, watch, read, draw, sing, dance）
 - 「好き・嫌い・欲しい・楽しい」など感情や好みを表す語も積極的に含めること（例: favorite, fun, happy, sad, scared, hungry, tired, cute, cool, great）
 - ビジネス系ではない日常系の単語・フレーズにすべし。ただし、幼稚園児や小学校低学年を想起させる話題（おもちゃ・砂遊びなど）は避けること
 - 副詞は中学英語で習うような基本的なものに限定（例: really, fast, slowly, together, again, always, never, very, too）
@@ -66,6 +65,7 @@ ${
 - ビジネス・旅行・日常生活など幅広いシーンに対応
 - 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
 }
+- 返答する場面でなく、話しかける場面で使われそうな単語・フレーズが好ましい。いかにも返答っぽいフレーズはNG（NG例: "of course", "all right"）
 - 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
 ${
   isKids
