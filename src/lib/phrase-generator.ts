@@ -170,6 +170,7 @@ export async function createEnglishSentence(
       if (qualityResult.correctSentenceDraft) {
         console.error(`     代替案: ${qualityResult.correctSentenceDraft}`);
       }
+      usedSentences.push(englishSentence);
       return null;
     }
 
