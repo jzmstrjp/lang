@@ -243,7 +243,7 @@ export async function createEnglishReply(
     const response = await openai.responses.create({
       model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
+      temperature: isKids ? 0.5 : 0.7,
       prompt_cache_retention: '24h',
       prompt_cache_key: 'english-reply-v1',
     });
