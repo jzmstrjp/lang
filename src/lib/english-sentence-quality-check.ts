@@ -13,13 +13,15 @@ function buildQualityCheckPrompt(
   expression: string,
   wordCountLength: ProblemLength,
 ): string {
+  const idiomCheck = expression.includes(' ')
+    ? '- 指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として適切に使われているか\n'
+    : '';
   return `あなたは英語ネイティブスピーカーの視点で、英語学習アプリ用の口語文の品質を審査する専門家です。
 
 以下の観点で審査してください：
 - ネイティブが実際に口語会話で使う自然な表現か
 - 文法的に正確か
-- 指定フレーズが慣用句・口語表現として適切に使われているか（文字通りの意味で使っていないか）
-- 語数制約（${wordCountLength}）と内容が釣り合っているか
+${idiomCheck}- 語数制約（${wordCountLength}）と内容が釣り合っているか
 - フレーズが不自然に無理やり当てはめられていないか
 
 ---
