@@ -7,7 +7,7 @@ export const WORD_COUNT_RULES = {
     sentenceNote:
       '子ども向けの学習コンテンツです。ごく簡単な文法でごく短い口語文にしてください。本当に簡単な文を作成してください。指定されたワード以外は、小学生でも分かりそうな語彙で作成すること。例: "Do you like Soccer?", "Can I borrow your eraser?", "Let\'s play outside!", "Do you have any pets?", "I like your backpack!", "What\'s your favorite color?"',
     sceneNote:
-      '学校や家庭・友人関係など日常生活のシーンにしてください。ビジネスのシーンは避けてください。',
+      '中高生の日常生活のシーンにしてください。友人・恋愛・部活・放課後・家族など中高生らしい話題が望ましいです。幼稚園児や小学校低学年を想起させるような幼い話題（砂遊び・おもちゃ・絵本など）は避けてください。ビジネスのシーンも避けてください。',
   },
   short: {
     min: 3,
