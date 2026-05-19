@@ -85,7 +85,7 @@ export function buildEnglishSentenceOnlyPrompt({
   const sentenceNote = 'sentenceNote' in rule ? rule.sentenceNote : undefined;
   const kidsConstraint = isKids
     ? `文法はできる限りシンプルにしてください。
-使ってよい構文の例: "Do you ~?", "Can I ~?", "Let's ~!", "I like ~.", "I want ~.", "Are you ~?"
+使ってよい構文の例: "Do you ~?", "Can I ~?", "Let's ~!", "I like ~.", "I want ~.", "Are you ~?", "Please ~."
 避けるべき複雑な構文の例: "couldn't help but ~", "You always make me ~", "I ended up ~ing"
 `
     : '';
