@@ -276,6 +276,7 @@ type FrameRestrictions = {
   frame2Must: string;
 };
 
+// TODO: この関数は未使用。あとで消すかも。
 /**
  * 各コマで描くべきでない内容をAIで生成
  */
@@ -814,12 +815,12 @@ export async function translateJapanese(
   params: TranslateJapaneseParams,
 ): Promise<string> {
   const {
-    place,
+    place: _place,
     how,
     senderWhen,
-    receiverPlace,
-    senderWhy,
-    senderWant,
+    receiverPlace: _receiverPlace,
+    senderWhy: _senderWhy,
+    senderWant: _senderWant,
     senderRole,
     senderName,
     senderGender,
@@ -853,22 +854,6 @@ export async function translateJapanese(
     how,
     when: senderWhen,
   })}
-
-【シーン情報】
-${buildSceneText({
-  how,
-  senderWhen,
-  place,
-  senderRole,
-  senderName,
-  senderVoice: senderGender === '男性' ? 'male' : 'female',
-  receiverPlace,
-  receiverRole,
-  receiverName,
-  receiverVoice: receiverGender === '男性' ? 'male' : 'female',
-  senderWhy,
-  senderWant,
-})}
 
 【重要】以下のJSON形式で必ず回答してください:
 
