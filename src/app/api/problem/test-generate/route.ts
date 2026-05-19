@@ -5,7 +5,6 @@ import {
   generateImagePrompt,
   generateImagePromptWithCharacters,
   generateImagePromptWithAnimals,
-  generateFrameRestrictions,
   type GenerateRequest,
 } from '@/lib/problem-generator';
 import OpenAI from 'openai';
@@ -136,14 +135,13 @@ export async function POST(req: Request) {
     const assetPromises: Promise<unknown>[] = [generateAudioAssets(problem)];
 
     // 画像プロンプト生成（使用するモードに応じて専用プロンプト）
-    const frameRestrictions = await generateFrameRestrictions(problem);
     let imagePrompt: string;
     if (body.useAnimalImages) {
-      imagePrompt = generateImagePromptWithAnimals(problem, frameRestrictions);
+      imagePrompt = generateImagePromptWithAnimals(problem);
     } else if (body.useCharacterImages) {
-      imagePrompt = generateImagePromptWithCharacters(problem, frameRestrictions);
+      imagePrompt = generateImagePromptWithCharacters(problem);
     } else {
-      imagePrompt = generateImagePrompt(problem, frameRestrictions);
+      imagePrompt = generateImagePrompt(problem);
     }
 
     // 画像が必要な場合は生成

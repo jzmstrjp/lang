@@ -358,13 +358,26 @@ AIによる画像生成では、以下の問題が起こりがちである。
   return JSON.parse(match[1]) as FrameRestrictions;
 }
 
+const frameRestrictions = `
+そのコマで現在起こっていることだけを描いてください。過去に起こったことや、未来に起こることは描かないでください。
+
+【例1】カウンターで「コーヒーを1つください」と注文しているシーン
+- 描くべき: カウンターに向かって注文している人物の様子
+- 描いてはいけない: テーブルに置かれたコーヒー（現時点では運ばれていないはず）、コーヒーを作っているバリスタ（現時点では作っていないはず）
+
+【例2】「はい、会議室に書類を取りに行ってきます」と返答しているシーン
+- 描くべき: 返答している相手の様子、会議室に向かおうとしている姿
+- 描いてはいけない: 会議室で書類を手に取っている様子（現時点では持っていないはず）、書類を持って戻ってきた様子（現時点では行ってないし戻っていないはず）
+
+【例3】「昨日、車を洗車したばかりなんです」と話しているシーン
+- 描くべき: 話している人物の様子、ピカピカに磨かれた車
+- 描いてはいけない: バケツや雑巾を持って洗車している様子（洗車は昨日終わったことであり、現時点では洗っていないはず）
+`;
+
 /**
  * 画像プロンプトを生成
  */
-export function generateImagePrompt(
-  problem: GeneratedProblem,
-  frameRestrictions?: FrameRestrictions,
-): string {
+export function generateImagePrompt(problem: GeneratedProblem): string {
   const senderGenderText = getGenderInJapanese(problem.senderVoice);
   const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
 
@@ -406,19 +419,8 @@ ${buildSceneText(problem)}
 【備考】
 - 生成AIっぽくない、自然な本物の写真を生成すること。
 
-【描くべきこと】
-${
-  frameRestrictions
-    ? `- 上半分: ${frameRestrictions.frame1Must}\n- 下半分: ${frameRestrictions.frame2Must}`
-    : ''
-}
-
 【描かないこと】
-${
-  frameRestrictions
-    ? `- 上半分: ${frameRestrictions.frame1Not}\n- 下半分: ${frameRestrictions.frame2Not}`
-    : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
-}
+${frameRestrictions}
 `;
 }
 
@@ -602,8 +604,7 @@ export async function generateAndUploadImageAsset(
   problem: GeneratedProblem,
   problemId: string,
 ): Promise<string> {
-  const frameRestrictions = await generateFrameRestrictions(problem);
-  const imagePrompt = generateImagePrompt(problem, frameRestrictions);
+  const imagePrompt = generateImagePrompt(problem);
   const imageBuffer = await generateImageBuffer(imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
 }
@@ -616,8 +617,7 @@ export async function generateAndUploadImageAssetWithCharacters(
   problemId: string,
   characterImages: Buffer[],
 ): Promise<string> {
-  const frameRestrictions = await generateFrameRestrictions(problem);
-  const imagePrompt = generateImagePromptWithCharacters(problem, frameRestrictions);
+  const imagePrompt = generateImagePromptWithCharacters(problem);
   const imageBuffer = await generateImageWithCharactersBuffer(characterImages, imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
 }
@@ -630,8 +630,7 @@ export async function generateAndUploadImageAssetWithAnimals(
   problemId: string,
   animalImages: Buffer[],
 ): Promise<string> {
-  const frameRestrictions = await generateFrameRestrictions(problem);
-  const imagePrompt = generateImagePromptWithAnimals(problem, frameRestrictions);
+  const imagePrompt = generateImagePromptWithAnimals(problem);
   const imageBuffer = await generateImageWithCharactersBuffer(animalImages, imagePrompt);
   return await uploadImageToR2(imageBuffer, problemId, 'composite');
 }
@@ -639,10 +638,7 @@ export async function generateAndUploadImageAssetWithAnimals(
 /**
  * キャラクター設定画像を使った画像生成用のプロンプトを生成
  */
-export function generateImagePromptWithCharacters(
-  problem: GeneratedProblem,
-  frameRestrictions?: FrameRestrictions,
-): string {
+export function generateImagePromptWithCharacters(problem: GeneratedProblem): string {
   const senderGenderText = getGenderInJapanese(problem.senderVoice);
   const receiverGenderText = getGenderInJapanese(problem.receiverVoice);
 
@@ -707,29 +703,15 @@ ${buildSceneText(problem)}
 - キャラクター画像と異なる顔や服装にしてはならない。
 - ビデオ会議のシーンの場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
-【描くべきこと】
-${
-  frameRestrictions
-    ? `- 1コマ目: ${frameRestrictions.frame1Must}\n- 2コマ目: ${frameRestrictions.frame2Must}`
-    : ''
-}
-
 【描かないこと】
-${
-  frameRestrictions
-    ? `- 1コマ目: ${frameRestrictions.frame1Not}\n- 2コマ目: ${frameRestrictions.frame2Not}`
-    : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
-}
+${frameRestrictions}
 `;
 }
 
 /**
  * 動物キャラクター用の画像プロンプトを生成
  */
-export function generateImagePromptWithAnimals(
-  problem: GeneratedProblem,
-  frameRestrictions?: FrameRestrictions,
-): string {
+export function generateImagePromptWithAnimals(problem: GeneratedProblem): string {
   // 動物の種類を性別で決定（male=黒猫、female=白猫）
   const senderAnimal = problem.senderVoice === 'male' ? '黒猫' : '白猫';
   const receiverAnimal = problem.receiverVoice === 'male' ? '黒猫' : '白猫';
@@ -796,19 +778,8 @@ ${buildSceneText(problem)}
 - 人間を描いてはならない（すべて猫です）。
 - 枠線は無し。
 
-【描くべきこと】
-${
-  frameRestrictions
-    ? `- 1コマ目: ${frameRestrictions.frame1Must}\n- 2コマ目: ${frameRestrictions.frame2Must}`
-    : ''
-}
-
 【描かないこと】
-${
-  frameRestrictions
-    ? `- 1コマ目: ${frameRestrictions.frame1Not}\n- 2コマ目: ${frameRestrictions.frame2Not}`
-    : `- 要するに「これから起こるべきこと・まだ起こっていないこと」は画像に描かないこと`
-}
+${frameRestrictions}
 `;
 }
 
