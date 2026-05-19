@@ -96,27 +96,99 @@ const samples: SceneInfo[] = [
   },
 ];
 
-// サンプルは固定テキストとして事前にビルドしておく（Prompt Caching の prefix として先頭に置くため）
-const SAMPLES_BLOCK: string = samples
-  .map((sample) => {
-    const { englishSentence: _es, how: _how, ...scene } = sample;
-    return `英文が「${_es}」の場合:\n\`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\``;
-  })
-  .join('\n\n');
+const kidsSamples: SceneInfo[] = [
+  {
+    englishSentence: 'Do you like soccer?',
+    how: '対面',
+    senderName: 'ケンタ',
+    senderRole: '小学生',
+    receiverName: 'ルーカス',
+    receiverRole: 'ケンタの同級生',
+    when: '休み時間に校庭で遊んでいた時',
+    where: '学校の校庭',
+    receiverWhere: 'ケンタの隣',
+    why: 'ルーカスがサッカーボールを持っているのを見て、一緒に遊びたいと思ったから',
+    want: 'ルーカスと一緒にサッカーをして遊びたい',
+  },
+  {
+    englishSentence: 'Can I borrow your eraser?',
+    how: '対面',
+    senderName: 'ハナ',
+    senderRole: '小学生',
+    receiverName: 'ソフィア',
+    receiverRole: 'ハナのクラスメイト',
+    when: '授業中に問題を解いていた時',
+    where: '教室の自分の席',
+    receiverWhere: 'ハナの隣の席',
+    why: '間違えた文字を消したいのに自分の消しゴムが見つからなかったから',
+    want: 'ソフィアに消しゴムを貸してもらいたい',
+  },
+  {
+    englishSentence: "Let's play outside!",
+    how: '対面',
+    senderName: 'リョウ',
+    senderRole: '小学生',
+    receiverName: 'トム',
+    receiverRole: 'リョウの友だち',
+    when: '放課後に教室で話していた時',
+    where: '教室',
+    receiverWhere: 'リョウの近く',
+    why: '授業が終わって外が晴れているのを見て、外で遊びたくなったから',
+    want: 'トムと一緒に外で遊びたい',
+  },
+  {
+    englishSentence: 'What is your favorite color?',
+    how: '対面',
+    senderName: 'アオイ',
+    senderRole: '小学生',
+    receiverName: 'エミリー',
+    receiverRole: 'アオイの友だち',
+    when: '昼休みに二人で話していた時',
+    where: '教室の自分の席',
+    receiverWhere: 'アオイの隣の席',
+    why: '図工の時間に使う色を選んでいて、エミリーの好きな色が気になったから',
+    want: 'エミリーの好きな色を知りたい',
+  },
+];
 
-const SCENE_INFO_PREAMBLE = `あなたは英語学習アプリのシーン設計者です。
+function buildSamplesBlock(sampleList: SceneInfo[]): string {
+  return sampleList
+    .map((sample) => {
+      const { englishSentence: _es, how: _how, ...scene } = sample;
+      return `英文が「${_es}」の場合:\n\`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\``;
+    })
+    .join('\n\n');
+}
+
+// サンプルは固定テキストとして事前にビルドしておく（Prompt Caching の prefix として先頭に置くため）
+const SAMPLES_BLOCK: string = buildSamplesBlock(samples);
+const KIDS_SAMPLES_BLOCK: string = buildSamplesBlock(kidsSamples);
+
+const SCENE_INFO_PREAMBLE_BASE = `あなたは英語学習アプリのシーン設計者です。
 与えられた英文のセリフに対して、自然でリアルな背景情報をJSON形式で作成してください。
 
 ## 出力ルール
 - 各項目を矛盾なく埋めること
 - 何かに対するリアクションではなく、送り手から話しかけた状況にすること
 - 現実世界で誰もが一度は見たことがあるようなシーンにすること
-- 人物の個人名は全てカタカナで書くこと
+- 人物の個人名は全てカタカナで書くこと`;
+
+const SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
 
 ## 出力例
 以下の例をよく参考にしてください。
 
 ${SAMPLES_BLOCK}`;
+
+const KIDS_SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
+- 登場人物は小学生〜中学生の子どもにすること
+- シーンは学校・家庭・公園など子どもの日常生活の範囲にすること
+- ビジネスや大人の職場のシーンは避けること
+
+## 出力例
+以下の例をよく参考にしてください。
+
+${KIDS_SAMPLES_BLOCK}`;
 
 export type SceneInfoPromptMessages = {
   system: string;
@@ -130,6 +202,7 @@ export function buildSceneInfoPrompt({
   voice,
   how,
   sceneNote,
+  isKids = false,
 }: {
   senderName: string;
   receiverName: string;
@@ -137,6 +210,7 @@ export function buildSceneInfoPrompt({
   voice: Voice;
   how: How;
   sceneNote?: string;
+  isKids?: boolean;
 }): SceneInfoPromptMessages {
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
@@ -153,5 +227,5 @@ ${JSON.stringify(buildSceneInfoResultDefinition(englishSentence, how, senderName
 \`\`\`
 `;
 
-  return { system: SCENE_INFO_PREAMBLE, user };
+  return { system: isKids ? KIDS_SCENE_INFO_PREAMBLE : SCENE_INFO_PREAMBLE, user };
 }

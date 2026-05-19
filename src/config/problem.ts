@@ -4,7 +4,8 @@ export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
     max: 7,
-    sentenceNote: '子ども向けの学習コンテンツです。シンプルな文法で短めの口語文にしてください。',
+    sentenceNote:
+      '子ども向けの学習コンテンツです。シンプルな文法で短めの口語文にしてください。本当に簡単な文を作成してください。例: "Do you like Soccer?", "Can I borrow your eraser?", "Let\'s play outside!", "Do you have any pets?", "I like your backpack!", "What\'s your favorite color?"',
     sceneNote:
       '学校や家庭・友人関係など日常生活のシーンにしてください。ビジネスのシーンは避けてください。',
   },

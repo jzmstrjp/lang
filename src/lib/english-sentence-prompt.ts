@@ -80,6 +80,14 @@ export function buildEnglishSentenceOnlyPrompt({
     .filter(Boolean)
     .join('\n');
 
+  const sentenceNote = 'sentenceNote' in rule ? rule.sentenceNote : undefined;
+  const kidsConstraint = sentenceNote?.includes('子ども向け')
+    ? `文法はできる限りシンプルにしてください。
+使ってよい構文の例: "Do you ~?", "Can I ~?", "Let's ~!", "I like ~.", "I want ~.", "Do you have ~?"
+避けるべき複雑な構文の例: "couldn't help but ~", "You always make me ~", "I ended up ~ing"
+`
+    : '';
+
   return `
 「${phrase}${phraseJa ? `（${phraseJa}）` : ''}」というフレーズを使って、現実世界で誰もが一度は聞いたことがあるような自然な英語の口語文を1つ作ってください。
 ${how}で誰かに話しかける口語文です。質問・依頼・意見・お気持ちなどです。
@@ -87,8 +95,8 @@ ${how}で誰かに話しかける口語文です。質問・依頼・意見・�
 現実にありそうなシチュエーションにしてください。
 英語ネイティブが聞いても違和感のない口語文にしてください。
 英語の文法として確実に正しい口語文にしてください。
-${'note' in rule ? `- ${rule.note}` : ''}
-フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
+${sentenceNote ? `- ${sentenceNote}` : ''}
+${kidsConstraint}フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
 具体的な状況や情景が浮かぶような具体的な口語文にしてください。
 
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。

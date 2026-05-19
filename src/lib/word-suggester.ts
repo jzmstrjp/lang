@@ -50,13 +50,15 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
   - フォーマル語・書き言葉は避けること（例: accompany→come with, inquire→ask, consult→talk to, assist→help, commence→start）
 ${
   isKids
-    ? `- 小中学生レベルの平易な語彙（例: "share", "help out", "excited"）
+    ? `- **日本人なら誰でも知っているような、中学英語レベルの基本単語・表現に限定すること**
+  - OK例: "play", "like", "eat", "sleep", "happy", "sad", "big", "fast", "friend", "school", "help", "run", "fun"
+  - NG例: "giggle"（日本人には馴染みが薄い）, "belongings"（難しい）, "peek"（馴染みが薄い）, "softly"（副詞として馴染みが薄い）, "snuggle"（馴染みが薄い）, "cozy"（馴染みが薄い）
+- 子どもが日常で頻繁に使う基本動詞・形容詞を積極的に含めること（例: play, like, love, want, need, know, think, try, make, go, come, get, give, take, put, eat, drink, sleep, help, watch, read, draw, sing, dance）
+- 「好き・嫌い・欲しい・楽しい」など感情や好みを表す語も積極的に含めること（例: favorite, fun, happy, sad, scared, hungry, tired, cute, cool, great）
 - 子どもの日常生活・学校・家族に関連するものが望ましい
-- 副詞は日常会話で自然に使えるものに限定（例: really, carefully, together, slowly, quietly, quickly, nicely）
-  - 避けるべき副詞の例: gratefully（フォーマル・スピーチ調）
-- 感謝・気持ち系の形容詞はカジュアルなものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
-- 感謝表現はカジュアルなものに限定（appreciate は可。gratefully / receive / understanding などフォーマル語は避ける）
-- 接続詞・接続副詞・群前置詞はカジュアルで平易なもの（例: unless, because of, even though, as soon as, so that）`
+- 副詞は中学英語で習うような基本的なものに限定（例: really, fast, slowly, together, again, always, never, very, too）
+- 感謝・気持ち系の形容詞はカジュアルで平易なものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
+- 接続詞・接続副詞・群前置詞はカジュアルで平易なもの（例: because, but, so, when, if, after, before）`
     : `- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
 - ビジネス・旅行・日常生活など幅広いシーンに対応
 - 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
@@ -64,7 +66,7 @@ ${
 - 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
 ${
   isKids
-    ? `  - kids向け comfort word の例: "hug", "cozy", "snuggle", "gentle", "kind", "warm", "cheerful", "thankful", "smile", "together"`
+    ? `  - kids向け comfort word の例: "hug", "kind", "warm", "smile", "together", "happy", "friend", "love", "safe", "nice"`
     : `  - non-kids向け comfort word の例: "cozy", "warmth", "heartfelt", "grateful", "cherish", "soothe", "serene", "comfort", "healing", "empathy"`
 }
 - 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個・接続詞/接続副詞/群前置詞 10個（合計 100個程度）
@@ -75,7 +77,20 @@ ${
 - expressionJa: 日本語の意味（1つだけ。「献身的な、専念した」のように複数書かない）
 
 例:
-{
+${
+  isKids
+    ? `{
+  "words": [
+    { "expression": "play", "expressionJa": "遊ぶ" },
+    { "expression": "favorite", "expressionJa": "お気に入りの" },
+    { "expression": "like", "expressionJa": "好き" },
+    { "expression": "help out", "expressionJa": "手伝う" },
+    { "expression": "excited", "expressionJa": "ワクワクしている" },
+    { "expression": "snuggle", "expressionJa": "くっつく" },
+    { "expression": "because of", "expressionJa": "〜のせいで" }
+  ]
+}`
+    : `{
   "words": [
     { "expression": "apologize", "expressionJa": "謝罪する" },
     { "expression": "give it a shot", "expressionJa": "試してみる" },
@@ -85,6 +100,7 @@ ${
     { "expression": "count on", "expressionJa": "頼りにする" },
     { "expression": "run into", "expressionJa": "偶然会う" }
   ]
+}`
 }`;
 
   const response = await openai.chat.completions.create({

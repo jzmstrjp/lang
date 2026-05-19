@@ -174,6 +174,7 @@ export async function createEnglishSentence(
       voice,
       how,
       sceneNote: 'sceneNote' in rule ? rule.sceneNote : undefined,
+      isKids: wordCountLength === 'kids',
     });
 
     const sceneResponse = await openai.responses.create({
