@@ -186,10 +186,14 @@ const SILLY_OPTION_WORDS = [
   'そろばん',
 ];
 
-export async function createIncorrectOptions(japaneseSentence: string): Promise<string[] | null> {
+export async function createIncorrectOptions(
+  japaneseSentence: string,
+  wordCountLength: ProblemLength,
+): Promise<string[] | null> {
   console.log(`  🎯 誤答選択肢を生成中...`);
 
   const sillyWord = SILLY_OPTION_WORDS[Math.floor(Math.random() * SILLY_OPTION_WORDS.length)];
+  const isKids = wordCountLength === 'kids';
 
   const prompt = `「正解の日本語文」に対して、誤答選択肢を3つ生成してください。クイズ用に使用します。
 
@@ -201,8 +205,13 @@ export async function createIncorrectOptions(japaneseSentence: string): Promise<
   - 文字数: 正解の日本語文と同じ文字数
 
 2つ目: **明らかな間違い**
-  - 正解と関連性がある話題だが、明らかに意味が違う失礼な内容。
-    - 例: 正解が「あなたの成功を賞賛します！」だとしたら「あなたの失敗を嘲笑します！」など
+${
+  isKids
+    ? `  - 正解と関連性がある話題だが、よくない結果を招きそうな内容。
+    - 例: 正解が「冷たい麦茶をもらっていい？」だとしたら「熱い苦茶をもらっていい？」、正解が「窓を開けてくれる？」だとしたら「窓ガラスを割ってくれる？」など`
+    : `  - 正解と関連性がある話題だが、明らかに意味が違う失礼な内容。
+    - 例: 正解が「あなたの成功を賞賛します！」だとしたら「あなたの失敗を嘲笑します！」など`
+}
   - 文字数: 正解の日本語文と同じ文字数
 
 3つ目: **明らかな間違い**
@@ -375,7 +384,7 @@ async function enrichToSeedProblemData({
   const senderVoice = voice;
   const receiverVoice = toggleVoice(voice);
 
-  const incorrectOptions = await createIncorrectOptions(japaneseSentence);
+  const incorrectOptions = await createIncorrectOptions(japaneseSentence, wordCountLength);
   if (!incorrectOptions) return null;
 
   const adjustedOptions = await adjustIncorrectOptionsLength(incorrectOptions, japaneseSentence);
