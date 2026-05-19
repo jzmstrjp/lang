@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     const englishResponse = await openai.responses.create({
       model: TEXT_MODEL_RICH_SCENE,
       input: [{ role: 'user', content: englishPrompt }],
-      temperature: isKids ? 0.5 : 0.7,
+      temperature: isKids ? 0.6 : 0.7,
     });
 
     if (englishResponse.status === 'incomplete') {

@@ -126,7 +126,7 @@ export function buildEnglishReplyPrompt({
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
-${isKids ? 'あまり捻らずに、シンプルな返答にしてください。' : '「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、'}どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
+${isKids ? 'あまり捻らずに、ストレートな返答を作成してください。' : '「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、'}どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
 
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 6 : 10}語以内を目安に作成してください。
