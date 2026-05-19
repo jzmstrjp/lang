@@ -53,7 +53,7 @@ ${
   - NG例: "giggle"（日本人には馴染みが薄い）, "belongings"（難しい）, "peek"（馴染みが薄い）, "softly"（副詞として馴染みが薄い）, "snuggle"（馴染みが薄い）, "cozy"（馴染みが薄い）
 - 子どもが日常で頻繁に使う基本動詞・形容詞を積極的に含めること（例: play, like, love, want, need, know, think, try, make, go, come, get, give, take, put, eat, drink, sleep, help, watch, read, draw, sing, dance）
 - 「好き・嫌い・欲しい・楽しい」など感情や好みを表す語も積極的に含めること（例: favorite, fun, happy, sad, scared, hungry, tired, cute, cool, great）
-- 中高生の日常生活に関連するものが望ましい（友人・恋愛・部活・放課後・家族など）。幼稚園児や小学校低学年を想起させる話題（おもちゃ・砂遊びなど）は避けること
+- ビジネス系ではない日常系の単語・フレーズにすべし。ただし、幼稚園児や小学校低学年を想起させる話題（おもちゃ・砂遊びなど）は避けること
 - 副詞は中学英語で習うような基本的なものに限定（例: really, fast, slowly, together, again, always, never, very, too）
 - 感謝・気持ち系の形容詞はカジュアルで平易なものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
 - 接続詞・接続副詞・群前置詞はカジュアルで平易なもの（例: because, but, so, when, if, after, before）`
