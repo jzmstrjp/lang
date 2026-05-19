@@ -129,7 +129,7 @@ ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}�
 ${isKids ? '' : '「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、'}どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
 
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
-簡潔な内容で、${isKids ? 7 : 10}語以内を目安に作成してください。
+簡潔な内容で、${isKids ? 6 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
 ${currentReply ? `「${currentReply}」と同じ方向性の感情で、別パターンの返答を作成してください。` : ''}
