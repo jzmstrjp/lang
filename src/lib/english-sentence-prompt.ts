@@ -50,6 +50,7 @@ export function buildEnglishSentenceOnlyPrompt({
   additionalInstruction = '',
   senderName,
   receiverName,
+  isKids = false,
 }: {
   phrase: string;
   phraseJa?: string;
@@ -60,6 +61,7 @@ export function buildEnglishSentenceOnlyPrompt({
   additionalInstruction?: string;
   senderName: string;
   receiverName: string;
+  isKids?: boolean;
 }): string {
   const usedBlock =
     usedSentences.length > 0
@@ -81,9 +83,9 @@ export function buildEnglishSentenceOnlyPrompt({
     .join('\n');
 
   const sentenceNote = 'sentenceNote' in rule ? rule.sentenceNote : undefined;
-  const kidsConstraint = sentenceNote?.includes('子ども向け')
+  const kidsConstraint = isKids
     ? `文法はできる限りシンプルにしてください。
-使ってよい構文の例: "Do you ~?", "Can I ~?", "Let's ~!", "I like ~.", "I want ~.", "Do you have ~?"
+使ってよい構文の例: "Do you ~?", "Can I ~?", "Let's ~!", "I like ~.", "I want ~.", "Are you ~?"
 避けるべき複雑な構文の例: "couldn't help but ~", "You always make me ~", "I ended up ~ing"
 `
     : '';

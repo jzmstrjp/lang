@@ -3,9 +3,9 @@ export type ProblemLength = 'kids' | 'short' | 'medium' | 'long';
 export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
-    max: 7,
+    max: 6,
     sentenceNote:
-      '子ども向けの学習コンテンツです。ごく簡単な文法でごく短い口語文にしてください。本当に簡単な文を作成してください。指定されたワード以外は、小学生でも分かりそうな語彙で作成すること。例: "Do you like Soccer?", "Can I borrow your eraser?", "Let\'s play outside!", "Do you have any pets?", "I like your backpack!", "What\'s your favorite color?"',
+      'ごく簡単な文法でごく短い口語文にしてください。中学1年生レベルの基本的な語彙・構文で作成すること。例: "Do you like soccer?", "Can I borrow your eraser?", "What\'s your favorite song?", "I like your jacket!", "Let\'s eat together!", "Are you free today?"',
     sceneNote:
       '中高生の日常生活のシーンにしてください。友人・恋愛・部活・放課後・家族など中高生らしい話題が望ましいです。幼稚園児や小学校低学年を想起させるような幼い話題（砂遊び・おもちゃ・絵本など）は避けてください。ビジネスのシーンも避けてください。',
   },

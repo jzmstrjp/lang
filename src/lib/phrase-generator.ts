@@ -134,6 +134,7 @@ export async function createEnglishSentence(
       additionalInstruction,
       senderName,
       receiverName,
+      isKids: wordCountLength === 'kids',
     });
 
     const sentenceResponse = await openai.responses.create({
