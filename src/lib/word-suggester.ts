@@ -44,7 +44,6 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 ## 提案ルール
 - 使用済み expression と重複しないこと（今回の提案リスト内でも重複不可）
   - ただし同じ単語でも意味（expressionJa）が異なれば別の expression として提案してよい（例: "play（遊ぶ）" と "play（からかう）" は別物）
-
 ${
   isKids
     ? `- **日本人なら誰でも知っているような、中学英語レベルの基本単語・表現に限定すること**
@@ -60,17 +59,22 @@ ${
 - イディオムは5語以内に収めること
 - **ネイティブが日常の口語会話で実際に使う表現に限定すること**
   - フォーマル語・書き言葉は避けること（例: accompany→come with, inquire→ask, consult→talk to, assist→help, commence→start）
-- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
+- TOEIC・社会人の日常英会話で頻出の語彙・表現を優先
 - ビジネス・旅行・日常生活など幅広いシーンに対応
 - 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
 }
 - 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
 ${
   isKids
-    ? `  - kids向け comfort word の例: "hug", "kind", "warm", "smile", "together", "happy", "friend", "love", "safe", "nice"`
-    : `  - non-kids向け comfort word の例: "cozy", "warmth", "heartfelt", "grateful", "cherish", "soothe", "serene", "comfort", "healing", "empathy"`
+    ? `  - comfort word の例: "hug", "kind", "warm", "smile", "together", "happy", "friend", "love", "safe", "nice"`
+    : `  - comfort word の例: "cozy", "warmth", "heartfelt", "grateful", "cherish", "soothe", "serene", "comfort", "healing", "empathy"`
 }
-- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個・接続詞/接続副詞/群前置詞 10個（合計 100個程度）
+${
+  isKids
+    ? `- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個・接続詞/接続副詞/群前置詞 10個（合計 100個程度）`
+    : `- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・接続詞 10個（合計 90個程度）`
+}
+
 
 ## 出力形式（JSON）
 "words" キーに { "expression": string, "expressionJa": string } のオブジェクト配列を返してください（説明などは不要）。
@@ -87,8 +91,8 @@ ${
     { "expression": "like", "expressionJa": "好き" },
     { "expression": "help out", "expressionJa": "手伝う" },
     { "expression": "excited", "expressionJa": "ワクワクしている" },
-    { "expression": "snuggle", "expressionJa": "くっつく" },
-    { "expression": "because of", "expressionJa": "〜のせいで" }
+    { "expression": "tired", "expressionJa": "疲れた" },
+    { "expression": "because", "expressionJa": "なぜなら" }
   ]
 }`
     : `{
