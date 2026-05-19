@@ -191,30 +191,27 @@ export async function createIncorrectOptions(japaneseSentence: string): Promise<
 
   const sillyWord = SILLY_OPTION_WORDS[Math.floor(Math.random() * SILLY_OPTION_WORDS.length)];
 
-  const prompt = `以下の「正解の日本語文」に対して、誤答選択肢を3つ生成してください。クイズ用に使用します。
-
-【正解の日本語文】
-${japaneseSentence}
+  const prompt = `「正解の日本語文」に対して、誤答選択肢を3つ生成してください。クイズ用に使用します。
 
 【誤答選択肢の構成（必須）】
 1つ目: **馬鹿馬鹿しい選択肢**
-  - 「${sillyWord}」というワードを必ず含めること
+  - 指定されたワードを必ず含めること
   - 笑ってしまうような、ありえない内容（例: 今日は手のひらサイズの象を食べました。）
   - 正解とは全く関係ない、面白おかしい文（例: たい焼きは本当に鯛を焼いて作っているらしいですが、ご存知でしたか？）
-  - 文字数: 正解（${japaneseSentence.length}文字）と同じ
+  - 文字数: 正解の日本語文と同じ文字数
 
 2つ目: **明らかな間違い**
   - 正解と関連性がある話題だが、明らかに意味が違う失礼な内容。
     - 例: 正解が「あなたの成功を賞賛します！」だとしたら「あなたの失敗を嘲笑します！」など
-  - 文字数: 正解（${japaneseSentence.length}文字）と同じ
+  - 文字数: 正解の日本語文と同じ文字数
 
 3つ目: **明らかな間違い**
   - かなり無関係な内容
-  - 文字数: 正解（${japaneseSentence.length}文字）と同じ
+  - 文字数: 正解の日本語文と同じ文字数
 
 【重要ルール】
-- 文字数が ${japaneseSentence.length}文字 より全然足りないのは禁止。少し冗長な言い回しにしてでも ${japaneseSentence.length}文字 にすること。
-- 文字数が ${japaneseSentence.length}文字 より多すぎるのも禁止。意味が通る範囲で単語を削って ${japaneseSentence.length}文字 にすること。
+- 文字数が正解より全然足りないのは禁止。少し冗長な言い回しにしてでも正解の日本語文と同じ文字数にすること。
+- 文字数が正解より多すぎるのも禁止。意味が通る範囲で単語を削って正解の日本語文と同じ文字数にすること。
 - 正解の日本語文が疑問文の場合、3つとも全て疑問文を生成すること
 - 正解の文と似たような意味に取れる文は作らないこと。（それではクイズにならないため）
 - 3つとも、バラバラの単語から始まる文であること。ただし頭に「まずは」「実は」「ちなみに」「ところで」などを加えて誤魔化すのは禁止。自然に別の単語から始まる文を作ること。
@@ -229,7 +226,11 @@ ${japaneseSentence}
   "微妙に違う話題（2つ目）",
   "明らかな間違い（3つ目）"
 ]
-\`\`\``;
+\`\`\`
+
+【正解の日本語文】（${japaneseSentence.length}文字）
+${japaneseSentence}
+【1つ目に使うワード】${sillyWord}`;
 
   try {
     const response = await openai.responses.create({
