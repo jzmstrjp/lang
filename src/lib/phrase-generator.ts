@@ -1,7 +1,6 @@
 import { OpenAI } from 'openai';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
-import { buildSceneText } from '@/lib/scene-utils';
 import {
   type Voice,
   type How,
@@ -296,23 +295,8 @@ export async function createJapaneseConversation(
     englishSentence: sentence.englishSentence,
     englishReply,
     how,
+    when: sentence.when,
   })}
-
-【シーン情報】
-${buildSceneText({
-  senderName,
-  receiverName,
-  how,
-  senderWhen: sentence.when,
-  place: sentence.where,
-  senderRole: sentence.senderRole,
-  senderVoice: voice,
-  receiverPlace: sentence.receiverWhere,
-  receiverRole: sentence.receiverRole,
-  receiverVoice: toggleVoice(voice),
-  senderWhy: sentence.why,
-  senderWant: sentence.want,
-})}
 
 以下のJSON形式で必ず回答してください。
 

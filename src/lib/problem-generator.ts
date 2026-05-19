@@ -113,12 +113,12 @@ export function buildEnglishReplyPrompt({
   senderGender,
   receiverGender,
   englishSentence,
-  when,
-  where,
-  receiverPlace,
-  why,
+  when: _when,
+  where: _where,
+  receiverPlace: _receiverPlace,
+  why: _why,
   how,
-  want,
+  want: _want,
   isKids = false,
   currentReply,
   additionalInstruction,
@@ -133,24 +133,6 @@ ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 英文法は正確に、文法の間違いがないようにしてください。
 
 ${currentReply ? `「${currentReply}」と同じ方向性の感情で、別パターンの返答を作成してください。` : ''}
-
-【シーン情報】
-${buildSceneText({
-  senderName,
-  receiverName,
-  how,
-  senderWhen: when,
-  place: where,
-  senderRole: who,
-  senderVoice: senderGender === '男性' ? 'male' : 'female',
-  receiverPlace: receiverPlace,
-  receiverRole: whom,
-  receiverVoice: receiverGender === '男性' ? 'male' : 'female',
-  senderWhy: why,
-  senderWant: want,
-})}
-
-このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答の口語文を英語で作成してください。
 `;
 }
 
@@ -851,6 +833,7 @@ export async function translateJapanese(
     englishReply,
     translate,
     how,
+    when: senderWhen,
   })}
 
 【シーン情報】
@@ -917,6 +900,7 @@ export type BuildJapaneseConversationRulesParams = {
   how: string;
   /** 翻訳対象: 'sender'=送り手の発話、'receiver'=受け手の返答。省略時は会話全体を翻訳 */
   translate?: 'sender' | 'receiver';
+  when: string;
 };
 
 /**
@@ -937,6 +921,7 @@ export function buildJapaneseConversationRules(
     englishReply,
     how,
     translate,
+    when,
   } = params;
 
   const targetDescription =
@@ -950,6 +935,7 @@ export function buildJapaneseConversationRules(
   ${how ? `- ${how}での会話です。` : ''}
   ${senderName}（${senderRole}・${senderGender}）が「${englishSentence}」と話しかけ、
   ${receiverName}（${receiverRole}・${receiverGender}）が「${englishReply}」と返答しました。
+  話しかけたタイミング: ${when}
   ${targetDescription}
   二人の関係性を考慮して、口調（敬語・タメ口）や呼び方（敬称・呼び捨て・役職呼び）を決めてください。
   慣用句は単語通りに直訳せず、慣用句として翻訳してください。
