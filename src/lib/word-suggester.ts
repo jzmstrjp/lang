@@ -47,6 +47,8 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 ${
   isKids
     ? `- **日本人なら誰でも知っているような、中学英語レベルの基本単語・表現に限定すること**
+- 単語・イディオム単体で会話の軸になれるもの。その単語・表現だけで自然な英文が作れること（例: "play", "like", "help out"）。補助的な語なしでは使えない単語はNG（例: "figure" → "figure out" がないと不自然なのでNG。"figure out" としてイディオムで登録すること）
+- イディオムは3語以内に収めること（例: "give up", "wake up", "look forward to"）
   - OK例: "play", "like", "eat", "sleep", "happy", "sad", "big", "fast", "friend", "school", "help", "run", "fun"
   - NG例: "giggle"（日本人には馴染みが薄い）, "belongings"（難しい）, "peek"（馴染みが薄い）, "softly"（副詞として馴染みが薄い）, "snuggle"（馴染みが薄い）, "cozy"（馴染みが薄い）
 - 子どもが日常で頻繁に使う基本動詞・形容詞を積極的に含めること（例: play, like, love, want, need, know, think, try, make, go, come, get, give, take, put, eat, drink, sleep, help, watch, read, draw, sing, dance）
