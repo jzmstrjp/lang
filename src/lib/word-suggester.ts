@@ -65,7 +65,7 @@ ${
 - 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
 }
 - 返答する場面でなく、話しかける場面で使われそうな単語・フレーズが好ましい。いかにも返答っぽいフレーズはNG（NG例: "of course", "all right"）
-- 補助的な語なしでは使えない単語はNG（例: "figure" → "figure out" がないと不自然なのでNG。"figure out" としてイディオムで登録すること）
+- 補助的な語なしでは使えない単語はNG（例: "figure"（分かる） は単体ではなく "figure out"（分かる） でないと不自然なのでNG。"figure out" としてイディオムで登録すること）
 - 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
 ${
   isKids
