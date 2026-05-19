@@ -44,10 +44,7 @@ ${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 ## 提案ルール
 - 使用済み expression と重複しないこと（今回の提案リスト内でも重複不可）
   - ただし同じ単語でも意味（expressionJa）が異なれば別の expression として提案してよい（例: "play（遊ぶ）" と "play（からかう）" は別物）
-- 単語・イディオム単体で会話の軸になれるもの（例: "apologize", "give it a shot"）
-- イディオムは5語以内に収めること
-- **ネイティブが日常の口語会話で実際に使う表現に限定すること**
-  - フォーマル語・書き言葉は避けること（例: accompany→come with, inquire→ask, consult→talk to, assist→help, commence→start）
+
 ${
   isKids
     ? `- **日本人なら誰でも知っているような、中学英語レベルの基本単語・表現に限定すること**
@@ -59,7 +56,11 @@ ${
 - 副詞は中学英語で習うような基本的なものに限定（例: really, fast, slowly, together, again, always, never, very, too）
 - 感謝・気持ち系の形容詞はカジュアルで平易なものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
 - 接続詞・接続副詞・群前置詞はカジュアルで平易なもの（例: because, but, so, when, if, after, before）`
-    : `- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
+    : `- 単語・イディオム単体で会話の軸になれるもの（例: "apologize", "give it a shot"）
+- イディオムは5語以内に収めること
+- **ネイティブが日常の口語会話で実際に使う表現に限定すること**
+  - フォーマル語・書き言葉は避けること（例: accompany→come with, inquire→ask, consult→talk to, assist→help, commence→start）
+- TOEIC や社会人の日常英会話で頻出の語彙・表現を優先
 - ビジネス・旅行・日常生活など幅広いシーンに対応
 - 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
 }
