@@ -111,6 +111,19 @@ const kidsSamples: SceneInfo[] = [
     want: 'ルーカスと一緒にサッカーをして遊びたい',
   },
   {
+    englishSentence: 'Can I borrow your eraser?',
+    how: '対面',
+    senderName: 'ケンジ',
+    senderRole: '中学生',
+    receiverName: 'エミリー',
+    receiverRole: 'ケンジのクラスメイト',
+    when: '授業中に問題を解いていた時',
+    where: '教室の自分の席',
+    receiverWhere: 'ケンジの隣の席',
+    why: '間違えた文字を消したいのに自分の消しゴムが見つからなかったから',
+    want: 'エミリーに消しゴムを貸してもらいたい',
+  },
+  {
     englishSentence: 'Are you free after school?',
     how: '対面',
     senderName: 'リョウ',
@@ -124,30 +137,17 @@ const kidsSamples: SceneInfo[] = [
     want: 'サトウ先生に放課後に時間を作ってもらい、進路の相談をしたい',
   },
   {
-    englishSentence: "Let's play outside!",
+    englishSentence: "I'm home!",
     how: '対面',
-    senderName: 'リョウ',
+    senderName: 'ユウキ',
     senderRole: '高校生',
-    receiverName: 'トム',
-    receiverRole: 'リョウの友だち',
-    when: '放課後に教室で話していた時',
-    where: '教室',
-    receiverWhere: 'リョウの近く',
-    why: '授業が終わって外が晴れているのを見て、外で遊びたくなったから',
-    want: 'トムと一緒に外で遊びたい',
-  },
-  {
-    englishSentence: 'What is your favorite color?',
-    how: '対面',
-    senderName: 'アオイ',
-    senderRole: '高校生',
-    receiverName: 'エミリー',
-    receiverRole: 'アオイの友だち',
-    when: '昼休みに二人で話していた時',
-    where: '教室の自分の席',
-    receiverWhere: 'アオイの隣の席',
-    why: '美術の時間に使う色を選んでいて、エミリーの好きな色が気になったから',
-    want: 'エミリーの好きな色を知りたい',
+    receiverName: 'ヨシコ',
+    receiverRole: 'ユウキのお母さん',
+    when: '部活を終えて家に帰った時',
+    where: '玄関',
+    receiverWhere: 'キッチン',
+    why: '疲れて帰ってきて、ヨシコに帰宅を伝えたかったから',
+    want: 'ヨシコに帰ったことを知らせたい',
   },
 ];
 
@@ -181,7 +181,7 @@ const SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
 ${SAMPLES_BLOCK}`;
 
 const KIDS_SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
-- 登場人物は主に中学生〜高校生だが、親・先生・先輩・後輩・バイト先の人なども登場してよい
+- 登場人物の片方は必ず中学生か高校生であること。もう片方は親・先生・先輩・後輩・バイト先の人なども登場してよいし、同じく中学生か高校生でもよい。
 - 友人・恋愛・部活・放課後・家族・趣味など幅広いシーンにすること
 - 幼稚園児や小学校低学年を想起させるような幼い話題（砂遊び・おもちゃ・絵本・ロボット工作など）は避けること
 - ビジネスや大人の職場のシーンも避けること
