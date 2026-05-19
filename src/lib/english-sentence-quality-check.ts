@@ -21,7 +21,7 @@ function buildQualityCheckPrompt(
 以下の観点で審査してください：
 - ネイティブが実際に口語会話で使う自然な表現か
 - 文法的に正確か
-${idiomCheck}- 語数制約（${wordCountLength}）と内容が釣り合っているか
+${idiomCheck}
 - フレーズが不自然に無理やり当てはめられていないか
 
 ---
