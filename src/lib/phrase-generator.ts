@@ -128,7 +128,7 @@ export async function createEnglishSentence(
       phrase,
       phraseJa,
       voice,
-      how: wordCountLength === 'kids' ? '対面' : how,
+      how,
       rule,
       usedSentences,
       additionalInstruction,

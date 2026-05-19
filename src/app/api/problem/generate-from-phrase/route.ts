@@ -47,7 +47,8 @@ export async function POST(req: Request) {
     for (let i = 0; i < GENERATE_COUNT; i++) {
       const voice: Voice =
         body.voice ?? (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-      const how: How = body.how ?? HOWS[Math.floor(Math.random() * HOWS.length)]!;
+      const how: How =
+        body.how ?? (type === 'kids' ? '対面' : HOWS[Math.floor(Math.random() * HOWS.length)]!);
       const result = await generateForPhrase(openai, {
         phrase,
         phraseJa,

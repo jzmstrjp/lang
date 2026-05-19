@@ -614,7 +614,7 @@ const main = async () => {
 
     for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
       const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
-      const how: How = hows[Math.floor(Math.random() * 2)];
+      const how: How = len === 'kids' ? '対面' : hows[Math.floor(Math.random() * 2)];
       console.log(
         `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
       );
@@ -848,7 +848,7 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
 
     for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
       const voice = voices[Math.floor(Math.random() * voices.length)];
-      const how = hows[Math.floor(Math.random() * hows.length)];
+      const how = len === 'kids' ? '対面' : hows[Math.floor(Math.random() * hows.length)];
       console.error(
         `\n── 「${word.expression}（${word.expressionJa}）」 / ${len} (${i + 1}/${PROBLEMS_PER_PHRASE}) ──`,
       );
