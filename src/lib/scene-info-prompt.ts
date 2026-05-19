@@ -101,10 +101,10 @@ const kidsSamples: SceneInfo[] = [
     englishSentence: 'Do you like soccer?',
     how: '対面',
     senderName: 'ケンタ',
-    senderRole: '小学生',
+    senderRole: '中学生',
     receiverName: 'ルーカス',
     receiverRole: 'ケンタの同級生',
-    when: '休み時間に校庭で遊んでいた時',
+    when: '放課後に校庭で話していた時',
     where: '学校の校庭',
     receiverWhere: 'ケンタの隣',
     why: 'ルーカスがサッカーボールを持っているのを見て、一緒に遊びたいと思ったから',
@@ -114,7 +114,7 @@ const kidsSamples: SceneInfo[] = [
     englishSentence: 'Can I borrow your eraser?',
     how: '対面',
     senderName: 'ハナ',
-    senderRole: '小学生',
+    senderRole: '中学生',
     receiverName: 'ソフィア',
     receiverRole: 'ハナのクラスメイト',
     when: '授業中に問題を解いていた時',
@@ -127,7 +127,7 @@ const kidsSamples: SceneInfo[] = [
     englishSentence: "Let's play outside!",
     how: '対面',
     senderName: 'リョウ',
-    senderRole: '小学生',
+    senderRole: '高校生',
     receiverName: 'トム',
     receiverRole: 'リョウの友だち',
     when: '放課後に教室で話していた時',
@@ -140,13 +140,13 @@ const kidsSamples: SceneInfo[] = [
     englishSentence: 'What is your favorite color?',
     how: '対面',
     senderName: 'アオイ',
-    senderRole: '小学生',
+    senderRole: '高校生',
     receiverName: 'エミリー',
     receiverRole: 'アオイの友だち',
     when: '昼休みに二人で話していた時',
     where: '教室の自分の席',
     receiverWhere: 'アオイの隣の席',
-    why: '図工の時間に使う色を選んでいて、エミリーの好きな色が気になったから',
+    why: '美術の時間に使う色を選んでいて、エミリーの好きな色が気になったから',
     want: 'エミリーの好きな色を知りたい',
   },
 ];
@@ -181,8 +181,8 @@ const SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
 ${SAMPLES_BLOCK}`;
 
 const KIDS_SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
-- 登場人物は小学生〜中学生の子どもにすること
-- シーンは学校・家庭・公園など子どもの日常生活の範囲にすること
+- 登場人物は中学生〜高校生にすること
+- シーンは学校・家庭・公園など日常生活の範囲にすること
 - ビジネスや大人の職場のシーンは避けること
 
 ## 出力例
