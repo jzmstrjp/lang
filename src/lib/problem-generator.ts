@@ -126,7 +126,7 @@ export function buildEnglishReplyPrompt({
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
-${isKids ? '質問に質問で返すことは禁止します。' : ''}「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
+${isKids ? '質問で返すことは禁止します。' : ''}「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
 
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 無駄に話題を広げず、簡潔な内容で、${isKids ? 6 : 10}語以内を目安に作成してください。
@@ -955,7 +955,7 @@ export function buildJapaneseConversationRules(
   日本人が読んだときに「${expression}」の意味（${expressionJa}）を誤解なく理解できるように翻訳してください。
   外国人名は全てカタカナに翻訳してください。
   元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
-  元の英文に含まれていない背景の情報は日本語訳に含めず、元の英文に含まれている内容のみを日本語に翻訳してください。
+  元の英文に明記されていない内容を付け加えないでください。元の英文に含まれている内容のみを日本語に翻訳してください。
   「誰が」という内容を省略しないでください。（例: "She looked worried."であれば「心配そうにしていたよ。」ではなく「彼女が心配そうにしていたよ。」と訳すこと）
   代名詞を個人名に変換しないでください。（例: "You are gentle."であれば「タカシは優しいね。」ではなく「君は優しいね。」と訳すこと）
   カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
