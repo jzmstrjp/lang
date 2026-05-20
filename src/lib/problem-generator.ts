@@ -132,7 +132,7 @@ ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 6 : 10}語以内を目安に作成してください。
 英文法は正確に、文法の間違いがないようにしてください。
 
-${currentReply ? `「${currentReply}」と同じ方向性の感情で、別パターンの返答を作成してください。` : ''}
+${currentReply ? `「${currentReply}」とは異なる返答を作成してください。` : ''}
 
 【シーン情報】
 ${buildSceneText({
