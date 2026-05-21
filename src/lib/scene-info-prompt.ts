@@ -140,7 +140,8 @@ export function buildSceneInfoPrompt({
   const user = `
 ${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
 
-この会話内容からごく自然に連想されるシーン情報を作成してください。
+この会話内容から必然的に連想されるシーン情報を作成してください。
+会話内容と矛盾しないシーンにしてください。
 
 - ${phoneNote}
 -${buildThirdPersonNote(englishSentence, senderName, receiverName)}

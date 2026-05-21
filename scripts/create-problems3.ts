@@ -60,7 +60,7 @@ async function replenishWordsIfNeeded(
     `.then((rows) => rows.map((r) => r.englishSentence)),
   ]);
 
-  const suggestions = await suggestWordsForCategory(
+  const { words: suggestions } = await suggestWordsForCategory(
     isKids,
     existingExpressions,
     existingWords,

@@ -48,12 +48,17 @@ const commonPromptSuffix = `
 }
 `;
 
+export type TokenUsage = {
+  inputTokens: number;
+  outputTokens: number;
+};
+
 export async function suggestWordsForCategory(
   isKids: boolean,
   existingExpressions: string[],
   existingWords: { expression: string; expressionJa: string; isKids: boolean }[],
   sampleSentences: string[],
-): Promise<{ expression: string; expressionJa: string }[]> {
+): Promise<{ words: { expression: string; expressionJa: string }[]; tokenUsage: TokenUsage }> {
   const usedFromWords = existingWords
     .filter((w) => w.isKids === isKids)
     .map((w) => ({ expression: w.expression, expressionJa: w.expressionJa }));
@@ -91,5 +96,11 @@ export async function suggestWordsForCategory(
 
   const content = response.choices[0]?.message.content ?? '{"words":[]}';
   const parsed = JSON.parse(content) as { words?: { expression: string; expressionJa: string }[] };
-  return (parsed.words ?? []).filter((w) => w.expression && w.expressionJa);
+  return {
+    words: (parsed.words ?? []).filter((w) => w.expression && w.expressionJa),
+    tokenUsage: {
+      inputTokens: response.usage?.prompt_tokens ?? 0,
+      outputTokens: response.usage?.completion_tokens ?? 0,
+    },
+  };
 }

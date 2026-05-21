@@ -76,7 +76,7 @@ async function main() {
   console.log(`  - englishSentence サンプル: ${sampleSentences.length}件`);
 
   console.log(`\n🤖 AI に候補を生成中（kids）...`);
-  const kidsSuggestions = await suggestWordsForCategory(
+  const kidsResult = await suggestWordsForCategory(
     true,
     existingExpressions,
     existingWords,
@@ -84,12 +84,31 @@ async function main() {
   );
 
   console.log(`🤖 AI に候補を生成中（non-kids）...`);
-  const nonKidsSuggestions = await suggestWordsForCategory(
+  const nonKidsResult = await suggestWordsForCategory(
     false,
     existingExpressions,
     existingWords,
     sampleSentences,
   );
+
+  const kidsSuggestions = kidsResult.words;
+  const nonKidsSuggestions = nonKidsResult.words;
+
+  const totalInput = kidsResult.tokenUsage.inputTokens + nonKidsResult.tokenUsage.inputTokens;
+  const totalOutput = kidsResult.tokenUsage.outputTokens + nonKidsResult.tokenUsage.outputTokens;
+  const costUsd = (totalInput * 2 + totalOutput * 8) / 1_000_000;
+  const costJpy = costUsd * 150;
+  console.log(`\n📊 トークン使用量:`);
+  console.log(
+    `  - kids    : input ${kidsResult.tokenUsage.inputTokens.toLocaleString()} / output ${kidsResult.tokenUsage.outputTokens.toLocaleString()}`,
+  );
+  console.log(
+    `  - non-kids: input ${nonKidsResult.tokenUsage.inputTokens.toLocaleString()} / output ${nonKidsResult.tokenUsage.outputTokens.toLocaleString()}`,
+  );
+  console.log(
+    `  - 合計    : input ${totalInput.toLocaleString()} / output ${totalOutput.toLocaleString()}`,
+  );
+  console.log(`  - 推定コスト: $${costUsd.toFixed(4)}（約${costJpy.toFixed(1)}円）`);
 
   console.log(`\n📋 提案された expression:\n`);
   console.log(`👶 kids（${kidsSuggestions.length}件）`);
