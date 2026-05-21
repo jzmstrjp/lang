@@ -13,7 +13,7 @@ export const toggleVoice = (voice: Voice): Voice => (voice === 'male' ? 'female'
 
 export const howNoteMap = {
   対面: '',
-  電話: '電話なので、お互いに相手のことは見えません。二人は別々の離れた場所にいます。',
+  電話: '電話での会話なので、お互いに相手のことは見えません。二人は別々の離れた場所にいます。',
 } as const satisfies Record<How, string>;
 
 const casualAdjectiveWords = [
@@ -50,7 +50,6 @@ export function buildEnglishSentenceOnlyPrompt({
   additionalInstruction = '',
   senderName,
   receiverName,
-  isKids = false,
 }: {
   phrase: string;
   phraseJa?: string;
@@ -94,12 +93,12 @@ ${how}で誰かに話しかける口語文です。質問・依頼・意見・�
 英語の文法として確実に正しい口語文にしてください。
 ${sentenceNote ? `- ${sentenceNote}` : ''}
 フレーズ内のS・V・O などは、それぞれ具体的な Subject（主語）・Verb（動詞）・Object（目的語）などに置き換えてください。
-${isKids ? '期待する結果や質問の意図が具体的に伝わる口語文にしてください。（OK例: "Water, please.（水が欲しい）", "I\'m so hungry!（空腹で何か食べたい）", "Can you play with me?（遊びに行ってほしい）" / NG例: "Can you wash this?（具体的に何を洗って欲しいのか分からない）", "Can you take it?（何を持ってくるのか分からない）"）目的語が代名詞だと目的が不明確になるのでNGです。' : '具体的な状況や情景が浮かぶような具体的な口語文にしてください。（例: "I like your jacket!"）'}
+そのまま画像を生成できるくらい、状況が浮かび上がる具体的な口語文にしてください。
 
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
 相手の名前は${receiverName}。${receiverGenderLabel}です。
-特に必要なければ、英文の中で相手の名前を呼びかけないでください。（呼びかけた方が自然な場合は呼びかけてください）
+${Math.random() < 0.9 ? '特に必要なければ、英文の中で相手の名前を呼びかけないでください。' : '冒頭で相手の名前を呼びかけるかどうかは、シーンによって決めてください。'}
 ${notes ? `【注意】\n${notes}\n` : ''}
 
 ${usedBlock}

@@ -1,6 +1,10 @@
 import { OpenAI } from 'openai';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
-import { buildEnglishReplyPrompt, buildJapaneseConversationRules } from '@/lib/problem-generator';
+import {
+  buildEnglishReplyPrompt,
+  buildJapaneseConversationRules,
+  stripSpeakerPrefix,
+} from '@/lib/problem-generator';
 import {
   type Voice,
   type How,
@@ -180,13 +184,11 @@ export async function createEnglishSentence(
       englishSentence,
       voice,
       how,
-      sceneNote: 'sceneNote' in rule ? rule.sceneNote : undefined,
       isKids: wordCountLength === 'kids',
     });
 
     const sceneResponse = await openai.responses.create({
       model: TEXT_MODEL_RICH_SCENE,
-      instructions: scenePrompt.system,
       input: scenePrompt.user,
       temperature: 0.7,
       prompt_cache_retention: '24h',
@@ -334,7 +336,11 @@ export async function createJapaneseConversation(
     const jsonMatch = content.match(/```json\n([\s\S]*?)```/);
     if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
 
-    return JSON.parse(jsonMatch[1]) as JapaneseConversationResult;
+    const parsed = JSON.parse(jsonMatch[1]) as JapaneseConversationResult;
+    return {
+      japaneseSentence: stripSpeakerPrefix(parsed.japaneseSentence),
+      japaneseReply: stripSpeakerPrefix(parsed.japaneseReply),
+    };
   } catch (e) {
     console.error('createJapaneseConversation エラー:', e);
     return null;

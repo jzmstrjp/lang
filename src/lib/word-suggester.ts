@@ -4,14 +4,56 @@ import { recordTokenUsage } from '@/lib/token-usage-tracker';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const commonPromptPrefix = (usedListText: string, sampleSentencesText: string) =>
+  `英語リスニング学習アプリで使用する英単語やイディオムを100個生成してください。
+
+- 名詞・動詞・形容詞・副詞・接続詞/接続副詞/群前置詞・イディオムを均等に作成してください。
+- 返答のセリフではなく、誰かに話しかける口語文の中で使用する語彙です。
+  - 明らかに返答向の語彙は生成しないでください。
+    - 例
+      - "of course"
+      - "all right"
+
+## 以下はすでに使用済みの英単語やイディオムです。重複は避けてください。
+${usedListText}
+
+## 既存問題の英文サンプル
+以下を参考に、足りていないものを生成してください。
+
+${sampleSentencesText}
+`;
+
+const kidsRules = `## 提案ルール
+- 中学一年生でも知っているレベルの語彙で作成してください。
+- イディオムは3単語までのものを作成してください。
+- 短文の中で使う前提です。「however」など、文と文を繋ぐような（長文を連想させる）接続詞は避けてください。
+`;
+
+const nonKidsRules = `## 提案ルール
+- 日常生活系・ビジネス系の語彙を半分ずつくらい生成してください。
+- TOEICのListening（口語）によく出るものを優先して生成してください。
+`;
+
+const commonPromptSuffix = `
+## 出力形式（JSON）
+"words" キーに { "expression": string, "expressionJa": string } の配列を返してください。
+- expression: 英語の単語・表現
+- expressionJa: 日本語の意味（一つだけ書くこと）
+
+### 生成例
+{
+  "words": [
+    { "expression": "apologize", "expressionJa": "謝罪する" },
+  ]
+}
+`;
+
 export async function suggestWordsForCategory(
   isKids: boolean,
   existingExpressions: string[],
   existingWords: { expression: string; expressionJa: string; isKids: boolean }[],
   sampleSentences: string[],
 ): Promise<{ expression: string; expressionJa: string }[]> {
-  const categoryLabel = isKids ? 'kids（子ども向け）' : 'non-kids（大人向け）';
-
   const usedFromWords = existingWords
     .filter((w) => w.isKids === isKids)
     .map((w) => ({ expression: w.expression, expressionJa: w.expressionJa }));
@@ -30,86 +72,11 @@ export async function suggestWordsForCategory(
     ),
   ].join('\n----------\n');
 
-  const prompt = `あなたは英語学習アプリの語彙設計者です。
-対象カテゴリ: **${categoryLabel}**
+  const sampleSentencesText = sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n');
 
-以下の情報をもとに、このカテゴリに追加すべき expression 候補を提案してください。
+  const rules = isKids ? kidsRules : nonKidsRules;
 
-## すでに使用済みの expression（重複不可）
-${usedListText}
-
-## 既存問題の英文サンプル（語彙レベル・傾向の参考）
-${sampleSentences.map((s, i) => `${i + 1}. ${s}`).join('\n')}
-
-## 提案ルール
-- 使用済み expression と重複しないこと（今回の提案リスト内でも重複不可）
-  - ただし同じ単語でも意味（expressionJa）が異なれば別の expression として提案してよい（例: "play（遊ぶ）" と "play（からかう）" は別物）
-${
-  isKids
-    ? `- **日本人なら誰でも知っているような、中学英語レベルの基本単語・表現に限定すること**
-  - OK例: "play", "like", "eat", "sleep", "happy", "sad", "big", "fast", "friend", "school", "help", "run", "fun"
-  - NG例: "giggle"（日本人には馴染みが薄い）, "belongings"（難しい）, "peek"（馴染みが薄い）, "softly"（副詞として馴染みが薄い）, "snuggle"（馴染みが薄い）, "cozy"（馴染みが薄い）
-- イディオムは3語以内に収めること（例: "give up", "wake up", "look forward to"）
-- 子どもでも理解可能な基本動詞・形容詞を積極的に含めること（例: play, like, love, want, need, know, think, try, make, go, come, get, give, take, put, eat, drink, sleep, help, watch, read, draw, sing, dance）
-- 「好き・嫌い・欲しい・楽しい」など感情や好みを表す語も積極的に含めること（例: favorite, fun, happy, sad, scared, hungry, tired, cute, cool, great）
-- ビジネス系ではない日常系の単語・フレーズにすべし。ただし、幼稚園児や小学校低学年を想起させる話題（おもちゃ・砂遊びなど）は避けること
-- 副詞は中学英語で習うような基本的なものに限定（例: really, fast, slowly, together, again, always, never, very, too）
-- 感謝・気持ち系の形容詞はカジュアルで平易なものに限定（thankful は可。grateful / heartfelt などフォーマル・硬い語は避ける）
-- 接続詞・接続副詞・群前置詞はカジュアルで平易なもの（例: because, but, so, when, if, after, before）`
-    : `- 単語・イディオム単体で会話の軸になれるもの（例: "apologize", "give it a shot"）
-- イディオムは5語以内に収めること
-- **ネイティブが日常の口語会話で実際に使う表現に限定すること**
-  - フォーマル語・書き言葉は避けること（例: accompany→come with, inquire→ask, consult→talk to, assist→help, commence→start）
-- TOEIC・社会人の日常英会話で頻出の語彙・表現を優先
-- ビジネス・旅行・日常生活など幅広いシーンに対応
-- 接続詞・接続副詞・群前置詞も含む（例: otherwise, therefore, due to, in spite of, as long as, provided that）`
-}
-- 返答する場面でなく、話しかける場面で使われそうな単語・フレーズが好ましい。いかにも返答っぽいフレーズはNG（NG例: "of course", "all right"）
-- 補助的な語なしでは使えない単語はNG（例: "figure"（分かる） は単体ではなく "figure out"（分かる） でないと不自然なのでNG。"figure out" としてイディオムで登録すること）
-- 全体の約1/3は「comfort word」にすること。comfort word とは、温かみ・安心感・やさしさを連想させる語彙・表現。
-${
-  isKids
-    ? `  - comfort word の例: "hug", "kind", "warm", "smile", "together", "happy", "friend", "love", "safe", "nice"`
-    : `  - comfort word の例: "cozy", "warmth", "heartfelt", "grateful", "cherish", "soothe", "serene", "comfort", "healing", "empathy"`
-}
-${
-  isKids
-    ? `- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・イディオム 10個・接続詞/接続副詞/群前置詞 10個（合計 100個程度）`
-    : `- 目標数: 名詞 20個・動詞 20個・形容詞 20個・副詞 20個・接続詞 10個（合計 90個程度）`
-}
-
-
-## 出力形式（JSON）
-"words" キーに { "expression": string, "expressionJa": string } のオブジェクト配列を返してください（説明などは不要）。
-- expression: 英語の単語・表現
-- expressionJa: 日本語の意味（1つだけ。「献身的な、専念した」のように複数書かない）
-
-例:
-${
-  isKids
-    ? `{
-  "words": [
-    { "expression": "play", "expressionJa": "遊ぶ" },
-    { "expression": "favorite", "expressionJa": "お気に入りの" },
-    { "expression": "like", "expressionJa": "好き" },
-    { "expression": "help out", "expressionJa": "手伝う" },
-    { "expression": "excited", "expressionJa": "ワクワクしている" },
-    { "expression": "tired", "expressionJa": "疲れた" },
-    { "expression": "because", "expressionJa": "なぜなら" }
-  ]
-}`
-    : `{
-  "words": [
-    { "expression": "apologize", "expressionJa": "謝罪する" },
-    { "expression": "give it a shot", "expressionJa": "試してみる" },
-    { "expression": "deadline", "expressionJa": "締め切り" },
-    { "expression": "come up with", "expressionJa": "思いつく" },
-    { "expression": "no wonder", "expressionJa": "〜なのは当然だ" },
-    { "expression": "count on", "expressionJa": "頼りにする" },
-    { "expression": "run into", "expressionJa": "偶然会う" }
-  ]
-}`
-}`;
+  const prompt = `${commonPromptPrefix(usedListText, sampleSentencesText)}\n${rules}\n${commonPromptSuffix}`;
 
   const response = await openai.chat.completions.create({
     model: TEXT_MODEL_RICH_SCENE,

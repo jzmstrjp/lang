@@ -6,8 +6,6 @@ export const WORD_COUNT_RULES = {
     max: 6,
     sentenceNote:
       'ごく簡単な文法でごく短い口語文にしてください。中学1年生レベルの基本的な語彙・構文で作成すること。できるだけ短い文にしてください。例: "Water, please.", "Help me, please.", "Do you like soccer?", "Can I borrow your eraser?", "I like your jacket!", "Are you free today?"',
-    sceneNote:
-      'ビジネス以外のシーンにしてください。友人・恋愛・部活・家族・先生・親など幅広い関係性のシーンが望ましいです。幼稚園児や小学校低学年を想起させるような幼い話題（砂遊び・おもちゃ・絵本など）は避けてください。',
   },
   short: {
     min: 3,
@@ -20,10 +18,7 @@ export const WORD_COUNT_RULES = {
     max: 30,
     sentenceNote: '1つの文を無理に長くせずとも、複数の文に分けても良い。',
   },
-} as const satisfies Record<
-  ProblemLength,
-  { min: number; max: number; sentenceNote?: string; sceneNote?: string }
->;
+} as const satisfies Record<ProblemLength, { min: number; max: number; sentenceNote?: string }>;
 
 export const VALID_DIFFICULTY_LEVELS = [
   'kids',

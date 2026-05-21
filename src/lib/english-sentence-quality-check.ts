@@ -34,7 +34,7 @@ ${idiomCheck}
 
 不合格の場合：
 \`\`\`json
-{ "isOk": false, "reason": "ダメな理由（50文字以内）最後に「指定されたフレーズが原因」などと本質的な原因で締めること", "correctSentenceDraft": "この英文なら良かった、という代替案（英文のみ）。代替案がなければnull" }
+{ "isOk": false, "reason": "ダメな理由（50文字以内）", "correctSentenceDraft": "この英文なら良かった、という代替案（英文のみ）。代替案がなければnull" }
 \`\`\`
 `;
 }

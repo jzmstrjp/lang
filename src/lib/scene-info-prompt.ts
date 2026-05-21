@@ -32,28 +32,15 @@ const buildSceneInfoResultDefinition = (
   senderName,
   senderRole: `${senderName}の立場・職業・役割（最大10文字程度で簡潔に。性別は記載しないこと。）`,
   receiverName,
-  receiverRole: `${senderName}は${receiverName}にとってどんな相手か（${senderName}の〇〇、という形式で書くこと・最大15文字程度で簡潔に。性別は記載しないこと。）`,
-  when: `${senderName}が${receiverName}に上記のセリフを言ったタイミング。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）20文字程度で簡潔に。`,
-  why: `${senderName}がそのセリフを言おうと感じたきっかけ。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）40文字程度で簡潔に。`,
-  want: `${senderName}が${receiverName}に何を期待してそのセリフを言うのか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）40文字程度で簡潔に。`,
+  receiverRole: `${senderName}は${receiverName}にとってどんな相手か（${senderName}の〇〇、という形式で書くこと・最大10文字程度で簡潔に。性別は記載しないこと。）`,
+  when: `${senderName}が${receiverName}に上記のセリフを言ったタイミング。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大20文字程度で簡潔に。`,
+  why: `${senderName}がそのセリフを言おうと感じたきっかけ。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大40文字程度で簡潔に。`,
+  want: `${senderName}が${receiverName}に何を期待してそのセリフを言うのか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大40文字程度で簡潔に。`,
   where: `${senderName}がいる場所（ここには個人名は書かないこと・最大10文字程度で簡潔に）`,
   receiverWhere: `${receiverName}がいる場所。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大10文字程度で簡潔に。`,
 });
 
 const samples: SceneInfo[] = [
-  {
-    englishSentence: 'Could you please pass me the salt?',
-    how: '対面',
-    senderName: 'シンジ',
-    senderRole: '港湾近くの倉庫で働く夜勤スタッフ',
-    receiverName: 'エマ',
-    receiverRole: 'シンジの恋人',
-    when: '仕事終わりに二人で海沿いを歩いていた夕方',
-    why: '曇り空だったのに、急に雲の隙間から夕日が強く差し込んで海と街全体が赤く染まったから',
-    want: 'エマにも同じ景色を見て、一緒にその瞬間を共有できる',
-    where: '港の防波堤沿いの歩道',
-    receiverWhere: 'シンジの隣',
-  },
   {
     englishSentence: 'Which floor was I supposed to go to again?',
     how: '対面',
@@ -63,8 +50,8 @@ const samples: SceneInfo[] = [
     receiverRole: 'マイクの友人',
     when: 'エスカレーターで移動中',
     where: 'ショッピングモールのエスカレーター',
-    receiverWhere: 'ショッピングモールのエスカレーター',
-    why: 'レイナと一緒に行くはずの店が何階にあるのかを忘れてしまったから',
+    receiverWhere: 'マイクと同じエスカレーターの下段',
+    why: 'レイナと一緒に行くはずの店が何階にあるのかを忘れてしまった',
     want: 'レイナが目的の店のフロアを教えてくれる',
   },
   {
@@ -76,23 +63,9 @@ const samples: SceneInfo[] = [
     receiverRole: 'タカシの同僚',
     when: '仕事の休憩時間',
     where: 'オフィスの休憩スペース',
-    receiverWhere: 'オフィスの休憩スペース',
+    receiverWhere: 'タカシの向かいの席',
     why: '友人（エマ）の活躍を知って感心し、誰かに共有したくなった',
     want: 'タカシがエマの実績に感心してくれる',
-  },
-  {
-    englishSentence:
-      "Hi, I'm calling because we'd like to formally move forward with a contract with your company.",
-    how: '電話',
-    senderName: 'ユキ',
-    senderRole: 'IT会社のシステムエンジニア',
-    receiverName: 'デイビッド',
-    receiverRole: 'ユキの会社のパートナー企業の担当者',
-    when: 'IT会社の業務中',
-    where: 'ユキのデスク',
-    receiverWhere: 'デイビッドの所属先企業のデスク',
-    why: 'パートナー企業のデイビッドが提案した内容を見て、正式に契約を結びたいと思った',
-    want: 'デイビッドの会社と正式な契約を締結する',
   },
 ];
 
@@ -111,43 +84,17 @@ const kidsSamples: SceneInfo[] = [
     want: 'サクラがサッカー好きかを知れる',
   },
   {
-    englishSentence: 'Can you pass me that bottle?',
+    englishSentence: 'Can you pass me the salt?',
     how: '対面',
-    senderName: 'リョウ',
-    senderRole: '高校生',
+    senderName: 'タケシ',
+    senderRole: '父親',
     receiverName: 'サラ',
-    receiverRole: 'リョウの幼なじみ',
-    when: '休日の昼に公園でバドミントンをしていた時',
-    where: '公園のベンチ',
-    receiverWhere: 'リョウの隣',
-    why: '練習の合間に喉が渇いて、手が届かない場所にボトルがあったから',
-    want: 'サラがボトルを渡してくれる',
-  },
-  {
-    englishSentence: 'Do you want to come with me?',
-    how: '対面',
-    senderName: 'ハナ',
-    senderRole: '高校生',
-    receiverName: 'タイガ',
-    receiverRole: 'ハナの友人',
-    when: '放課後に駅前の商店街を歩いていた時',
-    where: '駅前の商店街',
-    receiverWhere: 'ハナの隣',
-    why: '新しくできたカフェが気になっていて、一人で入るのが少し恥ずかしかったから',
-    want: 'タイガが一緒にカフェに来てくれる',
-  },
-  {
-    englishSentence: 'Can you help me carry this?',
-    how: '対面',
-    senderName: 'ナツキ',
-    senderRole: '高校生',
-    receiverName: 'ショウ',
-    receiverRole: 'ナツキのお兄さん',
-    when: '週末にスーパーで買い物を終えた時',
-    where: 'スーパーの駐車場',
-    receiverWhere: 'ナツキの隣',
-    why: '買い物袋が重くて両手がふさがってしまったから',
-    want: 'ショウが荷物を一緒に持ってくれる',
+    receiverRole: 'タケシの娘',
+    when: '家族で朝食を食べている最中',
+    where: '自宅の食卓',
+    receiverWhere: 'タケシの向かいの席',
+    why: '塩を使いたいが、塩の容器がサラの近くにあって、タケシは手が届かない',
+    want: 'サラが塩を渡してくれる',
   },
 ];
 
@@ -160,40 +107,15 @@ function buildSamplesBlock(sampleList: SceneInfo[]): string {
     .join('\n\n');
 }
 
-// サンプルは固定テキストとして事前にビルドしておく（Prompt Caching の prefix として先頭に置くため）
 const SAMPLES_BLOCK: string = buildSamplesBlock(samples);
 const KIDS_SAMPLES_BLOCK: string = buildSamplesBlock(kidsSamples);
 
-const SCENE_INFO_PREAMBLE_BASE = `あなたは英語学習アプリのシーン設計者です。
-与えられた英文のセリフに対して、自然でリアルな背景情報をJSON形式で作成してください。
-
-## 出力ルール
-- 各項目を矛盾なく埋めること
-- 何かに対するリアクションではなく、送り手から話しかけた状況にすること
-- 現実世界で誰もが一度は見たことがあるようなシーンにすること
-- 人物の個人名は全てカタカナで書くこと`;
-
-const SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
-
-## 出力例
-以下の例をよく参考にしてください。
-
-${SAMPLES_BLOCK}`;
-
-const KIDS_SCENE_INFO_PREAMBLE = `${SCENE_INFO_PREAMBLE_BASE}
-- 登場人物の片方は必ず中学生か高校生であること。もう片方は親・先生・バイト先の人など大人も積極的に登場してよいし、同じく中学生か高校生でもよい。
-- 友人・恋愛・部活・放課後・家族・趣味・バイト・休日など幅広いシーンにすること
-- 幼稚園児や小学校低学年を想起させるような幼い話題（砂遊び・おもちゃ・絵本・ロボット工作など）は避けること
+const KIDS_RULES_BLOCK: string = `- 登場人物の片方は必ず中学生か高校生であること。もう片方は親・先生・バイト先の人など大人も積極的に登場してよいし、同じく中学生か高校生でもよい。
+- 学校・友人・恋愛・部活・放課後・家族・趣味・バイト・休日など幅広いシーンにすること
 - ビジネスのシーンは避けること
-- 「きっかけ（why）」「動機（want）」はシンプルで直感的な内容にすること。複雑な背景や込み入った事情は避けること
-
-## 出力例
-以下の例をよく参考にしてください。
-
-${KIDS_SAMPLES_BLOCK}`;
+`;
 
 export type SceneInfoPromptMessages = {
-  system: string;
   user: string;
 };
 
@@ -203,7 +125,6 @@ export function buildSceneInfoPrompt({
   englishSentence,
   voice,
   how,
-  sceneNote,
   isKids = false,
 }: {
   senderName: string;
@@ -211,23 +132,36 @@ export function buildSceneInfoPrompt({
   englishSentence: string;
   voice: Voice;
   how: How;
-  sceneNote?: string;
   isKids?: boolean;
 }): SceneInfoPromptMessages {
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
-  const sceneNoteBlock = sceneNote ? `\n${sceneNote}\n` : '';
 
-  const user = `## 今回のお題
+  const user = `
 ${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
-${phoneNote}
-${sceneNoteBlock}${buildThirdPersonNote(englishSentence, senderName, receiverName)}
+
+この会話内容からごく自然に連想されるシーン情報を作成してください。
+
+- ${phoneNote}
+-${buildThirdPersonNote(englishSentence, senderName, receiverName)}
+
+## 出力ルール
+- 現実世界で誰もが一度は見たことがあるようなシーンにすること
+- 人物の個人名は全てカタカナで書くこと
+- 2コマ漫画として描くため、2コマで描けるシーンにすること。
+- ${isKids ? KIDS_RULES_BLOCK : ''}
+
 【重要】以下のJSON形式で必ず回答してください。
 
 \`\`\`json
 ${JSON.stringify(buildSceneInfoResultDefinition(englishSentence, how, senderName, receiverName), null, 2)}
 \`\`\`
+
+## 出力例
+以下の例を参考にしてください。
+
+${isKids ? KIDS_SAMPLES_BLOCK : SAMPLES_BLOCK}
 `;
 
-  return { system: isKids ? KIDS_SCENE_INFO_PREAMBLE : SCENE_INFO_PREAMBLE, user };
+  return { user };
 }

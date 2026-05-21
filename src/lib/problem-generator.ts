@@ -895,7 +895,12 @@ export async function translateJapanese(
     throw new Error('japanese が取得できませんでした。');
   }
 
-  return result.japanese.trim();
+  return stripSpeakerPrefix(result.japanese.trim());
+}
+
+/** 「タカシ：」「オリビア：」のような冒頭の話者名プレフィックスを除去する */
+export function stripSpeakerPrefix(text: string): string {
+  return text.replace(/^[\p{L}]{1,20}[：:]\s*/u, '').trim();
 }
 
 export type BuildJapaneseConversationRulesParams = {
@@ -934,8 +939,6 @@ export function buildJapaneseConversationRules(
     how,
     translate,
     when,
-    expression,
-    expressionJa,
   } = params;
 
   const targetDescription =
@@ -951,16 +954,16 @@ export function buildJapaneseConversationRules(
   ${receiverName}（${receiverRole}・${receiverGender}）が「${englishReply}」と返答しました。
   話しかけたタイミング: ${when}
   ${targetDescription}
+  個人名は全てカタカナに翻訳してください。
+  ${senderName}は元の英文に含まれていない限り、冒頭で${receiverName}の名前を呼びかけません。
   二人の関係性を考慮して、口調（敬語・タメ口）や呼び方（敬称・呼び捨て・役職呼び）を決めてください。
-  慣用句は単語通りに直訳せず、慣用句として翻訳してください。
+  カタカナ英語は避け、しっかりと日本語に翻訳すること。ただし日本でも定着しているカタカナ語は使用しても良い。
 
-  外国人名は全てカタカナに翻訳してください。
-  元の英文に含まれる内容はできるだけ省略せずに日本語に翻訳してください。
-  元の英文に明記されていない内容を付け加えないでください。元の英文に含まれている内容のみを日本語に翻訳してください。
-  「誰が」という内容を省略しないでください。（例: "She looked worried."であれば「心配そうにしていたよ。」ではなく「彼女が心配そうにしていたよ。」と訳すこと）
-  代名詞を個人名に変換しないでください。（例: "You are gentle."であれば「タカシは優しいね。」ではなく「君は優しいね。」と訳すこと）
-  カタカナ英語は避け、ちゃんと日本語に翻訳すること。ただし、日本でもカタカナ英語として定着しているものはカタカナ英語でもいいです。（例: check-in は チェックイン でOK）
+  - 代名詞の意味を省略しないでください。
+    - 「She was really happy to see your message.」であれば「あなたのメッセージを見て、すごく喜んでたよ。」ではなく「彼女があなたのメッセージを見て、すごく喜んでたよ。」と翻訳してください。
+    - 「You did an awesome job on your test.」であれば「テスト、すごくよくできてたよ。」ではなく「君のテスト、すごくよくできてたよ。」と翻訳してください。
+  - 元の英文に含まれていない個人名を翻訳文に含めることは禁止します。
+
   機械音声で読み上げるための日本語文なので、括弧書きは含めないこと。最後は「。」または「？」で終わること。
-  女性のセリフの語尾を「〜だわ」「〜なのよ」と翻訳するのは古臭いので禁止です。
-  セリフの最初に「タカシ：やあ、こんにちは」と話者の名前をつけるのは絶対に禁止します。`;
+  女性のセリフの語尾を「〜だわ。」「〜なのよ。」「〜かしら？」と翻訳するのは禁止です。古臭いので。`;
 }
