@@ -98,7 +98,7 @@ ${sentenceNote ? `- ${sentenceNote}` : ''}
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
 相手の名前は${receiverName}。${receiverGenderLabel}です。
-${Math.random() < 0.9 ? '特に必要なければ、英文の中で相手の名前を呼びかけないでください。' : '冒頭で相手の名前を呼びかけるかどうかは、シーンによって決めてください。'}
+${Math.random() < 0.83 ? '特に必要なければ、英文の中で相手の名前を呼びかけないでください。' : '冒頭で相手の名前を呼びかけるかどうかは、文の内容によって決めてください。'}
 ${notes ? `【注意】\n${notes}\n` : ''}
 
 ${usedBlock}

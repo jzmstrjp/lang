@@ -955,7 +955,7 @@ export function buildJapaneseConversationRules(
   話しかけたタイミング: ${when}
   ${targetDescription}
   個人名は全てカタカナに翻訳してください。
-  ${senderName}は元の英文に含まれていない限り、冒頭で${receiverName}の名前を呼びかけません。
+  ${senderName}は元の英文に含まれていない限り、冒頭で${receiverName}の名前を呼びかけません。元の英文に含まれている場合は${receiverName}の名前を呼びかけます。
   二人の関係性を考慮して、口調（敬語・タメ口）や呼び方（敬称・呼び捨て・役職呼び）を決めてください。
   カタカナ英語は避け、しっかりと日本語に翻訳すること。ただし日本でも定着しているカタカナ語は使用しても良い。
 

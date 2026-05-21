@@ -540,10 +540,10 @@ const main = async () => {
   const activeWordList = isKidsOnly ? allKidsWords : allNonKidsWords;
 
   // --- 使用ワード数 ---
-  const maxWords = isAll
+  const currentMax = isAll
     ? Math.max(allNonKidsWords.length, allKidsWords.length)
     : activeWordList.length;
-  const countAnswer = await ask(rl, `\n何ワード使用しますか？ [最大: ${maxWords}]: `);
+  const countAnswer = await ask(rl, `\n何ワード使用しますか？ [現在のDB件数: ${currentMax}]: `);
   rl.close();
 
   const wordCount = (() => {
@@ -553,10 +553,6 @@ const main = async () => {
     if (isNaN(parsed) || parsed < 1) {
       console.log('無効な入力です。1ワードを使用します。\n');
       return 1;
-    }
-    if (parsed > maxWords) {
-      console.log(`指定が多すぎます。最大値 ${maxWords} を使用します。`);
-      return maxWords;
     }
     return parsed;
   })();
