@@ -32,6 +32,7 @@ const kidsRules = `## 提案ルール
 const nonKidsRules = `## 提案ルール
 - 日常生活系・ビジネス系の語彙を半分ずつくらい生成してください。
 - TOEICのListening（口語）によく出るものを優先して生成してください。
+- 日本人が知らなそうな難しめのビジネス英語上級語彙も3割程度含めてください。
 `;
 
 const commonPromptSuffix = `
