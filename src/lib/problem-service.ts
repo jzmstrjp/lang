@@ -142,72 +142,71 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
 
   let problems: ProblemWithAudio[];
 
-  if (groupByExpression && !hasSearch && latestCount === undefined) {
-    // expressionでグルーピングして N フレーズ × M 問を取得する
-    // 1. 条件に合致する expression をランダムに EXPRESSION_FETCH_PHRASES 個選ぶ
-    // 2. 選んだ expression ごとに EXPRESSION_FETCH_PER_PHRASE 問ずつ取得する
-    const phrases = EXPRESSION_FETCH_PHRASES;
-    const perPhrase = EXPRESSION_FETCH_PER_PHRASE;
-    problems = await prisma.$queryRaw<ProblemWithAudio[]>`
-      SELECT p.*
-      FROM "problems" p
-      JOIN (
-        SELECT "expression", "expressionJa"
-        FROM "problems"
+  if (groupByExpression && !hasSearch) {
+    if (latestCount !== undefined) {
+      // 最新N件を全件取得
+      const sanitizedLatest = Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX);
+      problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+        SELECT * FROM "problems"
         WHERE ${whereClause}
-          AND "expression" IS NOT NULL
-        GROUP BY "expression", "expressionJa"
-        HAVING COUNT(*) >= 2
-        ORDER BY RANDOM()
-        LIMIT ${phrases}
-      ) AS chosen
-        ON p."expression" = chosen."expression"
-        AND (p."expressionJa" = chosen."expressionJa" OR (p."expressionJa" IS NULL AND chosen."expressionJa" IS NULL))
-      WHERE ${whereClause}
-      ORDER BY p."expression", p."expressionJa", RANDOM()
-    `;
-    // 各 expression + expressionJa の組み合わせから最大 perPhrase 件に絞る（SQLの都合で超過する場合があるため）
-    const seen = new Map<string, number>();
-    problems = problems.filter((p) => {
-      const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
-      const count = seen.get(key) ?? 0;
-      if (count >= perPhrase) return false;
-      seen.set(key, count + 1);
-      return true;
-    });
+        ORDER BY "createdAt" DESC
+        LIMIT ${sanitizedLatest}
+      `;
+    } else {
+      // ランダムに EXPRESSION_FETCH_PHRASES グループ × EXPRESSION_FETCH_PER_PHRASE 問を取得
+      problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+        SELECT p.*
+        FROM "problems" p
+        JOIN (
+          SELECT "expression", "expressionJa"
+          FROM "problems"
+          WHERE ${whereClause}
+            AND "expression" IS NOT NULL
+          GROUP BY "expression", "expressionJa"
+          HAVING COUNT(*) >= 2
+          ORDER BY RANDOM()
+          LIMIT ${EXPRESSION_FETCH_PHRASES}
+        ) AS chosen
+          ON p."expression" = chosen."expression"
+          AND (p."expressionJa" = chosen."expressionJa" OR (p."expressionJa" IS NULL AND chosen."expressionJa" IS NULL))
+        WHERE ${whereClause}
+        ORDER BY p."expression", p."expressionJa", RANDOM()
+      `;
+      // 各グループから最大 EXPRESSION_FETCH_PER_PHRASE 件に絞る
+      const seen = new Map<string, number>();
+      problems = problems.filter((p) => {
+        const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
+        const count = seen.get(key) ?? 0;
+        if (count >= EXPRESSION_FETCH_PER_PHRASE) return false;
+        seen.set(key, count + 1);
+        return true;
+      });
+    }
 
-    // 交互順に並び替え（問題数が多いグループを先頭にすることで末尾の連続を防ぐ）
-    // 例: [3問, 2問] → ex1,ex2,ex1,ex2,ex1
-    //     [2問, 3問] → ex2,ex1,ex2,ex1,ex2（多い方を先頭に）
+    // 共通: expressionでグループ化して2つずつペアで交互に並べる
+    // 例: [ex1×3, ex2×3, ex3×2, ex4×2] →
+    //     ex1, ex2, ex1, ex2, ex1, ex2, ex3, ex4, ex3, ex4
+    const withExpression = problems.filter((p) => p.expression != null);
+    const withoutExpression = problems.filter((p) => p.expression == null);
     const grouped = new Map<string, ProblemWithAudio[]>();
-    for (const p of problems) {
-      const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
+    for (const p of withExpression) {
+      const key = `${p.expression}::${p.expressionJa ?? ''}`;
       const group = grouped.get(key) ?? [];
       group.push(p);
       grouped.set(key, group);
     }
-    // 問題数が多いグループを先頭に並べる
     const groups = Array.from(grouped.values()).toSorted((a, b) => b.length - a.length);
-    const maxPerGroup = Math.max(...groups.map((g) => g.length));
     const interleaved: ProblemWithAudio[] = [];
-    for (let i = 0; i < maxPerGroup; i++) {
-      for (const group of groups) {
-        if (i < group.length) interleaved.push(group[i]!);
+    for (let pairStart = 0; pairStart < groups.length; pairStart += 2) {
+      const pair = groups.slice(pairStart, pairStart + 2);
+      const maxInPair = Math.max(...pair.map((g) => g.length));
+      for (let i = 0; i < maxInPair; i++) {
+        for (const group of pair) {
+          if (i < group.length) interleaved.push(group[i]!);
+        }
       }
     }
-    problems = interleaved;
-  } else if (latestCount !== undefined) {
-    // 最新N件から絞り込んでランダム取得
-    problems = await prisma.$queryRaw<ProblemWithAudio[]>`
-      SELECT * FROM (
-        SELECT * FROM "problems"
-        WHERE ${whereClause}
-        ORDER BY "createdAt" DESC
-        LIMIT ${Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX)}
-      ) AS recent
-      ORDER BY RANDOM()
-      LIMIT ${sanitizedLimit}
-    `;
+    problems = [...interleaved, ...withoutExpression];
   } else {
     // 条件全体からランダム取得
     problems = await prisma.$queryRaw<ProblemWithAudio[]>`
