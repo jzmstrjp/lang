@@ -143,45 +143,39 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
   let problems: ProblemWithAudio[];
 
   if (groupByExpression && !hasSearch) {
-    if (latestCount !== undefined) {
-      // 最新N件を全件取得
-      const sanitizedLatest = Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX);
-      problems = await prisma.$queryRaw<ProblemWithAudio[]>`
-        SELECT * FROM "problems"
-        WHERE ${whereClause}
-        ORDER BY "createdAt" DESC
-        LIMIT ${sanitizedLatest}
-      `;
-    } else {
-      // ランダムに EXPRESSION_FETCH_PHRASES グループ × EXPRESSION_FETCH_PER_PHRASE 問を取得
-      problems = await prisma.$queryRaw<ProblemWithAudio[]>`
-        SELECT p.*
-        FROM "problems" p
-        JOIN (
-          SELECT "expression", "expressionJa"
-          FROM "problems"
-          WHERE ${whereClause}
-            AND "expression" IS NOT NULL
-          GROUP BY "expression", "expressionJa"
-          HAVING COUNT(*) >= 2
-          ORDER BY RANDOM()
-          LIMIT ${EXPRESSION_FETCH_PHRASES}
-        ) AS chosen
-          ON p."expression" = chosen."expression"
-          AND (p."expressionJa" = chosen."expressionJa" OR (p."expressionJa" IS NULL AND chosen."expressionJa" IS NULL))
-        WHERE ${whereClause}
-        ORDER BY p."expression", p."expressionJa", RANDOM()
-      `;
-      // 各グループから最大 EXPRESSION_FETCH_PER_PHRASE 件に絞る
-      const seen = new Map<string, number>();
-      problems = problems.filter((p) => {
-        const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
-        const count = seen.get(key) ?? 0;
-        if (count >= EXPRESSION_FETCH_PER_PHRASE) return false;
-        seen.set(key, count + 1);
-        return true;
-      });
-    }
+    // EXPRESSION_FETCH_PHRASES グループ × EXPRESSION_FETCH_PER_PHRASE 問を取得
+    // latestCount が指定されている場合は最新N件の中から選ぶ
+    const baseQuery =
+      latestCount !== undefined
+        ? Prisma.sql`(SELECT * FROM "problems" WHERE ${whereClause} ORDER BY "createdAt" DESC LIMIT ${Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX)}) AS p`
+        : Prisma.sql`"problems" p`;
+    const outerWhere = latestCount !== undefined ? Prisma.empty : Prisma.sql`WHERE ${whereClause}`;
+    problems = await prisma.$queryRaw<ProblemWithAudio[]>`
+      SELECT p.*
+      FROM ${baseQuery}
+      JOIN (
+        SELECT "expression", "expressionJa"
+        FROM ${baseQuery}
+        WHERE "expression" IS NOT NULL
+        GROUP BY "expression", "expressionJa"
+        HAVING COUNT(*) >= 2
+        ORDER BY RANDOM()
+        LIMIT ${EXPRESSION_FETCH_PHRASES}
+      ) AS chosen
+        ON p."expression" = chosen."expression"
+        AND (p."expressionJa" = chosen."expressionJa" OR (p."expressionJa" IS NULL AND chosen."expressionJa" IS NULL))
+      ${outerWhere}
+      ORDER BY p."expression", p."expressionJa", RANDOM()
+    `;
+    // 各グループから最大 EXPRESSION_FETCH_PER_PHRASE 件に絞る
+    const seen = new Map<string, number>();
+    problems = problems.filter((p) => {
+      const key = `${p.expression ?? ''}::${p.expressionJa ?? ''}`;
+      const count = seen.get(key) ?? 0;
+      if (count >= EXPRESSION_FETCH_PER_PHRASE) return false;
+      seen.set(key, count + 1);
+      return true;
+    });
 
     // 共通: expressionでグループ化して2つずつペアで交互に並べる
     // 例: [ex1×3, ex2×3, ex3×2, ex4×2] →
