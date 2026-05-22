@@ -98,10 +98,19 @@ ${sentenceNote ? `- ${sentenceNote}` : ''}
 ${rule.min}語以上${rule.max}語以下の口語文にしてください。
 ちなみに、話者の名前は${senderName}です。${genderLabel}です。
 相手の名前は${receiverName}。${receiverGenderLabel}です。
-${Math.random() < 0.83 ? '特に必要なければ、英文の中で相手の名前を呼びかけないでください。' : '冒頭で相手の名前を呼びかけるかどうかは、文の内容によって決めてください。'}
+${Math.random() < 0.83 ? '特に必要なければ、英文の中で相手の名前を呼びかけないでください。' : '冒頭で相手の名前を呼びかけるかどうかは、文の内容や相手との関係性によって決めてください。'}
 ${notes ? `【注意】\n${notes}\n` : ''}
 
 ${usedBlock}
-【重要】英語の口語文のみを出力してください。JSONや説明は不要です。
+【重要】以下のJSON形式のみを出力してください。
+
+\`\`\`json
+{
+  "englishSentence": "作成した英語の口語文",
+  "motivation": "${senderName}が${receiverName}に対して${how}でこの台詞を言った必然性・理由。最大40文字程度で簡潔に。",
+  "senderRole": "${senderName}の職業・役割（最大10文字程度で簡潔に。性別は記載しないこと。）",
+  "receiverRole": "${receiverName}は${senderName}にとってどんな相手か。${senderName}の〇〇、という形式で書くこと（例: ${senderName}の同僚、${senderName}の依頼する宅配便業者、${senderName}の知らない他人、など。最大15文字程度で簡潔に。性別は記載しないこと。）"
+}
+\`\`\`
 `;
 }

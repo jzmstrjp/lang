@@ -26,13 +26,15 @@ const buildSceneInfoResultDefinition = (
   how: How,
   senderName: string,
   receiverName: string,
+  senderRole: string,
+  receiverRole: string,
 ): SceneInfo => ({
   englishSentence,
   how,
   senderName,
-  senderRole: `${senderName}の立場・職業・役割（最大10文字程度で簡潔に。性別は記載しないこと。）`,
+  senderRole,
   receiverName,
-  receiverRole: `${senderName}は${receiverName}にとってどんな相手か（${senderName}の〇〇、という形式で書くこと・最大10文字程度で簡潔に。性別は記載しないこと。）`,
+  receiverRole,
   when: `${senderName}が${receiverName}に上記のセリフを言ったタイミング。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大20文字程度で簡潔に。`,
   why: `${senderName}がそのセリフを言おうと感じたきっかけ。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大40文字程度で簡潔に。`,
   want: `${senderName}が${receiverName}に何を期待してそのセリフを言うのか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大40文字程度で簡潔に。`,
@@ -110,7 +112,7 @@ function buildSamplesBlock(sampleList: SceneInfo[]): string {
 const SAMPLES_BLOCK: string = buildSamplesBlock(samples);
 const KIDS_SAMPLES_BLOCK: string = buildSamplesBlock(kidsSamples);
 
-const KIDS_RULES_BLOCK: string = `- 登場人物の片方は必ず中学生か高校生であること。もう片方は親・先生・バイト先の人など大人も積極的に登場してよいし、同じく中学生か高校生でもよい。
+const KIDS_RULES_BLOCK: string = `- できれば登場人物の片方は中学生か高校生であること。もう片方は親・先生・バイト先の人など大人も積極的に登場してよいし、同じく中学生か高校生でもよい。
 - 学校・友人・恋愛・部活・放課後・家族・趣味・バイト・休日など幅広いシーンにすること
 - ビジネスのシーンは避けること
 `;
@@ -126,6 +128,9 @@ export function buildSceneInfoPrompt({
   voice,
   how,
   isKids = false,
+  motivation,
+  senderRole,
+  receiverRole,
 }: {
   senderName: string;
   receiverName: string;
@@ -133,12 +138,25 @@ export function buildSceneInfoPrompt({
   voice: Voice;
   how: How;
   isKids?: boolean;
+  motivation: string;
+  senderRole: string;
+  receiverRole: string;
 }): SceneInfoPromptMessages {
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
   const phoneNote = how === '電話' ? `\n${howNoteMap['電話']}` : '';
 
+  const resultDefinition = buildSceneInfoResultDefinition(
+    englishSentence,
+    how,
+    senderName,
+    receiverName,
+    senderRole,
+    receiverRole,
+  );
+
   const user = `
-${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLabel}）に対して${how}で「${englishSentence}」と話しかけました。
+${senderName}という${voiceMap[voice]}（${senderRole}）が${receiverName}という${receiverGenderLabel}（${receiverRole}）に対して、${how}で「${englishSentence}」と話しかけました。
+【発言の動機】${motivation}
 
 この会話内容から必然的に連想されるシーン情報(動機や状況など)を作成してください。
 会話内容と矛盾しないシーンにしてください。
@@ -155,7 +173,7 @@ ${senderName}という${voiceMap[voice]}が${receiverName}（${receiverGenderLab
 【重要】以下のJSON形式で必ず回答してください。
 
 \`\`\`json
-${JSON.stringify(buildSceneInfoResultDefinition(englishSentence, how, senderName, receiverName), null, 2)}
+${JSON.stringify(resultDefinition, null, 2)}
 \`\`\`
 
 ## 出力例

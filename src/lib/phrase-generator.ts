@@ -23,6 +23,7 @@ export type { SceneInfo } from '@/lib/scene-info-prompt';
 export type SceneInfoWithExpression = SceneInfo & {
   expression: string;
   expressionJa: string;
+  motivation: string;
 };
 
 export const HOWS: How[] = ['対面', '対面', '電話'];
@@ -158,7 +159,19 @@ export async function createEnglishSentence(
     const sentenceRaw = sentenceResponse.output_text?.trim();
     if (!sentenceRaw) throw new Error('英文レスポンスが空です');
 
-    const englishSentence = sentenceRaw.replace(/^```[\w]*\n?|```$/g, '').trim();
+    const sentenceJsonMatch = sentenceRaw.match(/```json\n([\s\S]*?)```/);
+    if (!sentenceJsonMatch?.[1]) throw new Error('英文JSONが見つかりませんでした');
+    const sentenceParsed = JSON.parse(sentenceJsonMatch[1]) as {
+      englishSentence: string;
+      motivation: string;
+      senderRole: string;
+      receiverRole: string;
+    };
+    console.log(sentenceParsed);
+    const englishSentence = sentenceParsed.englishSentence?.trim();
+    const motivation = sentenceParsed.motivation?.trim() ?? '';
+    const senderRoleFromSentence = sentenceParsed.senderRole?.trim() ?? '';
+    const receiverRoleFromSentence = sentenceParsed.receiverRole?.trim() ?? '';
     if (!englishSentence) throw new Error('英文が見つかりませんでした');
 
     const qualityResult = await checkEnglishSentenceQuality(openai, {
@@ -166,6 +179,9 @@ export async function createEnglishSentence(
       wordCountLength,
       prompt: sentencePrompt,
       englishSentence,
+      motivation,
+      senderRole: senderRoleFromSentence,
+      receiverRole: receiverRoleFromSentence,
     });
 
     if (!qualityResult.isOk) {
@@ -185,6 +201,9 @@ export async function createEnglishSentence(
       voice,
       how,
       isKids: wordCountLength === 'kids',
+      motivation,
+      senderRole: senderRoleFromSentence,
+      receiverRole: receiverRoleFromSentence,
     });
 
     const sceneResponse = await openai.responses.create({
@@ -203,7 +222,14 @@ export async function createEnglishSentence(
     if (!jsonMatch?.[1]) throw new Error('JSON形式のレスポンスが見つかりませんでした');
 
     const scene = JSON.parse(jsonMatch[1]) as Omit<SceneInfo, 'englishSentence' | 'how'>;
-    return { englishSentence, how, expression: phrase, expressionJa: phraseJa, ...scene };
+    return {
+      englishSentence,
+      how,
+      expression: phrase,
+      expressionJa: phraseJa,
+      motivation,
+      ...scene,
+    };
   } catch (e) {
     console.error('createEnglishSentence エラー:', e);
     return null;

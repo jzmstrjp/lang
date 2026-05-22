@@ -8,7 +8,13 @@ export type QualityCheckResult =
   | { isOk: true }
   | { isOk: false; reason: string; correctSentenceDraft: string | null };
 
-function buildQualityCheckPrompt(englishSentence: string, expression: string): string {
+function buildQualityCheckPrompt(
+  englishSentence: string,
+  expression: string,
+  motivation: string,
+  senderRole: string,
+  receiverRole: string,
+): string {
   const idiomCheck = expression.includes(' ')
     ? '- 指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として適切に使われているか\n'
     : '';
@@ -19,10 +25,14 @@ function buildQualityCheckPrompt(englishSentence: string, expression: string): s
 - 文法的に正確か
 ${idiomCheck}
 - フレーズが不自然に無理やり当てはめられていないか
+- 動機・登場人物・英文の内容が、総合的な場面として矛盾していないか
 
 ---
 【指定フレーズ】${expression}
 【判定対象の英文】${englishSentence}
+【話しかけた人の立場】${senderRole}
+【話しかけられた人の立場】${receiverRole}
+【発言の動機】${motivation}
 ---
 
 以下のJSON形式で必ず回答してください。reason は日本語で50文字以内。
@@ -46,14 +56,26 @@ export async function checkEnglishSentenceQuality(
     wordCountLength,
     prompt,
     englishSentence,
+    motivation,
+    senderRole,
+    receiverRole,
   }: {
     expression: string;
     wordCountLength: ProblemLength;
     prompt: string;
     englishSentence: string;
+    motivation: string;
+    senderRole: string;
+    receiverRole: string;
   },
 ): Promise<QualityCheckResult> {
-  const checkPrompt = buildQualityCheckPrompt(englishSentence, expression);
+  const checkPrompt = buildQualityCheckPrompt(
+    englishSentence,
+    expression,
+    motivation,
+    senderRole,
+    receiverRole,
+  );
 
   const response = await openai.responses.create({
     model: TEXT_MODEL_QUICK,
