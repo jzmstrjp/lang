@@ -1131,6 +1131,7 @@ function ProblemFlowInner({
             isImprovingTranslation={isImprovingTranslation}
             isRegeneratingReply={isRegeneratingReply}
             regeneratingAssetRef={regeneratingAssetRef}
+            currentProblem={currentProblem}
             onEditScene={() => {
               setAdminModalOpen(false);
               setSceneEditOpen(true);
@@ -1739,6 +1740,7 @@ type AdminProblemActionsProps = {
   isImprovingTranslation: boolean;
   isRegeneratingReply: boolean;
   regeneratingAssetRef: React.MutableRefObject<Record<RemovableField, boolean>>;
+  currentProblem: ProblemWithAudio;
   onEditScene: () => void;
   onRegenerateImage: () => void;
   onRegenerateAudioEn: () => void;
@@ -1757,6 +1759,7 @@ function AdminProblemActions({
   isImprovingTranslation,
   isRegeneratingReply,
   regeneratingAssetRef,
+  currentProblem,
   onEditScene,
   onRegenerateImage,
   onRegenerateAudioEn,
@@ -1770,6 +1773,7 @@ function AdminProblemActions({
 }: AdminProblemActionsProps) {
   const isAdmin = use(isAdminPromise);
   const [, forceUpdate] = useState({});
+  const [isScenePreviewOpen, setScenePreviewOpen] = useState(false);
 
   // refの変更を検知するために定期的にチェック
   useEffect(() => {
@@ -1800,6 +1804,15 @@ function AdminProblemActions({
       <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
         <div className="space-y-8">
           <div className="space-y-3">
+            {currentProblem.imageUrl && (
+              <button
+                type="button"
+                onClick={() => setScenePreviewOpen(true)}
+                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--background)] border border-[var(--border)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/30 transition enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+              >
+                画像と字幕を確認する
+              </button>
+            )}
             <button
               type="button"
               onClick={onEditScene}
@@ -1876,6 +1889,16 @@ function AdminProblemActions({
           </button>
         </div>
       </div>
+      {isScenePreviewOpen && currentProblem.imageUrl && (
+        <ImagePreviewDialog
+          preview={{
+            imageUrl: currentProblem.imageUrl,
+            japaneseSentence: currentProblem.japaneseSentence,
+            japaneseReply: currentProblem.japaneseReply,
+          }}
+          onClose={() => setScenePreviewOpen(false)}
+        />
+      )}
     </div>
   );
 }
