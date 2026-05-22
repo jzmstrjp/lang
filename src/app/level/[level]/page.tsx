@@ -50,7 +50,7 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
             search: searchQuery,
             includeNullDifficulty: false,
             latestCount,
-            limit: 1,
+            groupByExpression: latestCount !== undefined,
           })
         ).problems
       : await loadInitialProblems({
@@ -58,7 +58,9 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
           includeNullDifficulty: false,
         });
 
-  const initialProblem = pickRandomProblem(initialProblems);
+  const initialProblem =
+    latestCount !== undefined ? (initialProblems[0] ?? null) : pickRandomProblem(initialProblems);
+  const initialQueue = latestCount !== undefined ? initialProblems.slice(1) : [];
 
   return (
     <>
@@ -67,6 +69,7 @@ async function LevelPageContent({ params, searchParams }: LevelPageProps) {
         <ProblemFlow
           difficultyLevel={difficultyLevel}
           initialProblem={initialProblem}
+          initialQueue={latestCount !== undefined ? initialQueue : undefined}
           isAdminPromise={isAdminPromise}
           includeNullDifficulty={false}
           latestCount={latestCount}

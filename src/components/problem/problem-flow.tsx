@@ -67,6 +67,7 @@ type ProblemFlowProps = {
   length?: ProblemLength;
   difficultyLevel?: DifficultyLevel;
   initialProblem: ProblemWithAudio;
+  initialQueue?: ProblemWithAudio[];
   isAdminPromise: Promise<boolean>;
   includeNullDifficulty?: boolean;
   latestCount?: number;
@@ -103,6 +104,7 @@ function ProblemFlowInner({
   length,
   difficultyLevel,
   initialProblem,
+  initialQueue = [],
   isAdminPromise,
   latestCount,
   includeNullDifficulty = false,
@@ -137,7 +139,7 @@ function ProblemFlowInner({
   });
 
   // グローバル状態（全phase共通）
-  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>([]);
+  const [problemQueue, setProblemQueue] = useState<ProblemWithAudio[]>(initialQueue);
   const [isAudioBusy, setAudioBusy] = useState(false);
   const [isDeletingProblem, setDeletingProblem] = useState(false);
   const [isImprovingTranslation, setImprovingTranslation] = useState(false);

@@ -55,12 +55,14 @@ async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
             search: searchQuery,
             includeNullDifficulty: true,
             latestCount,
-            limit: 1,
+            groupByExpression: latestCount !== undefined,
           })
         ).problems
       : (await loadInitialProblemsByLength())[problemLength];
 
-  const initialProblem = pickRandomProblem(initialProblems);
+  const initialProblem =
+    latestCount !== undefined ? (initialProblems[0] ?? null) : pickRandomProblem(initialProblems);
+  const initialQueue = latestCount !== undefined ? initialProblems.slice(1) : [];
 
   return (
     <>
@@ -70,6 +72,7 @@ async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
           length={problemLength}
           difficultyLevel="non_kids"
           initialProblem={initialProblem}
+          initialQueue={latestCount !== undefined ? initialQueue : undefined}
           isAdminPromise={isAdminPromise}
           includeNullDifficulty={true}
           latestCount={latestCount}
