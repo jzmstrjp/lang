@@ -1164,9 +1164,12 @@ function ProblemFlowInner({
       <Suspense fallback={null}>
         <FixedAdminButton
           isAdminPromise={isAdminPromise}
-          isAdminModalOpen={isAdminModalOpen}
+          isAdminModalOpen={isAdminModalOpen || isSceneEditOpen}
           onOpenAdminModal={() => setAdminModalOpen(true)}
-          onCloseAdminModal={() => setAdminModalOpen(false)}
+          onCloseAdminModal={() => {
+            setAdminModalOpen(false);
+            setSceneEditOpen(false);
+          }}
         />
       </Suspense>
     </div>
