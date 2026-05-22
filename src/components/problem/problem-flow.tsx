@@ -144,6 +144,12 @@ function ProblemFlowInner({
   const [isRegeneratingReply, setRegeneratingReply] = useState(false);
   const [isAdminModalOpen, setAdminModalOpen] = useState(false);
   const [isSceneEditOpen, setSceneEditOpen] = useState(false);
+  // 画像再生成は時間がかかるためリロードせず、完成したらプレビューだけ表示する
+  const [imagePreview, setImagePreview] = useState<{
+    imageUrl: string;
+    japaneseSentence: string;
+    japaneseReply: string;
+  } | null>(null);
   // 現在の問題と画像を取得
   const currentProblem = phase.problem;
   const sceneImage = currentProblem?.imageUrl ?? null;
@@ -381,14 +387,14 @@ function ProblemFlowInner({
 
       if (responseData[field]) {
         if (field === 'imageUrl') {
-          // 画像再生成は生成に時間がかかるため、確認の上でページリロードで反映する
-          const sentence = currentProblem.englishSentence;
-          const shouldReload = window.confirm(
-            '画像の再生成が完了しました。画面を更新して新しい画像を表示しますか？',
-          );
-          if (shouldReload) {
-            window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
-          }
+          // 画像再生成は時間がかかり、完了時には既に次の問題に進んでいる可能性が高いため、
+          // state には反映せずダイアログでプレビューだけ表示する
+          setAdminModalOpen(false);
+          setImagePreview({
+            imageUrl: responseData[field] as string,
+            japaneseSentence: currentProblem.japaneseSentence,
+            japaneseReply: currentProblem.japaneseReply,
+          });
         } else {
           // 音声再生成はリロードせず state を差し替え、start-button-client に戻して
           // ユーザーのタップを user gesture として音声再生する導線にする
@@ -1159,6 +1165,10 @@ function ProblemFlowInner({
           onCancel={() => setSceneEditOpen(false)}
           onSubmit={handleEditScene}
         />
+      )}
+
+      {imagePreview && (
+        <ImagePreviewDialog preview={imagePreview} onClose={() => setImagePreview(null)} />
       )}
 
       <Suspense fallback={null}>
@@ -2233,6 +2243,55 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+type ImagePreviewDialogProps = {
+  preview: { imageUrl: string; japaneseSentence: string; japaneseReply: string };
+  onClose: () => void;
+};
+
+function ImagePreviewDialog({ preview, onClose }: ImagePreviewDialogProps) {
+  const captionClass =
+    'absolute left-[1%] right-[1%] text-center text-white p-1 font-extrabold leading-[1.5] md:text-3xl lg:text-4xl text-shadow-[0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black,0_0_2px_black]';
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="再生成された画像のプレビュー"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onClose();
+      }}
+    >
+      <div className="relative w-[500px] max-w-full max-h-[90dvh] overflow-y-auto">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="閉じる"
+          className="absolute top-2 right-2 z-10 inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--background)] p-2 text-[var(--text)] shadow-lg shadow-[var(--border)]/40 enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        <div className="relative w-full aspect-[2/3] overflow-hidden rounded-xl bg-black">
+          <Image
+            src={preview.imageUrl}
+            alt="再生成された画像"
+            width={500}
+            height={750}
+            unoptimized
+            priority
+            className="w-full h-auto"
+          />
+          <div className={`${captionClass} bottom-[50%]`}>{preview.japaneseSentence}</div>
+          <div className={`${captionClass} bottom-0`}>{preview.japaneseReply}</div>
+        </div>
+      </div>
     </div>
   );
 }
