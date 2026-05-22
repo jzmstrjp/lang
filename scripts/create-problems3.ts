@@ -446,6 +446,21 @@ async function generateForPhraseToSeed(
     return null;
   }
 
+  const requiredFields = [
+    'senderRole',
+    'receiverRole',
+    'when',
+    'where',
+    'receiverWhere',
+    'why',
+    'want',
+  ] as const;
+  const missingFields = requiredFields.filter((f) => !result[f]);
+  if (missingFields.length > 0) {
+    console.log(`  ⚠️ スキップ（シーン情報フィールド欠損: ${missingFields.join(', ')}）`);
+    return null;
+  }
+
   const sentence: SceneInfo = {
     englishSentence: result.englishSentence,
     senderName: result.senderName,
