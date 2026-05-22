@@ -148,8 +148,7 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
     const baseQuery =
       latestCount !== undefined
         ? Prisma.sql`(SELECT * FROM "problems" WHERE ${whereClause} ORDER BY "createdAt" DESC LIMIT ${Math.min(Math.max(Math.floor(latestCount), 1), LATEST_COUNT_MAX)}) AS p`
-        : Prisma.sql`"problems" p`;
-    const outerWhere = latestCount !== undefined ? Prisma.empty : Prisma.sql`WHERE ${whereClause}`;
+        : Prisma.sql`(SELECT * FROM "problems" WHERE ${whereClause}) AS p`;
     problems = await prisma.$queryRaw<ProblemWithAudio[]>`
       SELECT p.*
       FROM ${baseQuery}
@@ -164,7 +163,6 @@ export async function fetchProblems(options: FetchProblemsOptions): Promise<Fetc
       ) AS chosen
         ON p."expression" = chosen."expression"
         AND (p."expressionJa" = chosen."expressionJa" OR (p."expressionJa" IS NULL AND chosen."expressionJa" IS NULL))
-      ${outerWhere}
       ORDER BY p."expression", p."expressionJa", RANDOM()
     `;
     // 各グループから最大 EXPRESSION_FETCH_PER_PHRASE 件に絞る
