@@ -380,12 +380,34 @@ function ProblemFlowInner({
       const responseData = await response.json();
 
       if (responseData[field]) {
-        const sentence = currentProblem.englishSentence;
-        const shouldReload =
-          field !== 'imageUrl' ||
-          window.confirm('画像の再生成が完了しました。画面を更新して新しい画像を表示しますか？');
-        if (shouldReload) {
-          window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
+        if (field === 'imageUrl') {
+          // 画像再生成は生成に時間がかかるため、確認の上でページリロードで反映する
+          const sentence = currentProblem.englishSentence;
+          const shouldReload = window.confirm(
+            '画像の再生成が完了しました。画面を更新して新しい画像を表示しますか？',
+          );
+          if (shouldReload) {
+            window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
+          }
+        } else {
+          // 音声再生成はリロードせず state を差し替え、start-button-client に戻して
+          // ユーザーのタップを user gesture として音声再生する導線にする
+          // （モバイルの autoplay 制約があるため自動再生はしない）
+          const newUrl = responseData[field] as string;
+          setAdminModalOpen(false);
+          setPhase((prev) => ({
+            kind: 'start-button-client',
+            error: null,
+            problem: {
+              ...prev.problem,
+              [field]: newUrl,
+            },
+          }));
+          setProblemQueue((prevQueue) =>
+            prevQueue.map((problem) =>
+              problem.id === targetProblemId ? { ...problem, [field]: newUrl } : problem,
+            ),
+          );
         }
       }
     } catch (error) {
@@ -739,6 +761,8 @@ function ProblemFlowInner({
         return;
       }
 
+      const audioEnReplyData = (await audioEnReplyResponse.json()) as { audioEnReplyUrl: string };
+
       // 日本語返答音声を再生成
       const audioJaResponse = await fetch('/api/admin/problems/regenerate-asset', {
         method: 'POST',
@@ -752,9 +776,40 @@ function ProblemFlowInner({
         return;
       }
 
-      // ページをリロード
-      const sentence = currentProblem.englishSentence;
-      window.location.href = `${pathname}${new ProblemPageParams(searchParams, { search: sentence })}`;
+      const audioJaData = (await audioJaResponse.json()) as { audioJaUrl: string };
+
+      const newAudioEnReplyUrl = audioEnReplyData.audioEnReplyUrl;
+      const newAudioJaUrl = audioJaData.audioJaUrl;
+
+      setAdminModalOpen(false);
+
+      // モバイルの autoplay 制約があるため自動再生はせず、start-button-client に戻して
+      // ユーザーの明示的タップを user gesture として音声再生を行う
+      setPhase((prev) => ({
+        kind: 'start-button-client',
+        error: null,
+        problem: {
+          ...prev.problem,
+          englishReply: newEnglishReply,
+          japaneseReply: newJapaneseReply,
+          audioEnReplyUrl: newAudioEnReplyUrl,
+          audioJaUrl: newAudioJaUrl,
+        },
+      }));
+
+      setProblemQueue((prevQueue) =>
+        prevQueue.map((problem) =>
+          problem.id === targetProblemId
+            ? {
+                ...problem,
+                englishReply: newEnglishReply,
+                japaneseReply: newJapaneseReply,
+                audioEnReplyUrl: newAudioEnReplyUrl,
+                audioJaUrl: newAudioJaUrl,
+              }
+            : problem,
+        ),
+      );
     } catch (error) {
       console.error('[ProblemFlow] 返答再生成エラー:', error);
       if (typeof window !== 'undefined') {
