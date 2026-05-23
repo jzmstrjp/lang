@@ -323,7 +323,7 @@ ${buildSceneText({ ...problem, senderDoing: null, receiverDoing: null })}
 
 【備考】
 - 生成AIっぽくない、自然な本物の写真を生成すること。
-- 北野武の映画の質感。${Math.random() < 0.5 ? '北野ブルー。' : ''}フィルム映画の画質。
+- 映画の映像みたいな質感。
 `;
 }
 
