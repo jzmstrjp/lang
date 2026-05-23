@@ -316,7 +316,8 @@ ${buildSceneText({ ...problem, senderDoing: null, receiverDoing: null })}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【下半分】
-- ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」（${problem.japaneseReply}）と返答している。（${problem.receiverDoing}）上半分とは別のアングルで描画すること。
+- 上半分とは別のアングルで描画すること。
+- ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」（${problem.japaneseReply}）と返答している。（${problem.receiverDoing}）
 - ${receiverName}は${receiverAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
