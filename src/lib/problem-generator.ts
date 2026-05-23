@@ -323,6 +323,7 @@ ${buildSceneText({ ...problem, senderDoing: null, receiverDoing: null })}
 
 【備考】
 - 生成AIっぽくない、自然な本物の写真を生成すること。
+- 北野武の映画の質感。北野ブルー。古いフィルム映画の画質。
 `;
 }
 
