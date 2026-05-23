@@ -19,6 +19,8 @@ export type SceneInfo = {
   want: string;
   where: string;
   receiverWhere: string;
+  senderDoing: string;
+  receiverDoing: string;
 };
 
 const buildSceneInfoResultDefinition = (
@@ -40,6 +42,8 @@ const buildSceneInfoResultDefinition = (
   want: `${senderName}が${receiverName}に何を期待してそのセリフを言うのか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大40文字程度で簡潔に。`,
   where: `${senderName}がいる場所（ここには個人名は書かないこと・最大10文字程度で簡潔に）`,
   receiverWhere: `${receiverName}がいる場所。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大10文字程度で簡潔に。`,
+  senderDoing: `1コマ目で${senderName}が上記のセリフを言っている最中に何をしているか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大30文字程度で簡潔に。`,
+  receiverDoing: `2コマ目で${receiverName}が返答のセリフを言っている最中に何をしているか。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大30文字程度で簡潔に。`,
 });
 
 const samples: SceneInfo[] = [
@@ -55,6 +59,8 @@ const samples: SceneInfo[] = [
     receiverWhere: 'マイクと同じエスカレーターの下段',
     why: 'レイナと一緒に行くはずの店が何階にあるのかを忘れてしまった',
     want: 'レイナが目的の店のフロアを教えてくれる',
+    senderDoing: 'エスカレーターの手すりにつかまりながら',
+    receiverDoing: 'エスカレーターを乗りながら聞いている',
   },
   {
     englishSentence: 'I heard Emma followed through on that difficult project.',
@@ -68,6 +74,8 @@ const samples: SceneInfo[] = [
     receiverWhere: 'タカシの向かいの席',
     why: '友人（エマ）の活躍を知って感心し、誰かに共有したくなった',
     want: 'タカシがエマの実績に感心してくれる',
+    senderDoing: 'マグカップを片手に',
+    receiverDoing: 'スマホを見ながら',
   },
 ];
 
@@ -84,6 +92,8 @@ const kidsSamples: SceneInfo[] = [
     receiverWhere: 'ケンタの隣',
     why: 'サクラがサッカーボールを持っているのを見て、好きなのかが気になったから',
     want: 'サクラがサッカー好きかを知れる',
+    senderDoing: 'サッカーボールを足元で転がしながら',
+    receiverDoing: 'ボールを胸に抱えながら',
   },
   {
     englishSentence: 'Can you pass me the salt?',
@@ -97,6 +107,8 @@ const kidsSamples: SceneInfo[] = [
     receiverWhere: 'タケシの向かいの席',
     why: '塩を使いたいが、塩の容器がサラの近くにあって、タケシは手が届かない',
     want: 'サラが塩を渡してくれる',
+    senderDoing: 'パンを食べながら',
+    receiverDoing: 'トーストを食べながら',
   },
 ];
 
@@ -168,6 +180,8 @@ ${senderName}という${voiceMap[voice]}（${senderRole}）が${receiverName}と
 - 現実世界で誰もが一度は見たことがあるようなシーンにすること
 - 人物の個人名は全てカタカナで書くこと
 - 2コマ漫画として描くため、2コマで描けるシーンにすること。
+  - 1コマ目: ${senderName}（${voiceMap[voice]}・${senderRole}）が${receiverName}（${receiverGenderLabel}・${receiverRole}）に向かって「${englishSentence}」と話しかけている。
+  - 2コマ目: ${receiverName}（${receiverGenderLabel}・${receiverRole}）が${senderName}（${voiceMap[voice]}・${senderRole}）に向かって返答している。
 - ${isKids ? KIDS_RULES_BLOCK : ''}
 
 【重要】以下のJSON形式で必ず回答してください。

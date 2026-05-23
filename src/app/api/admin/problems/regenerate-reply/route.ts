@@ -58,6 +58,8 @@ export async function POST(request: Request) {
         how: problem.how,
         when: problem.senderWhen,
         want: problem.senderWant,
+        senderDoing: problem.senderDoing,
+        receiverDoing: problem.receiverDoing,
         isKids: problem.difficultyLevel === 1,
         currentReply: problem.englishReply,
       }) +

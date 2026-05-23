@@ -68,6 +68,7 @@ export async function POST(request: Request) {
       why: problem.senderWhy,
       when: problem.senderWhen,
       want: problem.senderWant,
+      senderDoing: problem.senderDoing ?? null,
     });
     const receiverVoiceInstruction = buildReceiverVoiceInstruction({
       senderName: problem.senderName,
@@ -79,6 +80,7 @@ export async function POST(request: Request) {
       englishSentence: problem.englishSentence,
       englishReply: problem.englishReply ?? '',
       when: problem.senderWhen,
+      receiverDoing: problem.receiverDoing ?? null,
     });
 
     let newUrl: string;
@@ -109,6 +111,8 @@ export async function POST(request: Request) {
           receiverPlace: problem.receiverPlace,
           senderWhy: problem.senderWhy,
           senderWant: problem.senderWant,
+          senderDoing: problem.senderDoing,
+          receiverDoing: problem.receiverDoing,
           difficultyLevel: problem.difficultyLevel ?? null,
           expression: problem.expression,
           expressionJa: problem.expressionJa ?? '',

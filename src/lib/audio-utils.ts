@@ -33,6 +33,7 @@ export function buildSenderVoiceInstruction({
   why,
   when,
   want,
+  senderDoing,
 }: {
   senderName: string;
   receiverName: string;
@@ -43,8 +44,9 @@ export function buildSenderVoiceInstruction({
   why: string;
   when: string;
   want: string;
+  senderDoing: string | null;
 }): string {
-  const base = `${senderName}（${senderRole}・${senderVoice}）が${receiverName}（${receiverRole}・${receiverVoice}）に話しかける場面。`;
+  const base = `${senderName}（${senderRole}・${senderVoice}）が${receiverName}（${receiverRole}・${receiverVoice}）に話しかける場面。${senderDoing ? `（${senderDoing}）` : ''}`;
   const context = [`タイミング: ${when}`, `きっかけ: ${why}`, `期待: ${want}`]
     .filter(Boolean)
     .join('\n');
@@ -61,6 +63,7 @@ export function buildReceiverVoiceInstruction({
   englishSentence,
   englishReply,
   when,
+  receiverDoing,
 }: {
   senderName: string;
   receiverName: string;
@@ -71,8 +74,9 @@ export function buildReceiverVoiceInstruction({
   englishSentence: string;
   englishReply: string;
   when: string;
+  receiverDoing: string | null;
 }): string {
-  const base = `${senderName}（${senderRole}・${senderVoice}）から「${englishSentence}」と話しかけられた${receiverName}（${receiverRole}・${receiverVoice}）が「${englishReply}」と返答する場面。`;
+  const base = `${senderName}（${senderRole}・${senderVoice}）から「${englishSentence}」と話しかけられた${receiverName}（${receiverRole}・${receiverVoice}）が「${englishReply}」と返答する場面。${receiverDoing ? `（${receiverDoing}）` : ''}`;
   const context = [`タイミング: ${when}`].filter(Boolean).join('\n');
   return context ? `${base}\n${context}` : base;
 }

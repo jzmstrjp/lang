@@ -14,6 +14,8 @@ type RequestBody = {
   receiverRole?: string;
   senderWhy?: string;
   senderWant?: string;
+  senderDoing?: string;
+  receiverDoing?: string;
   senderAppearance?: string;
   receiverAppearance?: string;
 };
@@ -38,6 +40,8 @@ export async function POST(request: Request) {
       receiverRole,
       senderWhy,
       senderWant,
+      senderDoing,
+      receiverDoing,
       senderAppearance,
       receiverAppearance,
     } = body;
@@ -55,6 +59,8 @@ export async function POST(request: Request) {
     if (receiverRole !== undefined) data.receiverRole = receiverRole.trim();
     if (senderWhy !== undefined) data.senderWhy = senderWhy.trim();
     if (senderWant !== undefined) data.senderWant = senderWant.trim();
+    if (senderDoing !== undefined) data.senderDoing = senderDoing.trim() || null;
+    if (receiverDoing !== undefined) data.receiverDoing = receiverDoing.trim() || null;
     if (senderAppearance !== undefined) data.senderAppearance = senderAppearance.trim() || null;
     if (receiverAppearance !== undefined)
       data.receiverAppearance = receiverAppearance.trim() || null;
@@ -75,6 +81,8 @@ export async function POST(request: Request) {
         receiverRole: true,
         senderWhy: true,
         senderWant: true,
+        senderDoing: true,
+        receiverDoing: true,
         senderAppearance: true,
         receiverAppearance: true,
       },

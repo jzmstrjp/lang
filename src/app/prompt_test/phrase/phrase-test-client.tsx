@@ -166,6 +166,9 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                       <p className="text-lg font-bold text-[var(--text)]">
                         {item.japaneseSentence}
                       </p>
+                      {item.senderDoing && (
+                        <p className="text-sm text-[var(--text-muted)]">（{item.senderDoing}）</p>
+                      )}
                       <p className="text-sm text-[var(--text-muted)]">{item.englishSentence}</p>
                     </div>
                     <div className="rounded-xl bg-[var(--border)]/20 border border-[var(--border)] p-3 space-y-1">
@@ -174,6 +177,9 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                         {item.voice === 'male' ? '女性' : '男性'}）
                       </p>
                       <p className="text-lg font-bold text-[var(--text)]">{item.japaneseReply}</p>
+                      {item.receiverDoing && (
+                        <p className="text-sm text-[var(--text-muted)]">（{item.receiverDoing}）</p>
+                      )}
                       <p className="text-sm text-[var(--text-muted)]">{item.englishReply}</p>
                     </div>
                   </div>

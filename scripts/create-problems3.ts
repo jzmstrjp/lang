@@ -412,6 +412,8 @@ async function enrichToSeedProblemData({
     receiverPlace: sentence.receiverWhere,
     senderWhy: sentence.why,
     senderWant: sentence.want,
+    senderDoing: sentence.senderDoing,
+    receiverDoing: sentence.receiverDoing,
     incorrectOptions: adjustedOptions,
     difficultyLevel: wordCountLength === 'kids' ? 1 : null,
     expression,
@@ -454,6 +456,8 @@ async function generateForPhraseToSeed(
     'receiverWhere',
     'why',
     'want',
+    'senderDoing',
+    'receiverDoing',
   ] as const;
   const missingFields = requiredFields.filter((f) => !result[f]);
   if (missingFields.length > 0) {
@@ -472,6 +476,8 @@ async function generateForPhraseToSeed(
     receiverWhere: result.receiverWhere,
     why: result.why,
     want: result.want,
+    senderDoing: result.senderDoing,
+    receiverDoing: result.receiverDoing,
     how: result.how,
   };
 

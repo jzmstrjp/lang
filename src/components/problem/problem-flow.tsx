@@ -862,6 +862,8 @@ function ProblemFlowInner({
               receiverRole: data.receiverRole ?? prevPhase.problem.receiverRole,
               senderWhy: data.senderWhy ?? prevPhase.problem.senderWhy,
               senderWant: data.senderWant ?? prevPhase.problem.senderWant,
+              senderDoing: data.senderDoing ?? prevPhase.problem.senderDoing,
+              receiverDoing: data.receiverDoing ?? prevPhase.problem.receiverDoing,
               senderAppearance: data.senderAppearance ?? prevPhase.problem.senderAppearance,
               receiverAppearance: data.receiverAppearance ?? prevPhase.problem.receiverAppearance,
             },
@@ -1162,6 +1164,8 @@ function ProblemFlowInner({
             receiverRole: currentProblem.receiverRole,
             senderWhy: currentProblem.senderWhy,
             senderWant: currentProblem.senderWant,
+            senderDoing: currentProblem.senderDoing ?? '',
+            receiverDoing: currentProblem.receiverDoing ?? '',
             senderAppearance: currentProblem.senderAppearance ?? '',
             receiverAppearance: currentProblem.receiverAppearance ?? '',
           }}
@@ -2028,6 +2032,8 @@ type SceneEditFormValues = {
   receiverRole: string;
   senderWhy: string;
   senderWant: string;
+  senderDoing: string;
+  receiverDoing: string;
   senderAppearance: string;
   receiverAppearance: string;
 };
@@ -2178,6 +2184,19 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
               />
             </div>
             <div>
+              <label htmlFor="scene-sender-doing" className={labelClass}>
+                セリフを言っている最中の動作・状態
+              </label>
+              <textarea
+                id="scene-sender-doing"
+                {...register('senderDoing')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
               <label htmlFor="scene-sender-appearance" className={labelClass}>
                 外見
               </label>
@@ -2226,6 +2245,19 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
               <textarea
                 id="scene-receiver-place"
                 {...register('receiverPlace')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-receiver-doing" className={labelClass}>
+                返答のセリフを言っている最中の動作・状態
+              </label>
+              <textarea
+                id="scene-receiver-doing"
+                {...register('receiverDoing')}
                 disabled={isSubmitting}
                 rows={2}
                 className={textareaClass}

@@ -42,6 +42,8 @@ export type GenerateForPhraseResult = {
   receiverWhere: string;
   why: string;
   want: string;
+  senderDoing: string;
+  receiverDoing: string;
   how: How;
   voice: Voice;
 };
@@ -211,7 +213,7 @@ export async function createEnglishSentence(
       input: scenePrompt.user,
       temperature: 0.7,
       prompt_cache_retention: '24h',
-      prompt_cache_key: 'scene-info-v1',
+      prompt_cache_key: 'scene-info-v2',
     });
     recordTokenUsage('シーン情報生成', sceneResponse.usage);
 
@@ -267,6 +269,8 @@ export async function createEnglishReply(
       why: sentence.why,
       how: sentence.how,
       want: sentence.want,
+      senderDoing: sentence.senderDoing,
+      receiverDoing: sentence.receiverDoing,
       isKids,
     }) +
     `
@@ -443,6 +447,8 @@ export async function generateForPhrase(
     receiverWhere: sentence.receiverWhere,
     why: sentence.why,
     want: sentence.want,
+    senderDoing: sentence.senderDoing,
+    receiverDoing: sentence.receiverDoing,
     how,
     voice,
   };

@@ -33,6 +33,8 @@ model Problem {
   receiverPlace            String
   senderWhy                String
   senderWant               String
+  senderDoing              String?
+  receiverDoing            String?
   difficultyLevel          Int?
   expression               String
   expressionJa             String

@@ -79,6 +79,8 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
         senderWhy: true,
         senderWhen: true,
         senderWant: true,
+        senderDoing: true,
+        receiverDoing: true,
         receiverVoice: true,
         receiverName: true,
         receiverRole: true,
@@ -146,6 +148,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           why: problem.senderWhy,
           when: problem.senderWhen,
           want: problem.senderWant,
+          senderDoing: problem.senderDoing ?? null,
         });
         const receiverVoiceInstruction = buildReceiverVoiceInstruction({
           senderName: problem.senderName,
@@ -157,6 +160,7 @@ async function main(batchSize: number = 10, checkOnly: boolean = false) {
           englishSentence: problem.englishSentence,
           englishReply: problem.englishReply ?? '',
           when: problem.senderWhen,
+          receiverDoing: problem.receiverDoing ?? null,
         });
 
         if (needsEnglish && audioUtilsModule && r2ClientModule) {

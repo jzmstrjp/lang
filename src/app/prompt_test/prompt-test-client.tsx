@@ -310,18 +310,28 @@ export default function PromptTestClient() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">英文</h3>
                 <p className="text-xl text-blue-900 font-medium">
-                  {problem.senderName}（{problem.senderRole}・
-                  {problem.senderVoice === 'male' ? '男性' : '女性'}）「{problem.japaneseSentence}」
+                  {problem.senderName}
+                  <span className="text-sm">
+                    （{problem.senderRole}・{problem.senderVoice === 'male' ? '男性' : '女性'}）
+                  </span>
+                  「{problem.japaneseSentence}」
                 </p>
+                {problem.senderDoing && <p className="text-blue-800">（{problem.senderDoing}）</p>}
                 <p className="text-xl text-blue-900 font-medium">{problem.englishSentence}</p>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-green-800 mb-2">日本語返答</h3>
                 <p className="text-xl text-green-900 font-medium">
-                  {problem.receiverName}（{problem.receiverRole}・
-                  {problem.receiverVoice === 'male' ? '男性' : '女性'}）「{problem.japaneseReply}」
+                  {problem.receiverName}
+                  <span className="text-sm">
+                    （{problem.receiverRole}・{problem.receiverVoice === 'male' ? '男性' : '女性'}）
+                  </span>
+                  「{problem.japaneseReply}」
                 </p>
+                {problem.receiverDoing && (
+                  <p className="text-green-800">（{problem.receiverDoing}）</p>
+                )}
                 <p className="text-xl text-green-900 font-medium">{problem.englishReply}</p>
               </div>
 
@@ -400,7 +410,7 @@ export default function PromptTestClient() {
                       )}
                     </button>
                   </div>
-                  <div className="text-sm text-amber-700 leading-relaxed whitespace-pre-line bg-white border border-amber-200 rounded p-3">
+                  <div className="text-sm text-amber-700 leading-relaxed whitespace-pre-wrap bg-white border border-amber-200 rounded p-3">
                     {assets.imagePrompt}
                   </div>
                 </div>

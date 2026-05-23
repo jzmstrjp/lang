@@ -21,7 +21,7 @@ import type { VoiceType } from '@prisma/client';
 import type { GeneratedProblem } from '@/types/generated-problem';
 import type { SeedProblemData } from '@/types/problem';
 import { buildSceneText } from '@/lib/scene-utils';
-import { TEXT_MODEL_RICH_SCENE, TEXT_MODEL_QUICK } from '@/const';
+import { TEXT_MODEL_QUICK } from '@/const';
 export type { GeneratedProblem } from '@/types/generated-problem';
 
 export type GenerateRequest = {
@@ -100,6 +100,8 @@ export type EnglishReplyPromptParams = {
   why: string;
   how: string;
   want: string;
+  senderDoing?: string | null;
+  receiverDoing?: string | null;
   isKids?: boolean;
   currentReply?: string;
   additionalInstruction?: string;
@@ -119,6 +121,8 @@ export function buildEnglishReplyPrompt({
   why,
   how,
   want,
+  senderDoing = null,
+  receiverDoing = null,
   isKids = false,
   currentReply,
   additionalInstruction,
@@ -149,6 +153,8 @@ ${buildSceneText({
   receiverVoice: receiverGender === '男性' ? 'male' : 'female',
   senderWhy: why,
   senderWant: want,
+  senderDoing,
+  receiverDoing,
 })}
 
 このシーンで${receiverName}（${whom}・${receiverGender}）が返すであろう、ごく自然な返答の口語文を英語で作成してください。
@@ -245,6 +251,8 @@ async function getRandomProblemFromSeed(
     receiverPlace: selectedProblem.receiverPlace ?? '',
     senderWhy: selectedProblem.senderWhy ?? '',
     senderWant: selectedProblem.senderWant ?? '',
+    senderDoing: selectedProblem.senderDoing ?? null,
+    receiverDoing: selectedProblem.receiverDoing ?? null,
     difficultyLevel: null,
     expression: selectedProblem.expression ?? '',
     expressionJa: selectedProblem.expressionJa ?? '',
@@ -269,112 +277,6 @@ const senderFaceDirectionMap = [
   ['右側', '左側'],
   ['左側', '右側'],
 ];
-
-type FrameRestrictions = {
-  frame1Not: string;
-  frame1Must: string;
-  frame2Not: string;
-  frame2Must: string;
-};
-
-// TODO: この関数は未使用。あとで消すかも。
-/**
- * 各コマで描くべきでない内容をAIで生成
- */
-export async function generateFrameRestrictions(
-  problem: GeneratedProblem,
-): Promise<FrameRestrictions> {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const prompt = `
-AIによる画像生成では、以下の問題が起こりがちである。
-- 「コーヒーをお願いします」というシーンなのに、既にテーブルに置かれたコーヒーが描かれてしまう（まだ注文したばかりなので、コーヒーは描かれるべきではない）
-- 「昨日、車を洗ったんだ」というシーンなのに、バケツや雑巾を持っている様子が描かれてしまう（洗車は昨日したことなので、バケツや雑巾は描かれるべきではない）
-
-これらの問題を解決するために「描くべきこと」と「描くべきではないこと」を説明した文章を作成してください。
-
-## 対象シーン
-- 場所: ${problem.place}
-- 1コマ目: ${problem.senderName}（${problem.senderRole}・${getGenderInJapanese(problem.senderVoice)}）が「${problem.englishSentence}」と話しかけている場面
-- 2コマ目: ${problem.receiverName}（${problem.receiverRole}・${getGenderInJapanese(problem.receiverVoice)}）が「${problem.englishReply}」と返答している場面
-- シーン情報: ${buildSceneText(problem)}
-
-## 例1
-- 場所: スーパーの近くの道
-- 1コマ目: タカシ（夫・男性）が「Did you buy bananas today?」と話しかけている場面
-- 2コマ目: アカリ（妻・女性）が「Yes, I picked some up earlier this afternoon.」と返答している場面
-- シーン情報: 電話での会話。タカシは仕事帰りにスーパーの近くにいる。アカリはすでに午後にバナナを買っている。
-
-\`\`\`json
-{
-  "frame1Not": "タカシ（夫・男性）がバナナを持っている様子は描かない。",
-  "frame1Must": "奥の方に見えるスーパーを描く。",
-  "frame2Not": "アカリ（妻・女性）が今まさにスーパーでバナナを買っている様子は描かない。",
-  "frame2Must": "近くに置いてあるバナナを描く。"
-}
-\`\`\`
-
-## 例2
-- 場所: 自分のオフィスのデスク
-- 1コマ目: アレクサンダー（プロジェクトマネージャー・男性）が「Hi Sarah, I'm calling to ask if you could help me look for the document I left in the conference room after yesterday's meeting.」と話しかけている場面
-- 2コマ目: サラ（同じプロジェクトのメンバー・女性）が「Sure, I'll check the conference room right now.」と返答している場面
-- シーン情報: 電話での会話。アレクサンダーは昨日の会議後に置き忘れた書類を探している。
-
-\`\`\`json
-{
-  "frame1Not": "アレクサンダー（プロジェクトマネージャー・男性）は書類を持っていない。",
-  "frame1Must": "自分のデスクで電話しているアレクサンダー（プロジェクトマネージャー・男性）を描く。",
-  "frame2Not": "アレクサンダー（プロジェクトマネージャー・男性）はまだ会議室にはいない。書類も持っていない。",
-  "frame2Must": "電話しているサラ（同じプロジェクトのメンバー・女性）を描く。"
-}
-\`\`\`
-
----
-
-【重要】
-以下のJSON形式で回答してください。
-
-\`\`\`json
-{
-  "frame1Not": "1コマ目で描くべきでない内容の説明文",
-  "frame1Must": "1コマ目で必ず描くべき内容の説明文",
-  "frame2Not": "2コマ目で描くべきでない内容の説明文",
-  "frame2Must": "2コマ目で必ず描くべき内容の説明文"
-}
-\`\`\``;
-
-  const response = await openai.responses.create({
-    model: TEXT_MODEL_RICH_SCENE,
-    input: [{ role: 'user', content: prompt }],
-    temperature: 0.3,
-  });
-  const content = response.output_text ?? '';
-  const match = content.match(/```json\n([\s\S]*?)```/);
-  if (!match?.[1]) {
-    return {
-      frame1Not: 'これから起こるべきこと・まだ起こっていないことは描かないこと',
-      frame1Must: '話しかけている人物を描く',
-      frame2Not: 'これから起こるべきこと・まだ起こっていないことは描かないこと',
-      frame2Must: '返答している人物を描く',
-    };
-  }
-  return JSON.parse(match[1]) as FrameRestrictions;
-}
-
-const frameRestrictions = `
-そのコマで現在起こっていることだけを描いてください。過去に起こったことや、未来に起こることは描かないでください。
-
-【例1】カウンターで「コーヒーを1つください」と注文しているシーン
-- 描くべき: カウンターに向かって注文している人物の様子
-- 描いてはいけない: テーブルに置かれたコーヒー（現時点では運ばれていないはず）、コーヒーを作っているバリスタ（現時点では作っていないはず）
-
-【例2】「はい、会議室に書類を取りに行ってきます」と返答しているシーン
-- 描くべき: 返答している相手の様子、会議室に向かおうとしている姿
-- 描いてはいけない: 会議室で書類を手に取っている様子（現時点では持っていないはず）、書類を持って戻ってきた様子（現時点では行ってないし戻っていないはず）
-
-【例3】「昨日、車を洗車したばかりなんです」と話しているシーン
-- 描くべき: 話している人物の様子、ピカピカに磨かれた車
-- 描いてはいけない: バケツや雑巾を持って洗車している様子（洗車は昨日終わったことであり、現時点では洗っていないはず）
-`;
 
 /**
  * 画像プロンプトを生成
@@ -406,23 +308,20 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 - ${receiverName}（${receiverGenderText}）・・・${problem.receiverRole}。${receiverAppearance}
 
 【シーン情報】
-${buildSceneText(problem)}
+${buildSceneText({ ...problem, senderDoing: null, receiverDoing: null })}
 
 【上半分】
-- ${senderName}（${problem.senderRole}・${senderGenderText}）が「${problem.englishSentence}」（${problem.japaneseSentence}）と言っている。
+- ${senderName}（${problem.senderRole}・${senderGenderText}）が「${problem.englishSentence}」（${problem.japaneseSentence}）と言っている。（${problem.senderDoing}）
 - ${senderName}は${senderAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【下半分】
-- ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」（${problem.japaneseReply}）と返答している。上半分とは別のアングルで描画すること。
+- ${receiverName}（${problem.receiverRole}・${receiverGenderText}）が「${problem.englishReply}」（${problem.japaneseReply}）と返答している。（${problem.receiverDoing}）上半分とは別のアングルで描画すること。
 - ${receiverName}は${receiverAppearance}
 - 吹き出し・台詞・字幕は描かないこと。写真だけで表現すること。
 
 【備考】
 - 生成AIっぽくない、自然な本物の写真を生成すること。
-
-【描かないこと】
-${frameRestrictions}
 `;
 }
 
@@ -444,6 +343,7 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
     why: problem.senderWhy,
     when: problem.senderWhen,
     want: problem.senderWant,
+    senderDoing: problem.senderDoing ?? null,
   });
   const receiverVoiceInstruction = buildReceiverVoiceInstruction({
     senderName: problem.senderName,
@@ -455,6 +355,7 @@ export async function generateAudioAssets(problem: GeneratedProblem): Promise<{
     englishSentence: problem.englishSentence,
     englishReply: problem.englishReply ?? '',
     when: problem.senderWhen,
+    receiverDoing: problem.receiverDoing ?? null,
   });
 
   const audioPromises = [
@@ -520,6 +421,7 @@ export async function generateAndUploadAudioAssets(
     why: problem.senderWhy,
     when: problem.senderWhen,
     want: problem.senderWant,
+    senderDoing: problem.senderDoing ?? null,
   });
   const receiverVoiceInstruction = buildReceiverVoiceInstruction({
     senderName: problem.senderName,
@@ -531,6 +433,7 @@ export async function generateAndUploadAudioAssets(
     englishSentence: problem.englishSentence,
     englishReply: problem.englishReply ?? '',
     when: problem.senderWhen,
+    receiverDoing: problem.receiverDoing ?? null,
   });
 
   const audioBufferPromises = [
@@ -680,7 +583,7 @@ export function generateImagePromptWithCharacters(problem: GeneratedProblem): st
 ※ビデオ会議の場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
 
 【シーン情報】
-${buildSceneText(problem)}
+${buildSceneText({ ...problem, senderDoing: null, receiverDoing: null })}
 
 【1コマ目】
 - ${senderName}（${senderGenderText}）が${senderFaceDirection}に向かって「${problem.englishSentence}」と言っている。
@@ -704,9 +607,6 @@ ${buildSceneText(problem)}
 - 1つのコマの中に同じ人物を2回描画してはならない。
 - キャラクター画像と異なる顔や服装にしてはならない。
 - ビデオ会議のシーンの場合は、必ず登場人物たちにイヤフォンなどを着用させてください。通常の電話であれば不要です。
-
-【描かないこと】
-${frameRestrictions}
 `;
 }
 
@@ -751,7 +651,7 @@ export function generateImagePromptWithAnimals(problem: GeneratedProblem): strin
 猫ちゃんたちはいついかなる時も真顔で無表情です。真剣に、愚かで拙い行動をします。
 
 【シーン情報】
-${buildSceneText(problem)}
+${buildSceneText({ ...problem, senderDoing: null, receiverDoing: null })}
 
 【上半分の画像】
 - ${senderName}（${senderAnimal}）は画像の${receiverFaceDirection}にいて、${senderFaceDirection}を向いて「${problem.englishSentence}」と言っている。
@@ -779,9 +679,6 @@ ${buildSceneText(problem)}
 - 1つの画像の中に同じ猫を2回描画してはならない。
 - 人間を描いてはならない（すべて猫です）。
 - 枠線は無し。
-
-【描かないこと】
-${frameRestrictions}
 `;
 }
 
