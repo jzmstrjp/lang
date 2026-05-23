@@ -18,7 +18,6 @@ export const appearanceTypeMap = {
     '色気ある感じ。',
     '優しそうな感じ。',
     '知的な感じ。',
-    'ワイルドな感じ。',
     '上品な感じ。',
   ],
   female: [
