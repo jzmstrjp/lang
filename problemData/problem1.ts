@@ -1,7 +1,7 @@
 import { SeedProblemData } from '../src/types/problem';
 
 /**
- * 問題データ 1
+ * 問題データ 1xx
  * 手書きシード（ojisan）×2問
  * 1: stone（石）／2: acquisition（買収）×椅子のズレ
  */
