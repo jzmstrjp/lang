@@ -321,12 +321,6 @@ if (require.main === module) {
     if (isNaN(parsed) || parsed <= 0) {
       console.error('❌ 処理件数は正の整数で指定してください');
       console.error('   使用例: npm run fix-missing-image 3');
-      console.error(
-        '   キャラ画像使用: npx tsx scripts/fix-missing-image.ts 3 --use-character-images',
-      );
-      console.error(
-        '   動物キャラ使用: npx tsx scripts/fix-missing-image.ts 3 --use-animal-images',
-      );
       console.error('   チェックのみ: npx tsx scripts/fix-missing-image.ts --check-only');
       process.exit(1);
     }
