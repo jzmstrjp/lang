@@ -125,22 +125,20 @@ export function buildEnglishReplyPrompt({
   senderDoing = null,
   receiverDoing = null,
   isKids = false,
-  currentReply,
   additionalInstruction,
   englishReplyDraft,
 }: EnglishReplyPromptParams): string {
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
+「Okay, I understand.」だけ、「Sure, I’ll do it.」だけ、「Sounds good.」だけなど、どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの具体的な返答を作成してください。
+ただし質問に対して質問で返すことは禁止します。
 ${englishReplyDraft ? `返答内容の方向性としては「${englishReplyDraft}」って感じです。` : ''}
-質問に対して質問で返すことは禁止します。
-${isKids ? '無駄に話題を広げることは禁止します。' : '「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、'}どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
 
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
 簡潔な内容で、${isKids ? 6 : 10}語以内を目安に作成してください。
+冒頭に自然な相槌を入れてください。
 英文法は正確に、文法の間違いがないようにしてください。
-
-${currentReply ? `「${currentReply}」とは異なる返答を作成してください。` : ''}
 
 【シーン情報】
 ${buildSceneText({

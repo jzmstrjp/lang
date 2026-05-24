@@ -696,6 +696,7 @@ function ProblemFlowInner({
     const targetProblemId = currentProblem?.id;
     const japaneseSentence = currentProblem?.japaneseSentence;
     const currentJapaneseReply = currentProblem?.japaneseReply;
+    const currentEnglishReplyDraft = currentProblem?.englishReplyDraft ?? '';
 
     if (!targetProblemId || !currentJapaneseReply) {
       return;
@@ -705,14 +706,24 @@ function ProblemFlowInner({
       return;
     }
 
+    const editedDraft = window.prompt(`返答の概要を入力してください。`, currentEnglishReplyDraft);
+    if (editedDraft === null) {
+      return;
+    }
+
+    const trimmedDraft = editedDraft.trim();
+    const nextEnglishReplyDraft = trimmedDraft || null;
+
     setRegeneratingReply(true);
 
     try {
-      // AI で englishReply + japaneseReply を再生成
       const regenerateResponse = await fetch('/api/admin/problems/regenerate-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ problemId: targetProblemId }),
+        body: JSON.stringify({
+          problemId: targetProblemId,
+          englishReplyDraft: trimmedDraft,
+        }),
       });
 
       if (!regenerateResponse.ok) {
@@ -724,11 +735,30 @@ function ProblemFlowInner({
       const regenerateData = await regenerateResponse.json();
       const newEnglishReply = regenerateData.englishReply as string;
       const newJapaneseReply = regenerateData.japaneseReply as string;
+      const savedEnglishReplyDraft =
+        regenerateData.englishReplyDraft !== undefined
+          ? (regenerateData.englishReplyDraft as string | null)
+          : nextEnglishReplyDraft;
 
       if (!newEnglishReply || !newJapaneseReply) {
         window.alert('返答の再生成に失敗しました。');
         return;
       }
+
+      setPhase((prev) => ({
+        ...prev,
+        problem: {
+          ...prev.problem,
+          englishReplyDraft: savedEnglishReplyDraft,
+        },
+      }));
+      setProblemQueue((prevQueue) =>
+        prevQueue.map((problem) =>
+          problem.id === targetProblemId
+            ? { ...problem, englishReplyDraft: savedEnglishReplyDraft }
+            : problem,
+        ),
+      );
 
       // confirm ダイアログで新しい返答を提示
       const confirmed = window.confirm(
@@ -800,6 +830,7 @@ function ProblemFlowInner({
           ...prev.problem,
           englishReply: newEnglishReply,
           japaneseReply: newJapaneseReply,
+          englishReplyDraft: savedEnglishReplyDraft,
           audioEnReplyUrl: newAudioEnReplyUrl,
           audioJaUrl: newAudioJaUrl,
         },
@@ -812,6 +843,7 @@ function ProblemFlowInner({
                 ...problem,
                 englishReply: newEnglishReply,
                 japaneseReply: newJapaneseReply,
+                englishReplyDraft: savedEnglishReplyDraft,
                 audioEnReplyUrl: newAudioEnReplyUrl,
                 audioJaUrl: newAudioJaUrl,
               }

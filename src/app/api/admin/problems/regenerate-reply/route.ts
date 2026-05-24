@@ -12,6 +12,7 @@ const openai = new OpenAI({
 
 type RequestBody = {
   problemId?: string;
+  englishReplyDraft?: string | null;
 };
 
 export async function POST(request: Request) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as RequestBody;
-    const { problemId } = body;
+    const { problemId, englishReplyDraft: englishReplyDraftInput } = body;
 
     if (!problemId || typeof problemId !== 'string') {
       return NextResponse.json({ error: 'problemId が不正です。' }, { status: 400 });
@@ -34,13 +35,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OpenAI APIキーが設定されていません。' }, { status: 500 });
     }
 
-    const problem = await prisma.problem.findUnique({
+    const existing = await prisma.problem.findUnique({
       where: { id: problemId },
     });
 
-    if (!problem) {
+    if (!existing) {
       return NextResponse.json({ error: '指定された問題が見つかりません。' }, { status: 404 });
     }
+
+    const englishReplyDraft =
+      englishReplyDraftInput !== undefined
+        ? typeof englishReplyDraftInput === 'string'
+          ? englishReplyDraftInput.trim() || null
+          : null
+        : existing.englishReplyDraft;
+
+    const problem =
+      englishReplyDraftInput !== undefined
+        ? await prisma.problem.update({
+            where: { id: problemId },
+            data: { englishReplyDraft },
+          })
+        : existing;
 
     // englishReply を再生成
     const englishPrompt =
@@ -62,7 +78,7 @@ export async function POST(request: Request) {
         receiverDoing: problem.receiverDoing,
         isKids: problem.difficultyLevel === 1,
         currentReply: problem.englishReply,
-        englishReplyDraft: problem.englishReplyDraft,
+        englishReplyDraft,
       }) +
       `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json
@@ -123,6 +139,7 @@ export async function POST(request: Request) {
       success: true,
       englishReply: newEnglishReply,
       japaneseReply: newJapaneseReply,
+      englishReplyDraft,
     });
   } catch (error) {
     console.error('[regenerate-reply] エラーが発生しました', error);
