@@ -6,7 +6,6 @@ import * as readline from 'readline';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import { withAccelerate } from '@prisma/extension-accelerate';
 import { TEXT_MODEL_QUICK, appearanceTypeMap } from '@/const';
 import { WORD_COUNT_RULES, type ProblemLength } from '@/config/problem';
 import type { SeedProblemData } from '@/types/problem';
@@ -739,7 +738,6 @@ const BATCH_MODES = ['kids', 'short', 'medium', 'long', 'all', 'nonKids'] as con
 
 async function seedToDatabase(seedProblems: SeedProblemData[]): Promise<void> {
   const rawPrisma = new PrismaClient({ log: ['error'] });
-  const acceleratedPrisma = rawPrisma.$extends(withAccelerate()) as unknown as PrismaClient;
   try {
     const createData = seedProblems.map((problem) => {
       const wordCount = problem.englishSentence
@@ -755,7 +753,7 @@ async function seedToDatabase(seedProblems: SeedProblemData[]): Promise<void> {
         imageUrl: null,
       };
     });
-    const result = await (acceleratedPrisma as PrismaClient).problem.createMany({
+    const result = await rawPrisma.problem.createMany({
       data: createData,
       skipDuplicates: true,
     });
