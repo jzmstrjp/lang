@@ -16,6 +16,7 @@ type RequestBody = {
   senderWant?: string;
   senderDoing?: string;
   receiverDoing?: string;
+  englishReplyDraft?: string;
   senderAppearance?: string;
   receiverAppearance?: string;
 };
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       senderWant,
       senderDoing,
       receiverDoing,
+      englishReplyDraft,
       senderAppearance,
       receiverAppearance,
     } = body;
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
     if (senderWant !== undefined) data.senderWant = senderWant.trim();
     if (senderDoing !== undefined) data.senderDoing = senderDoing.trim() || null;
     if (receiverDoing !== undefined) data.receiverDoing = receiverDoing.trim() || null;
+    if (englishReplyDraft !== undefined) data.englishReplyDraft = englishReplyDraft.trim() || null;
     if (senderAppearance !== undefined) data.senderAppearance = senderAppearance.trim() || null;
     if (receiverAppearance !== undefined)
       data.receiverAppearance = receiverAppearance.trim() || null;
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
         senderWant: true,
         senderDoing: true,
         receiverDoing: true,
+        englishReplyDraft: true,
         senderAppearance: true,
         receiverAppearance: true,
       },

@@ -864,6 +864,7 @@ function ProblemFlowInner({
               senderWant: data.senderWant ?? prevPhase.problem.senderWant,
               senderDoing: data.senderDoing ?? prevPhase.problem.senderDoing,
               receiverDoing: data.receiverDoing ?? prevPhase.problem.receiverDoing,
+              englishReplyDraft: data.englishReplyDraft ?? prevPhase.problem.englishReplyDraft,
               senderAppearance: data.senderAppearance ?? prevPhase.problem.senderAppearance,
               receiverAppearance: data.receiverAppearance ?? prevPhase.problem.receiverAppearance,
             },
@@ -1166,6 +1167,7 @@ function ProblemFlowInner({
             senderWant: currentProblem.senderWant,
             senderDoing: currentProblem.senderDoing ?? '',
             receiverDoing: currentProblem.receiverDoing ?? '',
+            englishReplyDraft: currentProblem.englishReplyDraft ?? '',
             senderAppearance: currentProblem.senderAppearance ?? '',
             receiverAppearance: currentProblem.receiverAppearance ?? '',
           }}
@@ -2034,6 +2036,7 @@ type SceneEditFormValues = {
   senderWant: string;
   senderDoing: string;
   receiverDoing: string;
+  englishReplyDraft: string;
   senderAppearance: string;
   receiverAppearance: string;
 };
@@ -2258,6 +2261,19 @@ function SceneEditDialog({ defaultValues, onCancel, onSubmit }: SceneEditDialogP
               <textarea
                 id="scene-receiver-doing"
                 {...register('receiverDoing')}
+                disabled={isSubmitting}
+                rows={2}
+                className={textareaClass}
+                style={textareaStyle}
+              />
+            </div>
+            <div>
+              <label htmlFor="scene-english-reply-draft" className={labelClass}>
+                返答の概要
+              </label>
+              <textarea
+                id="scene-english-reply-draft"
+                {...register('englishReplyDraft')}
                 disabled={isSubmitting}
                 rows={2}
                 className={textareaClass}
