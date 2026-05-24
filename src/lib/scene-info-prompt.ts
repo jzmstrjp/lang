@@ -93,7 +93,7 @@ const kidsSamples: SceneInfo[] = [
     why: 'サクラがサッカーボールを持っているのを見て、好きなのかが気になったから',
     want: 'サクラがサッカー好きかを知れる',
     senderDoing: 'サッカーボールを足元で転がしながら',
-    receiverDoing: 'サクラがボールと戯れているのを見ている',
+    receiverDoing: 'ケンタがボールと戯れているのを見ている',
   },
   {
     englishSentence: 'Can you pass me the salt?',
