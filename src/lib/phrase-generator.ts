@@ -44,6 +44,7 @@ export type GenerateForPhraseResult = {
   want: string;
   senderDoing: string;
   receiverDoing: string;
+  englishReplyDraft: string;
   how: How;
   voice: Voice;
 };
@@ -272,6 +273,7 @@ export async function createEnglishReply(
       senderDoing: sentence.senderDoing,
       receiverDoing: sentence.receiverDoing,
       isKids,
+      englishReplyDraft: sentence.englishReplyDraft,
     }) +
     `
 【重要】英語の台詞のみを出力してください。JSONや説明は不要です。
@@ -449,6 +451,7 @@ export async function generateForPhrase(
     want: sentence.want,
     senderDoing: sentence.senderDoing,
     receiverDoing: sentence.receiverDoing,
+    englishReplyDraft: sentence.englishReplyDraft,
     how,
     voice,
   };

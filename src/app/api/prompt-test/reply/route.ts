@@ -25,6 +25,7 @@ type RequestBody = {
   additionalInstruction?: string;
   englishReply?: string;
   currentReply?: string;
+  englishReplyDraft?: string;
   expression?: string;
   expressionJa?: string;
 };
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       isKids = false,
       additionalInstruction,
       currentReply,
+      englishReplyDraft,
       expression,
       expressionJa,
     } = body;
@@ -103,6 +105,7 @@ export async function POST(request: Request) {
         isKids,
         additionalInstruction: additionalInstruction?.trim() || undefined,
         currentReply: currentReply?.trim() || undefined,
+        englishReplyDraft: englishReplyDraft?.trim() || undefined,
       }) +
       `\n【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json

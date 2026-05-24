@@ -15,6 +15,7 @@ model Problem {
   japaneseSentence         String
   japaneseReply            String
   englishReply             String
+  englishReplyDraft        String?
   incorrectOptions         Json
   audioEnUrl               String?
   audioEnReplyUrl          String?

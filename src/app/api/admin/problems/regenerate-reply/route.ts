@@ -62,6 +62,7 @@ export async function POST(request: Request) {
         receiverDoing: problem.receiverDoing,
         isKids: problem.difficultyLevel === 1,
         currentReply: problem.englishReply,
+        englishReplyDraft: problem.englishReplyDraft,
       }) +
       `【重要】以下のJSON形式で必ず回答してください:
 \`\`\`json

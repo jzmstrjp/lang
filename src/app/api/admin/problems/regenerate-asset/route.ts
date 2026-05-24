@@ -96,6 +96,7 @@ export async function POST(request: Request) {
           japaneseSentence: problem.japaneseSentence,
           japaneseReply: problem.japaneseReply,
           englishReply: problem.englishReply,
+          englishReplyDraft: problem.englishReplyDraft ?? null,
           incorrectOptions: (Array.isArray(problem.incorrectOptions)
             ? problem.incorrectOptions
             : []) as string[],

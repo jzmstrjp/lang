@@ -405,6 +405,7 @@ async function enrichToSeedProblemData({
     englishSentence: sentence.englishSentence,
     japaneseSentence,
     englishReply,
+    englishReplyDraft: sentence.englishReplyDraft,
     japaneseReply,
     how,
     senderWhen: sentence.when,
@@ -457,6 +458,7 @@ async function generateForPhraseToSeed(
     'want',
     'senderDoing',
     'receiverDoing',
+    'englishReplyDraft',
   ] as const;
   const missingFields = requiredFields.filter((f) => !result[f]);
   if (missingFields.length > 0) {
@@ -477,6 +479,7 @@ async function generateForPhraseToSeed(
     want: result.want,
     senderDoing: result.senderDoing,
     receiverDoing: result.receiverDoing,
+    englishReplyDraft: result.englishReplyDraft,
     how: result.how,
   };
 

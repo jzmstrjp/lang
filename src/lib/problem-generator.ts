@@ -105,6 +105,7 @@ export type EnglishReplyPromptParams = {
   isKids?: boolean;
   currentReply?: string;
   additionalInstruction?: string;
+  englishReplyDraft?: string | null;
 };
 
 export function buildEnglishReplyPrompt({
@@ -126,10 +127,12 @@ export function buildEnglishReplyPrompt({
   isKids = false,
   currentReply,
   additionalInstruction,
+  englishReplyDraft,
 }: EnglishReplyPromptParams): string {
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
+${englishReplyDraft ? `返答内容の方向性としては「${englishReplyDraft}」って感じです。` : ''}
 質問に対して質問で返すことは禁止します。
 ${isKids ? '無駄に話題を広げることは禁止します。' : '「Okay, I understand.」や「Thanks, I’m happy to hear that.」などの、'}どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
 
@@ -233,6 +236,7 @@ async function getRandomProblemFromSeed(
     japaneseSentence: selectedProblem.japaneseSentence,
     japaneseReply: selectedProblem.japaneseReply,
     englishReply: selectedProblem.englishReply,
+    englishReplyDraft: selectedProblem.englishReplyDraft ?? null,
     incorrectOptions: Array.isArray(selectedProblem.incorrectOptions)
       ? selectedProblem.incorrectOptions
       : [],

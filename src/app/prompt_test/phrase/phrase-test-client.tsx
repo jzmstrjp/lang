@@ -195,6 +195,9 @@ export default function PhraseTestClient({ defaultPhrase = '' }: { defaultPhrase
                     <p>
                       <span className="font-semibold">期待:</span> {item.want}
                     </p>
+                    <p>
+                      <span className="font-semibold">返答の概要:</span> {item.englishReplyDraft}
+                    </p>
                   </div>
                 </div>
               </div>
