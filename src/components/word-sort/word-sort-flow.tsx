@@ -378,7 +378,7 @@ function CorrectView({ problem, correctStreak, isOnStreak, onNextProblem }: Corr
         if (selectedTextContent === paragraphText || paragraphText.includes(selectedTextContent)) {
           setSelectedText(selectedTextContent);
         }
-      }, 300);
+      }, 600);
     };
 
     document.addEventListener('selectionchange', handleSelectionChange);

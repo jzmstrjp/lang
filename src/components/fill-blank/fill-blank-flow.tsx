@@ -300,7 +300,7 @@ function CorrectView({
         if (selectedTextContent === paragraphText || paragraphText.includes(selectedTextContent)) {
           setSelectedText(selectedTextContent);
         }
-      }, 300);
+      }, 600);
     };
 
     document.addEventListener('selectionchange', handleSelectionChange);
