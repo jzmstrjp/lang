@@ -45,7 +45,7 @@ const buildSceneInfoResultDefinition = (
   receiverWhere: `${receiverName}がいる場所。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大10文字程度で簡潔に。`,
   senderDoing: `1コマ目で${senderName}が上記のセリフを言っている最中の動作・状態。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大30文字程度で簡潔に。`,
   receiverDoing: `2コマ目で${receiverName}が返答のセリフを言っている最中の動作・状態。登場人物は全て個人名で書くこと。（第三者が登場する場合はその人も含めて全て個人名で書くこと）最大30文字程度で簡潔に。`,
-  englishReplyDraft: `2コマ目で${receiverName}が返答する内容の簡単な要約。一言か二言で。`,
+  englishReplyDraft: `2コマ目で${receiverName}が返答するセリフの簡単な概要。日本語。一言か二言で。（例: 感謝、共感、感心、指示、支持、質問への回答、同意、照れ、迷いつつ許可、了承、納得、喜び、驚き、依頼、承諾、拒否、快諾、など）`,
 });
 
 const samples: SceneInfo[] = [
@@ -63,7 +63,7 @@ const samples: SceneInfo[] = [
     want: 'レイナが目的の店のフロアを教えてくれる',
     senderDoing: 'エスカレーターの下段にいるレイナの方を振り向いている',
     receiverDoing: 'エスカレーターの上段にいるマイクを見ながら',
-    englishReplyDraft: '7階だよ',
+    englishReplyDraft: '質問への回答',
   },
   {
     englishSentence: 'I heard Emma followed through on that difficult project.',
@@ -79,7 +79,7 @@ const samples: SceneInfo[] = [
     want: 'タカシがエマの実績に感心してくれる',
     senderDoing: 'マグカップを片手に持っている',
     receiverDoing: 'タカシの方を見て驚いた顔をしている',
-    englishReplyDraft: 'エマへの感心',
+    englishReplyDraft: '感心',
   },
 ];
 
@@ -98,7 +98,7 @@ const kidsSamples: SceneInfo[] = [
     want: 'サクラがサッカー好きかを知れる',
     senderDoing: 'サッカーボールを足元で転がしながら',
     receiverDoing: 'ケンタがボールと戯れているのを見ている',
-    englishReplyDraft: '好きだよ',
+    englishReplyDraft: '肯定',
   },
   {
     englishSentence: 'Can you pass me the salt?',
@@ -114,7 +114,7 @@ const kidsSamples: SceneInfo[] = [
     want: 'サラが塩を渡してくれる',
     senderDoing: 'サラの方に手を伸ばしている',
     receiverDoing: '塩の瓶をタケシの方に向けて渡している',
-    englishReplyDraft: 'はい、どうぞ',
+    englishReplyDraft: '快諾して対応',
   },
 ];
 
