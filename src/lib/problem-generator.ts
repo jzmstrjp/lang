@@ -301,6 +301,7 @@ export function generateImagePrompt(problem: GeneratedProblem): string {
 
   return `上下半分に分割された写真を生成すること。
 上下の高さは正確に同じであること。
+枠や余白は一切なし。
 
 【重要】
 - 上半分、下半分を通して、それぞれの人物の服装や髪型は変わらないこと。
