@@ -1752,7 +1752,7 @@ function AdminOptionEditButton({
       type="button"
       onClick={onStartEdit}
       tabIndex={-1}
-      className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+      className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm w-[3rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
     >
       <Pencil size={16} />
     </button>
@@ -1765,7 +1765,7 @@ function AdminOptionEditButton({
         }
       }}
       tabIndex={-1}
-      className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm min-w-[2rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
+      className="absolute top-1/2 right-0 z-10 flex -translate-y-1/2 items-end justify-end rounded-tr-2xl rounded-br-2xl h-[100%] border border-[var(--primary)]/40 bg-[var(--background)]/40 p-2 text-sm w-[3rem] font-semibold text-[var(--primary)] shadow-sm enabled:hover:bg-[var(--primary)] enabled:hover:text-[var(--primary-text)]"
     >
       <Pencil size={16} />
     </button>
