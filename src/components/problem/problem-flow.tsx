@@ -1842,15 +1842,6 @@ function AdminProblemActions({
       <div className="relative w-full max-w-md rounded-2xl bg-[var(--dialog-background)] p-6 shadow-2xl shadow-black/40">
         <div className="space-y-8">
           <div className="space-y-3">
-            {currentProblem.imageUrl && (
-              <button
-                type="button"
-                onClick={() => setScenePreviewOpen(true)}
-                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--background)] border border-[var(--border)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/30 transition enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
-              >
-                画像と字幕を確認する
-              </button>
-            )}
             <button
               type="button"
               onClick={onEditScene}
@@ -1865,6 +1856,15 @@ function AdminProblemActions({
             >
               2コマ画像を再生成する
             </button>
+            {currentProblem.imageUrl && (
+              <button
+                type="button"
+                onClick={() => setScenePreviewOpen(true)}
+                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--background)] border border-[var(--border)] px-6 py-3 text-base font-semibold text-[var(--text)] shadow-sm shadow-[var(--border)]/30 transition enabled:hover:border-[var(--secondary)] enabled:hover:text-[var(--secondary)]"
+              >
+                画像と字幕を確認する
+              </button>
+            )}
           </div>
           <div className="space-y-3">
             <button
@@ -1917,6 +1917,7 @@ function AdminProblemActions({
                 : '2コマ目の日本語音声だけ再生成する'}
             </button>
           </div>
+
           <button
             type="button"
             onClick={onDeleteProblem}
