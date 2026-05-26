@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { TEXT_MODEL_QUICK } from '@/const';
 import type { ProblemLength } from '@/config/problem';
 import { recordTokenUsage } from '@/lib/token-usage-tracker';
+import { How } from './english-sentence-prompt';
 
 export type QualityCheckResult =
   | { isOk: true }
@@ -14,6 +15,7 @@ function buildQualityCheckPrompt(
   motivation: string,
   senderRole: string,
   receiverRole: string,
+  how: How,
 ): string {
   const idiomCheck = expression.includes(' ')
     ? '- 指定されたフレーズが慣用句の場合は、文字通りの意味で使わず慣用句として適切に使われているか\n'
@@ -32,6 +34,7 @@ ${idiomCheck}
 【判定対象の英文】${englishSentence}
 【話しかけた人の立場】${senderRole}
 【話しかけられた人の立場】${receiverRole}
+【会話の方法】${how}
 【発言の動機】${motivation}
 ---
 
@@ -59,6 +62,7 @@ export async function checkEnglishSentenceQuality(
     motivation,
     senderRole,
     receiverRole,
+    how,
   }: {
     expression: string;
     wordCountLength: ProblemLength;
@@ -67,6 +71,7 @@ export async function checkEnglishSentenceQuality(
     motivation: string;
     senderRole: string;
     receiverRole: string;
+    how: How;
   },
 ): Promise<QualityCheckResult> {
   const checkPrompt = buildQualityCheckPrompt(
@@ -75,6 +80,7 @@ export async function checkEnglishSentenceQuality(
     motivation,
     senderRole,
     receiverRole,
+    how,
   );
 
   const response = await openai.responses.create({

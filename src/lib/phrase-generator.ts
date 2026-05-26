@@ -185,6 +185,7 @@ export async function createEnglishSentence(
       motivation,
       senderRole: senderRoleFromSentence,
       receiverRole: receiverRoleFromSentence,
+      how,
     });
 
     if (!qualityResult.isOk) {
