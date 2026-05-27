@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { HeaderPortal } from '@/components/layout/header-portal';
-import ProblemFlow, { ProblemLength } from '@/components/problem/problem-flow';
+import ProblemFlow from '@/components/problem/problem-flow';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
 import {
@@ -10,8 +10,7 @@ import {
   pickRandomProblem,
 } from '@/lib/problem-service';
 import { ProblemLoadingPlaceholder } from '@/components/ui/problem-loading-placeholder';
-
-const validTypes = ['kids', 'short', 'medium', 'long'] as const;
+import { PROBLEM_ROUTE_LENGTHS, type ProblemRouteLength } from '@/config/problem';
 
 type ProblemPageProps = {
   params: Promise<{ type: string }>;
@@ -30,7 +29,7 @@ const fetchIsAdmin = async () => {
 async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
   const { type } = await params;
 
-  if (!validTypes.includes(type as ProblemLength)) {
+  if (!PROBLEM_ROUTE_LENGTHS.includes(type as ProblemRouteLength)) {
     notFound();
   }
 
@@ -39,7 +38,7 @@ async function ProblemPageContent({ params, searchParams }: ProblemPageProps) {
   const latestParam = resolvedSearchParams.latest;
   const parsedLatest = latestParam !== undefined ? parseInt(latestParam, 10) : NaN;
   const latestCount = Number.isFinite(parsedLatest) && parsedLatest > 0 ? parsedLatest : undefined;
-  const problemLength = type as ProblemLength;
+  const problemLength = type as ProblemRouteLength;
 
   const isAdminPromise = fetchIsAdmin();
   // search / latest 指定時は最新の DB 結果が欲しいのでキャッシュを通さない。

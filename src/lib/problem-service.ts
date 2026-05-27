@@ -5,7 +5,9 @@ import { Prisma } from '@prisma/client';
 import {
   WORD_COUNT_RULES,
   DIFFICULTY_LEVEL_RULES,
+  PROBLEM_ROUTE_LENGTHS,
   type ProblemLength,
+  type ProblemRouteLength,
   type DifficultyLevel,
 } from '@/config/problem';
 import {
@@ -244,13 +246,11 @@ export async function loadInitialProblems(
   return problems;
 }
 
-const PROBLEM_LENGTHS: ProblemLength[] = ['kids', 'short', 'medium', 'long'];
-
-export type ProblemsByLength = Record<ProblemLength, ProblemWithAudio[]>;
+export type ProblemsByLength = Record<ProblemRouteLength, ProblemWithAudio[]>;
 
 /**
  * `/problems/[type]` の全 type 分の初期問題プールをまとめて取得する。
- * 引数なしなのでキャッシュエントリは 1 つに集約される（4 type 分のプールを 1 cache key で保持）。
+ * 引数なしなのでキャッシュエントリは 1 つに集約される（3 type 分のプールを 1 cache key で保持）。
  * search や latest など個別パラメータが付くケースでは fetchProblems を直接呼ぶ側で取得する。
  *
  * `'use cache: remote'` で Vercel Runtime Cache に保存することで、
@@ -261,7 +261,7 @@ export async function loadInitialProblemsByLength(): Promise<ProblemsByLength> {
   cacheLife('hours');
 
   const entries = await Promise.all(
-    PROBLEM_LENGTHS.map(async (type) => {
+    PROBLEM_ROUTE_LENGTHS.map(async (type) => {
       const { problems } = await fetchProblems({
         type,
         difficultyLevel: 'non_kids',

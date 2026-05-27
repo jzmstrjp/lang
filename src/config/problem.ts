@@ -1,5 +1,10 @@
 export type ProblemLength = 'kids' | 'short' | 'medium' | 'long';
 
+/** `/problems/[type]` で有効な長さ（子ども向けは `/level/kids`） */
+export const PROBLEM_ROUTE_LENGTHS = ['short', 'medium', 'long'] as const;
+
+export type ProblemRouteLength = (typeof PROBLEM_ROUTE_LENGTHS)[number];
+
 export const WORD_COUNT_RULES = {
   kids: {
     min: 2,
