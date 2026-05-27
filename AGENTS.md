@@ -9,6 +9,7 @@
   - マイグレーションコマンドは必ず許可をとってから実行すること
 
 ## 問題の種類
+
 - kids・short・medium・long などがある
 - `wordCount`（語数: `WORD_COUNT_RULES`）と `difficultyLevel`（難易度: `DIFFICULTY_LEVEL_RULES`）の2属性。子ども向け kids は生成時に両方セットされる（語数 2〜6 → `difficultyLevel` 1）。ルートでは `/level/kids` は難易度のみ、`/problems/*` は語数のみでフィルタする
 - 定義の正本: `src/config/problem.ts`（`WORD_COUNT_RULES` / `DIFFICULTY_LEVEL_RULES` / `PROBLEM_ROUTE_LENGTHS`）
