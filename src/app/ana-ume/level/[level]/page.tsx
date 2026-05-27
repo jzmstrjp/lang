@@ -4,11 +4,9 @@ import { HeaderPortal } from '@/components/layout/header-portal';
 import FillBlankFlow from '@/components/fill-blank/fill-blank-flow';
 import { fetchProblems, loadInitialProblems, pickRandomProblem } from '@/lib/problem-service';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-import { DIFFICULTY_LEVEL_RULES } from '@/config/problem';
+import { DIFFICULTY_LEVEL_RULES, VALID_DIFFICULTY_LEVELS } from '@/config/problem';
 import type { DifficultyLevel } from '@/config/problem';
 import { generateBlankProblem } from '@/lib/fill-blank-utils';
-
-const ALLOWED_LEVELS: DifficultyLevel[] = ['kids', 'non_kids'];
 
 type LevelPageProps = {
   params: Promise<{ level: string }>;
@@ -18,7 +16,7 @@ type LevelPageProps = {
 async function FillBlankLevelContent({ params, searchParams }: LevelPageProps) {
   const { level } = await params;
 
-  if (!ALLOWED_LEVELS.includes(level as DifficultyLevel)) {
+  if (!VALID_DIFFICULTY_LEVELS.includes(level as DifficultyLevel)) {
     notFound();
   }
 
