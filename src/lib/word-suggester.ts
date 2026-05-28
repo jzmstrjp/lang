@@ -18,7 +18,7 @@ const commonPromptPrefix = (usedListText: string, sampleSentencesText: string) =
 ${usedListText}
 
 ## 既存問題の英文サンプル
-以下を参考に、足りていないものを生成してください。
+以下のサンプルを見て、まだ登場していない英単語やイディオムを生成してください。
 
 ${sampleSentencesText}
 `;
