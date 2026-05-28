@@ -4,9 +4,9 @@
  */
 
 export const lightColors = {
-  // 背景色
+  // 背景色（カード・ボタンなどの面）
   background: '#ffffff',
-  backgroundSecondary: '#f4f1ea',
+  backgroundSecondary: '#ebedef',
 
   // テキスト色
   text: '#2a2b3c',

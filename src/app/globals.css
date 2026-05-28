@@ -1,12 +1,17 @@
 @import 'tailwindcss';
 
 :root {
-  /* 背景色 */
+  /* 背景色（カード・ボタンなどの面） */
   --background: #ffffff;
-  --background-secondary: #f4f1ea;
+  --background-secondary: #ebedef;
+
+  /* ページグラデーション（上下に色・中央は淡い青み） */
+  --page-gradient-edge: #d4e6ea;
+  --page-gradient-mid: #ebedef;
+  --page-gradient-transition: #dfe9ec;
 
   /* セーフエリア用カラー */
-  --safe-top-color: #ffffff;
+  --safe-top-color: #d4e6ea;
 
   --dialog-background: #ffffff;
 
@@ -221,14 +226,31 @@
 }
 
 html {
-  background: var(--background);
+  background: var(--safe-top-color);
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   word-break: auto-phrase;
+}
+
+:root:not([data-theme='dark']) html,
+[data-theme='light'] html {
+  background: var(--page-gradient-edge);
+}
+
+:root:not([data-theme='dark']) body,
+[data-theme='light'] body {
+  background: linear-gradient(
+    180deg,
+    var(--page-gradient-edge) 0%,
+    var(--page-gradient-transition) 20%,
+    var(--page-gradient-mid) 50%,
+    var(--page-gradient-transition) 80%,
+    var(--page-gradient-edge) 100%
+  );
+  background-attachment: fixed;
 }
 
 [data-theme='dark'] html {
