@@ -227,6 +227,11 @@
 
 html {
   background: var(--safe-top-color);
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 body {

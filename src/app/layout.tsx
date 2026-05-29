@@ -59,15 +59,17 @@ export default function RootLayout({
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        {/* 動的更新用: メディアクエリなし（ThemeColorUpdaterで更新） */}
-        <meta name="theme-color" content="#d4e6ea" />
-        {/* システム設定フォールバック用: メディアクエリ付き */}
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#d4e6ea" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a3d5a" />
+        {/* Safari の URL バー色: CSS 変数で data-theme と同期（iPad は media 付き meta を優先しやすいため1つだけ） */}
+        <meta name="theme-color" content="var(--safe-top-color)" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var isDark=t==='dark'||(t!=='light'&&d);var c=isDark?'#1a3d5a':'#d4e6ea';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c);}catch(e){}})();`,
+          }}
+        />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-[var(--background)] text-[var(--text)] antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} text-[var(--text)] antialiased`}
       >
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
           <div className="ios-safe-top" aria-hidden="true" />
