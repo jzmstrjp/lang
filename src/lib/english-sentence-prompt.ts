@@ -64,7 +64,7 @@ export function buildEnglishSentenceOnlyPrompt({
 }): string {
   const usedBlock =
     usedSentences.length > 0
-      ? `以下の英文とは異なるシーンでの台詞を作成してください。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n\n`
+      ? `以下の英文と全く同じ文は作成しないでください。ただし一部でも違っていればOKです。\n${usedSentences.map((s) => `- ${s}`).join('\n')}\n\n`
       : '';
   const genderLabel = voiceMap[voice];
   const receiverGenderLabel = voiceMap[toggleVoice(voice)];
