@@ -623,7 +623,6 @@ const main = async () => {
 
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
-  const MIN_PASS_COUNT = 2;
 
   async function generateForLen(
     word: { expression: string; expressionJa: string },
@@ -631,8 +630,6 @@ const main = async () => {
   ): Promise<void> {
     const phraseSeedsForLen: SeedProblemData[] = [];
     const usedSentences: string[] = [];
-    let passCount = 0;
-    let failCount = 0;
 
     for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
       const voice: Voice = (['male', 'female'] as const)[Math.floor(Math.random() * 2)];
@@ -648,25 +645,19 @@ const main = async () => {
         how,
         usedSentences,
       );
-      if (seed) {
-        usedSentences.push(seed.englishSentence);
-        phraseSeedsForLen.push(seed);
-        passCount++;
-      } else {
-        failCount++;
+      if (!seed) {
+        const label = `「${word.expression}」/ ${len}`;
+        console.log(
+          `\n  📊 ${label}: ${i + 1}問目で不合格 → ⏭️ 残り${PROBLEMS_PER_PHRASE - i - 1}問は作らずスキップ`,
+        );
+        return;
       }
+      usedSentences.push(seed.englishSentence);
+      phraseSeedsForLen.push(seed);
     }
 
     const label = `「${word.expression}」/ ${len}`;
-    if (phraseSeedsForLen.length < MIN_PASS_COUNT) {
-      console.log(
-        `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格 → ⏭️ スキップ（${MIN_PASS_COUNT}問未満）`,
-      );
-      return;
-    }
-    console.log(
-      `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格${failCount > 0 ? `（${failCount}問不合格）` : ''} → ✅ 採用`,
-    );
+    console.log(`\n  📊 ${label}: ${PROBLEMS_PER_PHRASE}/${PROBLEMS_PER_PHRASE} 合格 → ✅ 採用`);
     for (const seed of phraseSeedsForLen) seedProblems.push(seed);
   }
 
@@ -855,7 +846,6 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
 
   const seedProblems: SeedProblemData[] = [];
   const PROBLEMS_PER_PHRASE = 3;
-  const MIN_PASS_COUNT = 2;
   const voices = ['male', 'female'] as const satisfies Voice[];
 
   async function generateForLenBatch(
@@ -864,8 +854,6 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
   ): Promise<void> {
     const phraseSeedsForLen: SeedProblemData[] = [];
     const usedSentences: string[] = [];
-    let passCount = 0;
-    let failCount = 0;
 
     for (let i = 0; i < PROBLEMS_PER_PHRASE; i++) {
       const voice = voices[Math.floor(Math.random() * voices.length)];
@@ -881,25 +869,19 @@ async function runBatch(opts: ReturnType<typeof parseBatchCliArgs> & {}): Promis
         how,
         usedSentences,
       );
-      if (seed) {
-        usedSentences.push(seed.englishSentence);
-        phraseSeedsForLen.push(seed);
-        passCount++;
-      } else {
-        failCount++;
+      if (!seed) {
+        const label = `「${word.expression}」/ ${len}`;
+        console.error(
+          `\n  📊 ${label}: ${i + 1}問目で不合格 → ⏭️ 残り${PROBLEMS_PER_PHRASE - i - 1}問は作らずスキップ`,
+        );
+        return;
       }
+      usedSentences.push(seed.englishSentence);
+      phraseSeedsForLen.push(seed);
     }
 
     const label = `「${word.expression}」/ ${len}`;
-    if (phraseSeedsForLen.length < MIN_PASS_COUNT) {
-      console.error(
-        `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格 → ⏭️ スキップ（${MIN_PASS_COUNT}問未満）`,
-      );
-      return;
-    }
-    console.error(
-      `\n  📊 ${label}: ${passCount}/${PROBLEMS_PER_PHRASE} 合格${failCount > 0 ? `（${failCount}問不合格）` : ''} → ✅ 採用`,
-    );
+    console.error(`\n  📊 ${label}: ${PROBLEMS_PER_PHRASE}/${PROBLEMS_PER_PHRASE} 合格 → ✅ 採用`);
     for (const seed of phraseSeedsForLen) seedProblems.push(seed);
   }
 
