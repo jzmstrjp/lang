@@ -130,8 +130,8 @@ export function buildEnglishReplyPrompt({
 }: EnglishReplyPromptParams): string {
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
-この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。
-${isKids ? '捻った返答やウィットに富んだ返答は要りません。素直な返答にしてください。' : ''}「Okay, I understand.」だけ、「Sure, I’ll do it.」だけ、「Sounds good.」だけなど、どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの具体的な返答を作成してください。
+この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。自然な流れの会話にしてください。
+${isKids ? '捻った返答やウィットに富んだ返答は要りません。シンプルで具体的な返答にしてください。' : ''}「Okay, I understand.」だけ、「Sure, I’ll do it.」だけ、「Sounds good.」だけなど、どんな場面でも当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
 ただし質問に対して質問で返すことは禁止します。
 ${englishReplyDraft ? `返答内容の方向性としては「${englishReplyDraft}」って感じです。` : ''}
 
