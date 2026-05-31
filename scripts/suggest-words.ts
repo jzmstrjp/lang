@@ -75,7 +75,7 @@ async function main() {
   console.log(`  - 既存 words テーブル: ${existingWords.length}件`);
   console.log(`  - englishSentence サンプル: ${sampleSentences.length}件`);
 
-  console.log(`\n🤖 AI に候補を生成中（kids）...`);
+  console.log(`\n📋 固定テンプレートから候補を取得中（kids）...`);
   const kidsResult = await suggestWordsForCategory(
     true,
     existingExpressions,

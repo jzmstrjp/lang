@@ -42,7 +42,7 @@ async function replenishWordsIfNeeded(
   if (currentWords.length >= needed) return currentWords;
 
   console.error(
-    `⚠️ ${isKids ? 'kids' : 'non-kids'} のワードが不足（${currentWords.length}件 < ${needed}件）。AI で補充します...`,
+    `⚠️ ${isKids ? 'kids' : 'non-kids'} のワードが不足（${currentWords.length}件 < ${needed}件）。${isKids ? '固定テンプレート' : 'AI'} で補充します...`,
   );
 
   const { suggestWordsForCategory } = await import('@/lib/word-suggester');
@@ -67,7 +67,9 @@ async function replenishWordsIfNeeded(
   );
 
   if (suggestions.length === 0) {
-    console.error(`⚠️ AI による補充候補が0件でした。現在のワードのみで続行します。`);
+    console.error(
+      `⚠️ ${isKids ? '固定テンプレート' : 'AI'} による補充候補が0件でした。現在のワードのみで続行します。`,
+    );
     return currentWords;
   }
 
