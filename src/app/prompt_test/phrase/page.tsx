@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { isAdminEmail } from '@/lib/auth/admin';
-import { prisma } from '@/lib/prisma';
 import PhraseTestClient from './phrase-test-client';
 
 async function PhraseTestPageContent() {
@@ -13,16 +12,7 @@ async function PhraseTestPageContent() {
     notFound();
   }
 
-  const count = await prisma.word.count();
-  const randomWord =
-    count > 0
-      ? await prisma.word.findFirst({
-          skip: Math.floor(Math.random() * count),
-          select: { expression: true },
-        })
-      : null;
-
-  return <PhraseTestClient defaultPhrase={randomWord?.expression ?? ''} />;
+  return <PhraseTestClient />;
 }
 
 export default function PhraseTestPage() {
