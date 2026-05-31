@@ -19,60 +19,16 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'あなたのOBJECTを見てもいい？',
   },
   {
-    expression: 'Can I try this OBJECT?',
-    expressionJa: 'このOBJECTを試してもいい？',
+    expression: 'Can I try your OBJECT?',
+    expressionJa: 'あなたのOBJECTを試してもいい？',
   },
   {
-    expression: 'Can I have this OBJECT?',
-    expressionJa: 'このOBJECTをもらってもいい？',
+    expression: 'Can I read your OBJECT?',
+    expressionJa: 'あなたのOBJECTを読んでもいい？',
   },
   {
-    expression: 'Can I take this OBJECT?',
-    expressionJa: 'このOBJECTを取ってもいい？',
-  },
-  {
-    expression: 'Can I eat this OBJECT?',
-    expressionJa: 'このOBJECTを食べてもいい？',
-  },
-  {
-    expression: 'Can I drink this OBJECT?',
-    expressionJa: 'このOBJECTを飲んでもいい？',
-  },
-  {
-    expression: 'Can I read this OBJECT?',
-    expressionJa: 'このOBJECTを読んでもいい？',
-  },
-  {
-    expression: 'Can I watch this OBJECT?',
-    expressionJa: 'このOBJECTを見てもいい？',
-  },
-  {
-    expression: 'Can I wear this OBJECT?',
-    expressionJa: 'このOBJECTを着てもいい？',
-  },
-  {
-    expression: 'Can I open the OBJECT?',
-    expressionJa: 'そのOBJECTを開けてもいい？',
-  },
-  {
-    expression: 'Can I close the OBJECT?',
-    expressionJa: 'そのOBJECTを閉めてもいい？',
-  },
-  {
-    expression: 'Can I move the OBJECT?',
-    expressionJa: 'そのOBJECTを動かしてもいい？',
-  },
-  {
-    expression: 'Can I sit on the OBJECT?',
-    expressionJa: 'そのOBJECTに座ってもいい？',
-  },
-  {
-    expression: 'Can I play with this OBJECT?',
-    expressionJa: 'このOBJECTで遊んでもいい？',
-  },
-  {
-    expression: 'Can I take a picture of your OBJECT?',
-    expressionJa: 'あなたのOBJECTの写真を撮ってもいい？',
+    expression: 'Can I play with your OBJECT?',
+    expressionJa: 'あなたのOBJECTで遊んでもいい？',
   },
   {
     expression: 'Can I put my OBJECT here?',
@@ -87,32 +43,24 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'このOBJECTを選んでもいい？',
   },
   {
-    expression: 'Can you pass me the OBJECT?',
-    expressionJa: 'そのOBJECTを取ってくれる？',
+    expression: 'Can I buy this OBJECT?',
+    expressionJa: 'このOBJECTを買ってもいい？',
   },
   {
-    expression: 'Can you show me your OBJECT?',
-    expressionJa: 'あなたのOBJECTを見せてくれる？',
+    expression: 'Can I eat this OBJECT?',
+    expressionJa: 'このOBJECTを食べてもいい？',
   },
   {
-    expression: 'Can you bring the OBJECT?',
-    expressionJa: 'そのOBJECTを持ってきてくれる？',
+    expression: 'Can I drink this OBJECT?',
+    expressionJa: 'このOBJECTを飲んでもいい？',
   },
   {
-    expression: 'Can you find my OBJECT?',
-    expressionJa: '私のOBJECTを探してくれる？',
+    expression: 'Can I wear this OBJECT?',
+    expressionJa: 'このOBJECTを身につけてもいい？',
   },
   {
-    expression: 'Can you help me find my OBJECT?',
-    expressionJa: '私のOBJECTを探すのを手伝ってくれる？',
-  },
-  {
-    expression: 'Can you help me carry this OBJECT?',
-    expressionJa: 'このOBJECTを運ぶのを手伝ってくれる？',
-  },
-  {
-    expression: 'Can you help me clean the OBJECT?',
-    expressionJa: 'そのOBJECTを掃除するのを手伝ってくれる？',
+    expression: 'Could you lend me your OBJECT?',
+    expressionJa: 'あなたのOBJECTを貸してくれますか？',
   },
   {
     expression: 'Can you teach me this OBJECT?',
@@ -121,10 +69,6 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
   {
     expression: 'Can you explain this OBJECT?',
     expressionJa: 'このOBJECTを説明してくれる？',
-  },
-  {
-    expression: 'Can you check my OBJECT?',
-    expressionJa: '私のOBJECTを確認してくれる？',
   },
   {
     expression: 'Do you have your OBJECT?',
@@ -151,32 +95,16 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'このOBJECTを覚えている？',
   },
   {
-    expression: 'Do you want to try this OBJECT?',
-    expressionJa: 'このOBJECTを試してみたい？',
+    expression: 'Do you use this OBJECT?',
+    expressionJa: 'このOBJECTを使う？',
   },
   {
-    expression: 'Do you want to eat this OBJECT?',
-    expressionJa: 'このOBJECTを食べたい？',
+    expression: 'Do you read this OBJECT?',
+    expressionJa: 'このOBJECTを読む？',
   },
   {
-    expression: 'Do you want to drink this OBJECT?',
-    expressionJa: 'このOBJECTを飲みたい？',
-  },
-  {
-    expression: 'Do you want to read this OBJECT?',
-    expressionJa: 'このOBJECTを読みたい？',
-  },
-  {
-    expression: 'Do you want to watch this OBJECT?',
-    expressionJa: 'このOBJECTを見たい？',
-  },
-  {
-    expression: 'Do you want to buy this OBJECT?',
-    expressionJa: 'このOBJECTを買いたい？',
-  },
-  {
-    expression: 'Do you want to play with this OBJECT?',
-    expressionJa: 'このOBJECTで遊びたい？',
+    expression: 'Do you play with this OBJECT?',
+    expressionJa: 'このOBJECTで遊ぶ？',
   },
   {
     expression: 'Did you bring your OBJECT?',
@@ -203,8 +131,16 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'このOBJECTはあなたのもの？',
   },
   {
+    expression: 'Is this OBJECT mine?',
+    expressionJa: 'このOBJECTは私のもの？',
+  },
+  {
     expression: 'Is this OBJECT new?',
     expressionJa: 'このOBJECTは新しい？',
+  },
+  {
+    expression: 'Is this OBJECT old?',
+    expressionJa: 'このOBJECTは古い？',
   },
   {
     expression: 'Is this OBJECT expensive?',
@@ -213,22 +149,6 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
   {
     expression: 'Is this OBJECT cheap?',
     expressionJa: 'このOBJECTは安い？',
-  },
-  {
-    expression: 'Is this OBJECT too big?',
-    expressionJa: 'このOBJECTは大きすぎる？',
-  },
-  {
-    expression: 'Is this OBJECT too small?',
-    expressionJa: 'このOBJECTは小さすぎる？',
-  },
-  {
-    expression: 'Is this OBJECT for class?',
-    expressionJa: 'このOBJECTは授業で使うもの？',
-  },
-  {
-    expression: 'Is this OBJECT for me?',
-    expressionJa: 'このOBJECTは私のためのもの？',
   },
   {
     expression: 'Where is my OBJECT?',
@@ -247,12 +167,8 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'このOBJECTはどこで買える？',
   },
   {
-    expression: 'Where can I find the OBJECT?',
-    expressionJa: 'そのOBJECTはどこで見つかる？',
-  },
-  {
-    expression: 'Where should I put this OBJECT?',
-    expressionJa: 'このOBJECTをどこに置けばいい？',
+    expression: 'Where can I find this OBJECT?',
+    expressionJa: 'このOBJECTはどこで見つかる？',
   },
   {
     expression: 'What is this OBJECT?',
@@ -261,14 +177,6 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
   {
     expression: 'What does this OBJECT mean?',
     expressionJa: 'このOBJECTはどういう意味？',
-  },
-  {
-    expression: 'What do you think of this OBJECT?',
-    expressionJa: 'このOBJECTをどう思う？',
-  },
-  {
-    expression: 'What kind of OBJECT do you like?',
-    expressionJa: 'どんなOBJECTが好き？',
   },
   {
     expression: 'What is your favorite OBJECT?',
@@ -287,18 +195,6 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'どのOBJECTを選べばいい？',
   },
   {
-    expression: 'How much is this OBJECT?',
-    expressionJa: 'このOBJECTはいくら？',
-  },
-  {
-    expression: 'How about this OBJECT?',
-    expressionJa: 'このOBJECTはどう？',
-  },
-  {
-    expression: 'How was the OBJECT?',
-    expressionJa: 'そのOBJECTはどうだった？',
-  },
-  {
     expression: 'I want this OBJECT, please.',
     expressionJa: 'このOBJECTをください。',
   },
@@ -315,18 +211,6 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'このOBJECTをもらえますか？',
   },
   {
-    expression: 'Please give me the OBJECT.',
-    expressionJa: 'そのOBJECTをください。',
-  },
-  {
-    expression: 'Please show me the OBJECT.',
-    expressionJa: 'そのOBJECTを見せてください。',
-  },
-  {
-    expression: 'Please bring your OBJECT.',
-    expressionJa: 'あなたのOBJECTを持ってきてください。',
-  },
-  {
     expression: 'I want to try this OBJECT.',
     expressionJa: 'このOBJECTを試してみたい。',
   },
@@ -341,18 +225,6 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
   {
     expression: 'I want to read this OBJECT.',
     expressionJa: 'このOBJECTを読みたい。',
-  },
-  {
-    expression: 'I want to watch this OBJECT.',
-    expressionJa: 'このOBJECTを見たい。',
-  },
-  {
-    expression: 'I want to buy this OBJECT.',
-    expressionJa: 'このOBJECTを買いたい。',
-  },
-  {
-    expression: 'I want to play with this OBJECT.',
-    expressionJa: 'このOBJECTで遊びたい。',
   },
   {
     expression: 'I need my OBJECT.',
@@ -383,8 +255,12 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: '私のOBJECTを探しています。',
   },
   {
-    expression: 'I have a question about this OBJECT.',
-    expressionJa: 'このOBJECTについて質問があります。',
+    expression: 'I made this OBJECT.',
+    expressionJa: 'このOBJECTを作りました。',
+  },
+  {
+    expression: 'I drew this OBJECT.',
+    expressionJa: 'このOBJECTを描きました。',
   },
   {
     expression: 'I think this OBJECT is good.',
@@ -403,8 +279,264 @@ export const KIDS_WORD_TEMPLATES: { expression: string; expressionJa: string }[]
     expressionJa: 'このOBJECTのほうが好き。',
   },
   {
-    expression: "I don't like this OBJECT very much.",
-    expressionJa: 'このOBJECTはあまり好きじゃない。',
+    expression: 'Thank you for the OBJECT.',
+    expressionJa: 'そのOBJECTをありがとう。',
+  },
+  {
+    expression: 'Thanks for the OBJECT.',
+    expressionJa: 'そのOBJECTをありがとう。',
+  },
+  {
+    expression: 'Thank you for your OBJECT.',
+    expressionJa: 'あなたのOBJECTをありがとう。',
+  },
+  {
+    expression: 'Thanks for lending me your OBJECT.',
+    expressionJa: 'あなたのOBJECTを貸してくれてありがとう。',
+  },
+  {
+    expression: 'Sorry I broke your OBJECT.',
+    expressionJa: 'あなたのOBJECTを壊してごめんなさい。',
+  },
+  {
+    expression: 'Sorry I used your OBJECT.',
+    expressionJa: 'あなたのOBJECTを使ってごめんなさい。',
+  },
+  {
+    expression: 'Sorry I took your OBJECT.',
+    expressionJa: 'あなたのOBJECTを取ってごめんなさい。',
+  },
+  {
+    expression: 'Sorry I forgot your OBJECT.',
+    expressionJa: 'あなたのOBJECTを忘れてごめんなさい。',
+  },
+  {
+    expression: "You're ADJECTIVE.",
+    expressionJa: 'あなたはADJECTIVEです。',
+  },
+  {
+    expression: "You're so ADJECTIVE.",
+    expressionJa: 'あなたはとてもADJECTIVEです。',
+  },
+  {
+    expression: "You're really ADJECTIVE.",
+    expressionJa: 'あなたは本当にADJECTIVEです。',
+  },
+  {
+    expression: 'Are you ADJECTIVE?',
+    expressionJa: 'あなたはADJECTIVEですか？',
+  },
+  {
+    expression: 'Your OBJECT is cool.',
+    expressionJa: 'あなたのOBJECTはかっこいいです。',
+  },
+  {
+    expression: 'Your OBJECT is cute.',
+    expressionJa: 'あなたのOBJECTはかわいいです。',
+  },
+  {
+    expression: 'I like your OBJECT.',
+    expressionJa: 'あなたのOBJECTが好きです。',
+  },
+  {
+    expression: 'I love your OBJECT.',
+    expressionJa: 'あなたのOBJECTが大好きです。',
+  },
+  {
+    expression: 'Excuse me, is this your OBJECT?',
+    expressionJa: 'すみません、これはあなたのOBJECTですか？',
+  },
+  {
+    expression: 'Excuse me, is that your OBJECT?',
+    expressionJa: 'すみません、あれはあなたのOBJECTですか？',
+  },
+  {
+    expression: 'Excuse me, where is the OBJECT?',
+    expressionJa: 'すみません、そのOBJECTはどこですか？',
+  },
+  {
+    expression: 'Hey, is this your OBJECT?',
+    expressionJa: 'ねえ、これはあなたのOBJECT？',
+  },
+  {
+    expression: 'Hey, did you forget your OBJECT?',
+    expressionJa: 'ねえ、あなたのOBJECTを忘れた？',
+  },
+  {
+    expression: 'Hey, I found your OBJECT.',
+    expressionJa: 'ねえ、あなたのOBJECTを見つけたよ。',
+  },
+  {
+    expression: 'Hey, do you want this OBJECT?',
+    expressionJa: 'ねえ、このOBJECTがほしい？',
+  },
+  {
+    expression: 'Hey, can I borrow your OBJECT?',
+    expressionJa: 'ねえ、あなたのOBJECTを借りてもいい？',
+  },
+  {
+    expression: 'Hey, can I use your OBJECT?',
+    expressionJa: 'ねえ、あなたのOBJECTを使ってもいい？',
+  },
+  {
+    expression: 'Hey, can I see your OBJECT?',
+    expressionJa: 'ねえ、あなたのOBJECTを見てもいい？',
+  },
+  {
+    expression: 'Hey, can I try your OBJECT?',
+    expressionJa: 'ねえ、あなたのOBJECTを試してもいい？',
+  },
+  {
+    expression: 'Hey, can you explain this OBJECT?',
+    expressionJa: 'ねえ、このOBJECTを説明してくれる？',
+  },
+  {
+    expression: "I can't find my OBJECT.",
+    expressionJa: '私のOBJECTが見つからない。',
+  },
+  {
+    expression: "I don't have my OBJECT.",
+    expressionJa: '私のOBJECTを持っていない。',
+  },
+  {
+    expression: 'I forgot my OBJECT.',
+    expressionJa: '私のOBJECTを忘れた。',
+  },
+  {
+    expression: 'I lost my OBJECT.',
+    expressionJa: '私のOBJECTをなくした。',
+  },
+  {
+    expression: 'I need my OBJECT.',
+    expressionJa: '私のOBJECTが必要です。',
+  },
+  {
+    expression: 'I broke your OBJECT.',
+    expressionJa: 'あなたのOBJECTを壊してしまいました。',
+  },
+  {
+    expression: 'I dropped my OBJECT.',
+    expressionJa: '私のOBJECTを落としました。',
+  },
+  {
+    expression: 'I made this OBJECT.',
+    expressionJa: 'このOBJECTを作りました。',
+  },
+  {
+    expression: 'I drew this OBJECT.',
+    expressionJa: 'このOBJECTを描きました。',
+  },
+  {
+    expression: 'I brought my OBJECT.',
+    expressionJa: '私のOBJECTを持ってきました。',
+  },
+  {
+    expression: 'I want this OBJECT, please.',
+    expressionJa: 'このOBJECTをください。',
+  },
+  {
+    expression: "I'll take this OBJECT.",
+    expressionJa: 'このOBJECTにします。',
+  },
+  {
+    expression: "I'll have this OBJECT.",
+    expressionJa: 'このOBJECTにします。',
+  },
+  {
+    expression: 'Could I get this OBJECT?',
+    expressionJa: 'このOBJECTをもらえますか？',
+  },
+  {
+    expression: 'Can I try on this OBJECT?',
+    expressionJa: 'このOBJECTを試着してもいい？',
+  },
+  {
+    expression: 'Do you have another OBJECT?',
+    expressionJa: '別のOBJECTはありますか？',
+  },
+  {
+    expression: 'Do you have a bigger OBJECT?',
+    expressionJa: 'もっと大きいOBJECTはありますか？',
+  },
+  {
+    expression: 'Do you have a smaller OBJECT?',
+    expressionJa: 'もっと小さいOBJECTはありますか？',
+  },
+  {
+    expression: 'I like your OBJECT.',
+    expressionJa: 'あなたのOBJECTが好きです。',
+  },
+  {
+    expression: 'I love your OBJECT.',
+    expressionJa: 'あなたのOBJECTが大好きです。',
+  },
+  {
+    expression: 'Your OBJECT is cool.',
+    expressionJa: 'あなたのOBJECTはかっこいいです。',
+  },
+  {
+    expression: 'Your OBJECT is cute.',
+    expressionJa: 'あなたのOBJECTはかわいいです。',
+  },
+  {
+    expression: 'Your OBJECT is nice.',
+    expressionJa: 'あなたのOBJECTはすてきです。',
+  },
+  {
+    expression: "That's a nice OBJECT.",
+    expressionJa: 'それはすてきなOBJECTですね。',
+  },
+  {
+    expression: "That's a good OBJECT.",
+    expressionJa: 'それはいいOBJECTですね。',
+  },
+  {
+    expression: 'You are ADJECTIVE.',
+    expressionJa: 'あなたはADJECTIVEです。',
+  },
+  {
+    expression: 'You are so ADJECTIVE.',
+    expressionJa: 'あなたはとてもADJECTIVEです。',
+  },
+  {
+    expression: 'Are you ADJECTIVE?',
+    expressionJa: 'あなたはADJECTIVEですか？',
+  },
+  {
+    expression: 'Thank you for your OBJECT.',
+    expressionJa: 'あなたのOBJECTをありがとう。',
+  },
+  {
+    expression: 'Thanks for lending me your OBJECT.',
+    expressionJa: 'あなたのOBJECTを貸してくれてありがとう。',
+  },
+  {
+    expression: 'Thanks for sharing your OBJECT.',
+    expressionJa: 'あなたのOBJECTを分けてくれてありがとう。',
+  },
+  {
+    expression: 'Thanks for teaching me this OBJECT.',
+    expressionJa: 'このOBJECTを教えてくれてありがとう。',
+  },
+  {
+    expression: 'Sorry I used your OBJECT.',
+    expressionJa: 'あなたのOBJECTを使ってごめんなさい。',
+  },
+  {
+    expression: 'Sorry I took your OBJECT.',
+    expressionJa: 'あなたのOBJECTを取ってごめんなさい。',
+  },
+  {
+    expression: 'Sorry I broke your OBJECT.',
+    expressionJa: 'あなたのOBJECTを壊してごめんなさい。',
+  },
+  {
+    expression: 'Sorry I lost your OBJECT.',
+    expressionJa: 'あなたのOBJECTをなくしてごめんなさい。',
+  },
+  {
+    expression: 'Sorry I forgot your OBJECT.',
+    expressionJa: 'あなたのOBJECTを忘れてごめんなさい。',
   },
 ];
 
