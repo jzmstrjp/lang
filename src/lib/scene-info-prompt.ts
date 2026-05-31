@@ -133,6 +133,7 @@ const KIDS_SAMPLES_BLOCK: string = buildSamplesBlock(kidsSamples);
 const KIDS_RULES_BLOCK: string = `- できれば登場人物の片方は中学生か高校生であること。もう片方は親・先生・バイト先の人など大人も積極的に登場してよいし、同じく中学生か高校生でもよい。
 - 学校・友人・恋愛・部活・放課後・家族・趣味・バイト・休日など幅広いシーンにすること
 - ビジネスのシーンは避けること
+- 込み入った事情のない、シンプルなシーンであること。englishReplyDraftもシンプルに。
 `;
 
 export type SceneInfoPromptMessages = {
