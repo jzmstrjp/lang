@@ -10,7 +10,7 @@ export const WORD_COUNT_RULES = {
     min: 2,
     max: 6,
     sentenceNote:
-      'ごく簡単な文法でごく短い口語文にしてください。中学1年生レベルの基本的な語彙・構文で作成すること。できるだけ短い文にしてください。ビジネスシーンのセリフは避けてください。例: "Water, please.", "Help me, please.", "Do you like soccer?", "Can I borrow your eraser?", "I like your jacket!", "Are you free today?"',
+      'ビジネスシーンのセリフは避けてください。OBJECT や ADJECTIVE などは、文脈に合う自然で具体的な英単語に差し替えてください。',
   },
   short: {
     min: 3,
