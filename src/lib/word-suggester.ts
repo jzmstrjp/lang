@@ -585,14 +585,15 @@ export type TokenUsage = {
 };
 
 function suggestKidsWords(
-  existingExpressions: string[],
   existingWords: { expression: string; expressionJa: string; isKids: boolean }[],
 ): { expression: string; expressionJa: string }[] {
-  const usedExpressions = new Set([
-    ...existingWords.filter((w) => w.isKids).map((w) => w.expression),
-    ...existingExpressions,
-  ]);
-  return KIDS_WORD_TEMPLATES.filter((t) => !usedExpressions.has(t.expression));
+  const usedInWords = new Set(existingWords.filter((w) => w.isKids).map((w) => w.expression));
+  const seen = new Set<string>();
+  return KIDS_WORD_TEMPLATES.filter((t) => {
+    if (usedInWords.has(t.expression) || seen.has(t.expression)) return false;
+    seen.add(t.expression);
+    return true;
+  });
 }
 
 export async function suggestWordsForCategory(
@@ -603,7 +604,7 @@ export async function suggestWordsForCategory(
 ): Promise<{ words: { expression: string; expressionJa: string }[]; tokenUsage: TokenUsage }> {
   if (isKids) {
     return {
-      words: suggestKidsWords(existingExpressions, existingWords),
+      words: suggestKidsWords(existingWords),
       tokenUsage: { inputTokens: 0, outputTokens: 0 },
     };
   }
