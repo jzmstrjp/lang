@@ -131,9 +131,10 @@ export function buildEnglishReplyPrompt({
   return `英語ネイティブの${receiverName}（${whom}・${receiverGender}）が
 ${senderName}（${who}・${senderGender}）から${how}で「${englishSentence}」と話しかけられました。
 この時に${receiverName}（${whom}・${receiverGender}）が返すであろう自然な返答の口語文を英語で1つ作成してください。自然な流れの会話にしてください。背景を知らなくても状況がわかる会話にしてください。
-「Okay, I understand.」「Sure, I’ll do it.」「Sounds good.」「Oh, thanks, that means a lot.」など、いろんな場面に当てはまりそうな返答は禁止します。この場面ならではの返答を作成してください。
-ただし質問に対して質問で返すことは禁止します。
 「この場面でそれ言うの、矛盾してない？意味不明じゃない？」と絶対に突っ込まれないセリフにしてください。
+ただし「Okay, I understand.」「Sure, I’ll do it.」「Sounds good.」「Oh, thanks, that means a lot.」など、いろんな場面に当てはまりそうな当たり障りのない返答は禁止します。この場面ならではの返答を作成してください。
+質問に対して質問で返すことは禁止します。
+
 ${englishReplyDraft ? `返答内容の方向性としては「${englishReplyDraft}」って感じです。` : ''}
 
 ${additionalInstruction ? `${additionalInstruction}\n` : ''}
