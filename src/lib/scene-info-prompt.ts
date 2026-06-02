@@ -186,9 +186,10 @@ ${senderName}という${voiceMap[voice]}（${senderRole}）が${receiverName}と
 ## 出力ルール
 - 現実世界で誰もが一度は見たことがあるようなシーンにすること
 - 人物の個人名は全てカタカナで書くこと
-- 2コマ漫画として描くため、2コマで描けるシーンにすること。
+- 2コマ漫画として描くため、2コマで描けるシンプルなシーンにすること。
   - 1コマ目: ${senderName}（${voiceMap[voice]}・${senderRole}）が${receiverName}（${receiverGenderLabel}・${receiverRole}）に向かって「${englishSentence}」と話しかけている。
   - 2コマ目: ${receiverName}（${receiverGenderLabel}・${receiverRole}）が${senderName}（${voiceMap[voice]}・${senderRole}）に向かって返答している。
+- セリフだけ見れば状況が分かるようにすること。過去の事情を知らないと理解できないようなシーンは避けること。
 - ${isKids ? KIDS_RULES_BLOCK : ''}
 
 【重要】以下のJSON形式で必ず回答してください。
